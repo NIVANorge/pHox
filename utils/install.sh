@@ -77,22 +77,26 @@ echo "                        "
 read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
-    f="/tmp/pigpio.conf"
-    g="/etc/init/pigpio.conf"
-    echo '# pigpio'                       > $f
-    echo 'description	"PIGPIO daemon"' >> $f
-    echo 'start on runlevel [2345]'      >> $f
-    echo 'stop on runlevel [!2345]'      >> $f
-    echo 'respawn'                       >> $f
-    echo 'respawn limit 10 5'            >> $f
-    echo 'umask 022'                     >> $f
-    echo 'expect stop'                   >> $f
-    echo 'console none'                  >> $f
-    echo 'pre-start script'              >> $f
-    echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
-    echo 'end script'                    >> $f
-    echo 'exec /usr/bin/pigpiod'         >> $f
-    sudo mv $f $g
+    ## New method via systemd
+    systemctl start pigpiod
+    systemctl enable pigpiod
+    ## Old method via upstart system
+    #f="/tmp/pigpio.conf"
+    #g="/etc/init/pigpio.conf"
+    #echo '# pigpio'                       > $f
+    #echo 'description	"PIGPIO daemon"' >> $f
+    #echo 'start on runlevel [2345]'      >> $f
+    #echo 'stop on runlevel [!2345]'      >> $f
+    #echo 'respawn'                       >> $f
+    #echo 'respawn limit 10 5'            >> $f
+    #echo 'umask 022'                     >> $f
+    #echo 'expect stop'                   >> $f
+    #echo 'console none'                  >> $f
+    #echo 'pre-start script'              >> $f
+    #echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
+    #echo 'end script'                    >> $f
+    #echo 'exec /usr/bin/pigpiod'         >> $f
+    #sudo mv $f $g
 fi
 #--------------------------------------------------------------------------
 # Install Autostart
@@ -130,6 +134,22 @@ if [ "$ans" != "Y" ]
 then
     cd
     git clone git@github.com:NIVANorge/pHox.git
+fi
+#--------------------------------------------------------------------------
+# Install static IP on eth0
+#--------------------------------------------------------------------------
+echo "********* ETH0 *********"
+echo "Install ETH0            "
+echo "Static 192.168.0.90     "
+echo "************************"
+echo "                        "
+read -p "Skip? Y/[N] " ans
+if [ "$ans" != "Y" ]
+then
+    f="/etc/dhcpcd.conf"
+    echo '#interface eth0'                    >> $f
+    echo 'static ip_address=192.168.0.90/24'  >> $f
+    echo 'static routers=192.168.0.1'         >> $f
 fi
 
 
