@@ -77,22 +77,24 @@ echo "                        "
 read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
-    f="/tmp/pigpio.conf"
-    g="/etc/init/pigpio.conf"
-    echo '# pigpio'                       > $f
-    echo 'description	"PIGPIO daemon"' >> $f
-    echo 'start on runlevel [2345]'      >> $f
-    echo 'stop on runlevel [!2345]'      >> $f
-    echo 'respawn'                       >> $f
-    echo 'respawn limit 10 5'            >> $f
-    echo 'umask 022'                     >> $f
-    echo 'expect stop'                   >> $f
-    echo 'console none'                  >> $f
-    echo 'pre-start script'              >> $f
-    echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
-    echo 'end script'                    >> $f
-    echo 'exec /usr/bin/pigpiod'         >> $f
-    sudo mv $f $g
+    sudo systemctl start pigpiod
+    sudo systemctl enable pigpiod
+#    f="/tmp/pigpio.conf"
+#    g="/etc/init/pigpio.conf"
+#    echo '# pigpio'                       > $f
+#    echo 'description	"PIGPIO daemon"' >> $f
+#    echo 'start on runlevel [2345]'      >> $f
+#    echo 'stop on runlevel [!2345]'      >> $f
+#    echo 'respawn'                       >> $f
+#    echo 'respawn limit 10 5'            >> $f
+#    echo 'umask 022'                     >> $f
+#    echo 'expect stop'                   >> $f
+#    echo 'console none'                  >> $f
+#    echo 'pre-start script'              >> $f
+#    echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
+#    echo 'end script'                    >> $f
+#    echo 'exec /usr/bin/pigpiod'         >> $f
+#    sudo mv $f $g
 fi
 #--------------------------------------------------------------------------
 # Install Autostart
