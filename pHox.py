@@ -3,6 +3,8 @@
 import socket
 import threading
 import os,sys
+os.chdir('/home/pi/pHox')
+os.system('clear')
 import warnings
 import usb.core
 import usb
@@ -24,7 +26,7 @@ import pyqtgraph as pg
 
 UDP_SEND = 6801
 UDP_RECV = 6802
-UDP_IP   = '192.168.0.1'
+UDP_IP   = '192.168.0.2'
 
 #i2c_helper = ABEHelpers()
 #bus = i2c_helper.get_smbus()
@@ -445,7 +447,7 @@ class Cbon(object):
         
         self.samplingInterval = pH_SAMP_INT
         self.salinity = 33.5
-        self.pumping = 0
+        self.pumping = 1
         self.tsBegin = float
         self.status = [False]*16
         self.intvStatus = False
@@ -459,10 +461,14 @@ class Cbon(object):
         self.timeStamp = ''
         self.spectrometer.set_integration_time(self.specIntTime)
         self.spectrometer.set_scans_average(1)
-        self.BOTTLE='30_5_3_1111'
+        self.BOTTLE='00_5_3_1111'
         self.UNDERWAY='00_5_3_1111'
-        self._autostart = None
+        self._autostart = False
+        self._autotime  = None
+        self._autolen   = None
         self._autostop  = None
+        self._automode  = 'DISABLED'
+        self._autodark  = None
         self._deployed  = False
         self.last_dark  = None
         self.LED1 = 21
@@ -523,7 +529,7 @@ class Cbon(object):
         
     def load_config(self):
         print 'Loading pHaro parameters...'
-        with open('Cbon_sab_v6.cfg','r') as cfgF:
+        with open('Cbon_pja_v9.cfg','r') as cfgF:
             text = (cfgF.read()).replace(' ','')
         parLines = text.split()
         pars = []
@@ -571,20 +577,46 @@ class Cbon(object):
 ##       print 'LED1: ', self.LED1, ' LED2: ', self.LED2,' LED3: ', self.LED3,'\n'
         try:
             paramIndex = params.index('AUTOSTART')+1
-            self.AUTOSTART = int(params[paramIndex])
-            print 'autostart: ', self.AUTOSTART, '\n'
-        except ValueError:
-                self.AUTOSTART = -1
-        try:
-            paramIndex = params.index('DURATION')+1
-            self.DURATION = int(params[paramIndex])
-        except ValueError:
-                self.DURATION = -1
+            paramValue = params[paramIndex]
+            print 'autostart: ', paramValue
+            if paramValue.lower() == 'yes':
+                self._autostart = True
+        except Exception:
+            print 'no autostart'
+        if self._autostart:
+            try:
+                paramIndex = params.index('AUTOSTART_MODE')+1
+                paramValue = params[paramIndex]
+                print 'autostart mode: ', paramValue
+                if paramValue.lower() in ('pump', 'time', 'now'):
+                    self._automode = paramValue.lower()
+            except Exception:
+                raise ValueError('error reading AUTOSTART MODE')
+                self._autostart = None
+        if self._automode == 'time':
+            try:
+                paramIndex = params.index('AUTOSTART_TIME')+1
+                paramValue = params[paramIndex]
+                print 'autostart time: ', paramValue
+                self._autotime = datetime.strptime(paramValue, '%Y-%m-%dT%H:%M:%S')
+            except Exception:
+                error('error reading absolute start time') 
+                self._autostart = None
+            try:
+                paramIndex = params.index('AUTOSTART_LEN')+1
+                paramValue = int(params[paramIndex])
+                print 'autostart length: ', paramValue
+                self._autolen = paramValue
+            except Exception:
+                error('error reading duration length') 
+                self._autostart = None
+                        
         try:
             paramIndex = params.index('AUTODARK')+1
-            self.AUTODARK = int(params[paramIndex])
-        except ValueError:
-                self.AUTODARK = -1
+            self._autodark = timedelta(minutes=int(params[paramIndex]))
+        except Exception as err:
+            raise err
+            print 'no auto dark time'
         try:
             paramIndex = params.index('T_PROBE_CH')+1
             self.vNTCch = int(params[paramIndex])
@@ -876,7 +908,7 @@ class Cbon(object):
         #print refT
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_t = evalpH[0]
-        refpH = [evalpH[i] - dpH_dT *(evalT[i]-refT ) for i in range(n)]
+        refpH = [evalpH[i] + dpH_dT *(evalT[i]-refT ) for i in range(n)]
         #print refpH
         if n>1:
             x = np.array(evalAiso)
@@ -927,7 +959,7 @@ class Panel(QtGui.QWidget):
         
         self.timerSens.start(2000)
         
-        self.timerSave.start(10000)
+        #self.timerSave.start(10000)
         if USE_FIA_TA:
             self.statusFIA = True 
         self.puckEm.enter_instrument_mode([])
@@ -937,9 +969,8 @@ class Panel(QtGui.QWidget):
         self.timer.timeout.connect(self.update_spectra)
         self.timerUnderway.timeout.connect(self.underway)
         self.timerSens.timeout.connect(self.update_sensors)
-        self.timerSave.timeout.connect(self.save_pCO2_data)
+        #self.timerSave.timeout.connect(self.save_pCO2_data)
         self.timerFIA.timeout.connect(self.sample_alkalinity)
-        self.timerAuto.timeout.connect(self.autostart)
         #self.timerFlowCell.timeout.connect(self.update_Tntc)
 
         
@@ -956,7 +987,7 @@ class Panel(QtGui.QWidget):
         #self.chkBoxNames = ['Spectrophotometer','Take dark','Deploy','Enable PUCK protocol',
                            # 'Bottle','LEDs','Water pump','Inlet valve','Stirrer','Dye pump']
                             
-        self.chkBoxNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Deploy']
+        self.chkBoxNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Deploy','Single']
                             
         sldNames = ['Blue','Orange','Red','LED4']
 
@@ -1026,7 +1057,7 @@ class Panel(QtGui.QWidget):
     def checked(self, sender):
         if sender.objectName() == 'Spectrophotometer':
            if sender.isChecked():
-              self.timer.start(600)
+              self.timer.start(500)
            else:
               self.timer.stop()
               
@@ -1053,7 +1084,7 @@ class Panel(QtGui.QWidget):
         if sender.objectName() == 'Deploy':
            self.on_deploy_clicked(sender.isChecked())
 
-        if sender.objectName() == 'Bottle':
+        if sender.objectName() == 'Single':
            self.on_bottle_clicked()
            sender.setChecked(False)
 
@@ -1208,6 +1239,7 @@ class Panel(QtGui.QWidget):
             
            #Tntc = vNTC*(23.1/0.4173)
         text = 'Cuvette temperature \xB0C: %.4f  (%.4f V)\n' %(Tntc,vNTC)
+        text += 'Salinity=%-.2f\nPumping=%-d\n' % (self.instrument.salinity, self.instrument.pumping)        
         LED1 = self.sliders[0].value()
         LED2 = self.sliders[1].value()
         LED3 = self.sliders[2].value()
@@ -1329,14 +1361,14 @@ class Panel(QtGui.QWidget):
             print 'Start bottle ',self.instrument.flnmStr
             self.sample(self.instrument.BOTTLE)
             print 'Done'
-            self.check('Bottle',False)
+            self.check('Single',False)
             self.instrument.spectrometer.set_scans_average(1)
         self.timer.start()
         self.check('Spectrophotometer',True)
 
             
     def underway(self):
-         
+        print('Inside underway...')
         self.check('Spectrophotometer',False)    # stop the spectrophotometer update precautionally
         self.timer.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
@@ -1370,11 +1402,11 @@ class Panel(QtGui.QWidget):
 
         if not self.instrument.pumping:
             return
-        now = datetime.now()
-        dt  = timedelta(minutes=self.instrument.AUTODARK)
-        if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= dt):
-            print 'New dark required'
-            self.on_dark_clicked()
+        if self.instrument._autodark:
+            now = datetime.now()
+            if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
+               print 'New dark required'
+               self.on_dark_clicked()
         else:
             print 'next dark at %s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
@@ -1458,67 +1490,107 @@ class Panel(QtGui.QWidget):
         
 
     def _autostart(self):
+        print 'Inside _autostart...'
         time.sleep(10)
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
         self.sliders[2].setValue(self.instrument.LED3) 
         self.check('Spectrophotometer', True)
-        self.timer.start(600)        
+        self.check('LEDs', True)
+        self.timer.start(500)        
         self.check('Deploy', True)
         self.on_deploy_clicked(True)
+        #self.timerSave.start()
         return
 
     def _autostop(self):
+        print 'Inside _autostop...'
         time.sleep(10)
         self.sliders[0].setValue(0)
         self.sliders[1].setValue(0)
         self.sliders[2].setValue(0) 
         self.check('Spectrophotometer', False)
+        self.check('LEDs', False)
         self.check('Deploy', False)
         self.on_deploy_clicked(False)
         self.timer.stop()
         self.timerUnderway.stop()
-        self.timerSens.stop()
-        self.timerSave.stop()
+        #self.timerSens.stop()
+        #self.timerSave.stop()
         return
 
-        
-    def autostart(self):
+    def autostop_time(self):
+        print 'Inside autostop_time...'
+        self.timerAuto.stop()
+        self._autostop()
         now  = datetime.now()
-        if (self.instrument.DURATION > 0) and (self.instrument.AUTOSTART > 0):
-            if self.instrument._autostart is None:
-                self.instrument._autostart = datetime(now.year, now.month, now.day) + timedelta(minutes=self.instrument.AUTOSTART)
-            if self.instrument._autostop is None:
-                self.instrument._autostop = self.instrument._autostart + timedelta(minutes=self.instrument.DURATION)
-            if (now >= self.instrument._autostart) and (now < self.instrument._autostop) and (not self.instrument._deployed):
-                self.instrument._deployed = True
-                dt = (self.instrument._autostop - now).total_seconds()
-                self.timerAuto.start(int(dt*1000))
-                print 'Automatic starting at ' +  self.instrument._autostart.strftime('%Y-%m-%d %H:%M')
-                print 'Instrument will stop in %d minutes or at %s' % (dt/60, self.instrument._autostop.strftime('%Y-%m-%d %H:%M')) 
-                self._autostart()
-            elif (now >= self.instrument._autostop) and self.instrument._deployed:
-                print 'Automatic stop at ' + self.instrument._autostop.strftime('%Y-%m-%d %H:%M')
-                self.instrument._deployed  = False
-                self.instrument._autostart+= timedelta(days=1)
-                self.instrument._autostop += timedelat(days=1)
-                self.timerAuto.stop()
-                self.timerAuto.start(10000)
-                self._autostop()
-            else:
-                dt = (self.instrument._autostart - now).total_seconds()
-                self.timerAuto.stop()
-                self.timerAuto.start(int(dt*1000))
-                print 'Instrument will be deployed in %-d minutes' % (int(dt/60))
-                
+        dt   = now - self.instrument._autotime
+        days = int(dt.total_seconds()/86400) + 1
+        self.instrument._autotime += timedelta(days=days)
+        self.timerAuto.timeout.disconnect(self.autostop_time)
+        self.timerAuto.timeout.connect(self.autostart_time)
+        self.timerAuto.start(1000)
+        return
+        
+        
+    def autostart_time(self):
+        print 'Inside _autostart_time...'
+        self.timerAuto.stop()
+        now  = datetime.now()
+        if now < self.instrument._autotime:
+            self.timerAuto.timeout.connect(self.autostart_time)
+            dt = self.instrument._autotime - now
+            self.timerAuto.start(int(dt.total_seconds()*1000))
+            print 'Instrument will start at ' + self.instrument._autostart.strftime('%Y-%m-%dT%H:%M:%S')
+        else:
+            self.timerAuto.timeout.disconnect(self.autostart_time)
+            self.timerAuto.timeout.connect(self.autostop_time)
+            t0 = self.instrument._autotime + self.instrument._autolen
+            dt = t0 - now
+            self.timerAuto.start(int(dt.total_seconds()*1000))
+            print 'Instrument will stop at ' + t0.strftime('%Y-%m:%dT%H:%M:%S') 
+            self._autostart()
+        return
+    
+    def autostart_pump(self):
+        print 'Inside _autostart_pump...'
+        self.textBox.setText('Automatic start at pump enabled')
+        if self.instrument.pumping:
+            self.timerAuto.stop()
+            self.timerAuto.timeout.disconnect(self.autostart_pump)
+            self.timerAuto.timeout.connect(self.autostop_pump)
+            self.timerAuto.start(10000)
+            self._autostart()
+        else:
+            pass
+        return
+        
+    def autostop_pump(self):
+        print 'Inside autostop_pump...'        
+        if not self.instrument.pumping:
+            self.timerAuto.stop()
+            self.timerAuto.timeout.disconnect(self.autostop_pump)
+            self.timerAuto.timeout.connect(self.autostart_pump)
+            self.timerAuto.start(10000)
+            self._autostop()
+        else:
+            pass
+        return
+        
     
     def autorun(self):
+        print 'Inside underway...'
         time.sleep(10)
-        if (self.instrument.DURATION > 0) and (self.instrument.AUTOSTART > 0):
+        if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
-            self.autostart()
-        else:
+            self.timerAuto.timeout.connect(self.autostart_time)
+            self.timerAuto.start(1000)
+        elif (self.instrument._autostart) and (self.instrument._automode == 'pump'):
+            self.textBox.setText('Automatic start at pump enabled')
+            self.timerAuto.timeout.connect(self.autostart_pump)
+            self.timerAuto.start(1000)
+        elif (self.instrument._autostart) and (self.instrument._automode == 'now'):
             self.textBox.setText('Immediate automatic start enabled')
             self._autostart()
         return
@@ -1536,7 +1608,7 @@ def main():
     myPanel.timer.stop()
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
-    myPanel.timerSave.stop()
+    #myPanel.timerSave.stop()
         
 if __name__ == '__main__':
     main()
