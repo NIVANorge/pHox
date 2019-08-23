@@ -687,6 +687,15 @@ class Cbon(object):
         finally:
             print self.dyeCal,'\n'
 
+        try:
+            paramIndex = params.index('DYE')+1
+            self.dye = params[paramIndex]
+            print 'Dye method::'
+        except ValueError:
+            self.dye = 'TB'
+            print 'Using default dye calibration coefficients:'
+        finally:
+            print self.dye,'\n'
 
         #Franatech calibration coefficients
       
@@ -880,17 +889,36 @@ class Cbon(object):
         
         A1,Aiso,A2,Anir = absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]], absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]]
         mARs = reshape(np.array(self.molAbsRats),[3,3])
+
+       # to be corrected (SAM)
         Vinj = Aiso * Kind
         fcS = S* (sVol - Vinj)/ sVol + dyeS * Vinj/sVol
-        pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
-        e1, e2, e3 = mARs[0,0] + mARs[0,1]*T, mARs[1,0] + mARs[1,1]*T + mARs[1,2]*(T**2), mARs[2,0] + mARs[2,1]*T                   
-
-        print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
         
         R = A2/A1
-        print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)                   
-        arg = (R - e1)/(e2 - R*e3)
-        pH = 0.0047 + pK + log10(arg)
+        
+        if self.dye == 'TB':
+            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
+            e1, e2, e3 = mARs[0,0] + mARs[0,1]*T, mARs[1,0] + mARs[1,1]*T + mARs[1,2]*(T**2), mARs[2,0] + mARs[2,1]*T                   
+            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
+            print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)                   
+            arg = (R - e1)/(e2 - R*e3)
+            pH = 0.0047 + pK + log10(arg)
+        elif self.dye == 'MCP':        
+            e1=-0.007762+(4.5174*10^-5)*Temp
+            e2e3=-0.020813+((2.60262*10^-4)*Temp)+(1.0436*10^-4)*(fcS-35)
+            arg = (R - e1)/(1 - R*e2e3)
+            pk= 5.561224-(0.547716*fcS^0.5)+(0.123791*fcS)-(0.0280156*fcS^1.5)+(0.00344940*fcS^2)-(0.000167297*fcS^2.5)+((52.640726*fcS^0.5)*Temp^-1)+(815.984591*Temp^-1)
+            pH= pk + log10(arg)
+            print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+        else:
+            raise ValueError('wrong DYE: ' + self.dye)
+        # # mouais.. tu auras peut etre une meilleure idee
+        # e2=e2e3
+        # e3=-99
+        
+        ###### end if
+        
+
         print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC, S, A1, A2, Aiso, Tdeg, Vinj, fcS, Anir])
         
@@ -907,10 +935,12 @@ class Cbon(object):
         #print refT
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_t = evalpH[0]
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-refT ) for i in range(n)]
+        refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[1] ) for i in range(n)]
+        # temperature drift correction based on the 1st measurment SAM 
+        
         #print refpH
         if n>1:
-            x = np.array(evalAiso)
+            x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
             pert,pH_t = np.linalg.lstsq(A, y)[0]
