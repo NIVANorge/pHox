@@ -1,0 +1,45 @@
+{
+    "default":{
+        "NTC_CAL_COEF" : [72.803,-38.42,0,0],
+        "T_PROBE_CH" : 8,
+        "HI-" : 435,
+        "I2-" : 596,
+        "ISO" : 494,
+        "NIR-" : 730,
+        "MOL_ABS_RATIOS" : [-0.00132, 1.6E-5, 0.0, 7.2326, -0.0299717, 4.6E-5, 0.0223, 0.0003917, 0.0],
+        "comment" : "# PWM_LINES,GPIO_SSR,GPIO_TV from the code phox.py",
+        "PWM_LINES" : [12,13,19,16],
+        "GPIO_SSR" : [17,18,27,22],
+        "GPIO_TV" : [23,24,25],
+        "DYE_CAL" : [0.11, 0.00, 4.0],
+        "LED1" : 27,
+        "LED2" : 50,
+        "LED3" : 75,
+        "AUTOSTART" : -1,
+        "DURATION" : -1,
+        "AUTODARK" : 30},
+
+    "franatech":{
+
+        "comment0":"# Water temperature calibration coefficients :",
+        "WAT_TEMP_CAL" : [-25.779,29.84],
+
+        "comment1" : "# Water flow calibration coefficients :",
+        "WAT_FLOW_CAL" : [-1.25,1.6682],
+
+        "comment2" : "# Water pressure calibration coefficients :",
+        "WAT_PRES_CAL" : [-2.5,1.75562],
+
+        "comment3" : "# Air temperature calibration coefficients :",
+        "AIR_TEMP_CAL" : [80.329,17.415],
+
+        "comment4" : "# Air pressure calibration coefficients ",
+        "AIR_PRES_CAL" : [781.2273,302.2975 ],
+
+        "comment5" : " Water detection voltage threshold :",
+        "WAT_DETECT" : [0,1],
+
+        "comment6" :" # CO2 molar fraction calibration coefficients :",
+        "CO2_FRAC_CAL" : [-30.439,1.4352]
+    }
+}

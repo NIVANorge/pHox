@@ -326,7 +326,11 @@ class PuckManager(object):
 #####################               Ocean Optics STS protocol manager ###################################
 ##################### DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #################
 
-class STSVIS(object):
+
+
+
+class STSVIS(object): 
+    # spectrophotometer functions, used for pH 
     def __init__(self):
         self._dev = usb.core.find(idVendor=0x2457, idProduct=0x4000)
         if (self._dev == None):
@@ -494,13 +498,7 @@ class Cbon(object):
         udp = threading.Thread(target=self.udp_server)
         udp.start()
         
-        #status is a list of boolean keeping track of the status of the isntrument
-        #detailed assigning can be written here
-        #status 1-4: Darlington lines
-        #status 9: input toggle valve
-        #status 6: spectrophotometer free running
-        #status 7: LEDs
-        #status 0: operation mode
+
 
     def udp_server(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -524,203 +522,81 @@ class Cbon(object):
                 self.pumping = v
         sock.close()
             
-
         
     def load_config(self):
-        print 'Loading pHaro parameters...'
-        with open('Cbon_pja_v9.cfg','r') as cfgF:
-            text = (cfgF.read()).replace(' ','')
-        parLines = text.split()
-        pars = []
-        for i in range(len(parLines)):
-            pars += parLines[i].split('=')
-        params = []
-        for i in range(len(pars)):
-            params += pars[i].split(',')
-            
-        try:
-            paramIndex = params.index('HI-')+1
-            self.HI = int(params[paramIndex])         
-        except ValueError:
-                self.HI = 435
-        try:
-            paramIndex = params.index('I2-')+1
-            self.I2 = int(params[paramIndex])
-        except ValueError:
-                self.I2 = 596
-        try:
-            paramIndex = params.index('ISO')+1
-            self.Iso = int(params[paramIndex])
-        except ValueError:
-                self.Iso = 494
-        try:
-            paramIndex = params.index('NIR-')+1
-            self.NIR = int(params[paramIndex])
-        except ValueError:
-                self.NIR = 730
-##        try:
-##            paramIndex = params.index('LED1')+1
-##            self.LED2 = int(params[paramIndex])
-##        except ValueError:
-##                self.LED1 = 0
-##        try:
-##            paramIndex = params.index('LED2')+1
-##            self.LED2 = int(params[paramIndex])
-##        except ValueError:
-##                self.LED2 = 0
-##        try:
-##            paramIndex = params.index('LED3')+1
-##            self.LED2 = int(params[paramIndex])
-##        except ValueError:
-##                self.LED3 = 0
-##       print 'LED1: ', self.LED1, ' LED2: ', self.LED2,' LED3: ', self.LED3,'\n'
-        try:
-            paramIndex = params.index('AUTOSTART')+1
-            paramValue = params[paramIndex]
-            print 'autostart: ', paramValue
-            if paramValue.lower() == 'yes':
-                self._autostart = True
-        except Exception:
-            print 'no autostart'
-        if self._autostart:
-            try:
-                paramIndex = params.index('AUTOSTART_MODE')+1
-                paramValue = params[paramIndex]
-                print 'autostart mode: ', paramValue
-                if paramValue.lower() in ('pump', 'time', 'now'):
-                    self._automode = paramValue.lower()
-            except Exception:
-                raise ValueError('error reading AUTOSTART MODE')
-                self._autostart = None
-        if self._automode == 'time':
-            try:
-                paramIndex = params.index('AUTOSTART_TIME')+1
-                paramValue = params[paramIndex]
-                print 'autostart time: ', paramValue
-                self._autotime = datetime.strptime(paramValue, '%Y-%m-%dT%H:%M:%S')
-            except Exception:
-                error('error reading absolute start time') 
-                self._autostart = None
-            try:
-                paramIndex = params.index('AUTOSTART_LEN')+1
-                paramValue = int(params[paramIndex])
-                print 'autostart length: ', paramValue
-                self._autolen = paramValue
-            except Exception:
-                error('error reading duration length') 
-                self._autostart = None
-                        
-        try:
-            paramIndex = params.index('AUTODARK')+1
-            self._autodark = timedelta(minutes=int(params[paramIndex]))
-        except Exception as err:
-            raise err
-            print 'no auto dark time'
-        try:
-            paramIndex = params.index('T_PROBE_CH')+1
-            self.vNTCch = int(params[paramIndex])
-            if not(self.vNTCch in range(9)):
-                self.vNTCch = 8
-        except ValueError:
+        with open('config.json') as json_file:
+            j = json.load(json_file)
+
+        default =   j['default']
+        franatech = j['franatech']
+
+        print ('Loading pHaro parameters...')
+
+        self.HI =  int(default['HI-'])
+        self.I2 =  int(default['I2-'])
+        self.Iso = int(default['ISO'])
+        self.NIR = int(default['NIR-'])
+        self.AUTOSTART = int(default['AUTOSTART'])
+        self.DURATION =  int(default['DURATION'])
+        self.AUTODARK =  int(default['AUTODARK'])
+        self.vNTCch =    int(default['T_PROBE_CH'])
+        if not(self.vNTCch in range(9)):
             self.vNTCch = 8
-        try:
-            paramIndex = params.index('MOL_ABS_RATIOS')+1
-            self.molAbsRats = [float(params[paramIndex+i]) for i in range(9)]
-            print 'Molar absorption ratios: '
-        except ValueError:
-            self.molAbsRats = [-0.00132,1.6E-5, 0, 7.2326, -0.0299717, 4.6E-5, 0.0223, 0.0003917, 0]
-            print 'Using default molar absorption ratios: '
-        finally:
-            print self.molAbsRats, '\n'
 
-        try:
-            paramIndex = params.index('PWM_LINES')+1
-            self.pwmLines = [int(params[paramIndex+i]) for i in range (4)]
-            print 'BCM lines for PWM LEDs: '
-        except ValueError:
-            self.pwmLines = GPIO_PWM
-            print 'Using default BCM lines for PWM LEDs: '
-        finally:
-            print self.pwmLines
-            print '0 = will be skipped'
-           
-        try:
-            paramIndex = params.index('GPIO_SSR')+1
-            self.ssrLines = [int(params[paramIndex+i]) for i in range(4)]
-            print 'BCM lines for SSRs: '
-        except ValueError:
-            self.ssrLines = GPIO_SSR
-            print 'Using default BCM lines for SSRs: '
-        finally:
-            print self.ssrLines 
-            print '0 = will be skipped'
+        self.molAbsRats = default['MOL_ABS_RATIOS']
+        print ('Molar absorption ratios: ',self.molAbsRats)
 
-        try:
-            paramIndex = params.index('GPIO_TV')+1
-            self.GPIO_TV = [int(params[paramIndex+i]) for i in range(4)]
-            print 'BCM lines for bistable valve driver: '
-        except ValueError:
-            self.GPIO_TV = GPIO_TV
-            print 'Using default BCM lines for bistable valve driver: '
-        finally:
-            print self.GPIO_TV
-    
-            
+        self.pwmLines =  default['PWM_LINES']
+        print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
+        print ('0 = will be skipped')
+
+        self.ssrLines = default['GPIO_SSR']
+        print ('Using default BCM lines for SSRs: ',self.ssrLines)
+        print ('0 = will be skipped')
+
+        self.GPIO_TV = default['GPIO_TV']
+        print ('Using default BCM lines for bistable valve driver: ',self.GPIO_TV)
+
         # NTC calibration coefficients
-        try:
-            paramIndex = params.index('NTC_CAL_COEF')+1
-            self.ntcCalCoef = [float(params[paramIndex+i]) for i in range(4)]
-            print 'NTC calibration coefficients :'
-        except ValueError:
-            self.ntcCalCoef = [91.377, 18.676,0,0]
-            print 'Using default NTC calibration coefficients:'
-        finally:
-            print self.ntcCalCoef, '\n'
+        self.ntcCalCoef = default['NTC_CAL_COEF']
+        # this was cardcoded if Value Error self.ntcCalCoef = [91.377, 18.676,0,0]
+        print ('NTC calibration coefficients :')
+        print (self.ntcCalCoef, '\n')
 
-        try:
-            paramIndex = params.index('DYE_CAL')+1
-            self.dyeCal = [float(params[paramIndex+i]) for i in range(3)]
-            print 'Dye calibration coefficients (ml_dye/Aiso, S, ml):'
-        except ValueError:
-            self.dyeCal = [0.22, 0, 4] #to be confirmed
-            print 'Using default dye calibration coefficients:'
-        finally:
-            print self.dyeCal,'\n'
-
-        try:
-            paramIndex = params.index('DYE')+1
-            self.dye = params[paramIndex]
-            print 'Dye method::'
-        except ValueError:
-            self.dye = 'TB'
-            print 'Using default dye calibration coefficients:'
-        finally:
-            print self.dye,'\n'
-
-        #Franatech calibration coefficients
-      
+        self.dyeCal = default['DYE_CAL']
+        print ('Dye calibration coefficients (ml_dye/Aiso, S, ml):')
+        print (self.dyeCal,'\n')
+        # This was hardcoded as default self.dyeCal = [0.22, 0, 4] #to be confirmed
         #nominal self.ftCalCoef[0] = [-25,28.604]
-        self.ftCalCoef[0] = [-25.779,29.84] #after calibration
-        print 'Water temperature calibration coefficients :',self.ftCalCoef[0]
 
-        self.ftCalCoef[1] = [-1.25,1.6682] #nominal
-        print 'Water flow calibration coefficients :', self.ftCalCoef[1]
+        ### Franatech calibration coefficients ###
 
-        self.ftCalCoef[2] = [-2.5,1.75562] #nominal
-        print 'Water pressure calibration coefficients :',self.ftCalCoef[2]
+        # Why do we need 10 row here?
+        self.ftCalCoef = np.zeros((10, 2)) # [[0]*2]*10
+
+        self.ftCalCoef[0] = franatech['WAT_TEMP_CAL']
+        print ('Water temperature calibration coefficients :',self.ftCalCoef[0])
+
+        self.ftCalCoef[1] = franatech['WAT_FLOW_CAL']
+        print ('Water flow calibration coefficients :', self.ftCalCoef[1])
+
+        self.ftCalCoef[2] = franatech['WAT_PRES_CAL']
+        print ('Water pressure calibration coefficients :',self.ftCalCoef[2])
 
         #nominal self.ftCalCoef[3] = [-75,53.2368]
-        self.ftCalCoef[3] = [80.329,17.415] # after calibration
-        print 'Air temperature calibration coefficients :',self.ftCalCoef[3]
+        self.ftCalCoef[3] = franatech['AIR_TEMP_CAL']
+        print ('Air temperature calibration coefficients :',self.ftCalCoef[3])
 
-        self.ftCalCoef[4] = [781.2273,302.2975]
-        print 'Air pressure calibration coefficients :',self.ftCalCoef[4]
+        self.ftCalCoef[4] = franatech['AIR_PRES_CAL']
+        print ('Air pressure calibration coefficients :',self.ftCalCoef[4])
 
-        self.ftCalCoef[5] = [0,1]
-        print 'Water detection voltage threshold :',self.ftCalCoef[5]
+        self.ftCalCoef[5] = franatech['WAT_DETECT']
+        print ('Water detection voltage threshold :',self.ftCalCoef[5])
 
-        self.ftCalCoef[6] = [-30.439,1.4352]
-        print 'CO2 molar fraction calibration coefficients :',self.ftCalCoef[6]
+        self.ftCalCoef[6] = franatech['CO2_FRAC_CAL']
+        print ('CO2 molar fraction calibration coefficients :',self.ftCalCoef[6])
+        print (self.ftCalCoef)
+
                 
             
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
@@ -899,8 +775,7 @@ class Cbon(object):
         if self.dye == 'TB':
             pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
             e1, e2, e3 = mARs[0,0] + mARs[0,1]*T, mARs[1,0] + mARs[1,1]*T + mARs[1,2]*(T**2), mARs[2,0] + mARs[2,1]*T                   
-            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
-            print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)                   
+            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir                 
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + log10(arg)
         elif self.dye == 'MCP':        
@@ -910,15 +785,15 @@ class Cbon(object):
             pk= 5.561224-(0.547716*fcS^0.5)+(0.123791*fcS)-(0.0280156*fcS^1.5)+(0.00344940*fcS^2)-(0.000167297*fcS^2.5)+((52.640726*fcS^0.5)*Temp^-1)+(815.984591*Temp^-1)
             pH= pk + log10(arg)
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+           
+            ## to fit the log file
+            e2=e2e3
+            e3=-99
         else:
             raise ValueError('wrong DYE: ' + self.dye)
-        # # mouais.. tu auras peut etre une meilleure idee
-        # e2=e2e3
-        # e3=-99
-        
-        ###### end if
-        
 
+        print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
+        print ('dye: ', self.dye)
         print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC, S, A1, A2, Aiso, Tdeg, Vinj, fcS, Anir])
         
@@ -1233,9 +1108,9 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = scans
 
     def on_samT_clicked(self):  
-        time, ok = QtGui.QInputDialog.getInt(None, 'Set underway sampling interval','s',self.instrument.samplingInterval,30,3600,30)
+        time, ok = QtGui.QInputDialog.getInt(None, 'Set sampling interval','min',self.instrument.samplingInterval,2,60,1)
         if ok:
-            self.instrument.samplingInterval = time
+            self.instrument.samplingInterval = time*60
             
     
     def on_autoAdjust_clicked(self):
@@ -1448,11 +1323,15 @@ class Panel(QtGui.QWidget):
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
         if pT>0:
+            # start the instrument pump and the stirrer
             self.instrument.set_line(WPUM,True)
             self.instrument.set_line(STIP,True)
+            # pumping time
             self.instrument.wait(pT)
+            # turn off the pump and the stirrer
             self.instrument.set_line(STIP,False)
             self.instrument.set_line(WPUM,False)
+        # close the valve    
         self.instrument.set_TV(True)
         self.instrument.wait(wT)
 
@@ -1460,16 +1339,26 @@ class Panel(QtGui.QWidget):
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
         dark = self.instrument.spCounts[0]
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
+
+        # lenght of dA = numbers of cycles (4)
         for pinj in range(len(dA)):
             shots = int(dA[pinj])
+            # shots= number of dye injection for each cycle ( now 1 for all cycles)
             print 'Injection %d:, shots %d' %(pinj, shots)
+            # turn on the stirrer
             self.instrument.set_line(STIP, True)
+            # inject dye 
             self.instrument.cycle_line(DYEP, shots)
+            # mixing time
             self.instrument.wait(mT)
+            # turn off the stirrer
             self.instrument.set_line(STIP, False)
+            # wait before to start the measurment
             self.instrument.wait(wT)
+            # measure spectrum
             postinj = self.instrument.spectrometer.get_corrected_spectra()
-            self.instrument.spCounts[2+pinj] = postinj    
+            self.instrument.spCounts[2+pinj] = postinj 
+            # measuring Voltage for temperature probe
             vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
                 
             pmd = np.clip(postinj - dark,1,16000)
@@ -1486,7 +1375,7 @@ class Panel(QtGui.QWidget):
     
             self.plotAbs.setData(self.instrument.wvls,spAbs)
             self.instrument.calc_pH(spAbs,vNTC)
-
+        # opening the valve
         self.instrument.set_TV(False)
 
         flnm = open(self.folderPath + self.instrument.flnmStr +'.spt','w')
