@@ -16,7 +16,7 @@
         "LED1" : 27,
         "LED2" : 50,
         "LED3" : 75,
-        "AUTOSTART" : True,
+        "AUTOSTART" : "True",
         "AUTOSTART_MODE":"pump",
         "DURATION" : -1,
         "AUTODARK" : 30},

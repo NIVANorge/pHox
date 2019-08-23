@@ -538,7 +538,7 @@ class Cbon(object):
         self.Iso = int(default['ISO'])
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
-        self._automode  = bool(default['AUTOSTART_MODE'])
+        self._automode  = (default['AUTOSTART_MODE']
         #self.AUTOSTART = int(default['AUTOSTART'])
         print ('AUTOSTART',self._autostart,'AUTOSTART_MODE',self._automode)
         self.DURATION =  int(default['DURATION'])
