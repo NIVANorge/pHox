@@ -566,6 +566,9 @@ class Cbon(object):
         print ('NTC calibration coefficients :')
         print (self.ntcCalCoef, '\n')
 
+        self.dye = default['DYE'] 
+        #type of dye(default value, will be changed inside gui )
+
         self.dyeCal = default['DYE_CAL']
         print ('Dye calibration coefficients (ml_dye/Aiso, S, ml):')
         print (self.dyeCal,'\n')
