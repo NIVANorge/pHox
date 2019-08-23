@@ -15,7 +15,7 @@ import time
 import RPi.GPIO as GPIO
 from ADCDACPi import ADCDACPi
 from ADCDifferentialPi import ADCDifferentialPi
-#from ABE_helpers import ABEHelpers
+#from helpers import ABEHelpers
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
@@ -30,7 +30,6 @@ UDP_IP   = '192.168.0.2'
 
 #i2c_helper = ABEHelpers()
 #bus = i2c_helper.get_smbus()
-#adc = ADCDifferentialPi(bus, 0x68, 0x69, 14)
 adc = ADCDifferentialPi(0x68, 0x69, 14)
 adc.set_pga(1)
 adcdac = ADCDACPi()
@@ -93,7 +92,7 @@ GPIO_PWM = [12,13,19,16]
 #SSR: dye and water pump and stirrer 
 GPIO_SSR = [17,18,27,22]
 #TV: toggle Valve
-GPIO_TV = [24,23,25]
+GPIO_TV = [23,24,25]
 
 # ------- SSR settings
 # water pump slot
@@ -262,7 +261,7 @@ class PuckManager(object):
       dataString = '%.1f,%.4f,%.1f,9999.9999,8888.8888,%.2f,%.2f,%.2f\r' %(self.LAST_CO2,self.LAST_pH,self.LAST_TA,self.LAST_PAR[0],self.LAST_PAR[1],self.LAST_PAR[2])
       host.write(dataString)
       dataString = dateTime[0:10]+','+dateTime[11:19]+','+dataString
-      with open('data/Cbon.log','a') as flnm:
+      with open('data/pH.log','a') as flnm:
          flnm.write(dataString+'\n')      
 
 
@@ -863,7 +862,7 @@ class Cbon(object):
         Tdeg = 0
         for i in range(4):
            vNTC2 = 0
-           vNTC2 = self.get_Vd(2, self.vNTCch)
+           vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = 0
            Tdeg = (self.ntcCalCoef[0]*vNTC2) +self.ntcCalCoef[1]
         #for i in range(2):
@@ -955,7 +954,7 @@ class Panel(QtGui.QWidget):
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
         
-        self.folderPath ='/home/pi/Cbon2-fb/data/'
+        self.folderPath ='/home/pi/pHox/data/'
         
         self.timerSens.start(2000)
         
@@ -987,12 +986,13 @@ class Panel(QtGui.QWidget):
         #self.chkBoxNames = ['Spectrophotometer','Take dark','Deploy','Enable PUCK protocol',
                            # 'Bottle','LEDs','Water pump','Inlet valve','Stirrer','Dye pump']
                             
-        self.chkBoxNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Deploy','Single']
+        self.chkBoxNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Water pump','Deploy','Single']
                             
         sldNames = ['Blue','Orange','Red','LED4']
 
         for name in self.chkBoxNames:
-           chkBox = QtGui.QCheckBox(name)
+           chkBox = QtGui.QPushButton(name)
+           chkBox.setCheckable(True)
            chkBox.setObjectName(name)
            idx = self.chkBoxNames.index(name)
            self.group.addButton(chkBox, idx)
@@ -1012,25 +1012,25 @@ class Panel(QtGui.QWidget):
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
         #self.sliders[3].valueChanged[int].connect(self.sld3_change)
 
-        self.selFolderBtn = QtGui.QPushButton('Select data folder')
-        grid.addWidget(self.selFolderBtn,sldRow+4,0)
-        self.selFolderBtn.released.connect(self.on_selFolderBtn_released)
+        #self.selFolderBtn = QtGui.QPushButton('Select data folder')
+        #grid.addWidget(self.selFolderBtn,sldRow+4,0)
+        #self.selFolderBtn.released.connect(self.on_selFolderBtn_released)
                                          
-        self.combo = QtGui.QComboBox(self)
-        comboItems=['Set integration time','Set averaging scans','Set sampling interval',
-                    'Auto adjust','Set pCO2 data saving rate','BOTTLE setup', 'UNDERWAY setup']
-        for i in range(len(comboItems)):
-            self.combo.addItem(comboItems[i])
-        self.combo.activated[str].connect(self.on_combo_clicked)
-        grid.addWidget(self.combo, sldRow+4,1)
+        #self.combo = QtGui.QComboBox(self)
+        #comboItems=['Set integration time','Set averaging scans','Set sampling interval',
+                    #'Auto adjust','Set pCO2 data saving rate','BOTTLE setup', 'UNDERWAY setup']
+        #for i in range(len(comboItems)):
+            #self.combo.addItem(comboItems[i])
+        #self.combo.activated[str].connect(self.on_combo_clicked)
+        #grid.addWidget(self.combo, sldRow+4,1)
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
-        grid.addWidget(self.textBox, sldRow+5,0)
+        grid.addWidget(self.textBox, sldRow+4,0)
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
-        grid.addWidget(self.textBoxSens, sldRow+5,1)
+        grid.addWidget(self.textBoxSens, sldRow+4,1)
 
         hboxPanel = QtGui.QHBoxLayout()
         vboxPlot = QtGui.QVBoxLayout()
@@ -1138,7 +1138,7 @@ class Panel(QtGui.QWidget):
         self.folderDialog = QtGui.QFileDialog()
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         if folder == '':
-            self.folderPath ='/home/pi/Cbon2-fb/data/'
+            self.folderPath ='/home/pi/pHox/data/'
         else:
             self.folderPath = folder+'/'
         
@@ -1231,7 +1231,7 @@ class Panel(QtGui.QWidget):
 
     def update_sensors(self):
        
-        vNTC = self.instrument.get_Vd(2, self.instrument.vNTCch)
+        vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
         Tntc = 0
         Tntc = (self.instrument.ntcCalCoef[0]*vNTC) +self.instrument.ntcCalCoef[1]
         #for i in range(2):
@@ -1273,7 +1273,7 @@ class Panel(QtGui.QWidget):
 
            self.puckEm.LAST_PAR[2] = self.instrument.salinity
            self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
-           WD = self.instrument.get_Vd(1,6)  
+           WD = self.instrument.get_Vd(3,6)  
            text += VAR_NAMES[5]+ str (WD<0.04) + '\n'
            text += VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] + VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7]
            
@@ -1405,8 +1405,8 @@ class Panel(QtGui.QWidget):
         if self.instrument._autodark:
             now = datetime.now()
             if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
-               print 'New dark required'
-               self.on_dark_clicked()
+				print 'New dark required'
+				self.on_dark_clicked()
         else:
             print 'next dark at %s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
@@ -1440,7 +1440,7 @@ class Panel(QtGui.QWidget):
             self.instrument.wait(wT)
             postinj = self.instrument.spectrometer.get_corrected_spectra()
             self.instrument.spCounts[2+pinj] = postinj    
-            vNTC = self.instrument.get_Vd(2, self.instrument.vNTCch)
+            vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
                 
             pmd = np.clip(postinj - dark,1,16000)
             cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*bmd + self.instrument.nlCoeff[2] * bmd**2
@@ -1469,7 +1469,7 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         flnm = open(self.folderPath + self.instrument.flnmStr+'.evl','w')
-        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f\n'
+        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
         for i in range(len(self.instrument.evalPar)):
             txtData += strFormat % tuple(self.instrument.evalPar[i])
@@ -1478,12 +1478,12 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
-        print 'pH_t= %.4f, Tref= %.2f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval
+        print 'pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval
         
-        print 'Log file is %s' % (self.folderPath +'pH.log')
+        print 'data saved in %s' % (self.folderPath +'pH.log')
         with open(self.folderPath + 'pH.log','a') as logFile:
-            logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.2f,%.2f,%.3f,%.3f\n' %pHeval)
-        self.textBox.setText('pH_t<= %.4f, Tref= %.2f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
+            logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
+        self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
         self.puckEm.LAST_PAR[1]= pHeval[1]
         self.puckEm.LAST_pH = pHeval[0]
         
