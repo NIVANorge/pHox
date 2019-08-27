@@ -785,11 +785,13 @@ class Cbon(object):
             print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir                 
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + log10(arg)
-        elif self.dye == 'MCP':        
-            e1=-0.007762+(4.5174*10^-5)*Temp
-            e2e3=-0.020813+((2.60262*10^-4)*Temp)+(1.0436*10^-4)*(fcS-35)
+        elif self.dye == 'MCP':
+            e1=-0.007762+(4.5174*10**-5)*Temp
+            e2e3=-0.020813+((2.60262*10**-4)*Temp)+(1.0436*10**-4)*(fcS-35)
             arg = (R - e1)/(1 - R*e2e3)
-            pk= 5.561224-(0.547716*fcS^0.5)+(0.123791*fcS)-(0.0280156*fcS^1.5)+(0.00344940*fcS^2)-(0.000167297*fcS^2.5)+((52.640726*fcS^0.5)*Temp^-1)+(815.984591*Temp^-1)
+            pk= (5.561224-(0.547716*fcS^0.5)+(0.123791*fcS)-(0.0280156*fcS**1.5)+
+                 (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
+                 ((52.640726*fcS**0.5)*Temp**-1)+(815.984591*Temp**-1))
             pH= pk + log10(arg)
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
            
@@ -1320,7 +1322,7 @@ class Panel(QtGui.QWidget):
 				print 'New dark required'
 				self.on_dark_clicked()
         else:
-            print 'next dark at %s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+            print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
         self.check('LEDs', True)
 
