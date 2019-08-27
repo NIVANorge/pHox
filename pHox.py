@@ -475,9 +475,7 @@ class Cbon(object):
         self._autodark  = None
         self._deployed  = False
         self.last_dark  = None
-        self.LED1 = 21
-        self.LED2 = 70
-        self.LED3 = 99
+
         self.load_config()
 
         #setup PWM and SSR lines
@@ -575,7 +573,9 @@ class Cbon(object):
         print (self.dyeCal,'\n')
         # This was hardcoded as default self.dyeCal = [0.22, 0, 4] #to be confirmed
         #nominal self.ftCalCoef[0] = [-25,28.604]
-
+        self.LED1 = default["LED1"]
+        self.LED2 = default["LED2"]
+        self.LED3 = default["LED3"]
         ### Franatech calibration coefficients ###
 
         # Why do we need 10 row here?
