@@ -87,13 +87,9 @@ for i in range (len(ports)):
    
 
 
-# ----------- Rpi pins 
-#PWM: LEDs
-GPIO_PWM = [12,13,19,16]
-#SSR: dye and water pump and stirrer 
-GPIO_SSR = [17,18,27,22]
-#TV: toggle Valve
-GPIO_TV = [23,24,25]
+
+
+
 
 # ------- SSR settings
 # water pump slot
@@ -480,14 +476,10 @@ class Cbon(object):
 
         #setup PWM and SSR lines
         for pin in range (4):
-           if self.pwmLines[pin] in GPIO_PWM:
-              self.rpi.set_mode(self.pwmLines[pin],pigpio.OUTPUT)
-              self.rpi.set_PWM_frequency(self.pwmLines[pin], 100)
-              self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
-
-        for pin in range (4):
-           if self.ssrLines[pin] in GPIO_SSR:
-              self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
+            self.rpi.set_mode(self.pwmLines[pin],pigpio.OUTPUT)
+            self.rpi.set_PWM_frequency(self.pwmLines[pin], 100)
+            self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
+            self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
         print 'calculating wavelengths...\n'
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
@@ -496,8 +488,6 @@ class Cbon(object):
         
         udp = threading.Thread(target=self.udp_server)
         udp.start()
-        
-
 
     def udp_server(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -554,7 +544,6 @@ class Cbon(object):
 
         self.ssrLines = default['GPIO_SSR']
         print ('Using default BCM lines for SSRs: ',self.ssrLines)
-        print ('0 = will be skipped')
 
         self.GPIO_TV = default['GPIO_TV']
         print ('Using default BCM lines for bistable valve driver: ',self.GPIO_TV)
@@ -562,25 +551,21 @@ class Cbon(object):
         # NTC calibration coefficients
         self.ntcCalCoef = default['NTC_CAL_COEF']
         # this was cardcoded if Value Error self.ntcCalCoef = [91.377, 18.676,0,0]
-        print ('NTC calibration coefficients :')
-        print (self.ntcCalCoef, '\n')
+        print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
 
         self.dye = default['DYE'] 
         #type of dye(default value, will be changed inside gui )
-
         self.dyeCal = default['DYE_CAL']
         print ('Dye calibration coefficients (ml_dye/Aiso, S, ml):')
         print (self.dyeCal,'\n')
-        # This was hardcoded as default self.dyeCal = [0.22, 0, 4] #to be confirmed
-        #nominal self.ftCalCoef[0] = [-25,28.604]
+
         self.LED1 = default["LED1"]
         self.LED2 = default["LED2"]
         self.LED3 = default["LED3"]
         ### Franatech calibration coefficients ###
 
         # Why do we need 10 row here?
-        self.ftCalCoef = np.zeros((10, 2)) # [[0]*2]*10
-
+        self.ftCalCoef = np.zeros((10, 2))
         self.ftCalCoef[0] = franatech['WAT_TEMP_CAL']
         print ('Water temperature calibration coefficients :',self.ftCalCoef[0])
 
@@ -604,8 +589,6 @@ class Cbon(object):
         print ('CO2 molar fraction calibration coefficients :',self.ftCalCoef[6])
         print (self.ftCalCoef)
 
-                
-            
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
         pixels = np.arange(self.spectrometer.pixels)
