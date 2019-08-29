@@ -85,20 +85,11 @@ for i in range (len(ports)):
                               xonxoff=False)
       FIA_EXIST = True
    
-
-
-
-
-
-
 # ------- SSR settings
-# water pump slot
-WPUM = 1
-# dye pump slot
-DYEP = 2
-# stirrer slot
-STIP = 3
-#
+
+WPUM = 1 # water pump slot
+DYEP = 2 # dye pump slot
+STIP = 3 # stirrer slot
 INTV = 9
 
 
@@ -420,12 +411,8 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
-#_________________________________________________________________________________________________________________
-
-##########################  Instrument constructor ###############################################################
-    
-
 class Cbon(object):
+    # Instrument constructor #
     def __init__(self):
         # For signaling to threads
         self._exit = False 
@@ -443,8 +430,6 @@ class Cbon(object):
         self.nlCoeff = [1.0229, -9E-6, 6E-10]
         self.specIntTime = 500 #spectrometer integration time (ms)
         self.specAvScans = 6
-
-        
         self.samplingInterval = pH_SAMP_INT
         self.salinity = 33.5
         self.pumping = 1
@@ -461,16 +446,12 @@ class Cbon(object):
         self.timeStamp = ''
         self.spectrometer.set_integration_time(self.specIntTime)
         self.spectrometer.set_scans_average(1)
+
+        #TODO: em heritage,to fix
+        # HEll line 
         self.BOTTLE='00_5_3_1111'
+
         self.UNDERWAY='00_5_3_1111'
-        self._autostart = False
-        self._autotime  = None
-        self._autolen   = None
-        self._autostop  = None
-        self._automode  = 'DISABLED'
-        self._autodark  = None
-        self._deployed  = False
-        self.last_dark  = None
 
         self.load_config()
 
@@ -527,13 +508,24 @@ class Cbon(object):
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
         self._automode  = default['AUTOSTART_MODE']
-        #self.AUTOSTART = int(default['AUTOSTART'])
+
         print ('AUTOSTART',self._autostart,'AUTOSTART_MODE',self._automode)
         self.DURATION =  int(default['DURATION'])
+
+        #TODO: should be replaced by value from config?
         self.AUTODARK =  int(default['AUTODARK'])
+        self._autodark  = None
+
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
+
+        self._autotime  = None
+        self._autolen   = None
+        self._autostop  = None
+
+        self._deployed  = False
+        self.last_dark  = None
 
         self.molAbsRats = default['MOL_ABS_RATIOS']
         print ('Molar absorption ratios: ',self.molAbsRats)
@@ -814,17 +806,13 @@ class Cbon(object):
 
         return (pH_t, refT, self.salinity, pert, evalAnir)
             
-            
-    
-#______________________________________________________________________________________________________________________
-
-#################################### Panel Constructor ################################################################
-
 class inputDialog(QtGui.QDialog):
+    # Panel Constructor #
     def __init__(self, parent=None, title='user input', parString='30_5_3_1111'):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QFormLayout()
         self.line = QtGui.QLineEdit(parString)
+        # in input mask blanks are _ 9 is ascii 
         self.line.setInputMask('99_9_9_9999')
         self.line.returnPressed.connect(self.check_parameters)
         layout.addRow(self.line)
@@ -1060,15 +1048,15 @@ class Panel(QtGui.QWidget):
         choice = comboItems.index(text)
         if choice == 0:
             self.on_intTime_clicked()
-        if choice == 1:
+        elif choice == 1:
             self.on_scans_clicked() 
-        if choice == 2:
+        elif choice == 2:
             self.on_samT_clicked()
-        if choice == 4:
+        elif choice == 4:
             self.on_data_saving_rate_clicked()
-        if choice == 3:
+        elif choice == 3:
             self.on_autoAdjust_clicked()
-        if choice == 5:
+        elif choice == 5:
             dialog = inputDialog(parent= self, title='BOTTLE setup', parString=self.instrument.BOTTLE)
             dialog.exec_()
             try:
@@ -1244,18 +1232,23 @@ class Panel(QtGui.QWidget):
            self.textBox.setText('Cbon is not deployed')
                 
     def on_bottle_clicked(self):
+        # Button "single" is clicked
+        # old button bottle
         self.check('Spectrophotometer',False)
         self.timer.stop()
+        # TODO:do we need it only for sample name?
         t = datetime.now()
         flnmString = t.isoformat('_')
         self.instrument.timeStamp = flnmString
         self.instrument.flnmStr = flnmString[0:4]+flnmString[5:7]+flnmString[8:10]+flnmString[11:13]+flnmString[14:16]    
+        # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', self.instrument.flnmStr)
         if ok:
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
             print 'Start bottle ',self.instrument.flnmStr
+            # call sample func, where second parameter is a hell line 
             self.sample(self.instrument.BOTTLE)
             print 'Done'
             self.check('Single',False)
@@ -1263,7 +1256,9 @@ class Panel(QtGui.QWidget):
         self.timer.start()
         self.check('Spectrophotometer',True)
 
-            
+    def get_datetime(self):
+
+
     def underway(self):
         print('Inside underway...')
         self.check('Spectrophotometer',False)    # stop the spectrophotometer update precautionally
@@ -1310,6 +1305,9 @@ class Panel(QtGui.QWidget):
         self.check('LEDs', True)
 
         parList = parString.split('_')
+        # pT, mT, wT, dA put these parameters 
+        # to config instead of hell line
+
         pT, mT, wT, dA = int(parList[0]),int(parList[1]),int(parList[2]),str(parList[3])
 
         self.instrument.evalPar =[]
