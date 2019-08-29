@@ -1,6 +1,6 @@
 {
     "default":{
-        "NTC_CAL_COEF" : [72.803,-38.42,0,0],
+        "NTC_CAL_COEF" : [70.582,16.213,0,0],
         "T_PROBE_CH" : 8,
         "HI-" : 435,
         "I2-" : 596,
@@ -10,12 +10,14 @@
         "comment" : "# PWM_LINES,GPIO_SSR,GPIO_TV from the code phox.py",
         "PWM_LINES" : [12,13,19,16],
         "GPIO_SSR" : [17,18,27,22],
-        "GPIO_TV" : [23,24,25],
+        "GPIO_TV" : [24,23,25],
+        "DYE":"MCP",
         "DYE_CAL" : [0.11, 0.00, 4.0],
-        "LED1" : 27,
-        "LED2" : 50,
-        "LED3" : 75,
-        "AUTOSTART" : -1,
+        "LED1" : 29,
+        "LED2" : 16,
+        "LED3" : 80,
+        "AUTOSTART" : "True",
+        "AUTOSTART_MODE":"pump",
         "DURATION" : -1,
         "AUTODARK" : 30},
 
