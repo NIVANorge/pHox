@@ -441,14 +441,12 @@ class Panel(QtGui.QWidget):
                 
     def on_bottle_clicked(self):
         # Button "single" is clicked
-        # old button bottle
         self.check('Spectrophotometer',False)
         self.timer.stop()
-        # TODO:do we need it only for sample name?
         t = datetime.now()
-        flnmString = t.isoformat('_')
-        self.instrument.timeStamp = flnmString
-        self.instrument.flnmStr = flnmString[0:4]+flnmString[5:7]+flnmString[8:10]+flnmString[11:13]+flnmString[14:16]    
+        self.instrument.timeStamp = t.isoformat('_')
+        self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
+
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', self.instrument.flnmStr)
         if ok:
@@ -464,9 +462,6 @@ class Panel(QtGui.QWidget):
         self.timer.start()
         self.check('Spectrophotometer',True)
 
-    def get_datetime(self):
-
-
     def underway(self):
         print('Inside underway...')
         self.check('Spectrophotometer',False)    # stop the spectrophotometer update precautionally
@@ -476,12 +471,11 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(2,self.sliders[2].value())
         self.instrument.reset_lines()
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        
+
         t = datetime.now()
-        flnmString = t.isoformat('_')
-        self.instrument.flnmStr = flnmString[0:4]+flnmString[5:7]+flnmString[8:13]+flnmString[14:16]+flnmString[17:19]
-        self.instrument.timeStamp = flnmString
-        self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
+        self.instrument.timeStamp = t.isoformat('_')
+        self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
+        self.tsBegin = (t-datetime(1970,1,1)).total_seconds()
 
         print 'sampling...'
         self.sample(self.instrument.UNDERWAY)
