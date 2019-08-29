@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
-from numpy import *
+
 import random
 
 
@@ -35,254 +35,20 @@ adc = ADCDifferentialPi(0x68, 0x69, 14)
 adc.set_pga(1)
 adcdac = ADCDACPi()
 
-ports = list(serial.tools.list_ports.comports()) #locate serial port
-SENS_EXIST = False
-HOST_EXIST = False
-FIA_EXIST = False
-USE_FIA_TA = False
-
-print ports
-for i in range (len(ports)):
-   name=ports[i][2]
-   port=ports[i][0]
-   if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3': #USB-RS485 CO2 sensor
-      portSens = serial.Serial(port,
-                              baudrate=9600,
-                              parity=serial.PARITY_NONE,
-                              stopbits=serial.STOPBITS_ONE,
-                              bytesize=serial.EIGHTBITS,
-                              writeTimeout = 0,
-                              timeout = 0.5,
-                              rtscts=False,
-                              dsrdtr=False,
-                              xonxoff=False)
-      SENS_EXIST = True
-            
-   if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ': #USB-RS232 host
-      host = serial.Serial(port,
-                              baudrate=9600,
-                              parity=serial.PARITY_NONE,
-                              stopbits=serial.STOPBITS_ONE,
-                              bytesize=serial.EIGHTBITS,
-                              writeTimeout = 0,
-                              timeout = 0.25,
-                              rtscts=False,
-                              dsrdtr=False,
-                              xonxoff=False)
-      HOST_EXIST = True
-
-   if name == 'USB VID:PID=0557:2008': #USB-RS232 Alkalinity sensor
-      portFIA = serial.Serial(port,
-                              baudrate=115200,
-                              parity=serial.PARITY_NONE,
-                              stopbits=serial.STOPBITS_ONE,
-                              bytesize=serial.EIGHTBITS,
-                              writeTimeout = 0,
-                              timeout = 0.1,
-                              rtscts=False,
-                              dsrdtr=False,
-                              xonxoff=False)
-      FIA_EXIST = True
    
 # ------- SSR settings
-WPUM = 1 # water pump slot
-DYEP = 2 # dye pump slot
-STIP = 3 # stirrer slot
-INTV = 9
+#WPUM = 1 # water pump slot
+#DYEP = 2 # dye pump slot
+#STIP = 3 # stirrer slot
 
-VAR_NAMES = ['Water temperature \xB0C','Water flow l/m','Water pressure ','Air temperature \xB0C','Air pressure mbar','Water detect','C02 ppm','T CO2 sensor \xB0C']
 
-# ----------- definition of global constants 
 
-# PUCK mode strings
-PRD = 'PUCKRDY\r'
-PRM = 'PUCKRM'
-PTO = 'PUCKTMO\r'
-PSB = '@@@@@@!!!!!!'
-PCK = 'PUCK'
-PSZ = 'PUCKSZ'
-PSA = 'PUCKSA'
-PIM = 'PUCKIM'
 
-# Instrument mode strings
-CBG = 'CBON:GET'
-
-# Franatech query strings
-QUERY_CO2='\x2A\x4D\x31\x0A\x0D'
-QUERY_T='\x2A\x41\x32\x0A\x0D'
-
-# KM strings
-TCHAR = '\r\n'
-SET_SAL = '$KMSALINITY,W,'
-SET_SAMPLE_NAME = '$KMNAME,W,'
-RUN = '$KMRUN,W,MEASURE'+TCHAR
-STOP = '$KMRUN,W,STOP'+TCHAR
 
 # sampling intervals (seconds)
-TA_SAMP_INT = 600
+# TODO: to config file
 pH_SAMP_INT = 600
 
-class PuckManager(object):
-   
-   def __init__(self):
-      self.timerHostPoll = QtCore.QTimer()
-      #self.timerHostPoll.timeout.connect(self.poll_host_softbreak)
-      #self.timerHostPoll.timeout.connect(self.save_data)
-       # define PUCK dictionary  
-      self.puckDict = {PCK: self.puck,
-                       PSZ: self.puck_memory_size,
-                       PRM: self.puck_read_memory,
-                       PSA: self.puck_set_address,
-                       PIM: self.enter_instrument_mode}
-      self.instDict = {CBG: self.send_data} 
-
-      self.instDictHints = {CBG[0:6]}
-      self.memPtr = 0
-      self.PUCK_MEM_SIZE = 10000 #set larger than the actual puckmem file size
-      self.memDumpStr = ''
-      self.dump_puck_memory()
-      self.PT= 120  #PUCK timeout in seconds
-      self.puckMode = False
-      self.LAST_pH = 1
-      self.LAST_CO2 = 1
-      self.LAST_TA = 1
-      self.LAST_PAR=[0,0,0]
-
-   # Instrument mode -------------------------
-   def poll_host_softbreak(self):   
-      print( 'listening to host...') #750ms and 500ms sleep intervals seem to work with PUCK timing
-      try:
-         rx = host.read(6)
-         #print( '<-- '+ rx)
-         if rx == '@@@@@@':
-            time.sleep(0.75)
-            rx = host.read(7)
-            #print( '<-- '+ rx)
-            if rx == '!!!!!!':
-               time.sleep(0.5)
-               host.write(PRD)
-               self.timerHostPoll.stop()
-               self.enter_puckmode()
-            else:
-               host.flushInput()
-         elif (rx in self.instDictHints):
-            rRx = host.read(10)
-            sentence = (rx+rRx).split()
-            cmd = sentence[0]
-            parList=[]
-            if len(sentence)>1:
-               parList = sentence[1:]
-            if cmd in self.instDict:
-               print( 'Instrument command valid')
-               self.instDict[cmd].__call__(parList)                 
-         else:
-            host.flushInput()
-            
-      except KeyboardInterrupt:
-         self.timerHostPoll.stop()
-         host.close()
-         
-   
-   def enter_puckmode(self):
-      print( 'Puckmode')
-      #listen to host until some data arrive
-      self.puckMode= True
-      flInt = ['','\r'] #flow interruption marks
-      cmd =''
-      t0 = time.time()
-      elapsed = time.time()-t0
-      while (elapsed < self.PT) and (cmd != PIM) :
-         received = ''
-         fromHost = host.read(1)
-         while not(fromHost in flInt) and (elapsed < self.PT) and (received != PSB):
-            received += fromHost
-            fromHost = host.read(1)
-         print( 'received: '+received)
-         if len(received) > 0:
-            sentence = received.split()
-            cmd = sentence[0]
-            parList=[]
-            if len(sentence)>1:
-               parList = sentence[1:]
-            if cmd in self.puckDict:
-               print('PUCK command valid')
-               self.puckDict[cmd].__call__(parList)
-               t0 = time.time()
-         elapsed = time.time()-t0
-               
-      if cmd != PIM:
-         host.write(PTO+PRD)     
-      self.enter_instrument_mode([])
-      
-
-   def send_data(self, args):
-      t = datetime.now()
-      dateTime = t.isoformat('_')
-      dataString = dateTime[0:10]+','+dateTime[11:19]
-      # dataString header: pCO2,pH,TA,lat,lon,sal_ref,pCO2_Tref_meas,pH_Tref_meas
-      dataString = '%.1f,%.4f,%.1f,9999.9999,8888.8888,%.2f,%.2f,%.2f\r' %(self.LAST_CO2,self.LAST_pH,self.LAST_TA,self.LAST_PAR[0],self.LAST_PAR[1],self.LAST_PAR[2])
-      host.write(dataString)
-      dataString = dateTime[0:10]+','+dateTime[11:19]+','+dataString
-      with open('data/pH.log','a') as flnm:
-         flnm.write(dataString+'\n')      
-
-
-   def enter_instrument_mode(self, args):
-      print( 'Entering instrument mode...')
-      self.puckMode = False
-      self.timerHostPoll.start(30000)  #poll host for instrument specific commands, 1000ms seems to work with timing
-      
-   def puck(self,args):
-      host.write(PRD)
-      print( 'PUCK query')
-
-   def puck_memory_size(self,args):
-      host.write(str(self.PUCK_MEM_SIZE)+'\r')
-      host.write(PRD)
-
-   def puck_set_address(self, args):
-      self.memPtr = int(args[0])
-      host.write(PRD)
-         
-   def puck_read_memory(self, args):
-      print( 'Reading PUCK memory')
-      nBytesToRead = 0
-      bytesRead = ''
-      try:
-         nBytesToRead = int(args[0])
-      except IndexError:
-         print 'Missing argument'
-      for n in range (nBytesToRead):
-         bytesRead += self.memDumpStr[self.memPtr]
-         self.memPtr += 1
-         if self.memPtr == self.PUCK_MEM_SIZE:    #wrapping memory pointer
-            self.memPtr = 0
-       
-      print('PUCK memory pointer : %u ' %self.memPtr)
-      
-      host.write('['+bytesRead+']')
-      host.write(PRD)
-      
-   def puck_write_memory(self, args):
-      print( 'Writing PUCK memory')
-      nBytesToWrite = int(args[0])
-      packet = ''
-      for i in range (nBytesToWrite):
-         packet += host.read(1)
-      partMem = self.memDumpStr[0:self.memPtr] + packet
-      self.memPtr += len(packet)
-      print('PUCK memory pointer : %u ' %self.memPtr)
-      partMem += self.memDumpStr[self.memPtr:]
-      self.memDumpStr = partMem
-      print('Redumping PUCK memory...')
-      self.dump_puck_memory()
-      
-   def dump_puck_memory(self):
-      with open('puckmem','r') as puckMem:
-         self.memDumpStr = puckMem.read()
-      self.PUCK_MEM_SIZE = len(self.memDumpStr)     #assign actual puck memory size
-      frmt = '>'+str(self.PUCK_MEM_SIZE)+'B'
-      self.puckM = np.array(struct.unpack(frmt,self.memDumpStr))
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -466,9 +232,7 @@ class Cbon(object):
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
-
         default =   j['default']
-        franatech = j['franatech']
 
         print ('Loading pHaro parameters...')
 
@@ -505,7 +269,16 @@ class Cbon(object):
         print ('0 = will be skipped')
 
         self.ssrLines = default['GPIO_SSR']
-        print ('Using default BCM lines for SSRs: ',self.ssrLines)
+        #TODO: Replace ssrlines with new lines 
+        self.pump_slot= default["WPUMP_SLOT"]
+        self.dypepump_slot = default["DYEPUMP_SLOT"]
+        self.stirrer_slot = default["STIRR_SLOT"]
+        self.extra_slot = default["EXTRA_SLOT"] #empty for now
+  
+        #WPUM = 1 # water pump slot
+        #DYEP = 2 # dye pump slot
+        #STIP = 3 # stirrer slot
+
 
         self.GPIO_TV = default['GPIO_TV']
         print ('Using default BCM lines for bistable valve driver: ',self.GPIO_TV)
@@ -524,32 +297,7 @@ class Cbon(object):
         self.LED1 = default["LED1"]
         self.LED2 = default["LED2"]
         self.LED3 = default["LED3"]
-        ### Franatech calibration coefficients ###
 
-        # Why do we need 10 row here?
-        self.ftCalCoef = np.zeros((10, 2))
-        self.ftCalCoef[0] = franatech['WAT_TEMP_CAL']
-        print ('Water temperature calibration coefficients :',self.ftCalCoef[0])
-
-        self.ftCalCoef[1] = franatech['WAT_FLOW_CAL']
-        print ('Water flow calibration coefficients :', self.ftCalCoef[1])
-
-        self.ftCalCoef[2] = franatech['WAT_PRES_CAL']
-        print ('Water pressure calibration coefficients :',self.ftCalCoef[2])
-
-        #nominal self.ftCalCoef[3] = [-75,53.2368]
-        self.ftCalCoef[3] = franatech['AIR_TEMP_CAL']
-        print ('Air temperature calibration coefficients :',self.ftCalCoef[3])
-
-        self.ftCalCoef[4] = franatech['AIR_PRES_CAL']
-        print ('Air pressure calibration coefficients :',self.ftCalCoef[4])
-
-        self.ftCalCoef[5] = franatech['WAT_DETECT']
-        print ('Water detection voltage threshold :',self.ftCalCoef[5])
-
-        self.ftCalCoef[6] = franatech['CO2_FRAC_CAL']
-        print ('CO2 molar fraction calibration coefficients :',self.ftCalCoef[6])
-        print (self.ftCalCoef)
 
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
@@ -653,13 +401,15 @@ class Cbon(object):
             except KeyboardInterrupt:
                 print('skipped')
                 break
-
+    #
     def reset_lines(self):
         for pin in range(len(self.ssrLines)):
-            if self.ssrLines[pin] in GPIO_SSR:
-               self.rpi.write(self.ssrLines[pin], 0)
+            #if self.ssrLines[pin] in GPIO_SSR:
+            # set values in outputs of pins 
+            self.rpi.write(self.ssrLines[pin], 0)
                              
     def set_line (self, line, status):
+        # change status of the relay 
         self.rpi.write(self.ssrLines[line-1], status)
         
     def cycle_line (self, line, nCycles):
@@ -673,12 +423,12 @@ class Cbon(object):
         pass
 
     def set_TV (self, status):
-        chEn = GPIO_TV[0]
-        ch1 = GPIO_TV[1]
-        ch2 = GPIO_TV[2]
+        chEn = self.GPIO_TV[0]
+        ch1 = self.GPIO_TV[1]
+        ch2 = self.GPIO_TV[2]
         if status:
-            ch1= GPIO_TV[2]
-            ch2= GPIO_TV[1]   
+            ch1= self.GPIO_TV[2]
+            ch2= self.GPIO_TV[1]   
         self.rpi.write(ch1, True)
         self.rpi.write(ch2 , False)       
         self.rpi.write(chEn , True)
@@ -698,30 +448,24 @@ class Cbon(object):
     def calc_pH(self,absSp, vNTC):
         Tdeg = 0
         for i in range(4):
-           vNTC2 = 0
            vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = 0
            Tdeg = (self.ntcCalCoef[0]*vNTC2) +self.ntcCalCoef[1]
-        #for i in range(2):
-            #Tntc += self.instrument.ntcCalCoef[i] * pow(vNTC,i)
-            
-            #Tdeg += self.ntcCalCoef[i] * pow(vNTC,i)
 
         print 'T sample : %.2f' %Tdeg
 
         T = 273.15 + Tdeg
         S = self.salinity
-        Kind = self.dyeCal[0]
-        dyeS = self.dyeCal[1]
-        sVol = self.dyeCal[2]
+        #Kind,dyeS,sVol = self.dyeCal
+
         
         A1,Aiso,A2,Anir = absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]], absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]]
         mARs = reshape(np.array(self.molAbsRats),[3,3])
 
        # to be corrected (SAM)
-        Vinj = Aiso * Kind
-        fcS = S* (sVol - Vinj)/ sVol + dyeS * Vinj/sVol
-        
+       # volum in ml
+        #Vinj = Aiso * Kind
+        #fcS = S* (sVol - Vinj)/ sVol + dyeS * Vinj/sVol
+        #fcS= S* (Cuvette_V)/(dye_vol_inj+Cuvette_V)
         R = A2/A1
         
         if self.dye == 'TB':
