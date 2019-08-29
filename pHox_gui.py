@@ -43,8 +43,9 @@ class Console(QtGui.QWidget):
    def printText(self, text):
       self.textBox.append(text)
 
-class inputDialog(QtGui.QDialog):
+'''class inputDialog(QtGui.QDialog):
     # Panel Constructor #
+    # Dialog window for settings 
     def __init__(self, parent=None, title='user input', parString='30_5_3_1111'):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QFormLayout()
@@ -57,7 +58,7 @@ class inputDialog(QtGui.QDialog):
         self.setWindowTitle(title)
         
     def check_parameters(self):
-        self.parString= '%s' %self.line.text()
+        self.parString= '%s' %self.line.text()'''
         
 class Panel(QtGui.QWidget):
     def __init__(self):
@@ -448,14 +449,15 @@ class Panel(QtGui.QWidget):
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
 
         # dialog sample name  
-        text, ok = QtGui.QInputDialog.getText(None, 'Sample name', self.instrument.flnmStr)
+        text, ok = QtGui.QInputDialog.getText(None, 'Sample name', 
+                                        self.instrument.flnmStr)
         if ok:
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            print 'Start single measurement ',self.instrument.flnmStr
+            print 'Start single measurement ', self.instrument.flnmStr
             # call sample func, where second parameter is a hell line 
-            self.sample(self.instrument.BOTTLE)
+            self.sample()
             print 'Done'
             self.check('Single',False)
             self.instrument.spectrometer.set_scans_average(1)
@@ -464,21 +466,22 @@ class Panel(QtGui.QWidget):
 
     def underway(self):
         print('Inside underway...')
-        self.check('Spectrophotometer',False)    # stop the spectrophotometer update precautionally
+        # stop the spectrophotometer update precautionally
+        self.check('Spectrophotometer',False)    
         self.timer.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
         self.instrument.adjust_LED(1,self.sliders[1].value())
         self.instrument.adjust_LED(2,self.sliders[2].value())
         self.instrument.reset_lines()
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-
+        self.instrument.spectrometer.set_scans_average(
+                                  self.instrument.specAvScans)
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
         self.tsBegin = (t-datetime(1970,1,1)).total_seconds()
 
         print 'sampling...'
-        self.sample(self.instrument.UNDERWAY)
+        self.sample()
         print 'done...'
 
         #self.set_LEDs(False)
@@ -491,9 +494,7 @@ class Panel(QtGui.QWidget):
         self.check('Spectrophotometer',True)    # stop the spectrophotometer update precautionally
         self.timer.start()
     
-        
-    def sample(self, parString):
-
+    def sample(self): #parString pT, mT, wT, dA
         if not self.instrument.pumping:
             return
         if self.instrument._autodark:
@@ -506,28 +507,18 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(True)
         self.check('LEDs', True)
 
-        parList = parString.split('_')
-        # pT, mT, wT, dA put these parameters 
-        # to config instead of hell line
-
-        pT, mT, wT, dA = int(parList[0]),int(parList[1]),int(parList[2]),str(parList[3])
-
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        if pT>0:
-            # start the instrument pump and the stirrer
-            self.instrument.set_line(self.wpump_slot,True)
-            self.instrument.set_line(self.stirrer_slot,True)
-
-            self.instrument.wait(pT) # wait for pumping time
-
-            # turn off the pump and the stirrer
-            self.instrument.set_line(self.stirrer_slot,False)
-            self.instrument.set_line(self.wpump_slot,False)
+        if self.instrument.pT > 0:
+            self.instrument.set_line(self.wpump_slot,True) # start the instrument pump
+            self.instrument.set_line(self.stirrer_slot,True) # start the stirrer
+            self.instrument.wait(self.instrument.pT) # wait for pumping time
+            self.instrument.set_line(self.stirrer_slot,False) # turn off the pump
+            self.instrument.set_line(self.wpump_slot,False) # turn off the stirrer
 
         # close the valve
         self.instrument.set_TV(True)
-        self.instrument.wait(wT)
+        self.instrument.wait(self.instrument.wT)
 
         print 'Measuring blank...'
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
@@ -535,20 +526,20 @@ class Panel(QtGui.QWidget):
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
-        for pinj in range(len(dA)):
-            shots = int(dA[pinj])
+        for pinj in range(dA):
+            shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            print 'Injection %d:, shots %d' %(pinj, shots)
+            print 'Injection %d:, shots %d' %(pinj, self.instrument.nshots)
             # turn on the stirrer
             self.instrument.set_line(self.stirrer_slot, True)
             # inject dye 
             self.instrument.cycle_line(self.dyepump_slot, shots)
-            # mixing time
-            self.instrument.wait(mT)
+            # wait for mixing time
+            self.instrument.wait(self.instrument.mT)
             # turn off the stirrer
             self.instrument.set_line(self.stirrer_slot, False)
             # wait before to start the measurment
-            self.instrument.wait(wT)
+            self.instrument.wait(self.instrument.wT)
             # measure spectrum
             postinj = self.instrument.spectrometer.get_corrected_spectra()
             self.instrument.spCounts[2+pinj] = postinj 
@@ -574,7 +565,7 @@ class Panel(QtGui.QWidget):
 
         flnm = open(self.folderPath + self.instrument.flnmStr +'.spt','w')
         txtData = ''
-        for i in range(2+len(dA)):
+        for i in range(2+dA):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
             txtData += '\n'

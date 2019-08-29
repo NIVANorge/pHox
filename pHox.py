@@ -178,9 +178,8 @@ class Cbon(object):
 
         #TODO: em heritage,to fix
         # HEll line 
-        self.BOTTLE='00_5_3_1111'
-
-        self.UNDERWAY='00_5_3_1111'
+        # self.BOTTLE='00_5_3_1111'
+        # self.UNDERWAY='00_5_3_1111'
 
         self.load_config()
 
@@ -254,6 +253,12 @@ class Cbon(object):
         self._deployed  = False
         self.last_dark  = None
 
+        self.pT = 0 
+        self.mT = 5
+        self.wT = 3
+        self.dA = 4
+        self.nshots = 1
+        
         self.molAbsRats = default['MOL_ABS_RATIOS']
         print ('Molar absorption ratios: ',self.molAbsRats)
 
