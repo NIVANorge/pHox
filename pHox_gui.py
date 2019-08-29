@@ -64,7 +64,7 @@ class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
         self.instrument = Cbon()
-        self.puckEm = PuckManager()
+        #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
         self.timerUnderway = QtCore.QTimer()
         self.timerSens = QtCore.QTimer()
@@ -83,7 +83,7 @@ class Panel(QtGui.QWidget):
         #self.timerSave.start(10000)
         if USE_FIA_TA:
             self.statusFIA = True 
-        self.puckEm.enter_instrument_mode([])
+        #self.puckEm.enter_instrument_mode([])
         
     def init_ui(self):
         self.setWindowTitle('NIVA - pH')
@@ -199,17 +199,9 @@ class Panel(QtGui.QWidget):
            sender.setChecked(False)
 
         '''if btn == 'Inlet valve':
-           self.instrument.set_TV(sender.isChecked())
+           self.instrument.set_TV(sender.isChecked())'''
 
-        if btn == 'Enable PUCK protocol':
-           if sender.isChecked():
-              if HOST_EXIST:
-                 self.puckEm.enter_instrument_mode([])
-              else:
-                 sender.setChecked(False)
-           else:
-              self.puckEm.puckMode = False
-              self.puckEm.timerHostPoll.stop() '''
+
     
     def chkBox_caption(self, chkBoxName, appended):
         self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
@@ -258,11 +250,11 @@ class Panel(QtGui.QWidget):
         datay = self.instrument.spectrometer.get_corrected_spectra()
         self.plotSpc.setData(self.instrument.wvls,datay)                  
 
-    def simulate(self):
+    '''def simulate(self):
         self.puckEm.LAST_pH = 8+random.gauss(0,0.05)
         self.puckEm.LAST_CO2 = 350+random.gauss(0,10)
         self.puckEm.LAST_TA = 2200+random.gauss(0,25)
-        print '%.1f %.4f %.1f' %(self.puckEm.LAST_CO2,self.puckEm.LAST_pH,self.puckEm.LAST_TA)
+        print '%.1f %.4f %.1f' %(self.puckEm.LAST_CO2,self.puckEm.LAST_pH,self.puckEm.LAST_TA)'''
 
     '''def on_combo_clicked(self, text):
         comboItems = ['Set integration time','Set averaging scans',
@@ -340,87 +332,7 @@ class Panel(QtGui.QWidget):
         LED3 = self.sliders[2].value()
         text += 'LED1 = %-d\nLED2 = %-d\nLED3 = %-d\n' % (LED1, LED2, LED3) 
 
-        if SENS_EXIST:
-           portSens.write(QUERY_CO2)
-           resp = portSens.read(15)
-           try:
-               value =  float(resp[3:])
-               value = self.instrument.ftCalCoef[6][0]+self.instrument.ftCalCoef[6][1]*value
-           except ValueError:
-               value = 0
-           self.instrument.franatech[6] = value
-           self.puckEm.LAST_CO2 = self.instrument.franatech[6]
-        
-           portSens.write(QUERY_T)
-           resp = portSens.read(15)
-           try:
-               self.instrument.franatech[7] = float(resp[3:])
-           except ValueError:
-               self.instrument.franatech[7] = 0
-         
-           for ch in range(5):
-              V = self.instrument.get_Vd(2,ch+1)
-              X = 0
-              for i in range(2):
-                   X += self.instrument.ftCalCoef[ch][i] * pow(V,i)
-              self.instrument.franatech[ch] = X
-              text += VAR_NAMES[ch]+': %.2f\n'%X
-
-           self.puckEm.LAST_PAR[2] = self.instrument.salinity
-           self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
-           WD = self.instrument.get_Vd(3,6)  
-           text += VAR_NAMES[5]+ str (WD<0.04) + '\n'
-           text += VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] + VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7]
-           
         self.textBoxSens.setText(text)
-
-        if FIA_EXIST: 
-           # polling HydroFIA-TA 
-           rx = portFIA.read(300)
-           if rx != '':
-              sentence = rx.split(',')
-              logFile = open(self.folderPath + 'FIA-TA.log','a')
-              logFile.write(rx+'\n')
-              if len(sentence)>10:
-                 sample_name = sentence[4]
-                 portFIA.write(STOP)
-                 rx = portFIA.read(300)
-                 logFile.write(rx+'\n')
-                 self.statusFIA = True
-                 try:
-                    self.puckEm.LAST_TA = float(sentence[7])
-                 except ValueError:
-                    self.puckEm.LAST_TA = 1   
-                 print self.puckEm.LAST_TA
-              logFile.close()
-           
-           
-    '''def save_pCO2_data(self):
-        d = self.instrument.franatech
-        t = datetime.now() 
-        label = t.isoformat('_')
-        labelSample = label[0:19]
-        logStr = '%s,%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d\n' %(labelSample,d[0],d[1],d[2],d[3],d[4],d[6],d[7])
-        with open(self.folderPath + 'pCO2.log','a') as logFile:
-            logFile.write(logStr)
-         
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-        sock.sendto(logStr, (UDP_IP, UDP_SEND))
-        sock.close()   
-
-    def sample_alkalinity(self):
-        if self.statusFIA:
-           print 'Sampling alkalinity'
-           self.statusFIA = False
-           portFIA.write(SET_SAL+'%.2f\r\n' %self.instrument.salinity)
-           print portFIA.read(100)
-           t = datetime.now()
-           flnmString = t.isoformat('-')
-           sampleName = flnmString[0:4]+flnmString[5:7]+flnmString[8:13]+flnmString[14:16]+flnmString[17:19]
-           portFIA.write(SET_SAMPLE_NAME + sampleName +TCHAR)
-           print portFIA.read(100)
-           portFIA.write(RUN)
-           print portFIA.read(100)'''
 
     def on_deploy_clicked(self, state):
         newText =''
@@ -588,8 +500,8 @@ class Panel(QtGui.QWidget):
         with open(self.folderPath + 'pH.log','a') as logFile:
             logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
         self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
-        self.puckEm.LAST_PAR[1]= pHeval[1]
-        self.puckEm.LAST_pH = pHeval[0]
+        #self.puckEm.LAST_PAR[1]= pHeval[1]
+        #self.puckEm.LAST_pH = pHeval[0]
         
     def _autostart(self):
         print 'Inside _autostart...'
