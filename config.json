@@ -9,6 +9,7 @@
         "MOL_ABS_RATIOS" : [-0.00132, 1.6E-5, 0.0, 7.2326, -0.0299717, 4.6E-5, 0.0223, 0.0003917, 0.0],
         "comment" : "# PWM_LINES,GPIO_SSR,GPIO_TV from the code phox.py",
         "PWM_LINES" : [12,13,19,16],
+        "comment GPIO SSR":"#SSR: dye and water pump and stirrer ",
         "GPIO_SSR" : [17,18,27,22],
         "GPIO_TV" : [24,23,25],
         "DYE":"MCP",
