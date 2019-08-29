@@ -1,6 +1,5 @@
 #! /usr/bin/python
 
-import json
 import socket
 import threading
 import os,sys
@@ -475,7 +474,9 @@ class Cbon(object):
         self._autodark  = None
         self._deployed  = False
         self.last_dark  = None
-
+        self.LED1 = 21
+        self.LED2 = 70
+        self.LED3 = 99
         self.load_config()
 
         #setup PWM and SSR lines
@@ -535,10 +536,7 @@ class Cbon(object):
         self.I2 =  int(default['I2-'])
         self.Iso = int(default['ISO'])
         self.NIR = int(default['NIR-'])
-        self._autostart = bool(default['AUTOSTART'])
-        self._automode  = default['AUTOSTART_MODE']
-        #self.AUTOSTART = int(default['AUTOSTART'])
-        print ('AUTOSTART',self._autostart,'AUTOSTART_MODE',self._automode)
+        self.AUTOSTART = int(default['AUTOSTART'])
         self.DURATION =  int(default['DURATION'])
         self.AUTODARK =  int(default['AUTODARK'])
         self.vNTCch =    int(default['T_PROBE_CH'])
@@ -565,17 +563,12 @@ class Cbon(object):
         print ('NTC calibration coefficients :')
         print (self.ntcCalCoef, '\n')
 
-        self.dye = default['DYE'] 
-        #type of dye(default value, will be changed inside gui )
-
         self.dyeCal = default['DYE_CAL']
         print ('Dye calibration coefficients (ml_dye/Aiso, S, ml):')
         print (self.dyeCal,'\n')
         # This was hardcoded as default self.dyeCal = [0.22, 0, 4] #to be confirmed
         #nominal self.ftCalCoef[0] = [-25,28.604]
-        self.LED1 = default["LED1"]
-        self.LED2 = default["LED2"]
-        self.LED3 = default["LED3"]
+
         ### Franatech calibration coefficients ###
 
         # Why do we need 10 row here?
@@ -785,14 +778,12 @@ class Cbon(object):
             print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir                 
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + log10(arg)
-        elif self.dye == 'MCP':
-            e1=-0.007762+(4.5174*10**-5)*T
-            e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
+        elif self.dye == 'MCP':        
+            e1=-0.007762+(4.5174*10^-5)*Temp
+            e2e3=-0.020813+((2.60262*10^-4)*Temp)+(1.0436*10^-4)*(fcS-35)
             arg = (R - e1)/(1 - R*e2e3)
-            pK = (5.561224-(0.547716*fcS**0.5)+(0.123791*fcS)-(0.0280156*fcS**1.5)+
-                 (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
-                 ((52.640726*fcS**0.5)*T**-1)+(815.984591*T**-1))
-            pH= pK + np.log10(arg)
+            pk= 5.561224-(0.547716*fcS^0.5)+(0.123791*fcS)-(0.0280156*fcS^1.5)+(0.00344940*fcS^2)-(0.000167297*fcS^2.5)+((52.640726*fcS^0.5)*Temp^-1)+(815.984591*Temp^-1)
+            pH= pk + log10(arg)
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
            
             ## to fit the log file
@@ -1322,7 +1313,7 @@ class Panel(QtGui.QWidget):
 				print 'New dark required'
 				self.on_dark_clicked()
         else:
-            print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+            print 'next dark at %s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
         self.check('LEDs', True)
 
