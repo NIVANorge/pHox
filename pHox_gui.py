@@ -25,6 +25,8 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 from numpy import *
 import random
+import pyqtgraph as pg 
+
 
 class Console(QtGui.QWidget):
    
@@ -98,25 +100,31 @@ class Panel(QtGui.QWidget):
         grid = QtGui.QGridLayout()
         grid.setColumnStretch(0,1)
         grid.setColumnStretch(1,1)
+
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
+
         self.chkBoxList = []
         self.sliders = []
         self.sldLabels = []
         
-        #self.ButtonsNames = ['Spectrophotometer','Take dark','Deploy','Enable PUCK protocol',
-                           # 'Bottle','LEDs','Water pump','Inlet valve','Stirrer','Dye pump']
-                            
         self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Water pump','Deploy','Single']
         sldNames = ['Blue','Orange','Red','LED4']
 
-        for name in self.ButtonsNames:
+        for idx,name in enumerate(self.ButtonsNames):
+           row = 0
            BtnBox = QtGui.QPushButton(name)
            BtnBox.setCheckable(True)
            BtnBox.setObjectName(name)
-           idx = self.ButtonsNames.index(name)
+           #idx = self.ButtonsNames.index(name)
            self.group.addButton(BtnBox, idx)
-           grid.addWidget(BtnBox, idx, 0)
+            if idx == 5:
+                row = 0
+                col = 1
+            else: 
+                col = 0
+           grid.addWidget(BtnBox, row, col)
+           row += 1  
         self.group.buttonClicked.connect(self.BtnPressed)
         
         sldRow = len(self.ButtonsNames)+1
