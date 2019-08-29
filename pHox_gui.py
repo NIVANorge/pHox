@@ -112,19 +112,19 @@ class Panel(QtGui.QWidget):
         sldNames = ['Blue','Orange','Red','LED4']
 
         for idx,name in enumerate(self.ButtonsNames):
-           row = 0
-           BtnBox = QtGui.QPushButton(name)
-           BtnBox.setCheckable(True)
-           BtnBox.setObjectName(name)
-           #idx = self.ButtonsNames.index(name)
-           self.group.addButton(BtnBox, idx)
+            row = 0
+            BtnBox = QtGui.QPushButton(name)
+            BtnBox.setCheckable(True)
+            BtnBox.setObjectName(name)
+            #idx = self.ButtonsNames.index(name)
+            self.group.addButton(BtnBox, idx)
             if idx == 5:
-                row = 0
-                col = 1
+                 row = 0
+                 col = 1
             else: 
                 col = 0
-           grid.addWidget(BtnBox, row, col)
-           row += 1  
+            grid.addWidget(BtnBox, row, col)
+            row += 1  
         self.group.buttonClicked.connect(self.BtnPressed)
         
         sldRow = len(self.ButtonsNames)+1
