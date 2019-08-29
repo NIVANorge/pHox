@@ -41,10 +41,6 @@ adcdac = ADCDACPi()
 #DYEP = 2 # dye pump slot
 #STIP = 3 # stirrer slot
 
-
-
-
-
 # sampling intervals (seconds)
 # TODO: to config file
 pH_SAMP_INT = 600
@@ -173,9 +169,6 @@ class Cbon(object):
         self.status = [False]*16
         self.intvStatus = False
         
-        self.franatech = [0]*10
-        self.ftCalCoef= [[0]*2]*10
-        
         self.CO2UpT = 5
         
         self.flnmStr = ''
@@ -200,7 +193,7 @@ class Cbon(object):
 
         print 'calculating wavelengths...\n'
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
-        
+        print ("wavelengths", self.wvls)
         self.reset_lines()
         
         udp = threading.Thread(target=self.udp_server)
@@ -270,8 +263,8 @@ class Cbon(object):
 
         self.ssrLines = default['GPIO_SSR']
         #TODO: Replace ssrlines with new lines 
-        self.pump_slot= default["WPUMP_SLOT"]
-        self.dypepump_slot = default["DYEPUMP_SLOT"]
+        self.wpump_slot = default["WPUMP_SLOT"]
+        self.dyepump_slot = default["DYEPUMP_SLOT"]
         self.stirrer_slot = default["STIRR_SLOT"]
         self.extra_slot = default["EXTRA_SLOT"] #empty for now
   
@@ -279,20 +272,19 @@ class Cbon(object):
         #DYEP = 2 # dye pump slot
         #STIP = 3 # stirrer slot
 
-
         self.GPIO_TV = default['GPIO_TV']
-        print ('Using default BCM lines for bistable valve driver: ',self.GPIO_TV)
 
-        # NTC calibration coefficients
+        # NTC Temperature calibration coefficients
         self.ntcCalCoef = default['NTC_CAL_COEF']
-        # this was cardcoded if Value Error self.ntcCalCoef = [91.377, 18.676,0,0]
         print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
 
         self.dye = default['DYE'] 
         #type of dye(default value, will be changed inside gui )
-        self.dyeCal = default['DYE_CAL']
-        print ('Dye calibration coefficients (ml_dye/Aiso, S, ml):')
-        print (self.dyeCal,'\n')
+        print ('Dye type',self.dye,'\n')
+
+        # self.dyeCal = default['DYE_CAL']
+        self.Cuvette_V = default["CUVETTE_V"] #ml
+        self.dye_vol_inj = default["DYE_V_INJ"]
 
         self.LED1 = default["LED1"]
         self.LED2 = default["LED2"]
@@ -319,20 +311,19 @@ class Cbon(object):
     def get_sp_levels(self,pixel):
         spec = self.get_spectral_data()
         return spec[pixel],spec.max()
-    
-           
+
     def get_V(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
             V += adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
         return V/nAver
-      
+
     def get_Vd(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
             V += adc.read_voltage(ch)
         return V/nAver
-      
+
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
@@ -387,8 +378,7 @@ class Cbon(object):
                #self.specIntTime = sptIt
                #self.specAvScans = 3000/sptIt
         return DC1,DC2,DC3,sptIt,adj1 & adj2 % adj3
-                                                  
-        
+
     def print_Com(self, port, txtData):
         port.write(txtData)
 
@@ -403,15 +393,16 @@ class Cbon(object):
                 break
     #
     def reset_lines(self):
-        for pin in range(len(self.ssrLines)):
-            #if self.ssrLines[pin] in GPIO_SSR:
-            # set values in outputs of pins 
-            self.rpi.write(self.ssrLines[pin], 0)
-                             
+        # set values in outputs of pins 
+        self.rpi.write(   self.wpump_slot, 0)
+        self.rpi.write(self.dyepump_slot, 0)
+        self.rpi.write(self.stirrer_slot, 0)
+        self.rpi.write(  self.extra_slot, 0)
+
     def set_line (self, line, status):
         # change status of the relay 
-        self.rpi.write(self.ssrLines[line-1], status)
-        
+        self.rpi.write(line, status)
+
     def cycle_line (self, line, nCycles):
         ON = 0.3
         OFF = 0.3
@@ -424,20 +415,20 @@ class Cbon(object):
 
     def set_TV (self, status):
         chEn = self.GPIO_TV[0]
-        ch1 = self.GPIO_TV[1]
-        ch2 = self.GPIO_TV[2]
+        ch1 =  self.GPIO_TV[1]
+        ch2 =  self.GPIO_TV[2]
         if status:
             ch1= self.GPIO_TV[2]
-            ch2= self.GPIO_TV[1]   
+            ch2= self.GPIO_TV[1]
         self.rpi.write(ch1, True)
-        self.rpi.write(ch2 , False)       
+        self.rpi.write(ch2 , False)
         self.rpi.write(chEn , True)
         time.sleep(0.3)
         self.rpi.write(ch1, False)
-        self.rpi.write(ch2 , False)       
+        self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
 
-                
+
     def movAverage(self, dataSet, nPoints):
         spAbsMA = dataSet
         for i in range(3,len(dataSet)-3):
@@ -446,34 +437,29 @@ class Cbon(object):
         return spAbsMA
 
     def calc_pH(self,absSp, vNTC):
-        Tdeg = 0
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.ntcCalCoef[0]*vNTC2) +self.ntcCalCoef[1]
-
+           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
         print 'T sample : %.2f' %Tdeg
 
         T = 273.15 + Tdeg
-        S = self.salinity
-        #Kind,dyeS,sVol = self.dyeCal
 
-        
-        A1,Aiso,A2,Anir = absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]], absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]]
-        mARs = reshape(np.array(self.molAbsRats),[3,3])
+        A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
+                           absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
 
-       # to be corrected (SAM)
-       # volum in ml
-        #Vinj = Aiso * Kind
-        #fcS = S* (sVol - Vinj)/ sVol + dyeS * Vinj/sVol
-        #fcS= S* (Cuvette_V)/(dye_vol_inj+Cuvette_V)
+        # volume in ml
+        fcS = self.salinity * (
+              (self.Cuvette_V)/(self.dye_vol_inj+self.Cuvette_V))
         R = A2/A1
         
         if self.dye == 'TB':
+            e1 = -0.00132 + 1.6E-5*T
+            e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
+            e3 = 0.0223 + 0.0003917*T
             pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
-            e1, e2, e3 = mARs[0,0] + mARs[0,1]*T, mARs[1,0] + mARs[1,1]*T + mARs[1,2]*(T**2), mARs[2,0] + mARs[2,1]*T                   
-            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir                 
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + log10(arg)
+            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
             e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
@@ -481,19 +467,17 @@ class Cbon(object):
             pK = (5.561224-(0.547716*fcS**0.5)+(0.123791*fcS)-(0.0280156*fcS**1.5)+
                  (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
                  ((52.640726*fcS**0.5)*T**-1)+(815.984591*T**-1))
-            pH= pK + np.log10(arg)
+            pH = pK + np.log10(arg)
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
-           
             ## to fit the log file
-            e2=e2e3
-            e3=-99
+            e2,e3 =e2e3,-99
         else:
             raise ValueError('wrong DYE: ' + self.dye)
 
         print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
         print ('dye: ', self.dye)
         print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
-        self.evalPar.append([pH, pK, e1, e2, e3, vNTC, S, A1, A2, Aiso, Tdeg, Vinj, fcS, Anir])
+        self.evalPar.append([pH, pK, e1, e2, e3, vNTC, self.salinity, A1, A2, Aiso, Tdeg, self.dye_vol_inj, fcS, Anir])
         
     def pH_eval(self):
         # pH ref
@@ -510,8 +494,7 @@ class Cbon(object):
         pH_t = evalpH[0]
         refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[1] ) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
-        
-        #print refpH
+
         if n>1:
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)

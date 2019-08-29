@@ -10,6 +10,9 @@ HOST_EXIST = False
 FIA_EXIST = False
 USE_FIA_TA = False
 
+#self.franatech = [0]*10
+#self.ftCalCoef = [[0]*2]*10
+
 print ports
 for i in range (len(ports)):
    name=ports[i][2]
