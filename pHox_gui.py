@@ -110,19 +110,22 @@ class Panel(QtGui.QWidget):
         
         self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Water pump','Deploy','Single']
         sldNames = ['Blue','Orange','Red','LED4']
-
+	row = 0
         for idx,name in enumerate(self.ButtonsNames):
-            row = 0
+            
             BtnBox = QtGui.QPushButton(name)
             BtnBox.setCheckable(True)
             BtnBox.setObjectName(name)
             #idx = self.ButtonsNames.index(name)
             self.group.addButton(BtnBox, idx)
-            if idx == 5:
-                 row = 0
-                 col = 1
-            else: 
+            if idx < 5:
                 col = 0
+	    elif idx == 5:
+                row = 0
+                col = 1
+            elif idx > 5: 
+                col = 1
+            print (idx,name)
             grid.addWidget(BtnBox, row, col)
             row += 1  
         self.group.buttonClicked.connect(self.BtnPressed)
@@ -348,7 +351,7 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           nextSampleTA = datetime.fromtimestamp(self.tsBegin + TA_SAMP_INT)
+           #nextSampleTA = datetime.fromtimestamp(self.tsBegin + TA_SAMP_INT)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
            #if FIA_EXIST:
            #   #self.timerFIA.start(TA_SAMP_INT*1000)
