@@ -69,7 +69,7 @@ class Panel(QtGui.QWidget):
         self.timerUnderway = QtCore.QTimer()
         self.timerSens = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
-        self.timerFIA = QtCore.QTimer()
+        #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         #self.timerFlowCell = QtCore.QTimer()
         self.init_ui()
@@ -81,8 +81,8 @@ class Panel(QtGui.QWidget):
         self.timerSens.start(2000)
         
         #self.timerSave.start(10000)
-        if USE_FIA_TA:
-            self.statusFIA = True 
+        #if USE_FIA_TA:
+        #    self.statusFIA = True 
         #self.puckEm.enter_instrument_mode([])
         
     def init_ui(self):
@@ -91,7 +91,7 @@ class Panel(QtGui.QWidget):
         self.timerUnderway.timeout.connect(self.underway)
         self.timerSens.timeout.connect(self.update_sensors)
         #self.timerSave.timeout.connect(self.save_pCO2_data)
-        self.timerFIA.timeout.connect(self.sample_alkalinity)
+        #self.timerFIA.timeout.connect(self.sample_alkalinity)
         #self.timerFlowCell.timeout.connect(self.update_Tntc)
 
         #set grid layout and size columns
@@ -342,14 +342,14 @@ class Panel(QtGui.QWidget):
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
            nextSampleTA = datetime.fromtimestamp(self.tsBegin + TA_SAMP_INT)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
-           if FIA_EXIST:
-              self.timerFIA.start(TA_SAMP_INT*1000)
-              text += 'HydroFIA-TA deployed\nNext sample %s' % (nextSampleTA.isoformat())
+           #if FIA_EXIST:
+           #   #self.timerFIA.start(TA_SAMP_INT*1000)
+           #   #text += 'HydroFIA-TA deployed\nNext sample %s' % (nextSampleTA.isoformat())
            self.textBox.setText(text)
            self.timerUnderway.start(self.instrument.samplingInterval*1000)     
         else:
            self.timerUnderway.stop()
-           self.timerFIA.stop()
+           #self.timerFIA.stop()
            self.textBox.setText('Cbon is not deployed')
                 
     def on_bottle_clicked(self):
