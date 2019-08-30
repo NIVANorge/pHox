@@ -108,31 +108,36 @@ class Panel(QtGui.QWidget):
         self.sliders = []
         self.sldLabels = []
         
-        self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs',
-                             'Inlet valve','Stirrer',
-                             'Dye pump','Water pump','Deploy',
-                             'Single measurement','Set sampling interval']
-        sldNames = ['Blue','Orange','Red','LED4']
-        row = 0
-        for idx,name in enumerate(self.ButtonsNames):
-            
-            BtnBox = QtGui.QPushButton(name)
-            BtnBox.setCheckable(True)
-            BtnBox.setObjectName(name)
-            #idx = self.ButtonsNames.index(name)
+        #self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs',
+        #                     'Inlet valve','Stirrer',
+        #                     'Dye pump','Water pump','Deploy',
+        #                     'Single measurement','Set sampling interval']
+
+        self.ButtonsNames_ch = ['Spectrophotometer','LEDs','Inlet valve',
+                                'Stirrer','Water pump','Deploy']
+        self.ButtonsNames_unch = ['Set sampling interval','Single measurement','Dye pump','Take dark']
+
+        def create_button(name,check):
+            Btn = QtGui.QPushButton(name)
+            Btn.setObjectName(name)
+            if check:
+                Btn.setCheckable(True)
+            return Btn
+
+        for idx,name in enumerate(self.ButtonsNames)_ch:
+            btn = create_button(name,True)
+            self.group.addButton(btn, idx)
+            grid.addWidget(btn, idx, 0)
+
+        for idx,name in enumerate(self.ButtonsNames_ucnh):
+            btn = create_button(name,False)
             self.group.addButton(BtnBox, idx)
-            if idx < 5:
-                col = 0
-            elif idx == 5:
-                row = 0
-                col = 1
-            elif idx > 5: 
-                col = 1
-            grid.addWidget(BtnBox, row, col)
-            row += 1  
+            grid.addWidget(BtnBox, idx, 1)
+
         self.group.buttonClicked.connect(self.BtnPressed)
         
-        sldRow = len(self.ButtonsNames)+1
+        sldRow = 6
+        sldNames = ['Blue','Orange','Red','LED4']
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
@@ -213,7 +218,11 @@ class Panel(QtGui.QWidget):
         elif btn == 'Inlet valve':
            self.instrument.set_TV(sender.isChecked())
         elif btn == 'Set sampling interval':
-            self.on_samT_clicked()
+            self.on_samT_clicked() #should be Non checkable 
+            sender.setChecked(False)
+
+
+
 
     def chkBox_caption(self, chkBoxName, appended):
         self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
