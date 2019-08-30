@@ -131,8 +131,8 @@ class Panel(QtGui.QWidget):
 
         for idx,name in enumerate(self.ButtonsNames_unch):
             btn = create_button(name,False)
-            self.group.addButton(BtnBox, idx)
-            grid.addWidget(BtnBox, idx, 1)
+            self.group.addButton(btn, idx)
+            grid.addWidget(btn, idx, 1)
 
         self.group.buttonClicked.connect(self.BtnPressed)
         
