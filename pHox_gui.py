@@ -154,8 +154,21 @@ class Panel(QtGui.QWidget):
         
 
         #TODO: change connections functions 
-        self.group.buttonClicked.connect(self.BtnPressed)
+        #self.group.buttonClicked.connect(self.BtnPressed)
+
+        self.btn_spectro.clicked.connect(self.spectro_clicked)
+        self.btn_leds.clicked.connect(self.set_LEDs(self.btn_leds.isChecked))
+        self.btn_valve.clicked.connect(self.instrument.set_TV(self.btn_valve.isChecked())
+        self.btn_stirr.clicked.connect(self.instrument.set_line(self.stirrer_slot, self.btn_stirr.isChecked()))
+        self.btn_wpump.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_wpump.isChecked()))
+        self.btn_deploy.clicked.connect(self.on_deploy_clicked(self.btn_deploy.isChecked()))
+        # Unchecable buttons
+        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
+        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
+        self.btn_dye_pmp.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_dye_pmp.isChecked())
         
+
         sldRow = 6
         sldNames = ['Blue','Orange','Red','LED4']
         for sldInd in range(3):
@@ -209,77 +222,65 @@ class Panel(QtGui.QWidget):
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
 
-    def BtnPressed(self, sender):
-
+    """def BtnPressed(self, sender):
         btn = sender.objectName()
-
         if btn == 'Spectrophotometer':
            if sender.isChecked():
               self.timer.start(500)
            else:
               self.timer.stop()
         elif btn == 'Take dark':
-           self.on_dark_clicked() #should be Non checkable 
-           #sender.setChecked(False)
+           self.on_dark_clicked()
         elif btn == 'LEDs':
            self.set_LEDs(sender.isChecked())
         elif btn == 'Stirrer':
            self.instrument.set_line(self.stirrer_slot, sender.isChecked())
         elif btn == 'Dye pump': 
            self.instrument.cycle_line(self.dyepump_slot, 2)
-           #sender.setChecked(False) #should be Non checkable 
         elif btn == 'Water pump':
            self.instrument.set_line(self.wpump_slot, sender.isChecked())
         elif btn == 'Deploy':
            self.on_deploy_clicked(sender.isChecked())
         elif btn == 'Single measurement':
-           self.on_bottle_clicked() #should be Non checkable 
-           #sender.setChecked(False) 
+           self.on_bottle_clicked() 
         elif btn == 'Inlet valve':
            self.instrument.set_TV(sender.isChecked())
         elif btn == 'Set sampling interval':
-            self.on_samT_clicked() #should be Non checkable 
-            #sender.setChecked(False)
+            self.on_samT_clicked()"""
 
 
-
-
-    #def chkBox_caption(self, chkBoxName, appended):
-    #    self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
-
-    #def check(self, chkBoxName, newChk):
-    #    self.group.button(self.ButtonsNames.index(chkBoxName)).setChecked(newChk)
-   
+    def spectro_clicked(self):
+        if self.btn_spectro.isChecked():
+            self.timer.start(500)
+        else:
+            self.timer.stop()
     def sld0_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
         self.btn_leds.setChecked(True)
-        #self.check('LEDs',True)
-        
+
     def sld1_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
         self.btn_leds.setChecked(True)
-        #self.check('LEDs',True)
-        
+
     def sld2_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
         self.btn_leds.setChecked(True)
-        #self.check('LEDs',True)
 
     def on_dark_clicked(self):
         print 'Taking dark level...'
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
-        #self.check('LEDs',False)
-       
+
         print 'Measuring...'
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
         self.instrument.spectrometer.set_scans_average(1)
         print 'Done'
 
-        self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(str(self.instrument.specIntTime), str(self.instrument.specAvScans)))
-        #self.chkBox_caption('Take dark','(%s ms, n=%s)' % (str(self.instrument.specIntTime), str(self.instrument.specAvScans)))
-        
+        self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
+            str(self.instrument.specIntTime),
+            str(self.instrument.specAvScans)))
+
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
@@ -337,7 +338,9 @@ class Panel(QtGui.QWidget):
             print self.instrument.UNDERWAY'''
             
     def on_intTime_clicked(self):  
-        intTime, ok = QtGui.QInputDialog.getInt(None, 'Set spectrophotometer integration time', 'ms',self.instrument.specIntTime,100,3000,100)
+        intTime, ok = QtGui.QInputDialog.getInt(
+            None, 'Set spectrophotometer integration time',
+             'ms',self.instrument.specIntTime,100,3000,100)
         if ok:
             self.instrument.specIntTime = intTime
             self.instrument.spectrometer.set_integration_time(intTime)
@@ -350,9 +353,11 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = scans
 
     def on_samT_clicked(self): 
-        time, ok = QtGui.QInputDialog.getInt(None, 'Set sampling interval',
-                    'Interval in mseconds',value = self.instrument.samplingInterval,
-                    min = 200,max = 6000,step = 60)
+        time, ok = QtGui.QInputDialog.getInt(
+            None, 'Set sampling interval',
+            'Interval in seconds',
+            value = self.instrument.samplingInterval,
+            min = 200,max = 6000,step = 60)
         if ok:
             self.instrument.samplingInterval = time
 
@@ -410,7 +415,6 @@ class Panel(QtGui.QWidget):
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
-
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', 
                                         self.instrument.flnmStr)
@@ -419,14 +423,12 @@ class Panel(QtGui.QWidget):
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
             print 'Start single measurement ', self.instrument.flnmStr
-            # call sample func, where second parameter is a hell line 
             self.sample()
             print 'Done'
-            #self.check('Single',False)
             self.instrument.spectrometer.set_scans_average(1)
         self.timer.start()
         self.btn_spectro.setChecked(True)
-        #self.check('Spectrophotometer',True)
+
 
     def underway(self):
         print('Inside underway...')
@@ -449,15 +451,14 @@ class Panel(QtGui.QWidget):
         self.sample()
         print 'done...'
 
-        #self.set_LEDs(False)
-        #self.check('LEDs',False)
         self.instrument.spectrometer.set_scans_average(1)
         
         nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
         oldText = self.textBox.toPlainText()
         self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
-        self.btn_spectro.setChecked(True)
-        #self.check('Spectrophotometer',True)    # stop the spectrophotometer update precautionally
+        # TODO:should it be FAlse here??
+        self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
+        #self.check('Spectrophotometer',True)    
         self.timer.start()
     
     def sample(self): #parString pT, mT, wT, dA
@@ -472,7 +473,6 @@ class Panel(QtGui.QWidget):
             print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
-        #self.check('LEDs', True)
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
@@ -564,14 +564,13 @@ class Panel(QtGui.QWidget):
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
-        self.sliders[2].setValue(self.instrument.LED3) 
+        self.sliders[2].setValue(self.instrument.LED3)
+
         self.btn_spectro.setChecked(True)
         self.btn_leds.setChecked(True)
-        #self.check('Spectrophotometer', True)
-        #self.check('LEDs', True)
         self.timer.start(500)
         self.btn_deploy.setChecked(True)
-        #self.check('Deploy', True)
+
         self.on_deploy_clicked(True)
         #self.timerSave.start()
         return
@@ -579,6 +578,7 @@ class Panel(QtGui.QWidget):
     def _autostop(self):
         print 'Inside _autostop...'
         time.sleep(10)
+        #TODO: why do we need it 
         self.sliders[0].setValue(0)
         self.sliders[1].setValue(0)
         self.sliders[2].setValue(0) 
@@ -586,10 +586,6 @@ class Panel(QtGui.QWidget):
         self.btn_spectro.setChecked(False)
         self.btn_leds.setChecked(False)
         self.btn_deploy.setChecked(False)
-
-        #self.check('Spectrophotometer', False)
-        #self.check('LEDs', False)
-        #self.check('Deploy', False)
 
         self.on_deploy_clicked(False)
         self.timer.stop()
