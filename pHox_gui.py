@@ -107,15 +107,6 @@ class Panel(QtGui.QWidget):
         self.chkBoxList = []
         self.sliders = []
         self.sldLabels = []
-        
-        #self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs',
-        #                     'Inlet valve','Stirrer',
-        #                     'Dye pump','Water pump','Deploy',
-        #                     'Single measurement','Set sampling interval']
-
-        #self.ButtonsNames_ch = ['Spectrophotometer','LEDs','Inlet valve',
-        #                        'Stirrer','Water pump','Deploy']
-        #self.ButtonsNames_unch = ['Set sampling interval','Single measurement','Dye pump','Take dark']
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
@@ -192,19 +183,34 @@ class Panel(QtGui.QWidget):
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
 
-
         # Define connections Button clicked - Result 
         self.btn_spectro.clicked.connect(self.spectro_clicked)
-        self.btn_leds.clicked.connect(self.set_LEDs(self.btn_leds.isChecked()))
-        self.btn_valve.clicked.connect(self.instrument.set_TV(self.btn_valve.isChecked()))
-        self.btn_stirr.clicked.connect(self.instrument.set_line(self.stirrer_slot, self.btn_stirr.isChecked()))
-        self.btn_wpump.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_wpump.isChecked()))
-        self.btn_deploy.clicked.connect(self.on_deploy_clicked(self.btn_deploy.isChecked()))
+        self.btn_leds.clicked.connect(self.btn_leds_checked)
+        self.btn_valve.clicked.connect(self.btn_valve_clicked)
+        self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
+        self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
+        self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
+        
         # Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
         self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
-        self.btn_dye_pmp.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_dye_pmp.isChecked()))
+        self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
+
+    def btn_stirr_clicked(self):
+        self.instrument.set_line(self.stirrer_slot,
+        self.btn_stirr.isChecked())
+
+    def btn_wpump_clicked(self):
+        self.instrument.set_line(self.wpump_slot,
+        self.btn_wpump.isChecked())
+
+    def btn_deploy_clicked(self):
+        self.on_deploy_clicked(self.btn_deploy.isChecked())
+
+    def btn_dye_pmp_clicked(self):
+        self.instrument.set_line(self.wpump_slot,
+        self.btn_dye_pmp.isChecked())
 
     """def BtnPressed(self, sender):
         btn = sender.objectName()
@@ -232,12 +238,15 @@ class Panel(QtGui.QWidget):
         elif btn == 'Set sampling interval':
             self.on_samT_clicked()"""
 
+    def btn_valve_clicked():
+        self.instrument.set_TV(self.btn_valve.isChecked())
 
     def spectro_clicked(self):
         if self.btn_spectro.isChecked():
             self.timer.start(500)
         else:
             self.timer.stop()
+
     def sld0_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
         self.btn_leds.setChecked(True)
@@ -266,11 +275,15 @@ class Panel(QtGui.QWidget):
             str(self.instrument.specAvScans)))
 
     def set_LEDs(self, state):
-        print ('state in set leds',state)
         for i in range(0,3):
+            # state is 1 or 0 
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
         print 'Leds ',state
-        
+
+    def btn_leds_checked(self):
+        state = self.btn_leds.isChecked()
+        self.set_LEDs(state)
+
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')

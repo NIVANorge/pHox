@@ -275,7 +275,6 @@ class Cbon(object):
         self.LED2 = default["LED2"]
         self.LED3 = default["LED3"]
 
-
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
         pixels = np.arange(self.spectrometer.pixels)
@@ -397,7 +396,8 @@ class Cbon(object):
             self.set_line(line, False)
             time.sleep(OFF)
         pass
-
+    
+    
     def set_TV (self, status):
         chEn = self.GPIO_TV[0]
         ch1 =  self.GPIO_TV[1]
