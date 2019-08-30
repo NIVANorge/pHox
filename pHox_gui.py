@@ -266,6 +266,7 @@ class Panel(QtGui.QWidget):
             str(self.instrument.specAvScans)))
 
     def set_LEDs(self, state):
+        print ('state in set leds',state)
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
         print 'Leds ',state
