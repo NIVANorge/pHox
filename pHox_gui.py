@@ -147,12 +147,12 @@ class Panel(QtGui.QWidget):
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
-            self.tab1.layout.addWidget(btn, idx, 0) #row,col
+            self.tab1.layout.addWidget(btn, idx, 1) #row,col
             #grid.addWidget(btn, idx, 0)
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
-            self.tab1.layout.addWidget(btn, idx, 1)
+            self.tab1.layout.addWidget(btn, idx, 2)
             #grid.addWidget(btn, idx, 1)
 
         sldRow = 6
@@ -163,8 +163,8 @@ class Panel(QtGui.QWidget):
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
             #grid.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
             #grid.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
-            self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
-            self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
+            self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
+            self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
 
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
@@ -179,11 +179,11 @@ class Panel(QtGui.QWidget):
         #grid.addWidget(self.textBox, sldRow+4,0)
         #grid.addWidget(self.textBoxSens, sldRow+4,1)
 
-        self.tab1.layout.addWidget(self.textBox, sldRow+4,0)
-        self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,1)
+        self.tab1.layout.addWidget(self.textBox, sldRow+4,1)
+        self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,2)
 
-        vboxPlot = QtGui.QVBoxLayout()
-        vboxComm = QtGui.QVBoxLayout()
+        #vboxPlot = QtGui.QVBoxLayout()
+        #vboxComm = QtGui.QVBoxLayout()
 
         #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
@@ -193,14 +193,16 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
 
-        vboxPlot.addWidget(self.plotwidget1)
-        vboxPlot.addWidget(self.plotwidget2)
+        self.tab1.layout.addWidget(self.plotwidget1,0,0,3,3)
+        self.tab1.layout.addWidget(self.plotwidget2,0,1,3,3)
+        # vboxPlot.addWidget(self.plotwidget1)
+        # vboxPlot.addWidget(self.plotwidget2)
 
         #hboxPanel = QtGui.QHBoxLayout()
         #hboxPanel.addLayout(vboxPlot)
         #hboxPanel.addLayout(vboxComm)
         #self.setLayout(hboxPanel)
-        
+
         self.tab1.setLayout(self.tab1.layout)
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
