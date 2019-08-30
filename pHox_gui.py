@@ -96,7 +96,7 @@ class Panel(QtGui.QWidget):
         #self.timerFlowCell.timeout.connect(self.update_Tntc)
 
         #set grid layout and size columns
-        self.layout = QVBoxLayout(self)
+        self.layout = QtGui.QVBoxLayout(self)
         
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
