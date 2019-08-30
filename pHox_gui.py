@@ -190,7 +190,7 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
-        
+
         # Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
@@ -238,7 +238,7 @@ class Panel(QtGui.QWidget):
         elif btn == 'Set sampling interval':
             self.on_samT_clicked()"""
 
-    def btn_valve_clicked():
+    def btn_valve_clicked(self):
         self.instrument.set_TV(self.btn_valve.isChecked())
 
     def spectro_clicked(self):
@@ -475,11 +475,11 @@ class Panel(QtGui.QWidget):
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
         if self.instrument.pT > 0:
-            self.instrument.set_line(self.wpump_slot,True) # start the instrument pump
-            self.instrument.set_line(self.stirrer_slot,True) # start the stirrer
+            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
+            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
             self.instrument.wait(self.instrument.pT) # wait for pumping time
-            self.instrument.set_line(self.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.wpump_slot,False) # turn off the stirrer
+            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
+            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
         self.instrument.set_TV(True)
@@ -491,18 +491,18 @@ class Panel(QtGui.QWidget):
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
-        for pinj in range(dA):
+        for pinj in range(self.instrument.dA):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             print 'Injection %d:, shots %d' %(pinj, self.instrument.nshots)
             # turn on the stirrer
-            self.instrument.set_line(self.stirrer_slot, True)
+            self.instrument.set_line(self.instrument.stirrer_slot, True)
             # inject dye 
-            self.instrument.cycle_line(self.dyepump_slot, shots)
+            self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             # wait for mixing time
             self.instrument.wait(self.instrument.mT)
             # turn off the stirrer
-            self.instrument.set_line(self.stirrer_slot, False)
+            self.instrument.set_line(self.instrument.stirrer_slot, False)
             # wait before to start the measurment
             self.instrument.wait(self.instrument.wT)
             # measure spectrum
