@@ -313,10 +313,11 @@ class Panel(QtGui.QWidget):
         if ok:
             self.instrument.specAvScans = scans
 
-    def on_samT_clicked(self):  
-        time, ok = QtGui.QInputDialog.getInt(None, 'Set sampling interval','min',self.instrument.samplingInterval,2,60,1)
+    def on_samT_clicked(self): 
+        time, ok = QtGui.QInputDialog.getInt(None, title = 'Set sampling interval',label = 'Interval in mseconds',
+                    self.instrument.samplingInterval,200,6000,60)
         if ok:
-            self.instrument.samplingInterval = time*60
+            self.instrument.samplingInterval = time
 
     def on_autoAdjust_clicked(self):
         DC1,DC2, sptIt, Ok  = self.instrument.auto_adjust()

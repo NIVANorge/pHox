@@ -41,10 +41,6 @@ adcdac = ADCDACPi()
 #DYEP = 2 # dye pump slot
 #STIP = 3 # stirrer slot
 
-# sampling intervals (seconds)
-# TODO: to config file
-pH_SAMP_INT = 600
-
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -162,7 +158,7 @@ class Cbon(object):
         self.nlCoeff = [1.0229, -9E-6, 6E-10]
         self.specIntTime = 500 #spectrometer integration time (ms)
         self.specAvScans = 6
-        self.samplingInterval = pH_SAMP_INT
+
         self.salinity = 33.5
         self.pumping = 1
         self.tsBegin = float
@@ -219,8 +215,7 @@ class Cbon(object):
                 v = int(w[2])
                 self.pumping = v
         sock.close()
-            
-        
+
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
@@ -245,6 +240,8 @@ class Cbon(object):
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
+
+        self.samplingInterval = int(default["SAMPLING_INTERVAL"]
 
         self._autotime  = None
         self._autolen   = None

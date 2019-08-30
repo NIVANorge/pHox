@@ -26,7 +26,9 @@
         "AUTOSTART" : "True",
         "AUTOSTART_MODE":"pump",
         "DURATION" : -1,
-        "AUTODARK" : 30},
+        "AUTODARK" : 30,
+        "SAMPLING_INTERVAL" : 600
+    },
 
     "franatech":{
 
