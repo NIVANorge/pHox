@@ -238,7 +238,7 @@ class Cbon(object):
 
 
 
-        self.pT = int(default["pumpT"])
+        self.pT = int(default["pumpTime"])
         self.mT = int(default["mixTime"])
         self.wT = int(default["waitTime"])
         self.ncycles= int(default["ncycles"]) # Former dA
