@@ -1,5 +1,4 @@
 #! /usr/bin/python
-
 # Check not used functions
 from pHox import *
 import json
@@ -212,32 +211,6 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.wpump_slot,
         self.btn_dye_pmp.isChecked())
 
-    """def BtnPressed(self, sender):
-        btn = sender.objectName()
-        if btn == 'Spectrophotometer':
-           if sender.isChecked():
-              self.timer.start(500)
-           else:
-              self.timer.stop()
-        elif btn == 'Take dark':
-           self.on_dark_clicked()
-        elif btn == 'LEDs':
-           self.set_LEDs(sender.isChecked())
-        elif btn == 'Stirrer':
-           self.instrument.set_line(self.stirrer_slot, sender.isChecked())
-        elif btn == 'Dye pump': 
-           self.instrument.cycle_line(self.dyepump_slot, 2)
-        elif btn == 'Water pump':
-           self.instrument.set_line(self.wpump_slot, sender.isChecked())
-        elif btn == 'Deploy':
-           self.on_deploy_clicked(sender.isChecked())
-        elif btn == 'Single measurement':
-           self.on_bottle_clicked() 
-        elif btn == 'Inlet valve':
-           self.instrument.set_TV(sender.isChecked())
-        elif btn == 'Set sampling interval':
-            self.on_samT_clicked()"""
-
     def btn_valve_clicked(self):
         self.instrument.set_TV(self.btn_valve.isChecked())
 
@@ -247,15 +220,18 @@ class Panel(QtGui.QWidget):
         else:
             self.timer.stop()
 
-    def sld0_change(self,DC): #get the value from the connect method
+    def sld0_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
         self.btn_leds.setChecked(True)
 
-    def sld1_change(self,DC): #get the value from the connect method
+    def sld1_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
         self.btn_leds.setChecked(True)
 
-    def sld2_change(self,DC): #get the value from the connect method
+    def sld2_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
         self.btn_leds.setChecked(True)
 
