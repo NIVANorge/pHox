@@ -201,6 +201,7 @@ class Panel(QtGui.QWidget):
         #hboxPanel.addLayout(vboxComm)
         #self.setLayout(hboxPanel)
         
+        self.tab1.setLayout(self.tab1.layout)
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         #self.setGeometry(20, 150, 1200, 650)
