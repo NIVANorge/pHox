@@ -208,12 +208,9 @@ class Panel(QtGui.QWidget):
         elif btn == 'Single':
            self.on_bottle_clicked()
            sender.setChecked(False)
+        elif btn == 'Inlet valve':
+           self.instrument.set_TV(sender.isChecked())
 
-        '''if btn == 'Inlet valve':
-           self.instrument.set_TV(sender.isChecked())'''
-
-
-    
     def chkBox_caption(self, chkBoxName, appended):
         self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
 
