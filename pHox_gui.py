@@ -633,4 +633,5 @@ if __name__ == '__main__':
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
     print ('ended')
+    app.quit()
     #myPanel.timerSave.stop()
