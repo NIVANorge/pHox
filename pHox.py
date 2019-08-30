@@ -21,7 +21,6 @@ from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
-
 import random
 
 
@@ -34,13 +33,6 @@ UDP_IP   = '192.168.0.2'
 adc = ADCDifferentialPi(0x68, 0x69, 14)
 adc.set_pga(1)
 adcdac = ADCDACPi()
-
-   
-# ------- SSR settings
-#WPUM = 1 # water pump slot
-#DYEP = 2 # dye pump slot
-#STIP = 3 # stirrer slot
-
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -172,11 +164,6 @@ class Cbon(object):
         self.spectrometer.set_integration_time(self.specIntTime)
         self.spectrometer.set_scans_average(1)
 
-        #TODO: em heritage,to fix
-        # HEll line 
-        # self.BOTTLE='00_5_3_1111'
-        # self.UNDERWAY='00_5_3_1111'
-
         self.load_config()
 
         #setup PWM and SSR lines
@@ -268,12 +255,8 @@ class Cbon(object):
         self.wpump_slot = default["WPUMP_SLOT"]
         self.dyepump_slot = default["DYEPUMP_SLOT"]
         self.stirrer_slot = default["STIRR_SLOT"]
-        self.extra_slot = default["EXTRA_SLOT"] #empty for now
-  
-        #WPUM = 1 # water pump slot
-        #DYEP = 2 # dye pump slot
-        #STIP = 3 # stirrer slot
 
+        self.extra_slot = default["EXTRA_SLOT"] #empty for now
         self.GPIO_TV = default['GPIO_TV']
 
         # NTC Temperature calibration coefficients
@@ -306,7 +289,7 @@ class Cbon(object):
     def find_nearest(self, items, value):
         idx = (abs(items-value)).argmin()
         return idx
-                
+
     def get_spectral_data(self):
         return self.spectrometer.get_corrected_spectra()
 

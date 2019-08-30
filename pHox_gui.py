@@ -113,8 +113,8 @@ class Panel(QtGui.QWidget):
         #                     'Dye pump','Water pump','Deploy',
         #                     'Single measurement','Set sampling interval']
 
-        self.ButtonsNames_ch = ['Spectrophotometer','LEDs','Inlet valve',
-                                'Stirrer','Water pump','Deploy']
+        #self.ButtonsNames_ch = ['Spectrophotometer','LEDs','Inlet valve',
+        #                        'Stirrer','Water pump','Deploy']
         self.ButtonsNames_unch = ['Set sampling interval','Single measurement','Dye pump','Take dark']
 
         def create_button(name,check):
@@ -124,8 +124,18 @@ class Panel(QtGui.QWidget):
                 Btn.setCheckable(True)
             return Btn
 
-        for idx,name in enumerate(self.ButtonsNames_ch):
-            btn = create_button(name,True)
+        # All checkabple buttons
+        self.btn_spectro = create_button('Spectrophotometer',True)
+        self.btn_leds = create_button('LEDs',True)
+        self.btn_valve = create_button('Inlet valve',True)
+        self.btn_stirr = create_button('Stirrer',True)
+        self.btn_wpump = create_button('Water pump',True)
+        self.btn_deploy = create_button('Deploy',True)
+
+        self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
+                            self.btn_stirr, self.btn_wpump, self.btn_deploy]
+
+        for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
             grid.addWidget(btn, idx, 0)
 
@@ -200,26 +210,26 @@ class Panel(QtGui.QWidget):
               self.timer.stop()
         elif btn == 'Take dark':
            self.on_dark_clicked() #should be Non checkable 
-           sender.setChecked(False)
+           #sender.setChecked(False)
         elif btn == 'LEDs':
            self.set_LEDs(sender.isChecked())
         elif btn == 'Stirrer':
            self.instrument.set_line(self.stirrer_slot, sender.isChecked())
         elif btn == 'Dye pump': 
            self.instrument.cycle_line(self.dyepump_slot, 2)
-           sender.setChecked(False) #should be Non checkable 
+           #sender.setChecked(False) #should be Non checkable 
         elif btn == 'Water pump':
            self.instrument.set_line(self.wpump_slot, sender.isChecked())
         elif btn == 'Deploy':
            self.on_deploy_clicked(sender.isChecked())
         elif btn == 'Single measurement':
            self.on_bottle_clicked() #should be Non checkable 
-           sender.setChecked(False) 
+           #sender.setChecked(False) 
         elif btn == 'Inlet valve':
            self.instrument.set_TV(sender.isChecked())
         elif btn == 'Set sampling interval':
             self.on_samT_clicked() #should be Non checkable 
-            sender.setChecked(False)
+            #sender.setChecked(False)
 
 
 
@@ -232,20 +242,24 @@ class Panel(QtGui.QWidget):
    
     def sld0_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
-        self.check('LEDs',True)
+        self.btn_leds.setChecked(True)
+        #self.check('LEDs',True)
         
     def sld1_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
-        self.check('LEDs',True)
+        self.btn_leds.setChecked(True)
+        #self.check('LEDs',True)
         
     def sld2_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
-        self.check('LEDs',True)
+        self.btn_leds.setChecked(True)
+        #self.check('LEDs',True)
 
     def on_dark_clicked(self):
         print 'Taking dark level...'
         self.set_LEDs(False)
-        self.check('LEDs',False)
+        self.btn_leds.setChecked(False)
+        #self.check('LEDs',False)
        
         print 'Measuring...'
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
@@ -377,7 +391,8 @@ class Panel(QtGui.QWidget):
                 
     def on_bottle_clicked(self):
         # Button "single" is clicked
-        self.check('Spectrophotometer',False)
+        self.btn_spectro.setChecked(False)
+        #self.check('Spectrophotometer',False)
         self.timer.stop()
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
@@ -394,15 +409,17 @@ class Panel(QtGui.QWidget):
             # call sample func, where second parameter is a hell line 
             self.sample()
             print 'Done'
-            self.check('Single',False)
+            #self.check('Single',False)
             self.instrument.spectrometer.set_scans_average(1)
         self.timer.start()
-        self.check('Spectrophotometer',True)
+        self.btn_spectro.setChecked(True)
+        #self.check('Spectrophotometer',True)
 
     def underway(self):
         print('Inside underway...')
         # stop the spectrophotometer update precautionally
-        self.check('Spectrophotometer',False)    
+        self.btn_spectro.setChecked(False)
+        #self.check('Spectrophotometer',False)    
         self.timer.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
         self.instrument.adjust_LED(1,self.sliders[1].value())
@@ -426,7 +443,8 @@ class Panel(QtGui.QWidget):
         nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
         oldText = self.textBox.toPlainText()
         self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
-        self.check('Spectrophotometer',True)    # stop the spectrophotometer update precautionally
+        self.btn_spectro.setChecked(True)
+        #self.check('Spectrophotometer',True)    # stop the spectrophotometer update precautionally
         self.timer.start()
     
     def sample(self): #parString pT, mT, wT, dA
@@ -435,12 +453,13 @@ class Panel(QtGui.QWidget):
         if self.instrument._autodark:
             now = datetime.now()
             if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
-				print 'New dark required'
-				self.on_dark_clicked()
+                print 'New dark required'
+                self.on_dark_clicked()
         else:
             print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
-        self.check('LEDs', True)
+        self.btn_leds.setChecked(True)
+        #self.check('LEDs', True)
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
@@ -533,10 +552,13 @@ class Panel(QtGui.QWidget):
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
         self.sliders[2].setValue(self.instrument.LED3) 
-        self.check('Spectrophotometer', True)
-        self.check('LEDs', True)
-        self.timer.start(500)        
-        self.check('Deploy', True)
+        self.btn_spectro.setChecked(True)
+        self.btn_leds.setChecked(True)
+        #self.check('Spectrophotometer', True)
+        #self.check('LEDs', True)
+        self.timer.start(500)
+        self.btn_deploy.setChecked(True)
+        #self.check('Deploy', True)
         self.on_deploy_clicked(True)
         #self.timerSave.start()
         return
@@ -547,9 +569,15 @@ class Panel(QtGui.QWidget):
         self.sliders[0].setValue(0)
         self.sliders[1].setValue(0)
         self.sliders[2].setValue(0) 
-        self.check('Spectrophotometer', False)
-        self.check('LEDs', False)
-        self.check('Deploy', False)
+
+        self.btn_spectro.setChecked(False)
+        self.btn_leds.setChecked(False)
+        self.btn_deploy.setChecked(False)
+
+        #self.check('Spectrophotometer', False)
+        #self.check('LEDs', False)
+        #self.check('Deploy', False)
+
         self.on_deploy_clicked(False)
         self.timer.stop()
         self.timerUnderway.stop()
