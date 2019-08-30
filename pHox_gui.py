@@ -124,12 +124,12 @@ class Panel(QtGui.QWidget):
                 Btn.setCheckable(True)
             return Btn
 
-        for idx,name in enumerate(self.ButtonsNames)_ch:
+        for idx,name in enumerate(self.ButtonsNames_ch):
             btn = create_button(name,True)
             self.group.addButton(btn, idx)
             grid.addWidget(btn, idx, 0)
 
-        for idx,name in enumerate(self.ButtonsNames_ucnh):
+        for idx,name in enumerate(self.ButtonsNames_unch):
             btn = create_button(name,False)
             self.group.addButton(BtnBox, idx)
             grid.addWidget(BtnBox, idx, 1)
