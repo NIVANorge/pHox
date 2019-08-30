@@ -467,7 +467,7 @@ class Panel(QtGui.QWidget):
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
-        for pinj in range(self.instrument.dA):
+        for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             print 'Injection %d:, shots %d' %(pinj, self.instrument.nshots)
@@ -626,7 +626,6 @@ class Panel(QtGui.QWidget):
             pass
         return
         
-    
     def autorun(self):
         print 'Inside underway...'
         time.sleep(10)

@@ -27,7 +27,12 @@
         "AUTOSTART_MODE":"pump",
         "DURATION" : -1,
         "AUTODARK" : 30,
-        "SAMPLING_INTERVAL" : 600
+        "SAMPLING_INTERVAL" : 600,
+        "pumpTime" : 0 ,
+        "mixTime" : 5,
+        "waitTime" : 3,
+        "dA" : 4,
+        "dye_nshots" : 1
     },
 
     "franatech":{

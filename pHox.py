@@ -137,10 +137,10 @@ class Cbon(object):
         # For signaling to threads
         self._exit = False 
         
-        #initialize PWM lines      
+        #initialize PWM lines
         self.rpi = pigpio.pi()
          
-        # load instrument general configuration   
+        # load instrument general configuration
       
         self.evalPar = []
         self.ledDC = [0]*4 
@@ -222,7 +222,13 @@ class Cbon(object):
 
         #TODO: should be replaced by value from config?
         self.AUTODARK =  int(default['AUTODARK'])
+        
         self._autodark  = None
+        self._autotime  = None
+        self._autolen   = None
+        #self._autostop  = None #Not used
+        #self._deployed  = False #Not used
+        # self.last_dark  = None #Not used
 
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
@@ -230,18 +236,13 @@ class Cbon(object):
 
         self.samplingInterval = int(default["SAMPLING_INTERVAL"])
 
-        self._autotime  = None
-        self._autolen   = None
-        self._autostop  = None
 
-        self._deployed  = False
-        self.last_dark  = None
 
-        self.pT = 0 
-        self.mT = 5
-        self.wT = 3
-        self.dA = 4
-        self.nshots = 1
+        self.pT = int(default["pumpT"])
+        self.mT = int(default["mixTime"])
+        self.wT = int(default["waitTime"])
+        self.ncycles= int(default["ncycles"]) # Former dA
+        self.nshots = int(default["dye_nshots"])
         
         self.molAbsRats = default['MOL_ABS_RATIOS']
         print ('Molar absorption ratios: ',self.molAbsRats)
