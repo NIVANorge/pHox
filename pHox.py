@@ -241,7 +241,7 @@ class Cbon(object):
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
 
-        self.samplingInterval = int(default["SAMPLING_INTERVAL"]
+        self.samplingInterval = int(default["SAMPLING_INTERVAL"])
 
         self._autotime  = None
         self._autolen   = None

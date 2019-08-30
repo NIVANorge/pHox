@@ -314,8 +314,8 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = scans
 
     def on_samT_clicked(self): 
-        time, ok = QtGui.QInputDialog.getInt(None, title = 'Set sampling interval',
-                    label = 'Interval in mseconds',value = self.instrument.samplingInterval,
+        time, ok = QtGui.QInputDialog.getInt(None, 'Set sampling interval',
+                    'Interval in mseconds',value = self.instrument.samplingInterval,
                     min = 200,max = 6000,step = 60)
         if ok:
             self.instrument.samplingInterval = time
