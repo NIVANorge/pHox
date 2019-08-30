@@ -165,34 +165,6 @@ class Panel(QtGui.QWidget):
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
 
-        #TODO: change connections functions 
-        #self.group.buttonClicked.connect(self.BtnPressed)
-
-        self.btn_spectro.clicked.connect(self.spectro_clicked)
-        self.btn_leds.clicked.connect(self.set_LEDs(self.btn_leds.isChecked))
-        self.btn_valve.clicked.connect(self.instrument.set_TV(self.btn_valve.isChecked()))
-        self.btn_stirr.clicked.connect(self.instrument.set_line(self.stirrer_slot, self.btn_stirr.isChecked()))
-        self.btn_wpump.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_wpump.isChecked()))
-        self.btn_deploy.clicked.connect(self.on_deploy_clicked(self.btn_deploy.isChecked()))
-        # Unchecable buttons
-        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
-        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
-        self.btn_dye_pmp.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_dye_pmp.isChecked()))
-        #self.sliders[3].valueChanged[int].connect(self.sld3_change)
-
-        #self.selFolderBtn = QtGui.QPushButton('Select data folder')
-        #grid.addWidget(self.selFolderBtn,sldRow+4,0)
-        #self.selFolderBtn.released.connect(self.on_selFolderBtn_released)
-                                         
-        #self.combo = QtGui.QComboBox(self)
-        #comboItems=['Set integration time','Set averaging scans','Set sampling interval',
-                    #'Auto adjust','Set pCO2 data saving rate','BOTTLE setup', 'UNDERWAY setup']
-        #for i in range(len(comboItems)):
-            #self.combo.addItem(comboItems[i])
-        #self.combo.activated[str].connect(self.on_combo_clicked)
-        #grid.addWidget(self.combo, sldRow+4,1)
-
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
         grid.addWidget(self.textBox, sldRow+4,0)
@@ -219,6 +191,20 @@ class Panel(QtGui.QWidget):
 
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
+
+
+        # Define connections Button clicked - Result 
+        self.btn_spectro.clicked.connect(self.spectro_clicked)
+        self.btn_leds.clicked.connect(self.set_LEDs(self.btn_leds.isChecked()))
+        self.btn_valve.clicked.connect(self.instrument.set_TV(self.btn_valve.isChecked()))
+        self.btn_stirr.clicked.connect(self.instrument.set_line(self.stirrer_slot, self.btn_stirr.isChecked()))
+        self.btn_wpump.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_wpump.isChecked()))
+        self.btn_deploy.clicked.connect(self.on_deploy_clicked(self.btn_deploy.isChecked()))
+        # Unchecable buttons
+        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
+        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
+        self.btn_dye_pmp.clicked.connect(self.instrument.set_line(self.wpump_slot, self.btn_dye_pmp.isChecked()))
 
     """def BtnPressed(self, sender):
         btn = sender.objectName()
