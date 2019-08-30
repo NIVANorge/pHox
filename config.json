@@ -31,7 +31,7 @@
         "pumpTime" : 0 ,
         "mixTime" : 5,
         "waitTime" : 3,
-        "dA" : 4,
+        "ncycles" : 4,
         "dye_nshots" : 1
     },
 
