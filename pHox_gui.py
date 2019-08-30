@@ -193,8 +193,8 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
 
-        self.tab1.layout.addWidget(self.plotwidget1,0,0,3,3)
-        self.tab1.layout.addWidget(self.plotwidget2,0,1,3,3)
+        self.tab1.layout.addWidget(self.plotwidget1,0,0)
+        self.tab1.layout.addWidget(self.plotwidget2,1,0)
         # vboxPlot.addWidget(self.plotwidget1)
         # vboxPlot.addWidget(self.plotwidget2)
 
