@@ -115,7 +115,7 @@ class Panel(QtGui.QWidget):
 
         #self.ButtonsNames_ch = ['Spectrophotometer','LEDs','Inlet valve',
         #                        'Stirrer','Water pump','Deploy']
-        self.ButtonsNames_unch = ['Set sampling interval','Single measurement','Dye pump','Take dark']
+        #self.ButtonsNames_unch = ['Set sampling interval','Single measurement','Dye pump','Take dark']
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
@@ -131,9 +131,18 @@ class Panel(QtGui.QWidget):
         self.btn_stirr = create_button('Stirrer',True)
         self.btn_wpump = create_button('Water pump',True)
         self.btn_deploy = create_button('Deploy',True)
+        # Unchecable buttons
+        self.btn_t_dark = create_button('Take dark',False)
+        self.btn_sampl_int = create_button( 'Set sampling interval',False)
+        self.btn_sigle_meas = create_button('Single measurement',False)
+        self.btn_dye_pmp = create_button('Dye pump',False)
+
 
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump, self.btn_deploy]
+
+        self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
+                             self.btn_sigle_meas, self.btn_dye_pmp]
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
@@ -143,7 +152,9 @@ class Panel(QtGui.QWidget):
             btn = create_button(name,False)
             self.group.addButton(btn, idx)
             grid.addWidget(btn, idx, 1)
+        
 
+        #TODO: change connections functions 
         self.group.buttonClicked.connect(self.BtnPressed)
         
         sldRow = 6
@@ -237,8 +248,8 @@ class Panel(QtGui.QWidget):
     def chkBox_caption(self, chkBoxName, appended):
         self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
 
-    def check(self, chkBoxName, newChk):
-        self.group.button(self.ButtonsNames.index(chkBoxName)).setChecked(newChk)
+    #def check(self, chkBoxName, newChk):
+    #    self.group.button(self.ButtonsNames.index(chkBoxName)).setChecked(newChk)
    
     def sld0_change(self,DC): #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
@@ -266,7 +277,9 @@ class Panel(QtGui.QWidget):
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
         self.instrument.spectrometer.set_scans_average(1)
         print 'Done'
-        self.chkBox_caption('Take dark','(%s ms, n=%s)' % (str(self.instrument.specIntTime), str(self.instrument.specAvScans)))
+
+        self.btn_t_dark.setText('Take dark ({} ms, n= {}})'.format(str(self.instrument.specIntTime), str(self.instrument.specAvScans)))
+        #self.chkBox_caption('Take dark','(%s ms, n=%s)' % (str(self.instrument.specIntTime), str(self.instrument.specAvScans)))
         
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -329,7 +342,8 @@ class Panel(QtGui.QWidget):
         if ok:
             self.instrument.specIntTime = intTime
             self.instrument.spectrometer.set_integration_time(intTime)
-            self.chkBox_caption('Spectrophotometer','%d ms' %intTime)
+            self.btn_spectro.setText('Spectrophotometer {} ms'.format(str(intTime)))
+            #self.chkBox_caption('Spectrophotometer','%d ms' %intTime)
         
     def on_scans_clicked(self): 
         scans, ok = QtGui.QInputDialog.getInt(None, 'Set spectrophotometer averaging scans','',self.instrument.specAvScans,1,20,1)
