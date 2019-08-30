@@ -628,6 +628,7 @@ if __name__ == '__main__':
     print 'ending'
     myPanel.instrument._exit = True
     myPanel.timer.stop()
+    print 'timer is stopped'
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
     print ('ended')
