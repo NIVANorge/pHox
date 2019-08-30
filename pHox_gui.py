@@ -244,8 +244,8 @@ class Panel(QtGui.QWidget):
 
 
 
-    def chkBox_caption(self, chkBoxName, appended):
-        self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
+    #def chkBox_caption(self, chkBoxName, appended):
+    #    self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
 
     #def check(self, chkBoxName, newChk):
     #    self.group.button(self.ButtonsNames.index(chkBoxName)).setChecked(newChk)
