@@ -108,9 +108,12 @@ class Panel(QtGui.QWidget):
         self.sliders = []
         self.sldLabels = []
         
-        self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs','Inlet valve','Stirrer','Dye pump','Water pump','Deploy','Single']
+        self.ButtonsNames = ['Spectrophotometer','Take dark','LEDs',
+                             'Inlet valve','Stirrer',
+                             'Dye pump','Water pump','Deploy',
+                             'Single measurement','Set sampling interval']
         sldNames = ['Blue','Orange','Red','LED4']
-	row = 0
+        row = 0
         for idx,name in enumerate(self.ButtonsNames):
             
             BtnBox = QtGui.QPushButton(name)
@@ -120,12 +123,11 @@ class Panel(QtGui.QWidget):
             self.group.addButton(BtnBox, idx)
             if idx < 5:
                 col = 0
-	    elif idx == 5:
+            elif idx == 5:
                 row = 0
                 col = 1
             elif idx > 5: 
                 col = 1
-            print (idx,name)
             grid.addWidget(BtnBox, row, col)
             row += 1  
         self.group.buttonClicked.connect(self.BtnPressed)
@@ -192,24 +194,26 @@ class Panel(QtGui.QWidget):
            else:
               self.timer.stop()
         elif btn == 'Take dark':
-           self.on_dark_clicked()
+           self.on_dark_clicked() #should be Non checkable 
            sender.setChecked(False)
         elif btn == 'LEDs':
            self.set_LEDs(sender.isChecked())
         elif btn == 'Stirrer':
            self.instrument.set_line(self.stirrer_slot, sender.isChecked())
-        elif btn == 'Dye pump':
+        elif btn == 'Dye pump': 
            self.instrument.cycle_line(self.dyepump_slot, 2)
-           sender.setChecked(False)
+           sender.setChecked(False) #should be Non checkable 
         elif btn == 'Water pump':
            self.instrument.set_line(self.wpump_slot, sender.isChecked())
         elif btn == 'Deploy':
            self.on_deploy_clicked(sender.isChecked())
-        elif btn == 'Single':
-           self.on_bottle_clicked()
-           sender.setChecked(False)
+        elif btn == 'Single measurement':
+           self.on_bottle_clicked() #should be Non checkable 
+           sender.setChecked(False) 
         elif btn == 'Inlet valve':
            self.instrument.set_TV(sender.isChecked())
+        elif btn == 'Set sampling interval':
+            self.on_samT_clicked()
 
     def chkBox_caption(self, chkBoxName, appended):
         self.group.button(self.ButtonsNames.index(chkBoxName)).setText(chkBoxName+'   '+appended)
@@ -626,4 +630,5 @@ if __name__ == '__main__':
     myPanel.timer.stop()
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
+    print ('ended')
     #myPanel.timerSave.stop()
