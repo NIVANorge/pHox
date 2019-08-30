@@ -96,9 +96,19 @@ class Panel(QtGui.QWidget):
         #self.timerFlowCell.timeout.connect(self.update_Tntc)
 
         #set grid layout and size columns
+        self.layout = QVBoxLayout(self)
+        
+        self.tabs = QtGui.QTabWidget()
+        self.tab1 = QtGui.QWidget()
+        self.tab2 = QtGui.QWidget()
+
+        # Add tabs
+        self.tabs.addTab(self.tab1,"Tab 1")
+        self.tabs.addTab(self.tab2,"Tab 2")
+
         grid = QtGui.QGridLayout()
-        grid.setColumnStretch(0,1)
-        grid.setColumnStretch(1,1)
+        #grid.setColumnStretch(0,1)
+        #grid.setColumnStretch(1,1)
 
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
@@ -157,28 +167,40 @@ class Panel(QtGui.QWidget):
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
-        grid.addWidget(self.textBox, sldRow+4,0)
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
+
+        grid.addWidget(self.textBox, sldRow+4,0)
         grid.addWidget(self.textBoxSens, sldRow+4,1)
 
-        hboxPanel = QtGui.QHBoxLayout()
+
+
         vboxPlot = QtGui.QVBoxLayout()
+
         vboxComm = QtGui.QVBoxLayout()
-        vboxComm.addLayout(grid)    
+        self.tab1.layout.addLayout(grid)
         
+        #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget1.setYRange(0,16000)
-        vboxPlot.addWidget(self.plotwidget1)
+
         self.plotwidget2 = pg.PlotWidget()
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
-        vboxPlot.addWidget(self.plotwidget2)
-        hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addLayout(vboxComm)
-        self.setLayout(hboxPanel)
 
+        vboxPlot.addWidget(self.plotwidget1)
+        vboxPlot.addWidget(self.plotwidget2)
+
+        self.tab1.layout = QtGui.QHBoxLayout() #QtGui.QGridLayout()
+        self.tab1.layout.addLayout(vboxPlot)
+        self.tab1.layout.addLayout(vboxComm)
+        #hboxPanel = QtGui.QHBoxLayout()
+        #hboxPanel.addLayout(vboxPlot)
+        #hboxPanel.addLayout(vboxComm)
+        #self.setLayout(hboxPanel)
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
 
