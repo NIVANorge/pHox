@@ -106,7 +106,8 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab1,"Tab 1")
         self.tabs.addTab(self.tab2,"Tab 2")
 
-        grid = QtGui.QGridLayout()
+        self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
+        #grid = QtGui.QGridLayout()
         #grid.setColumnStretch(0,1)
         #grid.setColumnStretch(1,1)
 
@@ -146,21 +147,25 @@ class Panel(QtGui.QWidget):
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
-            grid.addWidget(btn, idx, 0)
+            self.tab1.layout.addWidget(btn, idx, 0) #row,col
+            #grid.addWidget(btn, idx, 0)
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
-            grid.addWidget(btn, idx, 1)
+            self.tab1.layout.addWidget(btn, idx, 1)
+            #grid.addWidget(btn, idx, 1)
 
         sldRow = 6
         sldNames = ['Blue','Orange','Red','LED4']
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
-            grid.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
-            grid.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
-        
+            #grid.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
+            #grid.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
+            self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
+            self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
+
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
@@ -171,16 +176,15 @@ class Panel(QtGui.QWidget):
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
 
-        grid.addWidget(self.textBox, sldRow+4,0)
-        grid.addWidget(self.textBoxSens, sldRow+4,1)
+        #grid.addWidget(self.textBox, sldRow+4,0)
+        #grid.addWidget(self.textBoxSens, sldRow+4,1)
 
-
+        self.tab1.layout.addWidget(self.textBox, sldRow+4,0)
+        self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,1)
 
         vboxPlot = QtGui.QVBoxLayout()
-
         vboxComm = QtGui.QVBoxLayout()
-        self.tab1.layout.addLayout(grid)
-        
+
         #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget1.setYRange(0,16000)
@@ -192,13 +196,11 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
-        self.tab1.layout = QtGui.QHBoxLayout() #QtGui.QGridLayout()
-        self.tab1.layout.addLayout(vboxPlot)
-        self.tab1.layout.addLayout(vboxComm)
         #hboxPanel = QtGui.QHBoxLayout()
         #hboxPanel.addLayout(vboxPlot)
         #hboxPanel.addLayout(vboxComm)
         #self.setLayout(hboxPanel)
+        
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         #self.setGeometry(20, 150, 1200, 650)
