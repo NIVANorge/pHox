@@ -631,7 +631,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        print 'Inside autostop_pump...'        
+        print 'Inside autostop_pump...'
+        print ("self.instrument.pumping is ", self.instrument.pumping)
         if not self.instrument.pumping:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
