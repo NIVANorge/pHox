@@ -182,7 +182,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.textBox, sldRow+4,1)
         self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,2)
 
-        #vboxPlot = QtGui.QVBoxLayout()
+        vboxPlot = QtGui.QVBoxLayout()
         #vboxComm = QtGui.QVBoxLayout()
 
         #create plotwidgets
