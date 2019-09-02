@@ -85,6 +85,8 @@ class Panel(QtGui.QWidget):
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         self.logTextBox.appendPlainText('Text message in log')
+
+       self.tab2.layout.addWidget(self.logTextBox) 
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
 
