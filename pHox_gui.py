@@ -222,7 +222,7 @@ class Panel(QtGui.QWidget):
         # Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
     def btn_stirr_clicked(self):
@@ -237,8 +237,7 @@ class Panel(QtGui.QWidget):
         self.on_deploy_clicked(self.btn_deploy.isChecked())
 
     def btn_dye_pmp_clicked(self):
-        self.instrument.set_line(self.wpump_slot,
-        self.btn_dye_pmp.isChecked())
+        self.instrument.cycle_line(self.dye_pmp,2)
 
     def btn_valve_clicked(self):
         self.instrument.set_TV(self.btn_valve.isChecked())
@@ -410,7 +409,7 @@ class Panel(QtGui.QWidget):
            #self.timerFIA.stop()
            self.textBox.setText('Cbon is not deployed')
                 
-    def on_bottle_clicked(self):
+    def on_sigle_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
@@ -535,7 +534,7 @@ class Panel(QtGui.QWidget):
 
         flnm = open(self.folderPath + self.instrument.flnmStr +'.spt','w')
         txtData = ''
-        for i in range(2+dA):
+        for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
             txtData += '\n'
