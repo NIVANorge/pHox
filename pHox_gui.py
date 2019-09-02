@@ -83,7 +83,7 @@ class Panel(QtGui.QWidget):
         self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
 
         self.logTextBox = QtGui.QPlainTextEdit()
-        self.logTextBox.setReadOnly()
+        self.logTextBox.setReadOnly(True)
         self.logTextBox.appendPlainText('Text message in log')
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
