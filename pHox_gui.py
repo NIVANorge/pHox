@@ -86,7 +86,8 @@ class Panel(QtGui.QWidget):
         self.logTextBox.setReadOnly(True)
         self.logTextBox.appendPlainText('Text message in log')
 
-       self.tab2.layout.addWidget(self.logTextBox) 
+        self.tab2.layout.addWidget(self.logTextBox) 
+
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
 
@@ -163,6 +164,7 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget2)
 
         self.tab1.setLayout(self.tab1.layout)
+        self.tab2.setLayout(self.tab2.layout)
         tabs_layout.addWidget(self.tabs)
 
         # combine layout for plots and buttons
@@ -229,6 +231,7 @@ class Panel(QtGui.QWidget):
 
     def on_dark_clicked(self):
         print 'Taking dark level...'
+        self.logTextBox.appendPlainText('Taking dark level...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
 
@@ -539,7 +542,6 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
         self.timer.start(500)
         self.btn_deploy.setChecked(True)
-
         self.on_deploy_clicked(True)
         #self.timerSave.start()
         return
