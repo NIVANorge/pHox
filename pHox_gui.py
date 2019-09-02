@@ -230,16 +230,15 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
 
     def on_dark_clicked(self):
-        print 'Taking dark level...'
         self.logTextBox.appendPlainText('Taking dark level...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
 
-        print 'Measuring...'
+        self.logTextBox.appendPlainText('Measuring...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
         self.instrument.spectrometer.set_scans_average(1)
-        print 'Done'
+        self.logTextBox.appendPlainText('Done')
 
         self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
             str(self.instrument.specIntTime),
@@ -249,7 +248,7 @@ class Panel(QtGui.QWidget):
         for i in range(0,3):
             # state is 1 or 0 
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
-        print 'Leds ',state
+        self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -367,11 +366,7 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           #nextSampleTA = datetime.fromtimestamp(self.tsBegin + TA_SAMP_INT)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
-           #if FIA_EXIST:
-           #   #self.timerFIA.start(TA_SAMP_INT*1000)
-           #   #text += 'HydroFIA-TA deployed\nNext sample %s' % (nextSampleTA.isoformat())
            self.textBox.setText(text)
            self.timerUnderway.start(self.instrument.samplingInterval*1000)     
         else:
@@ -394,9 +389,11 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            print 'Start single measurement ', self.instrument.flnmStr
+            self.logTextBox.appendPlainText(
+                'Start single measurement {}'.formatself.instrument.flnmStr())
+            #print 'Start single measurement ', self.instrument.flnmStr
             self.sample()
-            print 'Done'
+            self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
         self.timer.start()
         self.btn_spectro.setChecked(True)
