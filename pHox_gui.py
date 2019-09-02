@@ -80,9 +80,14 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab2,"Log")
 
         self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
 
+        self.logTextBox = QtGui.QPlainTextEdit()
+        self.logTextBox.setReadOnly()
+        self.logTextBox.appendPlainText('Text message in log')
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
+
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
