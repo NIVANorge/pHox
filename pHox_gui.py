@@ -25,7 +25,7 @@ import numpy as np
 from numpy import *
 import random
 import pyqtgraph as pg 
-
+import argparse
 
 class Console(QtGui.QWidget):
    
@@ -48,6 +48,13 @@ class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
         self.instrument = Cbon()
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--debug",
+                            action="store_true")
+        self.args = parser.parse_args()
+
+
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
         self.timerUnderway = QtCore.QTimer()
@@ -537,10 +544,11 @@ class Panel(QtGui.QWidget):
 
         self.btn_spectro.setChecked(True)
         self.btn_leds.setChecked(True)
-        self.timer.start(500)
-        self.btn_deploy.setChecked(True)
-        self.on_deploy_clicked(True)
-        #self.timerSave.start()
+        if not self.args.debug:
+            self.timer.start(500)
+            self.btn_deploy.setChecked(True)
+            self.on_deploy_clicked(True)
+            #self.timerSave.start()
         return
 
     def _autostop(self):
@@ -637,6 +645,7 @@ class Panel(QtGui.QWidget):
         return
 
 if __name__ == '__main__':
+
     app = QtGui.QApplication(sys.argv)
     myPanel = Panel()
     myPanel.autorun()
