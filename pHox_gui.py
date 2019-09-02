@@ -398,7 +398,6 @@ class Panel(QtGui.QWidget):
             self.instrument.reset_lines()
             self.logTextBox.appendPlainText(
                 'Start single measurement {}'.formatself.instrument.flnmStr())
-            #print 'Start single measurement ', self.instrument.flnmStr
             self.sample()
             self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
@@ -407,10 +406,9 @@ class Panel(QtGui.QWidget):
 
 
     def underway(self):
-        print('Inside underway...')
+        self.logTextBox.appendPlainText('Inside underway...')
         # stop the spectrophotometer update precautionally
         self.btn_spectro.setChecked(False)
-        #self.check('Spectrophotometer',False)    
         self.timer.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
         self.instrument.adjust_LED(1,self.sliders[1].value())
@@ -423,9 +421,9 @@ class Panel(QtGui.QWidget):
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
         self.tsBegin = (t-datetime(1970,1,1)).total_seconds()
 
-        print 'sampling...'
+        self.logTextBox.appendPlainText('sampling...')
         self.sample()
-        print 'done...'
+        self.logTextBox.appendPlainText('done...')
 
         self.instrument.spectrometer.set_scans_average(1)
         
@@ -443,10 +441,10 @@ class Panel(QtGui.QWidget):
         if self.instrument._autodark:
             now = datetime.now()
             if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
-                print 'New dark required'
+                self.logTextBox.appendPlainText('New dark required')
                 self.on_dark_clicked()
         else:
-            print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+            self.logTextBox.appendPlainText('next dark at time..x') #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
@@ -463,7 +461,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_TV(True)
         self.instrument.wait(self.instrument.wT)
 
-        print 'Measuring blank...'
+        self.logTextBox.appendPlainText('Measuring blank...')
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
         dark = self.instrument.spCounts[0]
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
@@ -472,7 +470,7 @@ class Panel(QtGui.QWidget):
         for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            print 'Injection %d:, shots %d' %(pinj, self.instrument.nshots)
+            self.logTextBox.appendPlainText('Injection %d:, shots %d' %(pinj, self.instrument.nshots))
             # turn on the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, True)
             # inject dye 
@@ -525,9 +523,9 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
-        print 'pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval
+        self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
-        print 'data saved in %s' % (self.folderPath +'pH.log')
+        self.logTextBox.appendPlainText('data saved in %s' % (self.folderPath +'pH.log'))
         with open(self.folderPath + 'pH.log','a') as logFile:
             logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
         self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
@@ -535,7 +533,7 @@ class Panel(QtGui.QWidget):
         #self.puckEm.LAST_pH = pHeval[0]
         
     def _autostart(self):
-        print 'Inside _autostart...'
+        self.logTextBox.appendPlainText('Inside _autostart...')
         time.sleep(10)
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
@@ -552,7 +550,7 @@ class Panel(QtGui.QWidget):
         return
 
     def _autostop(self):
-        print 'Inside _autostop...'
+        self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         #TODO: why do we need it 
         self.sliders[0].setValue(0)
@@ -571,7 +569,7 @@ class Panel(QtGui.QWidget):
         return
 
     def autostop_time(self):
-        print 'Inside autostop_time...'
+        self.logTextBox.appendPlainText('Inside autostop_time...')
         self.timerAuto.stop()
         self._autostop()
         now  = datetime.now()
@@ -584,26 +582,27 @@ class Panel(QtGui.QWidget):
         return
         
     def autostart_time(self):
-        print 'Inside _autostart_time...'
+        self.logTextBox.appendPlainText('Inside _autostart_time...')
         self.timerAuto.stop()
         now  = datetime.now()
         if now < self.instrument._autotime:
             self.timerAuto.timeout.connect(self.autostart_time)
             dt = self.instrument._autotime - now
             self.timerAuto.start(int(dt.total_seconds()*1000))
-            print 'Instrument will start at ' + self.instrument._autostart.strftime('%Y-%m-%dT%H:%M:%S')
+            self.logTextBox.appendPlainText('Instrument will start at ' + self.instrument._autostart.strftime('%Y-%m-%dT%H:%M:%S'))
         else:
             self.timerAuto.timeout.disconnect(self.autostart_time)
             self.timerAuto.timeout.connect(self.autostop_time)
             t0 = self.instrument._autotime + self.instrument._autolen
             dt = t0 - now
             self.timerAuto.start(int(dt.total_seconds()*1000))
-            print 'Instrument will stop at ' + t0.strftime('%Y-%m:%dT%H:%M:%S') 
+            self.logTextBox.appendPlainText('Instrument will stop at ' + t0.strftime('%Y-%m:%dT%H:%M:%S')) 
             self._autostart()
         return
     
     def autostart_pump(self):
-        print 'Inside _autostart_pump...'
+        self.logTextBox.appendPlainText('Inside _autostart_pump...')
+        self.logTextBox.appendPlainText('Automatic start at pump enabled')
         self.textBox.setText('Automatic start at pump enabled')
         if self.instrument.pumping:
             self.timerAuto.stop()
@@ -616,8 +615,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        print 'Inside autostop_pump...'
-        print ("self.instrument.pumping is ", self.instrument.pumping)
+        self.logTextBox.appendPlainText('Inside autostop_pump...')
+        self.logTextBox.appendPlainText("self.instrument.pumping is {}".format(str(self.instrument.pumping)))
         if not self.instrument.pumping:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
@@ -629,7 +628,7 @@ class Panel(QtGui.QWidget):
         return
         
     def autorun(self):
-        print 'Inside underway...'
+        self.logTextBox.appendPlainText('Inside underway...')
         time.sleep(10)
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
