@@ -541,7 +541,9 @@ class Panel(QtGui.QWidget):
         self.sliders[2].setValue(self.instrument.LED3)
 
         self.btn_spectro.setChecked(True)
+        self.spectro_clicked()
         self.btn_leds.setChecked(True)
+        self.btn_leds_checked()
         if not self.args.debug:
             self.timer.start(500)
             self.btn_deploy.setChecked(True)
