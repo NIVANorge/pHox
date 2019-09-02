@@ -193,19 +193,22 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
 
-        self.tab1.layout.addWidget(self.plotwidget1,0,0)
-        self.tab1.layout.addWidget(self.plotwidget2,1,0)
-        # vboxPlot.addWidget(self.plotwidget1)
-        # vboxPlot.addWidget(self.plotwidget2)
+        #self.tab1.layout.addWidget(self.plotwidget1,0,0)
+        #self.tab1.layout.addWidget(self.plotwidget2,1,0)
+        vboxPlot.addWidget(self.plotwidget1)
+        vboxPlot.addWidget(self.plotwidget2)
 
-        #hboxPanel = QtGui.QHBoxLayout()
-        #hboxPanel.addLayout(vboxPlot)
-        #hboxPanel.addLayout(vboxComm)
-        #self.setLayout(hboxPanel)
+
 
         self.tab1.setLayout(self.tab1.layout)
         self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
+
+        hboxPanel = QtGui.QHBoxLayout()
+        hboxPanel.addLayout(vboxPlot)
+        hboxPanel.addLayout(self.layout)
+        self.setLayout(hboxPanel)
+
+        #self.setLayout(self.layout)
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
 
