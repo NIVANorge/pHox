@@ -9,8 +9,7 @@ os.system('clear')
 import warnings
 import usb.core
 import usb
-import serial
-import serial.tools.list_ports
+
 import struct
 import time
 import RPi.GPIO as GPIO
@@ -235,9 +234,6 @@ class Cbon(object):
             self.vNTCch = 8
 
         self.samplingInterval = int(default["SAMPLING_INTERVAL"])
-
-
-
         self.pT = int(default["pumpTime"])
         self.mT = int(default["mixTime"])
         self.wT = int(default["waitTime"])
@@ -376,7 +372,7 @@ class Cbon(object):
             except KeyboardInterrupt:
                 print('skipped')
                 break
-    #
+
     def reset_lines(self):
         # set values in outputs of pins 
         self.rpi.write(   self.wpump_slot, 0)
@@ -414,7 +410,6 @@ class Cbon(object):
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
 
-
     def movAverage(self, dataSet, nPoints):
         spAbsMA = dataSet
         for i in range(3,len(dataSet)-3):
@@ -429,7 +424,6 @@ class Cbon(object):
         print 'T sample : %.2f' %Tdeg
 
         T = 273.15 + Tdeg
-
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
                            absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
 

@@ -1,23 +1,17 @@
 #! /usr/bin/python
 # Check not used functions
 from pHox import *
-import json
-import socket
-import threading
+from pco2 import *
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
 import warnings
-import usb.core
-import usb
-import serial
-import serial.tools.list_ports
-import struct
+#import usb.core
+#import usb
 import time
 import RPi.GPIO as GPIO
 from ADCDACPi import ADCDACPi
 from ADCDifferentialPi import ADCDifferentialPi
-#from helpers import ABEHelpers
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
@@ -26,6 +20,7 @@ from numpy import *
 import random
 import pyqtgraph as pg 
 import argparse
+import socket
 
 class Console(QtGui.QWidget):
    
@@ -52,8 +47,15 @@ class Panel(QtGui.QWidget):
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
                             action="store_true")
+        parser.add_argument("--pco2",
+                            action="store_true")
+
         self.args = parser.parse_args()
 
+        if self.args.pco2:
+            #self.instrument_pco2 = PCO2()
+            self.puckEm = PuckManager()
+            self.puckEm.enter_instrument_mode([])
 
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
@@ -75,6 +77,8 @@ class Panel(QtGui.QWidget):
         self.timer.timeout.connect(self.update_spectra)
         self.timerUnderway.timeout.connect(self.underway)
         self.timerSens.timeout.connect(self.update_sensors)
+        if self.args.pco2:
+            self.timerSave.timeout.connect(self.save_pCO2_data)
 
         #set grid layout and size columns
         tabs_layout = QtGui.QVBoxLayout()
@@ -320,7 +324,20 @@ class Panel(QtGui.QWidget):
             except AttributeError:
                pass
             print self.instrument.UNDERWAY'''
-            
+
+
+    def save_pCO2_data(self):
+        d = self.CO2_instrument.franatech 
+        t = datetime.now() 
+        label = t.isoformat('_')
+        labelSample = label[0:19]
+        logStr = '%s,%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d\n' %(labelSample,d[0],d[1],d[2],d[3],d[4],d[6],d[7])
+        with open(self.folderPath + 'pCO2.log','a') as logFile:
+            logFile.write(logStr)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+        sock.sendto(logStr, (UDP_IP, UDP_SEND))
+        sock.close() 
+
     def on_intTime_clicked(self):
         # Not used now
         intTime, ok = QtGui.QInputDialog.getInt(
@@ -364,8 +381,42 @@ class Panel(QtGui.QWidget):
         LED2 = self.sliders[1].value()
         LED3 = self.sliders[2].value()
         text += 'LED1 = %-d\nLED2 = %-d\nLED3 = %-d\n' % (LED1, LED2, LED3) 
-
         self.textBoxSens.setText(text)
+
+        if self.args.pco2:
+            self.CO2_instrument.portSens.write(
+                self.CO2_instrument.QUERY_CO2)
+            resp = self.CO2_instrument.portSens.read(15)
+            try:
+                value =  float(resp[3:])
+                value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
+            except ValueError:
+                value = 0
+            self.CO2_instrument.franatech[6] = value
+            self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
+
+            self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
+            resp = self.CO2_instrument.portSens.read(15)
+            try:
+                    self.CO2_instrument.franatech[7] = float(resp[3:])
+            except ValueError:
+                    self.CO2_instrument.franatech[7] = 0
+
+            for ch in range(5):
+                V = self.CO2_instrument.get_Vd(2,ch+1)
+                X = 0
+                for i in range(2):
+                    X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
+                self.CO2_instrument.franatech[ch] = X
+                text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
+
+            self.puckEm.LAST_PAR[2] = self.instrument.salinity
+            self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
+            WD = self.CO2_instrument.get_Vd(1,6)
+            text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
+            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] +
+                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7])
+            self.textBoxSens.setText(text)
 
     def on_deploy_clicked(self, state):
         newText =''
@@ -549,7 +600,8 @@ class Panel(QtGui.QWidget):
 
             self.btn_deploy.setChecked(True)
             self.on_deploy_clicked(True)
-            #self.timerSave.start()
+        if self.args.pco2:
+            self.timerSave.start()
         return
 
     def _autostop(self):
