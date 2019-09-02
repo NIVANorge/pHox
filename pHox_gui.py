@@ -96,7 +96,7 @@ class Panel(QtGui.QWidget):
         #self.timerFlowCell.timeout.connect(self.update_Tntc)
 
         #set grid layout and size columns
-        self.layout = QtGui.QVBoxLayout(self)
+        tabs_layout = QtGui.QVBoxLayout()
         
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
@@ -114,9 +114,8 @@ class Panel(QtGui.QWidget):
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
 
-        self.chkBoxList = []
-        self.sliders = []
-        self.sldLabels = []
+        #self.chkBoxList = []
+
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
@@ -125,7 +124,7 @@ class Panel(QtGui.QWidget):
                 Btn.setCheckable(True)
             return Btn
 
-        # All checkabple buttons
+        # Create checkabple buttons
         self.btn_spectro = create_button('Spectrophotometer',True)
         self.btn_leds = create_button('LEDs',True)
         self.btn_valve = create_button('Inlet valve',True)
@@ -157,6 +156,8 @@ class Panel(QtGui.QWidget):
 
         sldRow = 6
         sldNames = ['Blue','Orange','Red','LED4']
+        self.sliders = []
+        self.sldLabels = []
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
@@ -198,14 +199,12 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
-
-
         self.tab1.setLayout(self.tab1.layout)
-        self.layout.addWidget(self.tabs)
+        tabs_layout.addWidget(self.tabs)
 
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addLayout(self.layout)
+        hboxPanel.addLayout(tabs_layout)
         self.setLayout(hboxPanel)
 
         #self.setLayout(self.layout)
