@@ -42,7 +42,6 @@ class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
         self.instrument = Cbon()
-        self.CO2_instrument = CO2_instrument()
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
                             action="store_true")
@@ -51,10 +50,11 @@ class Panel(QtGui.QWidget):
 
         self.args = parser.parse_args()
 
-        '''if self.args.pco2:
+        if self.args.pco2:
+            self.CO2_instrument = CO2_instrument()
             #self.instrument_pco2 = PCO2()
-            self.puckEm = PuckManager()
-            self.puckEm.enter_instrument_mode([])'''
+            #self.puckEm = PuckManager()
+            #self.puckEm.enter_instrument_mode([])'''
 
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
