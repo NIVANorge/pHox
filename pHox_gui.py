@@ -1,32 +1,25 @@
 #! /usr/bin/python
-
 # Check not used functions
 from pHox import *
-import json
-import socket
-import threading
+from pco2 import *
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
 import warnings
-import usb.core
-import usb
-import serial
-import serial.tools.list_ports
-import struct
+#import usb.core
+#import usb
 import time
 import RPi.GPIO as GPIO
 from ADCDACPi import ADCDACPi
 from ADCDifferentialPi import ADCDifferentialPi
-#from helpers import ABEHelpers
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
-from numpy import *
-import random
+#import random
 import pyqtgraph as pg 
-
+import argparse
+import socket
 
 class Console(QtGui.QWidget):
    
@@ -45,27 +38,24 @@ class Console(QtGui.QWidget):
    def printText(self, text):
       self.textBox.append(text)
 
-'''class inputDialog(QtGui.QDialog):
-    # Panel Constructor #
-    # Dialog window for settings 
-    def __init__(self, parent=None, title='user input', parString='30_5_3_1111'):
-        QtGui.QWidget.__init__(self, parent)
-        layout = QtGui.QFormLayout()
-        self.line = QtGui.QLineEdit(parString)
-        # in input mask blanks are _ 9 is ascii 
-        self.line.setInputMask('99_9_9_9999')
-        self.line.returnPressed.connect(self.check_parameters)
-        layout.addRow(self.line)
-        self.setLayout(layout)
-        self.setWindowTitle(title)
-        
-    def check_parameters(self):
-        self.parString= '%s' %self.line.text()'''
-        
 class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
         self.instrument = Cbon()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--debug",
+                            action="store_true")
+        parser.add_argument("--pco2",
+                            action="store_true")
+
+        self.args = parser.parse_args()
+
+        if self.args.pco2:
+            self.CO2_instrument = CO2_instrument()
+            #self.instrument_pco2 = PCO2()
+            #self.puckEm = PuckManager()
+            #self.puckEm.enter_instrument_mode([])'''
+
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
         self.timerUnderway = QtCore.QTimer()
@@ -73,40 +63,44 @@ class Panel(QtGui.QWidget):
         self.timerSave = QtCore.QTimer()
         #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        #self.timerFlowCell = QtCore.QTimer()
+
         self.init_ui()
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
-        
+
         self.folderPath ='/home/pi/pHox/data/'
-        
         self.timerSens.start(2000)
-        
-        #self.timerSave.start(10000)
-        #if USE_FIA_TA:
-        #    self.statusFIA = True 
-        #self.puckEm.enter_instrument_mode([])
-        
+
     def init_ui(self):
         self.setWindowTitle('NIVA - pH')
         self.timer.timeout.connect(self.update_spectra)
         self.timerUnderway.timeout.connect(self.underway)
         self.timerSens.timeout.connect(self.update_sensors)
-        #self.timerSave.timeout.connect(self.save_pCO2_data)
-        #self.timerFIA.timeout.connect(self.sample_alkalinity)
-        #self.timerFlowCell.timeout.connect(self.update_Tntc)
+        if self.args.pco2:
+            self.timerSave.timeout.connect(self.save_pCO2_data)
 
         #set grid layout and size columns
-        grid = QtGui.QGridLayout()
-        grid.setColumnStretch(0,1)
-        grid.setColumnStretch(1,1)
+        tabs_layout = QtGui.QVBoxLayout()
+        self.tabs = QtGui.QTabWidget()
+        self.tab1 = QtGui.QWidget()
+        self.tab2 = QtGui.QWidget()
+
+        # Add tabs
+        self.tabs.addTab(self.tab1,"Tab 1")
+        self.tabs.addTab(self.tab2,"Log")
+
+        self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
+
+        self.logTextBox = QtGui.QPlainTextEdit()
+        self.logTextBox.setReadOnly(True)
+        self.logTextBox.appendPlainText('Text message in log')
+
+        self.tab2.layout.addWidget(self.logTextBox) 
 
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
 
-        self.chkBoxList = []
-        self.sliders = []
-        self.sldLabels = []
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
@@ -115,7 +109,7 @@ class Panel(QtGui.QWidget):
                 Btn.setCheckable(True)
             return Btn
 
-        # All checkabple buttons
+        # Create checkabple buttons
         self.btn_spectro = create_button('Spectrophotometer',True)
         self.btn_leds = create_button('LEDs',True)
         self.btn_valve = create_button('Inlet valve',True)
@@ -128,7 +122,6 @@ class Panel(QtGui.QWidget):
         self.btn_sigle_meas = create_button('Single measurement',False)
         self.btn_dye_pmp = create_button('Dye pump',False)
 
-
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump, self.btn_deploy]
 
@@ -137,49 +130,60 @@ class Panel(QtGui.QWidget):
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
-            grid.addWidget(btn, idx, 0)
+            self.tab1.layout.addWidget(btn, idx, 1) #row,col
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
-            grid.addWidget(btn, idx, 1)
+            self.tab1.layout.addWidget(btn, idx, 2)
 
         sldRow = 6
         sldNames = ['Blue','Orange','Red','LED4']
+        self.sliders = []
+        self.sldLabels = []
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
-            grid.addWidget(self.sliders[sldInd],sldRow+sldInd,0)
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
-            grid.addWidget(self.sldLabels[sldInd],sldRow+sldInd,1)
-        
+            self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
+            self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
+
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
-        grid.addWidget(self.textBox, sldRow+4,0)
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
-        grid.addWidget(self.textBoxSens, sldRow+4,1)
 
-        hboxPanel = QtGui.QHBoxLayout()
+        self.tab1.layout.addWidget(self.textBox, sldRow+4,1)
+        self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,2)
+
         vboxPlot = QtGui.QVBoxLayout()
-        vboxComm = QtGui.QVBoxLayout()
-        vboxComm.addLayout(grid)    
-        
+
+        #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget1.setYRange(0,16000)
-        vboxPlot.addWidget(self.plotwidget1)
+
         self.plotwidget2 = pg.PlotWidget()
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
+
+        vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
+
+        self.tab1.setLayout(self.tab1.layout)
+        self.tab2.setLayout(self.tab2.layout)
+        tabs_layout.addWidget(self.tabs)
+
+        # combine layout for plots and buttons
+        hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addLayout(vboxComm)
+        hboxPanel.addLayout(tabs_layout)
         self.setLayout(hboxPanel)
 
+        #self.setLayout(self.layout)
         #self.setGeometry(20, 150, 1200, 650)
         self.showMaximized()
 
@@ -191,52 +195,25 @@ class Panel(QtGui.QWidget):
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
 
-        # Unchecable buttons
+        # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_bottle_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
     def btn_stirr_clicked(self):
-        self.instrument.set_line(self.stirrer_slot,
+        self.instrument.set_line(self.instrument.stirrer_slot,
         self.btn_stirr.isChecked())
 
     def btn_wpump_clicked(self):
-        self.instrument.set_line(self.wpump_slot,
+        self.instrument.set_line(self.instrument.wpump_slot,
         self.btn_wpump.isChecked())
 
     def btn_deploy_clicked(self):
         self.on_deploy_clicked(self.btn_deploy.isChecked())
 
     def btn_dye_pmp_clicked(self):
-        self.instrument.set_line(self.wpump_slot,
-        self.btn_dye_pmp.isChecked())
-
-    """def BtnPressed(self, sender):
-        btn = sender.objectName()
-        if btn == 'Spectrophotometer':
-           if sender.isChecked():
-              self.timer.start(500)
-           else:
-              self.timer.stop()
-        elif btn == 'Take dark':
-           self.on_dark_clicked()
-        elif btn == 'LEDs':
-           self.set_LEDs(sender.isChecked())
-        elif btn == 'Stirrer':
-           self.instrument.set_line(self.stirrer_slot, sender.isChecked())
-        elif btn == 'Dye pump': 
-           self.instrument.cycle_line(self.dyepump_slot, 2)
-        elif btn == 'Water pump':
-           self.instrument.set_line(self.wpump_slot, sender.isChecked())
-        elif btn == 'Deploy':
-           self.on_deploy_clicked(sender.isChecked())
-        elif btn == 'Single measurement':
-           self.on_bottle_clicked() 
-        elif btn == 'Inlet valve':
-           self.instrument.set_TV(sender.isChecked())
-        elif btn == 'Set sampling interval':
-            self.on_samT_clicked()"""
+        self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
     def btn_valve_clicked(self):
         self.instrument.set_TV(self.btn_valve.isChecked())
@@ -247,28 +224,31 @@ class Panel(QtGui.QWidget):
         else:
             self.timer.stop()
 
-    def sld0_change(self,DC): #get the value from the connect method
+    def sld0_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
         self.btn_leds.setChecked(True)
 
-    def sld1_change(self,DC): #get the value from the connect method
+    def sld1_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
         self.btn_leds.setChecked(True)
 
-    def sld2_change(self,DC): #get the value from the connect method
+    def sld2_change(self,DC): 
+        #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
         self.btn_leds.setChecked(True)
 
     def on_dark_clicked(self):
-        print 'Taking dark level...'
+        self.logTextBox.appendPlainText('Taking dark level...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
 
-        print 'Measuring...'
+        self.logTextBox.appendPlainText('Measuring...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
         self.instrument.spectrometer.set_scans_average(1)
-        print 'Done'
+        self.logTextBox.appendPlainText('Done')
 
         self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
             str(self.instrument.specIntTime),
@@ -278,7 +258,7 @@ class Panel(QtGui.QWidget):
         for i in range(0,3):
             # state is 1 or 0 
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
-        print 'Leds ',state
+        self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -291,7 +271,16 @@ class Panel(QtGui.QWidget):
             self.folderPath ='/home/pi/pHox/data/'
         else:
             self.folderPath = folder+'/'
-        
+
+    def on_samT_clicked(self): 
+        time, ok = QtGui.QInputDialog.getInt(
+            None, 'Set sampling interval',
+            'Interval in seconds',
+            value = self.instrument.samplingInterval,
+            min = 200,max = 6000,step = 60)
+        if ok:
+            self.instrument.samplingInterval = time
+
     def update_spectra(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
         self.plotSpc.setData(self.instrument.wvls,datay)                  
@@ -334,8 +323,23 @@ class Panel(QtGui.QWidget):
             except AttributeError:
                pass
             print self.instrument.UNDERWAY'''
-            
-    def on_intTime_clicked(self):  
+
+
+    def save_pCO2_data(self):
+        d = self.CO2_instrument.franatech 
+        t = datetime.now() 
+        label = t.isoformat('_')
+        labelSample = label[0:19]
+        logStr = '%s,%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d\n' %(labelSample,d[0],d[1],d[2],d[3],d[4],d[6],d[7])
+        with open(self.folderPath + 'pCO2.log','a') as logFile:
+            logFile.write(logStr)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+        sock.sendto(logStr, (self.CO2_instrument.UDP_IP,
+                             self.CO2_instrument.UDP_SEND))
+        sock.close() 
+
+    def on_intTime_clicked(self):
+        # Not used now
         intTime, ok = QtGui.QInputDialog.getInt(
             None, 'Set spectrophotometer integration time',
              'ms',self.instrument.specIntTime,100,3000,100)
@@ -346,20 +350,13 @@ class Panel(QtGui.QWidget):
             #self.chkBox_caption('Spectrophotometer','%d ms' %intTime)
         
     def on_scans_clicked(self): 
+        # Not used now
         scans, ok = QtGui.QInputDialog.getInt(None, 'Set spectrophotometer averaging scans','',self.instrument.specAvScans,1,20,1)
         if ok:
             self.instrument.specAvScans = scans
 
-    def on_samT_clicked(self): 
-        time, ok = QtGui.QInputDialog.getInt(
-            None, 'Set sampling interval',
-            'Interval in seconds',
-            value = self.instrument.samplingInterval,
-            min = 200,max = 6000,step = 60)
-        if ok:
-            self.instrument.samplingInterval = time
-
     def on_autoAdjust_clicked(self):
+        # Not used now
         DC1,DC2, sptIt, Ok  = self.instrument.auto_adjust()
         self.sliders[0].setValue(DC1)
         self.sliders[1].setValue(DC2)
@@ -384,8 +381,42 @@ class Panel(QtGui.QWidget):
         LED2 = self.sliders[1].value()
         LED3 = self.sliders[2].value()
         text += 'LED1 = %-d\nLED2 = %-d\nLED3 = %-d\n' % (LED1, LED2, LED3) 
-
         self.textBoxSens.setText(text)
+
+        if self.args.pco2:
+            self.CO2_instrument.portSens.write(
+                self.CO2_instrument.QUERY_CO2)
+            resp = self.CO2_instrument.portSens.read(15)
+            try:
+                value =  float(resp[3:])
+                value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
+            except ValueError:
+                value = 0
+            self.CO2_instrument.franatech[6] = value
+            #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
+
+            self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
+            resp = self.CO2_instrument.portSens.read(15)
+            try:
+                    self.CO2_instrument.franatech[7] = float(resp[3:])
+            except ValueError:
+                    self.CO2_instrument.franatech[7] = 0
+
+            for ch in range(5):
+                V = self.CO2_instrument.get_Vd(2,ch+1)
+                X = 0
+                for i in range(2):
+                    X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
+                self.CO2_instrument.franatech[ch] = X
+                text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
+
+            #self.puckEm.LAST_PAR[2] = self.instrument.salinity
+            #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
+            WD = self.CO2_instrument.get_Vd(1,6)
+            text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
+            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] +
+                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7])
+            self.textBoxSens.setText(text)
 
     def on_deploy_clicked(self, state):
         newText =''
@@ -393,11 +424,7 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           #nextSampleTA = datetime.fromtimestamp(self.tsBegin + TA_SAMP_INT)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
-           #if FIA_EXIST:
-           #   #self.timerFIA.start(TA_SAMP_INT*1000)
-           #   #text += 'HydroFIA-TA deployed\nNext sample %s' % (nextSampleTA.isoformat())
            self.textBox.setText(text)
            self.timerUnderway.start(self.instrument.samplingInterval*1000)     
         else:
@@ -405,7 +432,7 @@ class Panel(QtGui.QWidget):
            #self.timerFIA.stop()
            self.textBox.setText('Cbon is not deployed')
                 
-    def on_bottle_clicked(self):
+    def on_sigle_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
@@ -420,19 +447,19 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            print 'Start single measurement ', self.instrument.flnmStr
+            self.logTextBox.appendPlainText(
+                'Start single measurement {}'.formatself.instrument.flnmStr())
             self.sample()
-            print 'Done'
+            self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
         self.timer.start()
         self.btn_spectro.setChecked(True)
 
 
     def underway(self):
-        print('Inside underway...')
+        self.logTextBox.appendPlainText('Inside underway...')
         # stop the spectrophotometer update precautionally
         self.btn_spectro.setChecked(False)
-        #self.check('Spectrophotometer',False)    
         self.timer.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
         self.instrument.adjust_LED(1,self.sliders[1].value())
@@ -445,9 +472,9 @@ class Panel(QtGui.QWidget):
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
         self.tsBegin = (t-datetime(1970,1,1)).total_seconds()
 
-        print 'sampling...'
+        self.logTextBox.appendPlainText('sampling...')
         self.sample()
-        print 'done...'
+        self.logTextBox.appendPlainText('done...')
 
         self.instrument.spectrometer.set_scans_average(1)
         
@@ -465,10 +492,10 @@ class Panel(QtGui.QWidget):
         if self.instrument._autodark:
             now = datetime.now()
             if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
-                print 'New dark required'
+                self.logTextBox.appendPlainText('New dark required')
                 self.on_dark_clicked()
         else:
-            print 'next dark at' #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+            self.logTextBox.appendPlainText('next dark at time..x') #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
@@ -485,16 +512,16 @@ class Panel(QtGui.QWidget):
         self.instrument.set_TV(True)
         self.instrument.wait(self.instrument.wT)
 
-        print 'Measuring blank...'
+        self.logTextBox.appendPlainText('Measuring blank...')
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
         dark = self.instrument.spCounts[0]
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
-        for pinj in range(self.instrument.dA):
+        for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            print 'Injection %d:, shots %d' %(pinj, self.instrument.nshots)
+            self.logTextBox.appendPlainText('Injection %d:, shots %d' %(pinj, self.instrument.nshots))
             # turn on the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, True)
             # inject dye 
@@ -530,7 +557,7 @@ class Panel(QtGui.QWidget):
 
         flnm = open(self.folderPath + self.instrument.flnmStr +'.spt','w')
         txtData = ''
-        for i in range(2+dA):
+        for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
             txtData += '\n'
@@ -547,9 +574,9 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
-        print 'pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval
+        self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
-        print 'data saved in %s' % (self.folderPath +'pH.log')
+        self.logTextBox.appendPlainText('data saved in %s' % (self.folderPath +'pH.log'))
         with open(self.folderPath + 'pH.log','a') as logFile:
             logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
         self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
@@ -557,7 +584,7 @@ class Panel(QtGui.QWidget):
         #self.puckEm.LAST_pH = pHeval[0]
         
     def _autostart(self):
-        print 'Inside _autostart...'
+        self.logTextBox.appendPlainText('Inside _autostart...')
         time.sleep(10)
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
@@ -565,16 +592,21 @@ class Panel(QtGui.QWidget):
         self.sliders[2].setValue(self.instrument.LED3)
 
         self.btn_spectro.setChecked(True)
+        #self.spectro_clicked()
         self.btn_leds.setChecked(True)
+        #self.btn_leds_checked()
         self.timer.start(500)
-        self.btn_deploy.setChecked(True)
+        if not self.args.debug:
 
-        self.on_deploy_clicked(True)
-        #self.timerSave.start()
+            self.btn_deploy.setChecked(True)
+            self.on_deploy_clicked(True)
+        if self.args.pco2:
+            # change to config file 
+            self.timerSave.start(500)
         return
 
     def _autostop(self):
-        print 'Inside _autostop...'
+        self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         #TODO: why do we need it 
         self.sliders[0].setValue(0)
@@ -593,7 +625,7 @@ class Panel(QtGui.QWidget):
         return
 
     def autostop_time(self):
-        print 'Inside autostop_time...'
+        self.logTextBox.appendPlainText('Inside autostop_time...')
         self.timerAuto.stop()
         self._autostop()
         now  = datetime.now()
@@ -606,26 +638,27 @@ class Panel(QtGui.QWidget):
         return
         
     def autostart_time(self):
-        print 'Inside _autostart_time...'
+        self.logTextBox.appendPlainText('Inside _autostart_time...')
         self.timerAuto.stop()
         now  = datetime.now()
         if now < self.instrument._autotime:
             self.timerAuto.timeout.connect(self.autostart_time)
             dt = self.instrument._autotime - now
             self.timerAuto.start(int(dt.total_seconds()*1000))
-            print 'Instrument will start at ' + self.instrument._autostart.strftime('%Y-%m-%dT%H:%M:%S')
+            self.logTextBox.appendPlainText('Instrument will start at ' + self.instrument._autostart.strftime('%Y-%m-%dT%H:%M:%S'))
         else:
             self.timerAuto.timeout.disconnect(self.autostart_time)
             self.timerAuto.timeout.connect(self.autostop_time)
             t0 = self.instrument._autotime + self.instrument._autolen
             dt = t0 - now
             self.timerAuto.start(int(dt.total_seconds()*1000))
-            print 'Instrument will stop at ' + t0.strftime('%Y-%m:%dT%H:%M:%S') 
+            self.logTextBox.appendPlainText('Instrument will stop at ' + t0.strftime('%Y-%m:%dT%H:%M:%S')) 
             self._autostart()
         return
     
     def autostart_pump(self):
-        print 'Inside _autostart_pump...'
+        self.logTextBox.appendPlainText('Inside _autostart_pump...')
+        self.logTextBox.appendPlainText('Automatic start at pump enabled')
         self.textBox.setText('Automatic start at pump enabled')
         if self.instrument.pumping:
             self.timerAuto.stop()
@@ -638,8 +671,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        print 'Inside autostop_pump...'
-        print ("self.instrument.pumping is ", self.instrument.pumping)
+        self.logTextBox.appendPlainText('Inside autostop_pump...')
+        self.logTextBox.appendPlainText("self.instrument.pumping is {}".format(str(self.instrument.pumping)))
         if not self.instrument.pumping:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
@@ -650,9 +683,8 @@ class Panel(QtGui.QWidget):
             pass
         return
         
-    
     def autorun(self):
-        print 'Inside underway...'
+        self.logTextBox.appendPlainText('Inside underway...')
         time.sleep(10)
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
@@ -668,14 +700,15 @@ class Panel(QtGui.QWidget):
         return
 
 if __name__ == '__main__':
+
     app = QtGui.QApplication(sys.argv)
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
-    print 'ending'
+    print ('ending')
     myPanel.instrument._exit = True
     myPanel.timer.stop()
-    print 'timer is stopped'
+    print ('timer is stopped')
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
     print ('ended')

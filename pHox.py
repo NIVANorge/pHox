@@ -9,8 +9,7 @@ os.system('clear')
 import warnings
 import usb.core
 import usb
-import serial
-import serial.tools.list_ports
+
 import struct
 import time
 import RPi.GPIO as GPIO
@@ -137,10 +136,10 @@ class Cbon(object):
         # For signaling to threads
         self._exit = False 
         
-        #initialize PWM lines      
+        #initialize PWM lines
         self.rpi = pigpio.pi()
          
-        # load instrument general configuration   
+        # load instrument general configuration
       
         self.evalPar = []
         self.ledDC = [0]*4 
@@ -222,26 +221,24 @@ class Cbon(object):
 
         #TODO: should be replaced by value from config?
         self.AUTODARK =  int(default['AUTODARK'])
+        
         self._autodark  = None
+        self._autotime  = None
+        self._autolen   = None
+        #self._autostop  = None #Not used
+        #self._deployed  = False #Not used
+        # self.last_dark  = None #Not used
 
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
 
         self.samplingInterval = int(default["SAMPLING_INTERVAL"])
-
-        self._autotime  = None
-        self._autolen   = None
-        self._autostop  = None
-
-        self._deployed  = False
-        self.last_dark  = None
-
-        self.pT = 0 
-        self.mT = 5
-        self.wT = 3
-        self.dA = 4
-        self.nshots = 1
+        self.pT = int(default["pumpTime"])
+        self.mT = int(default["mixTime"])
+        self.wT = int(default["waitTime"])
+        self.ncycles= int(default["ncycles"]) # Former dA
+        self.nshots = int(default["dye_nshots"])
         
         self.molAbsRats = default['MOL_ABS_RATIOS']
         print ('Molar absorption ratios: ',self.molAbsRats)
@@ -375,7 +372,7 @@ class Cbon(object):
             except KeyboardInterrupt:
                 print('skipped')
                 break
-    #
+
     def reset_lines(self):
         # set values in outputs of pins 
         self.rpi.write(   self.wpump_slot, 0)
@@ -413,7 +410,6 @@ class Cbon(object):
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
 
-
     def movAverage(self, dataSet, nPoints):
         spAbsMA = dataSet
         for i in range(3,len(dataSet)-3):
@@ -428,7 +424,6 @@ class Cbon(object):
         print 'T sample : %.2f' %Tdeg
 
         T = 273.15 + Tdeg
-
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
                            absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
 
