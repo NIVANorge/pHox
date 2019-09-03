@@ -42,7 +42,7 @@ class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
         self.instrument = Cbon()
-
+        self.CO2_instrument = CO2_instrument()
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
                             action="store_true")
