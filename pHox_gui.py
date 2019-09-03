@@ -202,18 +202,18 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
     def btn_stirr_clicked(self):
-        self.instrument.set_line(self.stirrer_slot,
+        self.instrument.set_line(self.instrument.stirrer_slot,
         self.btn_stirr.isChecked())
 
     def btn_wpump_clicked(self):
-        self.instrument.set_line(self.wpump_slot,
+        self.instrument.set_line(self.instrument.wpump_slot,
         self.btn_wpump.isChecked())
 
     def btn_deploy_clicked(self):
         self.on_deploy_clicked(self.btn_deploy.isChecked())
 
     def btn_dye_pmp_clicked(self):
-        self.instrument.cycle_line(self.dye_pmp,2)
+        self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
     def btn_valve_clicked(self):
         self.instrument.set_TV(self.btn_valve.isChecked())
