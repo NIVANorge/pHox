@@ -16,8 +16,7 @@ from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
-from numpy import *
-import random
+#import random
 import pyqtgraph as pg 
 import argparse
 import socket
@@ -52,10 +51,10 @@ class Panel(QtGui.QWidget):
 
         self.args = parser.parse_args()
 
-        if self.args.pco2:
+        '''if self.args.pco2:
             #self.instrument_pco2 = PCO2()
             self.puckEm = PuckManager()
-            self.puckEm.enter_instrument_mode([])
+            self.puckEm.enter_instrument_mode([])'''
 
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
@@ -335,7 +334,8 @@ class Panel(QtGui.QWidget):
         with open(self.folderPath + 'pCO2.log','a') as logFile:
             logFile.write(logStr)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-        sock.sendto(logStr, (UDP_IP, UDP_SEND))
+        sock.sendto(logStr, (self.CO2_instrument.UDP_IP,
+                             self.CO2_instrument.UDP_SEND))
         sock.close() 
 
     def on_intTime_clicked(self):
@@ -393,7 +393,7 @@ class Panel(QtGui.QWidget):
             except ValueError:
                 value = 0
             self.CO2_instrument.franatech[6] = value
-            self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
+            #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
 
             self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
             resp = self.CO2_instrument.portSens.read(15)
@@ -410,8 +410,8 @@ class Panel(QtGui.QWidget):
                 self.CO2_instrument.franatech[ch] = X
                 text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
 
-            self.puckEm.LAST_PAR[2] = self.instrument.salinity
-            self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
+            #self.puckEm.LAST_PAR[2] = self.instrument.salinity
+            #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
             WD = self.CO2_instrument.get_Vd(1,6)
             text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
             text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] +
@@ -601,7 +601,8 @@ class Panel(QtGui.QWidget):
             self.btn_deploy.setChecked(True)
             self.on_deploy_clicked(True)
         if self.args.pco2:
-            self.timerSave.start()
+            # change to config file 
+            self.timerSave.start(500)
         return
 
     def _autostop(self):
@@ -704,10 +705,10 @@ if __name__ == '__main__':
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
-    print 'ending'
+    print ('ending')
     myPanel.instrument._exit = True
     myPanel.timer.stop()
-    print 'timer is stopped'
+    print ('timer is stopped')
     myPanel.timerUnderway.stop()
     myPanel.timerSens.stop()
     print ('ended')

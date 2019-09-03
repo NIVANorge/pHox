@@ -70,7 +70,9 @@ class CO2_instrument(object):
 
       self.QUERY_CO2='\x2A\x4D\x31\x0A\x0D'
       self.QUERY_T='\x2A\x41\x32\x0A\x0D'
-
+      self.UDP_SEND = 6801
+      self.UDP_RECV = 6802
+      self.UDP_IP   = '192.168.0.1'
       self.VAR_NAMES = ['Water temperature \xB0C','Water flow l/m',
                'Water pressure ','Air temperature \xB0C',
                'Air pressure mbar','Water detect','C02 ppm',
