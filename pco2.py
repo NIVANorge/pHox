@@ -4,6 +4,7 @@ from ADCDifferentialPi import ADCDifferentialPi
 import json
 import numpy as np
 from PyQt4 import QtGui, QtCore
+import time
 
 class CO2_instrument(object):
    def __init__(self):
@@ -99,8 +100,7 @@ class PuckManager(object):
       self.LAST_CO2 = 1
       self.LAST_TA = 1
       self.LAST_PAR=[0,0,0]
-      self.franatech = [0]*10
-      self.ftCalCoef = [[0]*2]*10
+
 
    # Instrument mode -------------------------
    def poll_host_softbreak(self):   
