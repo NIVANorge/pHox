@@ -52,7 +52,7 @@ class CO2_instrument(object):
          V += adcdac.read_adc_voltage(ch,0) 
       return V/nAver
       
-   def load_config():
+   def load_config(self):
       with open('config.json') as json_file:
          j = json.load(json_file)
       franatech =   j['franatech']
