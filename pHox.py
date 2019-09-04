@@ -204,7 +204,7 @@ class Cbon(object):
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
 
-        self.samplingInterval = int(default["SAMPLING_INTERVAL"])
+        self.samplingInterval = int(default["PH_SAMPLING_INTERVAL_SEC"])
         self.pT = int(default["pumpTime"])
         self.mT = int(default["mixTime"])
         self.wT = int(default["waitTime"])
@@ -426,7 +426,7 @@ class Cbon(object):
             if arg > 0: 
                 pH = pK + np.log10(arg)
             else:
-                pH = -99.9999
+                pH = 99.9999
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
             ## to fit the log file
             e2,e3 =e2e3,-99
@@ -436,7 +436,9 @@ class Cbon(object):
         print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
         print ('dye: ', self.dye)
         print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
-        self.evalPar.append([pH, pK, e1, e2, e3, vNTC, self.fb_data['salinity'], A1, A2, Aiso, Tdeg, self.dye_vol_inj, fcS, Anir])
+        self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
+                            self.fb_data['salinity'], A1, A2, Aiso,
+                            Tdeg, self.dye_vol_inj, fcS, Anir])
         
     def pH_eval(self):
         # pH ref

@@ -27,7 +27,7 @@
         "AUTOSTART_MODE":"pump",
         "DURATION" : -1,
         "AUTODARK" : 30,
-        "SAMPLING_INTERVAL" : 600,
+        "PH_SAMPLING_INTERVAL_SEC" : 300,
         "pumpTime" : 0 ,
         "mixTime" : 5,
         "waitTime" : 3,
@@ -36,7 +36,8 @@
     },
 
     "intervals":{
-        "SAVE_PCO2_SEC": 2
+        "SAVE_PCO2_SEC": 60
+
     },
     "franatech":{
 

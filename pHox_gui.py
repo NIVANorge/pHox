@@ -607,8 +607,8 @@ class Panel(QtGui.QWidget):
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
         self.logTextBox.appendPlainText('pH_eval')
-        print ('pH_eavl', pHeval) 
-        #t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
+        print ('pH_eval', pHeval) 
+        #t= %.4f, Tref= %.4f,  pert= %.3f, Anir= %.1f' % pHeval)
         
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         logf = os.path.join(self.instrument.folderPath, 'pH.log')
@@ -618,7 +618,7 @@ class Panel(QtGui.QWidget):
         s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], 
             fbox['latitude'], fbox['temperature'], fbox['salinity'])
-        s+= ',%.4f,%.4f,%.4f,%.3f,%.3f' %pHeval
+        s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
         s+= '\n'
         with open(logf,'a') as logFile:
             if hdr:
