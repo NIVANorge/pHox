@@ -269,7 +269,7 @@ class Panel(QtGui.QWidget):
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
-        self.folderPath = folder+'/'
+        self.instrument.folderPath = folder+'/'
 
     def on_samT_clicked(self): 
         time, ok = QtGui.QInputDialog.getInt(
@@ -330,7 +330,7 @@ class Panel(QtGui.QWidget):
         label = t.isoformat('_')
         labelSample = label[0:19]
         logStr = '%s,%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d\n' %(labelSample,d[0],d[1],d[2],d[3],d[4],d[6],d[7])
-        with open(self.folderPath + 'pCO2.log','a') as logFile:
+        with open(self.instrument.folderPath + 'pCO2.log','a') as logFile:
             logFile.write(logStr)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
         sock.sendto(logStr, (self.CO2_instrument.UDP_IP,
@@ -365,7 +365,7 @@ class Panel(QtGui.QWidget):
     def refresh_settings(self):
         settings = ('Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time : %d\nDye addition sequence : %s\nSampling interval : %d\nData folder : %s' % (
                     self.instrument.specIntTime, self.instrument.specAvScans,self.instrument.pumpT, self.instrument.waitT, self.instrument.mixT, self.instrument.dyeAdditions, 
-                    self.instrument.samplingInterval, self.folderPath))
+                    self.instrument.samplingInterval, self.instrument.folderPath))
         self.textBox.setText(settings)
 
     def update_sensors(self):
@@ -415,8 +415,8 @@ class Panel(QtGui.QWidget):
             #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
             WD = self.get_Vd(1,6)
             text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
-            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] +
-                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7])
+            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.CO2_instrument.franatech[6] +
+                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.CO2_instrument.franatech[7])
             self.textBoxSens.setText(text)
 
     def on_deploy_clicked(self, state):
@@ -567,7 +567,7 @@ class Panel(QtGui.QWidget):
         # opening the valve
         self.instrument.set_TV(False)
 
-        flnm = open(self.folderPath + self.instrument.flnmStr +'.spt','w')
+        flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
         txtData = ''
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
@@ -576,7 +576,7 @@ class Panel(QtGui.QWidget):
         flnm.write(txtData)    
         flnm.close()
 
-        flnm = open(self.folderPath + self.instrument.flnmStr+'.evl','w')
+        flnm = open(self.instrument.folderPath + self.instrument.flnmStr+'.evl','w')
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
         for i in range(len(self.instrument.evalPar)):
@@ -588,8 +588,8 @@ class Panel(QtGui.QWidget):
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
         self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
-        self.logTextBox.appendPlainText('data saved in %s' % (self.folderPath +'pH.log'))
-        with open(self.folderPath + 'pH.log','a') as logFile:
+        self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        with open(self.instrument.folderPath + 'pH.log','a') as logFile:
             logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
         self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
         #self.puckEm.LAST_PAR[1]= pHeval[1]
