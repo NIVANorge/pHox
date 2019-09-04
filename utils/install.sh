@@ -81,6 +81,19 @@ then
     sudo systemctl enable pigpiod
 fi
 #--------------------------------------------------------------------------
+# Install SSH
+#--------------------------------------------------------------------------
+echo "******** SSH ***********"
+echo "Install SSH             "
+echo "************************"
+echo "                        "
+read -p "Skip? Y/[N] " ans
+if [ "$ans" != "Y" ]
+then
+    sudo systemctl enable ssh
+    sudo systemctl start ssh
+fi
+#--------------------------------------------------------------------------
 # Install Autostart
 #--------------------------------------------------------------------------
 echo "****** AUTOSTART *******"
@@ -129,7 +142,7 @@ read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
-    echo '#interface eth0'                    >> $f
+    echo 'interface eth0'                     >> $f
     echo 'static ip_address=192.168.0.90/24'  >> $f
     echo 'static routers=192.168.0.1'         >> $f
 fi

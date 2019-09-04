@@ -7,6 +7,7 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 import time
 
+
 class CO2_instrument(object):
    def __init__(self):
       #locate serial port

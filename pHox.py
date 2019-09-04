@@ -1,8 +1,6 @@
 #! /usr/bin/python
 
 import json
-import socket
-import threading
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
@@ -22,12 +20,13 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
 
-UDP_SEND = 6801
-UDP_RECV = 6802
-UDP_IP   = '192.168.0.2'
+# UDP stuff
+import udp
+
 
 #i2c_helper = ABEHelpers()
 #bus = i2c_helper.get_smbus()
+
 
 
 class STSVIS(object): 
@@ -147,8 +146,9 @@ class Cbon(object):
         self.specIntTime = 500 #spectrometer integration time (ms)
         self.specAvScans = 6
 
-        self.salinity = 33.5
-        self.pumping = 1
+        # Ferrybox data
+        self.fb_data = udp.Ferrybox
+        
         self.tsBegin = float
         self.status = [False]*16
         self.intvStatus = False
@@ -174,30 +174,7 @@ class Cbon(object):
         print ("wavelengths", self.wvls)
         self.reset_lines()
         
-        udp = threading.Thread(target=self.udp_server)
-        udp.start()
-
-    def udp_server(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(('', UDP_RECV))
-        print 'UDP server started'
-        while not self._exit:
-            (data,addr) = sock.recvfrom(500)
-            print 'received: %s' % (data.strip())
-            w = data.split(',')
-            if data.startswith('$PFBOX,TIME,'):
-                v = datetime.strptime(w[2], '%Y-%m-%dT%H:%M:%S')
-                t = datetime.now()
-                if abs(t-v).total_seconds() > 5:
-                    print 'will correct time'
-                    os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
-            elif data.startswith('$PFBOX,SAL,'):
-                v = float(w[2])
-                self.salinity = v
-            elif data.startswith('$PFBOX,PUMP,'):
-                v = int(w[2])
-                self.pumping = v
-        sock.close()
+        
 
     def load_config(self):
         with open('config.json') as json_file:
@@ -419,7 +396,7 @@ class Cbon(object):
                            absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
 
         # volume in ml
-        fcS = self.salinity * (
+        fcS = self.fb_data['salinity'] * (
               (self.Cuvette_V)/(self.dye_vol_inj+self.Cuvette_V))
         R = A2/A1
         
@@ -448,7 +425,7 @@ class Cbon(object):
         print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
         print ('dye: ', self.dye)
         print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
-        self.evalPar.append([pH, pK, e1, e2, e3, vNTC, self.salinity, A1, A2, Aiso, Tdeg, self.dye_vol_inj, fcS, Anir])
+        self.evalPar.append([pH, pK, e1, e2, e3, vNTC, self.fb_data['salinity'], A1, A2, Aiso, Tdeg, self.dye_vol_inj, fcS, Anir])
         
     def pH_eval(self):
         # pH ref
@@ -472,4 +449,4 @@ class Cbon(object):
             A = np.vstack([x, np.ones(len(x))]).T
             pert,pH_t = np.linalg.lstsq(A, y)[0]
 
-        return (pH_t, refT, self.salinity, pert, evalAnir)
+        return (pH_t, refT, pert, evalAnir)

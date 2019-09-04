@@ -21,6 +21,10 @@ import pyqtgraph as pg
 import argparse
 import socket
 
+# Ferrybox data
+import udp
+from udp import Ferrybox as fbox
+
 class Console(QtGui.QWidget):
    
    def __init__(self):
@@ -322,18 +326,28 @@ class Panel(QtGui.QWidget):
             print self.instrument.UNDERWAY'''
 
 
-    def save_pCO2_data(self):
+    def save_pCO2_data(self, pH):
         d = self.CO2_instrument.franatech 
         t = datetime.now() 
         label = t.isoformat('_')
         labelSample = label[0:19]
-        logStr = '%s,%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d\n' %(labelSample,d[0],d[1],d[2],d[3],d[4],d[6],d[7])
-        with open(self.instrument.folderPath + 'pCO2.log','a') as logFile:
-            logFile.write(logStr)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-        sock.sendto(logStr, (self.CO2_instrument.UDP_IP,
-                             self.CO2_instrument.UDP_SEND))
-        sock.close() 
+        logf = os.path.join(self.folderPath, 'pCO2.log')
+        hdr  = ''
+        if not os.path.exists(logf):
+            hdr = 'Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2'
+        s = labelSample
+        s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], fbox['latitude'], 
+                fbox['temperature'], fbox['salinity'])
+        s+= ',%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d' %(d[0],d[1],d[2],d[3],d[4],d[6],d[7])
+        s+= '\n'
+        with open(logf,'a') as logFile:
+            if hdr:
+                logFile.write(hdr + '\n')
+            logFile.write(s)
+        udp.send_data('PCO2,' + s)
+        return
+        
+        
 
     def on_intTime_clicked(self):
         # Not used now
@@ -375,7 +389,13 @@ class Panel(QtGui.QWidget):
             
            #Tntc = vNTC*(23.1/0.4173)
         text = 'Cuvette temperature \xB0C: %.4f  (%.4f V)\n' %(Tntc,vNTC)
-        text += 'Salinity=%-.2f\nPumping=%-d\n' % (self.instrument.salinity, self.instrument.pumping)        
+        fmt  = 'FBPumping={:-d}\nFBTemperature={:-.2f}\nFBSalinity={:-.2f}\n'
+        fmt += 'FBLongitude={:-.4f}\nFBLatitude={:-.4f}\n'
+        text += fmt.format(fbox['pumping'], 
+                           fbox['temperature'], 
+                           fbox['salinity'],
+                           fbox['longitude'], 
+                           fbox['latitude'])
         LED1 = self.sliders[0].value()
         LED2 = self.sliders[1].value()
         LED3 = self.sliders[2].value()
@@ -497,7 +517,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra.start()
     
     def sample(self): #parString pT, mT, wT, dA
-        if not self.instrument.pumping:
+        if not fbox['pumping']:
             return
         if self.instrument._autodark:
             now = datetime.now()
@@ -586,10 +606,22 @@ class Panel(QtGui.QWidget):
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
         self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
-        self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
-        with open(self.instrument.folderPath + 'pH.log','a') as logFile:
-            logFile.write(self.instrument.timeStamp[0:16] + ',%.4f,%.4f,%.4f,%.3f,%.3f\n' %pHeval)
-        self.textBox.setText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' %pHeval)
+        self.logTextBox.appendPlainText('data saved in %s' % (self.folderPath +'pH.log'))
+        logf = os.path.join(self.folderPath, 'pH.log')
+        hdr  = ''
+        if not os.path.exists(logf):
+            hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
+        s = self.instrument.timeStamp[0:16]
+        s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], 
+            fbox['latitude'], fbox['temperature'], fbox['salinity'])
+        s+= ',%.4f,%.4f,%.4f,%.3f,%.3f' %pHeval
+        s+= '\n'
+        with open(logf,'a') as logFile:
+            if hdr:
+                logFile.write(hdr + '\n')
+            logFile.write(s)
+        udp.send_data('PH,' + s)
+        self.textBox.setText('pH_t= %.4f, Tref= %.4f, pert= %.3f, Anir= %.1f' %pHeval)
         #self.puckEm.LAST_PAR[1]= pHeval[1]
         #self.puckEm.LAST_pH = pHeval[0]
         
@@ -670,7 +702,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Inside _autostart_pump...')
         self.logTextBox.appendPlainText('Automatic start at pump enabled')
         self.textBox.setText('Automatic start at pump enabled')
-        if self.instrument.pumping:
+        if fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostart_pump)
             self.timerAuto.timeout.connect(self.autostop_pump)
@@ -682,8 +714,8 @@ class Panel(QtGui.QWidget):
         
     def autostop_pump(self):
         self.logTextBox.appendPlainText('Inside autostop_pump...')
-        self.logTextBox.appendPlainText("self.instrument.pumping is {}".format(str(self.instrument.pumping)))
-        if not self.instrument.pumping:
+        self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
+        if not self.instrument.fb_pumping:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
             self.timerAuto.timeout.connect(self.autostart_pump)
@@ -716,11 +748,16 @@ if __name__ == '__main__':
     myPanel.autorun()
     app.exec_()
     print ('ending')
-    myPanel.instrument._exit = True
-    myPanel.timer.stop()
+    udp.UDP_EXIT = True
+    udp.server.join()
+    if not udp.server.is_alive():
+        print 'UDP server closed'
+    myPanel.timerSpectra.stop()
     print ('timer is stopped')
     myPanel.timerUnderway.stop()
+
     myPanel.timerSensUpd.stop()
+    myPanel.close()
+
     print ('ended')
     app.quit()
-    #myPanel.timerSave.stop()
