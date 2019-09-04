@@ -390,7 +390,7 @@ class Cbon(object):
             V += self.adc.read_voltage(ch)
         return V/nAver
          
-        def get_Vd(self, nAver, ch):
+    def get_Vd(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
             V += self.adc.read_voltage(ch)
