@@ -463,7 +463,7 @@ class Panel(QtGui.QWidget):
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
             self.logTextBox.appendPlainText(
-                'Start single measurement {}'.format(self.instrument.flnmStr()))
+                'Start single measurement ')
             self.sample()
             self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
