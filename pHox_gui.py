@@ -393,7 +393,6 @@ class Panel(QtGui.QWidget):
                 value =  float(resp[3:])
                 print ('float(resp[3:])',float(resp[3:]))
                 value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
-                pritn (value,'coef')
             except ValueError:
                 print ("Value error")
                 value = 0
@@ -453,7 +452,7 @@ class Panel(QtGui.QWidget):
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
             self.logTextBox.appendPlainText(
-                'Start single measurement {}'.formatself.instrument.flnmStr())
+                'Start single measurement {}'.format(self.instrument.flnmStr()))
             self.sample()
             self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
