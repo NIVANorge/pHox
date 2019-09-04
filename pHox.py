@@ -7,7 +7,8 @@ os.system('clear')
 import warnings
 import usb.core
 import usb
-
+from ADCDACPi import ADCDACPi
+from ADCDifferentialPi import ADCDifferentialPi
 import struct
 import time
 import RPi.GPIO as GPIO
@@ -196,7 +197,7 @@ class Cbon(object):
         #self._autostop  = None #Not used
         #self._deployed  = False #Not used
         # self.last_dark  = None #Not used
-        
+
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
         self.adcdac = ADCDACPi()

@@ -10,8 +10,7 @@ import warnings
 #import usb
 import time
 import RPi.GPIO as GPIO
-from ADCDACPi import ADCDACPi
-from ADCDifferentialPi import ADCDifferentialPi
+
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
