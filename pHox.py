@@ -423,7 +423,10 @@ class Cbon(object):
             pK = (5.561224-(0.547716*fcS**0.5)+(0.123791*fcS)-(0.0280156*fcS**1.5)+
                  (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
                  ((52.640726*fcS**0.5)*T**-1)+(815.984591*T**-1))
-            pH = pK + np.log10(arg)
+            try:
+                pH = pK + np.log10(arg)
+            except ValueError:
+                ph = -99
             print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
             ## to fit the log file
             e2,e3 =e2e3,-99
