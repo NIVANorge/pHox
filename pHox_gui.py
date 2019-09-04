@@ -327,7 +327,7 @@ class Panel(QtGui.QWidget):
         t = datetime.now() 
         label = t.isoformat('_')
         labelSample = label[0:19]
-        logf = os.path.join(self.folderPath, 'pCO2.log')
+        logf = os.path.join(self.instrument.folderPath, 'pCO2.log')
         hdr  = ''
         if not os.path.exists(logf):
             hdr = 'Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2'
@@ -603,8 +603,8 @@ class Panel(QtGui.QWidget):
         pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
         self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
-        self.logTextBox.appendPlainText('data saved in %s' % (self.folderPath +'pH.log'))
-        logf = os.path.join(self.folderPath, 'pH.log')
+        self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        logf = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
         if not os.path.exists(logf):
             hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
@@ -712,7 +712,7 @@ class Panel(QtGui.QWidget):
     def autostop_pump(self):
         self.logTextBox.appendPlainText('Inside autostop_pump...')
         self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
-        if not self.instrument.fb_pumping:
+        if not fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
             self.timerAuto.timeout.connect(self.autostart_pump)
