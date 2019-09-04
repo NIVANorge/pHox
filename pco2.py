@@ -45,13 +45,19 @@ class CO2_instrument(object):
       SENS_EXIST = True
       self.load_config()
 
-   def get_V(self, nAver, ch):
+   """def get_V(self, nAver, ch):
       V = 0.0000
       for i in range (nAver):
             #1: read channel in differential mode
          V += adcdac.read_adc_voltage(ch,0) 
-      return V/nAver
+      return V/nAver"""
       
+   def get_Vd(self, nAver, ch):
+      V = 0.0000
+      for i in range (nAver):
+         V += adc.read_voltage(ch)
+      return V/nAver
+
    def load_config(self):
       with open('config.json') as json_file:
          j = json.load(json_file)

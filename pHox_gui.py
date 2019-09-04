@@ -68,7 +68,7 @@ class Panel(QtGui.QWidget):
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
 
-        self.folderPath ='/home/pi/pHox/data/'
+
         self.timerSens.start(2000)
 
     def init_ui(self):
@@ -267,10 +267,7 @@ class Panel(QtGui.QWidget):
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
-        if folder == '':
-            self.folderPath ='/home/pi/pHox/data/'
-        else:
-            self.folderPath = folder+'/'
+        self.folderPath = folder+'/'
 
     def on_samT_clicked(self): 
         time, ok = QtGui.QInputDialog.getInt(
@@ -364,7 +361,9 @@ class Panel(QtGui.QWidget):
         self.instrument.specAvScans = 3000/sptIt
 
     def refresh_settings(self):
-        settings = 'Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time : %d\nDye addition sequence : %s\nSampling interval : %d\nData folder : %s' % (self.instrument.specIntTime, self.instrument.specAvScans,self.instrument.pumpT, self.instrument.waitT, self.instrument.mixT, self.instrument.dyeAdditions, self.instrument.samplingInterval, self.folderPath)
+        settings = ('Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time : %d\nDye addition sequence : %s\nSampling interval : %d\nData folder : %s' % (
+                    self.instrument.specIntTime, self.instrument.specAvScans,self.instrument.pumpT, self.instrument.waitT, self.instrument.mixT, self.instrument.dyeAdditions, 
+                    self.instrument.samplingInterval, self.folderPath))
         self.textBox.setText(settings)
 
     def update_sensors(self):
