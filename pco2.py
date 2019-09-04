@@ -1,4 +1,5 @@
 import serial
+import serial.tools.list_ports
 from ADCDACPi import ADCDACPi
 from ADCDifferentialPi import ADCDifferentialPi
 import json
