@@ -551,8 +551,10 @@ class Panel(QtGui.QWidget):
             self.logTextBox.appendPlainText('Injection %d:, shots %d' %(pinj, self.instrument.nshots))
             # turn on the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, True)
-            # inject dye 
-            self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
+            
+            if not self.args.debug:
+                # inject dye 
+                self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             # wait for mixing time
             self.instrument.wait(self.instrument.mT)
             # turn off the stirrer
@@ -604,7 +606,7 @@ class Panel(QtGui.QWidget):
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
-        self.logTextBox.appendPlainText('pH_eval', pHeval) 
+        self.logTextBox.appendPlainText('pH_eval', str(pHeval)) 
         #t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
