@@ -77,47 +77,21 @@ echo "                        "
 read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
-<<<<<<< HEAD
     sudo systemctl start pigpiod
     sudo systemctl enable pigpiod
-#    f="/tmp/pigpio.conf"
-#    g="/etc/init/pigpio.conf"
-#    echo '# pigpio'                       > $f
-#    echo 'description	"PIGPIO daemon"' >> $f
-#    echo 'start on runlevel [2345]'      >> $f
-#    echo 'stop on runlevel [!2345]'      >> $f
-#    echo 'respawn'                       >> $f
-#    echo 'respawn limit 10 5'            >> $f
-#    echo 'umask 022'                     >> $f
-#    echo 'expect stop'                   >> $f
-#    echo 'console none'                  >> $f
-#    echo 'pre-start script'              >> $f
-#    echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
-#    echo 'end script'                    >> $f
-#    echo 'exec /usr/bin/pigpiod'         >> $f
-#    sudo mv $f $g
-=======
-    ## New method via systemd
-    systemctl start pigpiod
-    systemctl enable pigpiod
-    ## Old method via upstart system
-    #f="/tmp/pigpio.conf"
-    #g="/etc/init/pigpio.conf"
-    #echo '# pigpio'                       > $f
-    #echo 'description	"PIGPIO daemon"' >> $f
-    #echo 'start on runlevel [2345]'      >> $f
-    #echo 'stop on runlevel [!2345]'      >> $f
-    #echo 'respawn'                       >> $f
-    #echo 'respawn limit 10 5'            >> $f
-    #echo 'umask 022'                     >> $f
-    #echo 'expect stop'                   >> $f
-    #echo 'console none'                  >> $f
-    #echo 'pre-start script'              >> $f
-    #echo '    test -x /usr/bin/pigpiod || { stop; exit 0; }' >> $f
-    #echo 'end script'                    >> $f
-    #echo 'exec /usr/bin/pigpiod'         >> $f
-    #sudo mv $f $g
->>>>>>> 92351c4ac5afc5b0d74b0a3795f40377426d1219
+fi
+#--------------------------------------------------------------------------
+# Install SSH
+#--------------------------------------------------------------------------
+echo "******** SSH ***********"
+echo "Install SSH             "
+echo "************************"
+echo "                        "
+read -p "Skip? Y/[N] " ans
+if [ "$ans" != "Y" ]
+then
+    sudo systemctl enable ssh
+    sudo systemctl start ssh
 fi
 #--------------------------------------------------------------------------
 # Install Autostart
@@ -135,11 +109,11 @@ then
     then
         mkdir -p "/home/pi/.config/autostart"
     fi
-    echo '[Desktop Entry]'                                  > $f
-    echo 'Type=Application'                                >> $f
-    echo 'NAME=pHox'                                       >> $f
-    echo 'Exec=sudo /usr/bin/python /home/pi/pHox/pHox.py' >> $f
-    echo 'X-GNOME-Autostart-enabled=true'                  >> $f
+    echo '[Desktop Entry]'                                     >  $f
+    echo 'Type=Application'                                    >> $f
+    echo 'NAME=pHox'                                           >> $f
+    echo 'Exec=sudo /usr/bin/python /home/pi/pHox/pHox_gui.py' >> $f
+    echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
 #--------------------------------------------------------------------------
@@ -168,7 +142,7 @@ read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
-    echo '#interface eth0'                    >> $f
+    echo 'interface eth0'                     >> $f
     echo 'static ip_address=192.168.0.90/24'  >> $f
     echo 'static routers=192.168.0.1'         >> $f
 fi

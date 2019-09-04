@@ -1,0 +1,6 @@
+data/
+*.pyc
+*.log
+*.*~
+*.evl
+*.spt
