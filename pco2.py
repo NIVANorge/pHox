@@ -68,6 +68,8 @@ class CO2_instrument(object):
       self.ftCalCoef = np.zeros((10, 2))
       self.franatech = [0]*10
 
+      self.save_pco2_interv = intervals['SAVE_PCO2_SEC']
+
       self.ftCalCoef[0] = franatech['WAT_TEMP_CAL']
       self.ftCalCoef[1] = franatech['WAT_FLOW_CAL']
       self.ftCalCoef[2] = franatech['WAT_PRES_CAL']

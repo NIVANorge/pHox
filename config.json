@@ -35,6 +35,9 @@
         "dye_nshots" : 1
     },
 
+    "intervals":{
+        "SAVE_PCO2_SEC": 2
+    },
     "franatech":{
 
         "comment0":"# Water temperature calibration coefficients :",

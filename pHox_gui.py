@@ -636,12 +636,11 @@ class Panel(QtGui.QWidget):
         #self.btn_leds_checked()
         self.timerSpectra.start(500)
         if not self.args.debug:
-
             self.btn_deploy.setChecked(True)
             self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
-            self.timerSave.start(500)
+            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.e6) #milliseconds
         return
 
     def _autostop(self):
