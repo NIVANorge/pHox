@@ -424,6 +424,7 @@ class Cbon(object):
                  (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
                  ((52.640726*fcS**0.5)*T**-1)+(815.984591*T**-1))
             try:
+                print (arg,type(arg))
                 pH = pK + np.log10(arg)
             except ValueError:
                 ph = -99

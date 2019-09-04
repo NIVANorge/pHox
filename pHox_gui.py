@@ -606,7 +606,8 @@ class Panel(QtGui.QWidget):
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
-        self.logTextBox.appendPlainText('pH_eval', str(pHeval)) 
+        self.logTextBox.appendPlainText('pH_eval')
+        print ('pH_eavl', pHeval) 
         #t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
