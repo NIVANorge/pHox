@@ -388,10 +388,14 @@ class Panel(QtGui.QWidget):
             self.CO2_instrument.portSens.write(
                 self.CO2_instrument.QUERY_CO2)
             resp = self.CO2_instrument.portSens.read(15)
+            print ('REST',resp)
             try:
                 value =  float(resp[3:])
+                print ('float(resp[3:])',float(resp[3:]))
                 value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
+                pritn (value,'coef')
             except ValueError:
+                print ("Value error")
                 value = 0
             self.CO2_instrument.franatech[6] = value
             #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
