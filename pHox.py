@@ -384,17 +384,23 @@ class Cbon(object):
             spAbsMA[i]= np.mean(v)
         return spAbsMA
 
-    def calc_pH(self,absSp, vNTC):
-        for i in range(4):
-           vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-        print 'T sample : %.2f' %Tdeg
-
     def get_Vd(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
             V += self.adc.read_voltage(ch)
         return V/nAver
+         
+        def get_Vd(self, nAver, ch):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.adc.read_voltage(ch)
+        return V/nAver
+
+    def calc_pH(self,absSp, vNTC):
+        for i in range(4):
+           vNTC2 = self.get_Vd(3, self.vNTCch)
+           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
+        print 'T sample : %.2f' %Tdeg
 
         T = 273.15 + Tdeg
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
