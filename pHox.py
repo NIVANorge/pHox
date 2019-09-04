@@ -13,8 +13,8 @@ import usb
 import struct
 import time
 import RPi.GPIO as GPIO
-from ADCDACPi import ADCDACPi
-from ADCDifferentialPi import ADCDifferentialPi
+#from ADCDACPi import ADCDACPi
+#from ADCDifferentialPi import ADCDifferentialPi
 #from helpers import ABEHelpers
 from datetime import datetime, timedelta
 import pigpio
@@ -22,16 +22,13 @@ from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
 
-
 UDP_SEND = 6801
 UDP_RECV = 6802
 UDP_IP   = '192.168.0.2'
 
 #i2c_helper = ABEHelpers()
 #bus = i2c_helper.get_smbus()
-adc = ADCDifferentialPi(0x68, 0x69, 14)
-adc.set_pga(1)
-adcdac = ADCDACPi()
+
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -273,7 +270,7 @@ class Cbon(object):
         self.LED3 = default["LED3"]
 
         self.folderPath ='/data' # relative path
-        
+
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
@@ -298,18 +295,6 @@ class Cbon(object):
     def get_sp_levels(self,pixel):
         spec = self.get_spectral_data()
         return spec[pixel],spec.max()
-
-    def get_V(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
-        return V/nAver
-
-    def get_Vd(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += adc.read_voltage(ch)
-        return V/nAver
 
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)

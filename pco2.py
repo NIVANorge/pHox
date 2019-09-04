@@ -1,7 +1,7 @@
 import serial
 import serial.tools.list_ports
-from ADCDACPi import ADCDACPi
-from ADCDifferentialPi import ADCDifferentialPi
+#from ADCDACPi import ADCDACPi
+#from ADCDifferentialPi import ADCDifferentialPi
 import json
 import numpy as np
 from PyQt4 import QtGui, QtCore
@@ -50,13 +50,13 @@ class CO2_instrument(object):
       for i in range (nAver):
             #1: read channel in differential mode
          V += adcdac.read_adc_voltage(ch,0) 
-      return V/nAver"""
+      return V/nAver
       
    def get_Vd(self, nAver, ch):
       V = 0.0000
       for i in range (nAver):
          V += adc.read_voltage(ch)
-      return V/nAver
+      return V/nAver"""
 
    def load_config(self):
       with open('config.json') as json_file:

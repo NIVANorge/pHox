@@ -55,7 +55,9 @@ class Panel(QtGui.QWidget):
             #self.instrument_pco2 = PCO2()
             #self.puckEm = PuckManager()
             #self.puckEm.enter_instrument_mode([])'''
-
+        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+        self.adc.set_pga(1)
+        self.adcdac = ADCDACPi()
         #self.puckEm = PuckManager()
         self.timer = QtCore.QTimer()
         self.timerUnderway = QtCore.QTimer()
@@ -367,7 +369,7 @@ class Panel(QtGui.QWidget):
         self.textBox.setText(settings)
 
     def update_sensors(self):
-        vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
+        vNTC = self.get_Vd(3, self.instrument.vNTCch)
         Tntc = 0
         Tntc = (self.instrument.ntcCalCoef[0]*vNTC) +self.instrument.ntcCalCoef[1]
         #for i in range(2):
@@ -402,7 +404,7 @@ class Panel(QtGui.QWidget):
                     self.CO2_instrument.franatech[7] = 0
 
             for ch in range(5):
-                V = self.CO2_instrument.get_Vd(2,ch+1)
+                V = self.get_Vd(2,ch+1)
                 X = 0
                 for i in range(2):
                     X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
@@ -411,7 +413,7 @@ class Panel(QtGui.QWidget):
 
             #self.puckEm.LAST_PAR[2] = self.instrument.salinity
             #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
-            WD = self.CO2_instrument.get_Vd(1,6)
+            WD = self.get_Vd(1,6)
             text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
             text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.franatech[6] +
                      self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.franatech[7])
@@ -454,6 +456,17 @@ class Panel(QtGui.QWidget):
         self.timer.start()
         self.btn_spectro.setChecked(True)
 
+    def get_V(self, nAver, ch):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
+        return V/nAver
+
+    def get_Vd(self, nAver, ch):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.adc.read_voltage(ch)
+        return V/nAver
 
     def underway(self):
         self.logTextBox.appendPlainText('Inside underway...')
@@ -535,7 +548,7 @@ class Panel(QtGui.QWidget):
             postinj = self.instrument.spectrometer.get_corrected_spectra()
             self.instrument.spCounts[2+pinj] = postinj 
             # measuring Voltage for temperature probe
-            vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
+            vNTC = self.get_Vd(3, self.instrument.vNTCch)
                 
             pmd = np.clip(postinj - dark,1,16000)
             cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*bmd + self.instrument.nlCoeff[2] * bmd**2
