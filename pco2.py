@@ -63,7 +63,7 @@ class CO2_instrument(object):
       with open('config.json') as json_file:
          j = json.load(json_file)
       franatech =   j['franatech']
-
+      intervals =   j['intervals']
       # Why do we need 10 row here?
       self.ftCalCoef = np.zeros((10, 2))
       self.franatech = [0]*10
