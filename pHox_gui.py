@@ -600,8 +600,12 @@ class Panel(QtGui.QWidget):
         flnm.write(txtData)    
         flnm.close()
 
-        pHeval = self.instrument.pH_eval()  #returns: pH evaluated at reference temperature (cuvette water temperature), reference temperature, salinity, estimated dye perturbation
-        self.logTextBox.appendPlainText('pH_t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
+        pHeval = self.instrument.pH_eval()
+        #returns: pH evaluated at reference temperature 
+        # (cuvette water temperature), reference temperature, salinity, 
+        # estimated dye perturbation
+        self.logTextBox.appendPlainText('pH_eval', pHeval) 
+        #t= %.4f, Tref= %.4f, S= %.2f, pert= %.3f, Anir= %.1f' % pHeval)
         
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         logf = os.path.join(self.instrument.folderPath, 'pH.log')

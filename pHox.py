@@ -168,8 +168,6 @@ class Cbon(object):
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
         print ("wavelengths", self.wvls)
         self.reset_lines()
-        
-        
 
     def load_config(self):
         with open('config.json') as json_file:
@@ -250,7 +248,6 @@ class Cbon(object):
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
-
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
         pixels = np.arange(self.spectrometer.pixels)
@@ -275,8 +272,8 @@ class Cbon(object):
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
-   # auto adjust integration time, scans and light levels #
     def auto_adjust(self):
+        # auto adjust integration time, scans and light levels #
         THR = 11500
         STEP = 5
         sptItRange = [500,750,1000,1500,3000]
