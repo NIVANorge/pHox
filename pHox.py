@@ -23,12 +23,6 @@ import random
 # UDP stuff
 import udp
 
-
-#i2c_helper = ABEHelpers()
-#bus = i2c_helper.get_smbus()
-
-
-
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
     # DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #
@@ -202,6 +196,10 @@ class Cbon(object):
         #self._autostop  = None #Not used
         #self._deployed  = False #Not used
         # self.last_dark  = None #Not used
+        
+        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+        self.adc.set_pga(1)
+        self.adcdac = ADCDACPi()
 
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
@@ -390,6 +388,12 @@ class Cbon(object):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
         print 'T sample : %.2f' %Tdeg
+
+    def get_Vd(self, nAver, ch):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.adc.read_voltage(ch)
+        return V/nAver
 
         T = 273.15 + Tdeg
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
