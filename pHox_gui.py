@@ -419,8 +419,8 @@ class Panel(QtGui.QWidget):
             #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
             WD = self.get_Vd(1,6)
             text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
-            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.instrument.CO2_instrument.franatech[6] +
-                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.instrument.CO2_instrument.franatech[7])
+            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
+                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
             self.textBoxSens.setText(text)
 
     def on_deploy_clicked(self, state):
