@@ -57,12 +57,9 @@ class Panel(QtGui.QWidget):
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument()
 
-        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
-        self.adc.set_pga(1)
-        self.adcdac = ADCDACPi()
         #self.puckEm = PuckManager()
         self.timerSpectra = QtCore.QTimer()
-        self.timerUnderway = QtCore.QTimer()
+        self.timer_contin_mode = QtCore.QTimer()
         self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         #self.timerFIA = QtCore.QTimer()
@@ -78,7 +75,7 @@ class Panel(QtGui.QWidget):
     def init_ui(self):
         self.setWindowTitle('NIVA - pH')
         self.timerSpectra.timeout.connect(self.update_spectra)
-        self.timerUnderway.timeout.connect(self.underway)
+        self.timer_contin_mode.timeout.connect(self.continuous_mode)
         self.timerSensUpd.timeout.connect(self.update_sensors)
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
@@ -119,7 +116,7 @@ class Panel(QtGui.QWidget):
         self.btn_valve = create_button('Inlet valve',True)
         self.btn_stirr = create_button('Stirrer',True)
         self.btn_wpump = create_button('Water pump',True)
-        self.btn_deploy = create_button('Deploy',True)
+        self.btn_deploy = create_button('Continuous measerments',True)
         # Unchecable buttons
         self.btn_t_dark = create_button('Take dark',False)
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
@@ -326,7 +323,7 @@ class Panel(QtGui.QWidget):
             print self.instrument.UNDERWAY'''
 
 
-    def save_pCO2_data(self, pH):
+    def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
         t = datetime.now() 
         label = t.isoformat('_')
@@ -445,9 +442,9 @@ class Panel(QtGui.QWidget):
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
            self.textBox.setText(text)
-           self.timerUnderway.start(self.instrument.samplingInterval*1000)
+           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
-           self.timerUnderway.stop()
+           self.timer_contin_mode.stop()
            #self.timerFIA.stop()
            self.textBox.setText('Cbon is not deployed')
                 
@@ -477,17 +474,18 @@ class Panel(QtGui.QWidget):
     def get_V(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
-            V += self.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
+            V += self.instrument.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
         return V/nAver
 
     def get_Vd(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
-            V += self.adc.read_voltage(ch)
+            V += self.instrument.adc.read_voltage(ch)
         return V/nAver
 
-    def underway(self):
-        self.logTextBox.appendPlainText('Inside underway...')
+    def continuous_mode(self):
+        #former Underway
+        self.logTextBox.appendPlainText('Inside continuous_mode...')
         # stop the spectrophotometer update precautionally
         self.btn_spectro.setChecked(False)
         self.timerSpectra.stop()
@@ -661,7 +659,7 @@ class Panel(QtGui.QWidget):
 
         self.on_deploy_clicked(False)
         self.timerSpectra.stop()
-        self.timerUnderway.stop()
+        self.timer_contin_mode.stop()
         #self.timerSensUpd.stop()
         #self.timerSave.stop()
         return
@@ -726,7 +724,7 @@ class Panel(QtGui.QWidget):
         return
         
     def autorun(self):
-        self.logTextBox.appendPlainText('Inside underway...')
+        self.logTextBox.appendPlainText('Inside continuous_mode...')
         time.sleep(10)
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
@@ -754,7 +752,7 @@ if __name__ == '__main__':
         print 'UDP server closed'
     myPanel.timerSpectra.stop()
     print ('timer is stopped')
-    myPanel.timerUnderway.stop()
+    myPanel.timer_contin_mode.stop()
 
     myPanel.timerSensUpd.stop()
     myPanel.close()
