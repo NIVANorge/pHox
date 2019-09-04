@@ -52,16 +52,14 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument()
-            #self.instrument_pco2 = PCO2()
-            #self.puckEm = PuckManager()
-            #self.puckEm.enter_instrument_mode([])'''
+
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
         self.adcdac = ADCDACPi()
         #self.puckEm = PuckManager()
-        self.timer = QtCore.QTimer()
+        self.timerSpectra = QtCore.QTimer()
         self.timerUnderway = QtCore.QTimer()
-        self.timerSens = QtCore.QTimer()
+        self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
@@ -71,13 +69,13 @@ class Panel(QtGui.QWidget):
         self.plotAbs= self.plotwidget2.plot()
 
 
-        self.timerSens.start(2000)
+        self.timerSensUpd.start(2000)
 
     def init_ui(self):
         self.setWindowTitle('NIVA - pH')
-        self.timer.timeout.connect(self.update_spectra)
+        self.timerSpectra.timeout.connect(self.update_spectra)
         self.timerUnderway.timeout.connect(self.underway)
-        self.timerSens.timeout.connect(self.update_sensors)
+        self.timerSensUpd.timeout.connect(self.update_sensors)
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
@@ -222,9 +220,9 @@ class Panel(QtGui.QWidget):
 
     def spectro_clicked(self):
         if self.btn_spectro.isChecked():
-            self.timer.start(500)
+            self.timerSpectra.start(500)
         else:
-            self.timer.stop()
+            self.timerSpectra.stop()
 
     def sld0_change(self,DC): 
         #get the value from the connect method
@@ -393,7 +391,7 @@ class Panel(QtGui.QWidget):
                 value =  float(resp[3:])
                 print ('float(resp[3:])',float(resp[3:]))
                 value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
-                pritn (value,'coef')
+                print (value,'coef')
             except ValueError:
                 print ("Value error")
                 value = 0
@@ -431,7 +429,7 @@ class Panel(QtGui.QWidget):
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
            text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
            self.textBox.setText(text)
-           self.timerUnderway.start(self.instrument.samplingInterval*1000)     
+           self.timerUnderway.start(self.instrument.samplingInterval*1000)
         else:
            self.timerUnderway.stop()
            #self.timerFIA.stop()
@@ -441,7 +439,7 @@ class Panel(QtGui.QWidget):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
-        self.timer.stop()
+        self.timerSpectra.stop()
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
@@ -457,7 +455,7 @@ class Panel(QtGui.QWidget):
             self.sample()
             self.logTextBox.appendPlainText('Done')
             self.instrument.spectrometer.set_scans_average(1)
-        self.timer.start()
+        self.timerSpectra.start()
         self.btn_spectro.setChecked(True)
 
     def get_V(self, nAver, ch):
@@ -476,7 +474,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Inside underway...')
         # stop the spectrophotometer update precautionally
         self.btn_spectro.setChecked(False)
-        self.timer.stop()
+        self.timerSpectra.stop()
         self.instrument.adjust_LED(0,self.sliders[0].value())
         self.instrument.adjust_LED(1,self.sliders[1].value())
         self.instrument.adjust_LED(2,self.sliders[2].value())
@@ -500,7 +498,7 @@ class Panel(QtGui.QWidget):
         # TODO:should it be FAlse here??
         self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
         #self.check('Spectrophotometer',True)    
-        self.timer.start()
+        self.timerSpectra.start()
     
     def sample(self): #parString pT, mT, wT, dA
         if not self.instrument.pumping:
@@ -611,7 +609,7 @@ class Panel(QtGui.QWidget):
         #self.spectro_clicked()
         self.btn_leds.setChecked(True)
         #self.btn_leds_checked()
-        self.timer.start(500)
+        self.timerSpectra.start(500)
         if not self.args.debug:
 
             self.btn_deploy.setChecked(True)
@@ -634,9 +632,9 @@ class Panel(QtGui.QWidget):
         self.btn_deploy.setChecked(False)
 
         self.on_deploy_clicked(False)
-        self.timer.stop()
+        self.timerSpectra.stop()
         self.timerUnderway.stop()
-        #self.timerSens.stop()
+        #self.timerSensUpd.stop()
         #self.timerSave.stop()
         return
 
@@ -726,7 +724,7 @@ if __name__ == '__main__':
     myPanel.timer.stop()
     print ('timer is stopped')
     myPanel.timerUnderway.stop()
-    myPanel.timerSens.stop()
+    myPanel.timerSensUpd.stop()
     print ('ended')
     app.quit()
     #myPanel.timerSave.stop()
