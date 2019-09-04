@@ -453,7 +453,7 @@ class Cbon(object):
         #print refT
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_t = evalpH[0]
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[1] ) for i in range(n)]
+        refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[0] ) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
         if n>1:
@@ -461,5 +461,7 @@ class Cbon(object):
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
             pert,pH_t = np.linalg.lstsq(A, y)[0]
+            
+        pH_t = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
 
         return (pH_t, refT, pert, evalAnir)
