@@ -449,7 +449,7 @@ class Cbon(object):
         print 'Anir = %.4f' % (evalAnir)
         evalAiso = [self.evalPar[i][9] for i in range(n)]
         evalT = [self.evalPar[i][10] for i in range(n)]
-        refT = np.mean(evalT)
+        refT = evalT[0]
         #print refT
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_t = evalpH[0]
