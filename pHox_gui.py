@@ -143,6 +143,8 @@ class Panel(QtGui.QWidget):
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
+            self.sliders.setTracking(True) # to track changes on sliders
+            # otherwise value change is triggere only when you unclick slider 
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
             self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
             self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
