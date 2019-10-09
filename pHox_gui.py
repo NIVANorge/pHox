@@ -72,6 +72,7 @@ class Panel(QtGui.QWidget):
         self.timerSensUpd.start(2000)
 
     def init_ui(self):
+
         self.setWindowTitle('NIVA - pH')
         self.timerSpectra.timeout.connect(self.update_spectra)
         self.timer_contin_mode.timeout.connect(self.continuous_mode)
@@ -95,6 +96,8 @@ class Panel(QtGui.QWidget):
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         self.logTextBox.appendPlainText('Text message in log')
+        if self.args.debug:
+            self.logTextBox.appendPlainText('Starting in debug mode')
 
         self.tab2.layout.addWidget(self.logTextBox) 
 
@@ -121,12 +124,13 @@ class Panel(QtGui.QWidget):
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
         self.btn_sigle_meas = create_button('Single measurement',False)
         self.btn_dye_pmp = create_button('Dye pump',False)
+        self.reload_config = create_button('Reload config',False)        
 
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump, self.btn_deploy]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
-                             self.btn_sigle_meas, self.btn_dye_pmp]
+                             self.btn_sigle_meas, self.btn_dye_pmp,self.reload_config]
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
@@ -196,12 +200,20 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
+        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
 
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
         self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
+
+    def btn_reload_config_clicked(self):
+        self.logTextBox.appendPlainText('Button reload config was clicked')
+        self.instrument.load_config()
+        state = self.btn_leds.isChecked()
+        self.set_LEDs(state)
+
 
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
