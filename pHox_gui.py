@@ -212,8 +212,10 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Button reload config was clicked')
         self.instrument.load_config()
         state = self.btn_leds.isChecked()
+        self.sliders[0].setValue(self.instrument.LED1)
+        self.sliders[1].setValue(self.instrument.LED2)
+        self.sliders[2].setValue(self.instrument.LED3)
         self.set_LEDs(state)
-
 
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
