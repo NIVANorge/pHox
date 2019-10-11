@@ -85,13 +85,17 @@ class Panel(QtGui.QWidget):
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
+        self.tab3 = QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,"Tab 1")
         self.tabs.addTab(self.tab2,"Log")
+        self.tabs.addTab(self.tab3,"Config")
+
 
         self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
         self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab3.layout = QtGui.QGridLayout() #.addLayout(grid)
 
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
@@ -297,46 +301,6 @@ class Panel(QtGui.QWidget):
     def update_spectra(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
         self.plotSpc.setData(self.instrument.wvls,datay)                  
-
-    '''def simulate(self):
-        self.puckEm.LAST_pH = 8+random.gauss(0,0.05)
-        self.puckEm.LAST_CO2 = 350+random.gauss(0,10)
-        self.puckEm.LAST_TA = 2200+random.gauss(0,25)
-        print '%.1f %.4f %.1f' %(self.puckEm.LAST_CO2,self.puckEm.LAST_pH,self.puckEm.LAST_TA)'''
-
-    '''def on_combo_clicked(self, text):
-        comboItems = ['Set integration time','Set averaging scans',
-                      'Set sampling interval','Auto adjust',
-                      'Set pCO2 data saving rate',
-                      'BOTTLE setup','UNDERWAY setup']
-        choice = comboItems.index(text)
-        if choice == 0:
-            self.on_intTime_clicked()
-        elif choice == 1:
-            self.on_scans_clicked() 
-        elif choice == 2:
-            self.on_samT_clicked()
-        elif choice == 4:
-            self.on_data_saving_rate_clicked()
-        elif choice == 3:
-            self.on_autoAdjust_clicked()
-        elif choice == 5:
-            dialog = inputDialog(parent= self, title='BOTTLE setup', parString=self.instrument.BOTTLE)
-            dialog.exec_()
-            try:
-               self.instrument.BOTTLE = dialog.parString
-            except AttributeError:
-               pass
-            print self.instrument.BOTTLE
-        if choice == 6:
-            dialog = inputDialog(parent= self, title='UNDERWAY setup', parString= self.instrument.UNDERWAY)
-            dialog.exec_()
-            try:
-               self.instrument.UNDERWAY = dialog.parString
-            except AttributeError:
-               pass
-            print self.instrument.UNDERWAY'''
-
 
     def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
@@ -596,7 +560,12 @@ class Panel(QtGui.QWidget):
                 spAbsMA[i]= np.mean(v)
     
             self.plotAbs.setData(self.instrument.wvls,spAbs)
-            self.instrument.calc_pH(spAbs,vNTC)
+            Tdeg, pK, e1, e2, e3, Anir,R, Aiso, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
+
+            self.logTextBox.appendPlainText(
+                'Tdeg = {}, pK = {}, e1= {}, e2= {}, e3 = {}'.format(Tdeg, pK, e1, e2, e3))
+            self.logTextBox.appendPlainText(
+                'Anir = {},R = {}, Aiso = {}, dye = {}, pH = {}'.format(Anir,R, Aiso, dye, pH))
         # opening the valve
         self.instrument.set_TV(False)
 
@@ -619,13 +588,13 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         pHeval = self.instrument.pH_eval()
+        pH_t, refT, pert, evalAnir = pHeval
+
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
-        self.logTextBox.appendPlainText('pH_eval')
-        print ('pH_eval', pHeval) 
-        #t= %.4f, Tref= %.4f,  pert= %.3f, Anir= %.1f' % pHeval)
-        
+
+        self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         logf = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
@@ -667,7 +636,7 @@ class Panel(QtGui.QWidget):
         return
 
     def _autostop(self):
-        self.logTextBox.appendPlainText('Inside _autostop...')
+        #self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         #TODO: why do we need it 
         self.sliders[0].setValue(0)
@@ -732,8 +701,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        self.logTextBox.appendPlainText('Inside autostop_pump...')
-        self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
+        #self.logTextBox.appendPlainText('Inside autostop_pump...')
+        #self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
         if not fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
