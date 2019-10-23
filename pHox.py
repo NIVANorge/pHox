@@ -243,7 +243,7 @@ class Cbon(object):
         self.LED2 = default["LED2"]
         self.LED3 = default["LED3"]
 
-        self.folderPath ='/home/pi/pHox/data' # relative path
+        self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
