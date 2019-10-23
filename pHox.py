@@ -408,7 +408,8 @@ class Cbon(object):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-
+        #print 'T sample : %.2f' %Tdeg
+        #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
@@ -426,7 +427,7 @@ class Cbon(object):
             pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + log10(arg)
-            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
+            #print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
             e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
@@ -438,20 +439,20 @@ class Cbon(object):
                 pH = pK + np.log10(arg)
             else:
                 pH = 99.9999
-            print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+            #print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
             ## to fit the log file
             e2,e3 =e2e3,-99
         else:
             raise ValueError('wrong DYE: ' + self.dye)
 
-        print 'T sample : %.2f' %Tdeg
-        print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
-        print ('dye: ', self.dye)
-        print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
-
+        #print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
+        #print ('dye: ', self.dye)
+        #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2, Aiso,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
+
+        return  Tdeg, pK, e1, e2, e3, Anir,R, Aiso,self.dye, pH
         
     def pH_eval(self):
         # pH ref
