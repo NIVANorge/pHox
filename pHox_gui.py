@@ -571,7 +571,7 @@ class Panel(QtGui.QWidget):
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
-        txtData = ''
+	txtData = ''
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
