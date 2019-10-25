@@ -20,7 +20,7 @@ import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
-import pandas as pd 
+#import pandas as pd 
 
 # UDP stuff
 import udp
