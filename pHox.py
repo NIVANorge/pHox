@@ -478,4 +478,4 @@ class Cbon(object):
         # pH at in situ 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
-        return (pH_t, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
+        return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
