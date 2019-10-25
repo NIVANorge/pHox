@@ -465,6 +465,6 @@ class Cbon(object):
             A = np.vstack([x, np.ones(len(x))]).T
             pert,pH_t = np.linalg.lstsq(A, y)[0]
             
-        pH_t = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
+        pH_insitu = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
 
         return (pH_t, refT, pert, evalAnir)
