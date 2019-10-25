@@ -568,7 +568,8 @@ class Panel(QtGui.QWidget):
                 'Anir = {},R = {}, Aiso = {}, dye = {}, pH = {}'.format(Anir,R, Aiso, dye, pH))
         # opening the valve
         self.instrument.set_TV(False)
-
+        # LOg files 
+        # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
 	txtData = ''
         for i in range(2+self.instrument.ncycles):
@@ -578,6 +579,9 @@ class Panel(QtGui.QWidget):
         flnm.write(txtData)    
         flnm.close()
 
+        # 4 measurements for each measure *product of spectrums 
+        # Write Temp_probe calibration coefficients , ntc cal now, a,b 
+        # T_probe_coef_a, T_probe_coef_b 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr+'.evl','w')
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
@@ -596,6 +600,8 @@ class Panel(QtGui.QWidget):
 
         self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        # add boat code 
+        # add temperature Caliblrated (TRUE or FALSE)
         logf = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
         if not os.path.exists(logf):

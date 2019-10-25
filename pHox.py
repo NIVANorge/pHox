@@ -20,6 +20,7 @@ import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
+import pandas as pd 
 
 # UDP stuff
 import udp
@@ -133,6 +134,7 @@ class Cbon(object):
         # load instrument general configuration
       
         self.evalPar = []
+        #self.evalPar_df = pd.DataFrame()
         self.ledDC = [0]*4 
         self.spectrometer = STSVIS()
         self.wvlPixels = []
@@ -166,19 +168,30 @@ class Cbon(object):
 
         print 'calculating wavelengths...\n'
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
-        print ("wavelengths", self.wvls)
+        try: 
+            self.textBox.append("wavelengths {}".format(self.wvls))
+        except: 
+            pass
         self.reset_lines()
 
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
         default =   j['default']
+        try: 
+            self.textBox.append('Loading pHaro parameters...')
+        except: 
+            pass
+            #print ('Loading pHaro parameters...')
 
-        print ('Loading pHaro parameters...')
+        self.dye = default['DYE'] 
+        if self.dye == 'MCP':
+            self.HI =  int(default['MCP_wl_HI'])
+            self.I2 =  int(default['MCP_wl_I2-'])         
+        elif self.dye == "TB":   
+            self.HI =  int(default['TB_wl_HI-'])
+            self.I2 =  int(default['TB_wl_I2-'])
 
-        self.HI =  int(default['HI-'])
-        self.I2 =  int(default['I2-'])
-        self.Iso = int(default['ISO'])
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
         self._automode  = default['AUTOSTART_MODE']
@@ -231,9 +244,7 @@ class Cbon(object):
         self.ntcCalCoef = default['NTC_CAL_COEF']
         print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
 
-        self.dye = default['DYE'] 
-        #type of dye(default value, will be changed inside gui )
-        print ('Dye type',self.dye,'\n')
+
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
@@ -452,19 +463,19 @@ class Cbon(object):
         print 'Anir = %.4f' % (evalAnir)
         evalAiso = [self.evalPar[i][9] for i in range(n)]
         evalT = [self.evalPar[i][10] for i in range(n)]
-        refT = evalT[0]
+        T_lab = evalT[0]
         #print refT
         evalpH = [self.evalPar[i][0] for i in range(n)]
-        pH_t = evalpH[0]
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[0] ) for i in range(n)]
+        pH_lab = evalpH[0] # pH at cuvette temp at this step
+        refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
         if n>1:
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
-            pert,pH_t = np.linalg.lstsq(A, y)[0]
-            
-        pH_insitu = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
+            pert,pH_lab = np.linalg.lstsq(A, y)[0]
+        # pH at in situ 
+        pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
-        return (pH_t, refT, pert, evalAnir)
+        return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
