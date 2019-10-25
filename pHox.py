@@ -264,7 +264,7 @@ class Cbon(object):
         pixels = np.arange(self.spectrometer.pixels)
         wvls = coeffs[0] + coeffs[1]* pixels + coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3)
         self.wvlPixels = []
-        for wl in (self.HI, self.Iso, self.I2, self.NIR):
+        for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
         print 'Analysis pixels : ', self.wvlPixels
         return wvls
