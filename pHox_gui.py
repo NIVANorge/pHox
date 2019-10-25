@@ -134,7 +134,10 @@ class Panel(QtGui.QWidget):
                             self.btn_stirr, self.btn_wpump, self.btn_cont_meas]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
-                             self.btn_sigle_meas, self.btn_dye_pmp,self.reload_config]
+                             self.btn_sigle_meas, self.btn_dye_pmp] 
+
+        
+        self.tab3.layout.addWidget(self.reload_config)
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
@@ -185,6 +188,8 @@ class Panel(QtGui.QWidget):
 
         self.tab1.setLayout(self.tab1.layout)
         self.tab2.setLayout(self.tab2.layout)
+        self.tab3.setLayout(self.tab3.layout)   
+            
         tabs_layout.addWidget(self.tabs)
 
         # combine layout for plots and buttons
