@@ -468,9 +468,7 @@ class Panel(QtGui.QWidget):
         # stop the spectrophotometer update precautionally
         self.btn_spectro.setChecked(False)
         self.timerSpectra.stop()
-        self.instrument.adjust_LED(0,self.sliders[0].value())
-        self.instrument.adjust_LED(1,self.sliders[1].value())
-        self.instrument.adjust_LED(2,self.sliders[2].value())
+        [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
         self.instrument.spectrometer.set_scans_average(
                                   self.instrument.specAvScans)
