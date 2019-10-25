@@ -413,9 +413,9 @@ class Cbon(object):
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
             e3 = 0.0223 + 0.0003917*T
-            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
+            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*fcS
             arg = (R - e1)/(e2 - R*e3)
-            pH = 0.0047 + pK + log10(arg)
+            pH = 0.0047 + pK + np.log10(arg)
             #print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
