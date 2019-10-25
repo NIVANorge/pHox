@@ -122,7 +122,7 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
-class Cbon(object):
+class pH_instrument(object):
     # Instrument constructor #
     def __init__(self):
         # For signaling to threads
@@ -245,7 +245,6 @@ class Cbon(object):
         print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
 
 
-
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
         self.dye_vol_inj = default["DYE_V_INJ"]
@@ -284,6 +283,7 @@ class Cbon(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def auto_adjust(self):
+        # TODO, implement it, now now used 
         # auto adjust integration time, scans and light levels #
         THR = 11500
         STEP = 5

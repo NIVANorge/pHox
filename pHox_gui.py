@@ -44,7 +44,7 @@ class Console(QtGui.QWidget):
 class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
-        self.instrument = Cbon()
+        self.instrument = pH_instrument()
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
                             action="store_true")
@@ -122,7 +122,7 @@ class Panel(QtGui.QWidget):
         self.btn_valve = create_button('Inlet valve',True)
         self.btn_stirr = create_button('Stirrer',True)
         self.btn_wpump = create_button('Water pump',True)
-        self.btn_deploy = create_button('Continuous measerments',True)
+        self.btn_cont_meas = create_button('Continuous measurements',True)
         # Unchecable buttons
         self.btn_t_dark = create_button('Take dark',False)
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
@@ -131,7 +131,7 @@ class Panel(QtGui.QWidget):
         self.reload_config = create_button('Reload config',False)        
 
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
-                            self.btn_stirr, self.btn_wpump, self.btn_deploy]
+                            self.btn_stirr, self.btn_wpump, self.btn_cont_meas]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
                              self.btn_sigle_meas, self.btn_dye_pmp,self.reload_config]
@@ -203,7 +203,7 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
+        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
         self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
 
         # Define connections for Unchecable buttons
@@ -229,8 +229,8 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.wpump_slot,
         self.btn_wpump.isChecked())
 
-    def btn_deploy_clicked(self):
-        self.on_deploy_clicked(self.btn_deploy.isChecked())
+    def btn_cont_meas_clicked(self):
+        self.on_deploy_clicked(self.btn_cont_meas.isChecked())
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -322,7 +322,6 @@ class Panel(QtGui.QWidget):
             logFile.write(s)
         udp.send_data('PCO2,' + s)
         return
-        
         
 
     def on_intTime_clicked(self):
@@ -419,13 +418,13 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           text = 'instrument deployed\nNext sample %s\n\n' %(nextSample.isoformat())
+           text = 'Continuous measurement mode is ON\nNext sample %s\n\n' %(nextSample.isoformat())
            self.textBox.setText(text)
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
            #self.timerFIA.stop()
-           self.textBox.setText('Cbon is not deployed')
+           self.textBox.setText('Continuous measurement mode is OFF')
                 
     def on_sigle_meas_clicked(self):
         # Button "single" is clicked
@@ -632,7 +631,7 @@ class Panel(QtGui.QWidget):
         #self.btn_leds_checked()
         self.timerSpectra.start(500)
         if not self.args.debug:
-            self.btn_deploy.setChecked(True)
+            self.btn_cont_meas.setChecked(True)
             self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
@@ -649,7 +648,7 @@ class Panel(QtGui.QWidget):
 
         self.btn_spectro.setChecked(False)
         self.btn_leds.setChecked(False)
-        self.btn_deploy.setChecked(False)
+        self.btn_cont_meas.setChecked(False)
 
         self.on_deploy_clicked(False)
         self.timerSpectra.stop()
