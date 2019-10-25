@@ -179,7 +179,8 @@ class Panel(QtGui.QWidget):
         self.plotwidget2 = pg.PlotWidget()
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
-
+        
+        vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
@@ -190,7 +191,7 @@ class Panel(QtGui.QWidget):
 
         self.tab3.layout.addWidget(self.reload_config)
         self.tab3.layout.addWidget(self.list_config)       
-        vboxPlot = QtGui.QVBoxLayout()
+
 
         self.tab1.setLayout(self.tab1.layout)
         self.tab2.setLayout(self.tab2.layout)
