@@ -186,8 +186,9 @@ class Panel(QtGui.QWidget):
 
         # Define widgets for config tab 
         self.reload_config = create_button('Reload config',False)     
-        self.list_config = QtWidgets.QListWidget(self)
-        self.list_config.addItem("LED1: ").format(str(self.instrument.LED1))
+        self.list_config = QtGui.QListWidget(self)
+        self.list_config.addItem("LED1: ")
+	#.format(str(self.instrument.LED1))
 
         self.tab3.layout.addWidget(self.reload_config)
         self.tab3.layout.addWidget(self.list_config)       
