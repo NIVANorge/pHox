@@ -116,6 +116,7 @@ class Panel(QtGui.QWidget):
                 Btn.setCheckable(True)
             return Btn
 
+        # Define widgets for main tab 
         # Create checkabple buttons
         self.btn_spectro = create_button('Spectrophotometer',True)
         self.btn_leds = create_button('LEDs',True)
@@ -128,16 +129,14 @@ class Panel(QtGui.QWidget):
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
         self.btn_sigle_meas = create_button('Single measurement',False)
         self.btn_dye_pmp = create_button('Dye pump',False)
-        self.reload_config = create_button('Reload config',False)        
-
+   
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump, self.btn_cont_meas]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
                              self.btn_sigle_meas, self.btn_dye_pmp] 
 
-        
-        self.tab3.layout.addWidget(self.reload_config)
+
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
@@ -148,7 +147,7 @@ class Panel(QtGui.QWidget):
             self.tab1.layout.addWidget(btn, idx, 2)
 
         sldRow = 6
-        sldNames = ['Blue','Orange','Red','LED4']
+        sldNames = ['Blue','Orange','Red']
         self.sliders = []
         self.sldLabels = []
         for sldInd in range(3):
@@ -173,8 +172,6 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.textBox, sldRow+4,1)
         self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,2)
 
-        vboxPlot = QtGui.QVBoxLayout()
-
         #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget1.setYRange(0,16000)
@@ -186,10 +183,19 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
+        # Define widgets for config tab 
+        self.reload_config = create_button('Reload config',False)     
+        self.list_config = QtWidgets.QListWidget(self)
+        self.list_config.addItem("LED1: ").format(str(self.instrument.LED1))
+
+        self.tab3.layout.addWidget(self.reload_config)
+        self.tab3.layout.addWidget(self.list_config)       
+        vboxPlot = QtGui.QVBoxLayout()
+
         self.tab1.setLayout(self.tab1.layout)
         self.tab2.setLayout(self.tab2.layout)
         self.tab3.setLayout(self.tab3.layout)   
-            
+
         tabs_layout.addWidget(self.tabs)
 
         # combine layout for plots and buttons

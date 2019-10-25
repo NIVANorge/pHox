@@ -225,7 +225,7 @@ class pH_instrument(object):
         self.nshots = int(default["dye_nshots"])
         
         self.molAbsRats = default['MOL_ABS_RATIOS']
-        print ('Molar absorption ratios: ',self.molAbsRats)
+
 
         self.pwmLines =  default['PWM_LINES']
         print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
