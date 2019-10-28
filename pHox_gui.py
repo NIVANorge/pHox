@@ -186,24 +186,58 @@ class Panel(QtGui.QWidget):
 
         # Define widgets for config tab 
         self.reload_config = create_button('Reload config',False)     
-        self.dye_label = QtGui.QLabel('DYE')
+        self.dye_label = QtGui.QLabel('DYE: ')
         self.dye_value = QtGui.QComboBox()
         self.dye_value.addItem('TB')
         self.dye_value.addItem('MCP')        
-	print (self.instrument.dye,"*****")
-        #self.dye_value.SelectedText = self.instrument.dye
-	#self.dye_value.SelectedItem = str(self.instrument.dye)
-        index = self.dye_value.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
-        print (index,'index')
-	if index >= 0:
+        index = self.dye_value.findText(self.instrument.dye, 
+                                QtCore.Qt.MatchFixedString)
+        if index >= 0: 
             self.dye_value.setCurrentIndex(index)
-        #self.list_config = QtGui.QListWidget(self)
-        #self.list_config.addItem("LED1: ")
-	    #.format(str(self.instrument.LED1))
+
+        self.nir_label = QtGui.QLabel('NIR: ')
+        self.nir_value = QtGui.QSpinBox()
+        self.nir_value.setValue(self.instrument.NIR)
+
+        self.hi_label = QtGui.QLabel('HI-: ')
+        self.hi_value = QtGui.QSpinBox()
+
+        self.i2_label = QtGui.QLabel('I2-: ')
+        self.i2_value = QtGui.QSpinBox()
+
+        self.dyecal_label = QtGui.QLabel('DYE calibration: ')
+        self.dyecal_val = QtGui.QLabel('to be added')
+        
+        self.dyev_inj_label = QtGui.QLabel('Dye injection volume: ')
+        self.dyev_inj_value = QtGui.QSpinBox()
+
+        self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
+        self.cuv_v_value = QtGui.QSpinBox()
+
 
         self.tab3.layout.addWidget(self.reload_config,0,0,0,-1)
+
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_value,1,1,1,1)
+
+        self.tab3.layout.addWidget(self.nir_label,2,1,1,1)
+        self.tab3.layout.addWidget(self.nir_value,2,2,1,1)
+
+        self.tab3.layout.addWidget(self.hi_label,3,2,1,1)
+        self.tab3.layout.addWidget(self.hi_value,3,3,1,1)
+
+        self.tab3.layout.addWidget(self.i2_label,4,3,1,1)
+        self.tab3.layout.addWidget(self.i2_value,4,4,1,1)
+
+        self.tab3.layout.addWidget(self.dyecal_label,5,4,1,1)
+        self.tab3.layout.addWidget(self.dyecal_value,5,5,1,1)
+
+        self.tab3.layout.addWidget(self.dyev_inj_label,6,5,1,1)
+        self.tab3.layout.addWidget(self.dyev_inj_value,6,6,1,1)
+
+        self.tab3.layout.addWidget(self.cuv_v_label,7,6,1,1)
+        self.tab3.layout.addWidget(self.cuv_v_value,7,7,1,1)
+
         #self.tab3.layout.addWidget(self.list_config)       
 
 
