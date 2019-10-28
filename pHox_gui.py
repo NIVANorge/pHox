@@ -88,12 +88,14 @@ class Panel(QtGui.QWidget):
         self.tab3 = QtGui.QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.tab1,"Tab 1")
+        self.tabs.addTab(self.tab1,"Home")
+        self.tabs.addTab(self.tab_manual,"Manual mode")
         self.tabs.addTab(self.tab2,"Log")
         self.tabs.addTab(self.tab3,"Config")
 
 
-        self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab1.layout = QtGui.QGridLayout()
+        self.tab_manual  = QtGui.QGridLayout()
         self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
         self.tab3.layout = QtGui.QGridLayout() #.addLayout(grid)
 
@@ -107,7 +109,6 @@ class Panel(QtGui.QWidget):
 
         self.group = QtGui.QButtonGroup()
         self.group.setExclusive(False)
-
 
         def create_button(name,check):
             Btn = QtGui.QPushButton(name)
@@ -131,16 +132,16 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp = create_button('Dye pump',False)
    
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
-                            self.btn_stirr, self.btn_wpump, self.btn_cont_meas]
+                            self.btn_stirr, self.btn_wpump]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
                              self.btn_sigle_meas, self.btn_dye_pmp] 
 
-
+        self.tab1.layout.addWidget(0, 0, 1, 1)
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
-            self.tab1.layout.addWidget(btn, idx, 1) #row,col
+            self.tab_manual.layout.addWidget(btn, idx, 1) #row,col
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
@@ -201,6 +202,7 @@ class Panel(QtGui.QWidget):
 
         self.hi_label = QtGui.QLabel('HI-: ')
         self.hi_value = QtGui.QSpinBox()
+        self.nir_value.setValue(self.instrument.HI)
 
         self.i2_label = QtGui.QLabel('I2-: ')
         self.i2_value = QtGui.QSpinBox()
