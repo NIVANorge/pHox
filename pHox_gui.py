@@ -223,8 +223,8 @@ class Panel(QtGui.QWidget):
         # print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
         # print 'Analysis pixels : ', self.wvlPixels
 
-        
-        self.tab3.layout.addWidget(self.reload_config,0,0,0,1)
+
+        self.tab3.layout.addWidget(self.reload_config,0,0,1,1)
 
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_value,1,1,1,1)
@@ -301,7 +301,7 @@ class Panel(QtGui.QWidget):
 
     def btn_cont_meas_clicked(self):
         state = self.btn_cont_meas.isChecked()
-        self.logTextBox.appendPlainText('Continuous measerement mode is ', state)
+        self.logTextBox.appendPlainText('Continuous measerement mode is '.format(str(state)))
         if state:
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
