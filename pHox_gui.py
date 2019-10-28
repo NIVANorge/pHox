@@ -84,6 +84,7 @@ class Panel(QtGui.QWidget):
         tabs_layout = QtGui.QVBoxLayout()
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
+	self.tab_manual = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
         self.tab3 = QtGui.QWidget()
 
@@ -95,7 +96,7 @@ class Panel(QtGui.QWidget):
 
 
         self.tab1.layout = QtGui.QGridLayout()
-        self.tab_manual  = QtGui.QGridLayout()
+        self.tab_manual.layout  = QtGui.QGridLayout()
         self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
         self.tab3.layout = QtGui.QGridLayout() #.addLayout(grid)
 
@@ -137,7 +138,7 @@ class Panel(QtGui.QWidget):
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
                              self.btn_sigle_meas, self.btn_dye_pmp] 
 
-        self.tab1.layout.addWidget(0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
