@@ -295,7 +295,7 @@ class Panel(QtGui.QWidget):
 
     def btn_cont_meas_clicked(self):
         state = self.btn_cont_meas.isChecked()
-
+        print ('btn state is ', state)
         if state:
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
@@ -629,12 +629,13 @@ class Panel(QtGui.QWidget):
                 spAbsMA[i]= np.mean(v)
     
             self.plotAbs.setData(self.instrument.wvls,spAbs)
-            Tdeg, pK, e1, e2, e3, Anir,R, Aiso, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
+            Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
 
             self.logTextBox.appendPlainText(
                 'Tdeg = {}, pK = {}, e1= {}, e2= {}, e3 = {}'.format(Tdeg, pK, e1, e2, e3))
             self.logTextBox.appendPlainText(
-                'Anir = {},R = {}, Aiso = {}, dye = {}, pH = {}'.format(Anir,R, Aiso, dye, pH))
+                'Anir = {},R = {}, dye = {}, pH = {}'.format(Anir,R, dye, pH))
+
         # opening the valve
         self.instrument.set_TV(False)
         # LOg files 
