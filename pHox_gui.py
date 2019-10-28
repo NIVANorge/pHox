@@ -189,15 +189,20 @@ class Panel(QtGui.QWidget):
         self.dye_label = QtGui.QLabel('DYE')
         self.dye_value = QtGui.QComboBox()
         self.dye_value.addItem('TB')
-        self.dye_value.addItem('mCP')        
-        self.dye_value.SelectedText = self.instrument.dye
-
+        self.dye_value.addItem('MCP')        
+	print (self.instrument.dye,"*****")
+        #self.dye_value.SelectedText = self.instrument.dye
+	#self.dye_value.SelectedItem = str(self.instrument.dye)
+        index = self.dye_value.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
+        print (index,'index')
+	if index >= 0:
+            self.dye_value.setCurrentIndex(index)
         #self.list_config = QtGui.QListWidget(self)
         #self.list_config.addItem("LED1: ")
 	    #.format(str(self.instrument.LED1))
 
         self.tab3.layout.addWidget(self.reload_config,0,0,0,-1)
-        self.tab3.layout.addWidget(self.dye_label,0,1,1,1)
+        self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_value,1,1,1,1)
         #self.tab3.layout.addWidget(self.list_config)       
 
