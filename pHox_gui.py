@@ -146,7 +146,7 @@ class Panel(QtGui.QWidget):
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
-            self.tab1.layout.addWidget(btn, idx, 2)
+            self.tab_manual.layout.addWidget(btn, idx, 2)
 
         sldRow = 6
         sldNames = ['Blue','Orange','Red']
@@ -158,8 +158,8 @@ class Panel(QtGui.QWidget):
             self.sliders[sldInd].setTracking(True) # to track changes on sliders
             # otherwise value change is triggere only when you unclick slider 
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
-            self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
-            self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
+            self.tab_manual.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
+            self.tab_manual.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
 
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
@@ -481,7 +481,6 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           self.textBox.setText(text)
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
