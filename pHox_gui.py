@@ -306,6 +306,7 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
+           self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(str(nextSample)))
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
@@ -544,7 +545,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Inside continuous_mode...')
         # stop the spectrophotometer update precautionally
         ###self.btn_spectro.setChecked(False)
-
+        
         self.timerSpectra.stop()
         [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
@@ -565,7 +566,7 @@ class Panel(QtGui.QWidget):
         oldText = self.textBox.toPlainText()
         self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
         # TODO:should it be FAlse here??
-        ####self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
+        self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
         #self.check('Spectrophotometer',True)    
         self.timerSpectra.start()
     
