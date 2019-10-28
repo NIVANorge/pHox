@@ -111,7 +111,7 @@ class STSVIS(object):
             rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000)
             #wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
-        print 'calibration coefficients: ', wvlCalCoeff,'\n'
+        
         return wvlCalCoeff
           
     def get_corrected_spectra(self):
@@ -166,7 +166,6 @@ class pH_instrument(object):
             self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
-        print 'calculating wavelengths...\n'
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
         try: 
             self.textBox.append("wavelengths {}".format(self.wvls))
@@ -179,10 +178,10 @@ class pH_instrument(object):
             j = json.load(json_file)
         default =   j['default']
         try: 
-            self.textBox.append('Loading pHaro parameters...')
+            self.textBox.append('Loading config.json')
         except: 
             pass
-            #print ('Loading pHaro parameters...')
+
 
         self.dye = default['DYE'] 
         if self.dye == 'MCP':
@@ -196,7 +195,6 @@ class pH_instrument(object):
         self._autostart = bool(default['AUTOSTART'])
         self._automode  = default['AUTOSTART_MODE']
 
-        print ('AUTOSTART',self._autostart,'AUTOSTART_MODE',self._automode)
         self.DURATION =  int(default['DURATION'])
 
         #TODO: should be replaced by value from config?
@@ -226,10 +224,8 @@ class pH_instrument(object):
         
         self.molAbsRats = default['MOL_ABS_RATIOS']
 
-
         self.pwmLines =  default['PWM_LINES']
-        print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
-        print ('0 = will be skipped')
+
 
         self.ssrLines = default['GPIO_SSR']
         #TODO: Replace ssrlines with new lines 
@@ -242,8 +238,6 @@ class pH_instrument(object):
 
         # NTC Temperature calibration coefficients
         self.ntcCalCoef = default['NTC_CAL_COEF']
-        print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
-
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
@@ -265,7 +259,6 @@ class pH_instrument(object):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
-        print 'Analysis pixels : ', self.wvlPixels
         return wvls
 
     def find_nearest(self, items, value):
@@ -340,7 +333,6 @@ class pH_instrument(object):
 
     def wait(self, secs):
         t0 = time.time()
-        print('Waiting...')
         while (time.time()-t0)<secs:
             try:
                 time.sleep(0.1)
@@ -408,8 +400,8 @@ class pH_instrument(object):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-        #print 'T sample : %.2f' %Tdeg
-        #self.logTextBox.appendPlainText('Taking dark level...')
+            #print 'T sample : %.2f' %Tdeg
+            #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
         A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
@@ -428,7 +420,7 @@ class pH_instrument(object):
             pK = 4.706*(fcS/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*fcS
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + np.log10(arg)
-            #print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
+
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
             e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
@@ -440,7 +432,7 @@ class pH_instrument(object):
                 pH = pK + np.log10(arg)
             else:
                 pH = 99.9999
-            #print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+
             ## to fit the log file
             e2,e3 =e2e3,-99
         else:
@@ -450,22 +442,20 @@ class pH_instrument(object):
         #print ('dye: ', self.dye)
         #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2, #Aiso,
+                            self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
-
         return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
         
     def pH_eval(self):
         # pH ref
         dpH_dT = -0.0155
         n = len(self.evalPar)
-        evalAnir = [self.evalPar[i][13] for i in range(n)]
+        evalAnir = [self.evalPar[i][12] for i in range(n)]
         evalAnir = np.mean(evalAnir)
-        print 'Anir = %.4f' % (evalAnir)
-        evalAiso = [self.evalPar[i][9] for i in range(n)]
-        evalT = [self.evalPar[i][10] for i in range(n)]
+
+        evalT = [self.evalPar[i][9] for i in range(n)]
         T_lab = evalT[0]
-        #print refT
+
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_lab = evalpH[0] # pH at cuvette temp at this step
         refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]

@@ -217,7 +217,13 @@ class Panel(QtGui.QWidget):
         self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
         self.cuv_v_value = QtGui.QSpinBox()
 
+        # print 'calibration coefficients: ', wvlCalCoeff,'\n'
+        # print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
+        # print ('0 = will be skipped')
+        # print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
+        # print 'Analysis pixels : ', self.wvlPixels
 
+        
         self.tab3.layout.addWidget(self.reload_config,0,0,0,1)
 
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
@@ -295,7 +301,7 @@ class Panel(QtGui.QWidget):
 
     def btn_cont_meas_clicked(self):
         state = self.btn_cont_meas.isChecked()
-        print ('btn state is ', state)
+        self.logTextBox.appendPlainText('Continuous measerement mode is ', state)
         if state:
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
@@ -348,7 +354,7 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
 
-        self.logTextBox.appendPlainText('Measuring...')
+        self.logTextBox.appendPlainText('Measuring dark...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
         self.instrument.spectrometer.set_scans_average(1)
@@ -516,7 +522,7 @@ class Panel(QtGui.QWidget):
             self.logTextBox.appendPlainText(
                 'Start single measurement ')
             self.sample()
-            self.logTextBox.appendPlainText('Done')
+            self.logTextBox.appendPlainText('Single Measurement is Done')
             self.instrument.spectrometer.set_scans_average(1)
         self.timerSpectra.start()
         self.btn_spectro.setChecked(True)
@@ -580,12 +586,14 @@ class Panel(QtGui.QWidget):
         if self.instrument.pT > 0:
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            self.instrument.wait(self.instrument.pT) # wait for pumping time
+            self.logTextBox.appendPlainText("wait for pumping time")
+            self.instrument.wait(self.instrument.pT) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
         self.instrument.set_TV(True)
+        self.logTextBox.appendPlainText("wait for instrument waiting time")
         self.instrument.wait(self.instrument.wT)
 
         self.logTextBox.appendPlainText('Measuring blank...')
@@ -604,11 +612,13 @@ class Panel(QtGui.QWidget):
             if not self.args.debug:
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
-            # wait for mixing time
+
+            self.logTextBox.appendPlainText("wait for mixing time")
             self.instrument.wait(self.instrument.mT)
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
-            # wait before to start the measurment
+
+            self.logTextBox.appendPlainText("wait before to start the measurment")
             self.instrument.wait(self.instrument.wT)
             # measure spectrum
             postinj = self.instrument.spectrometer.get_corrected_spectra()
