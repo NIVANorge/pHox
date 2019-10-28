@@ -450,10 +450,10 @@ class pH_instrument(object):
         #print ('dye: ', self.dye)
         #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2, Aiso,
+                            self.fb_data['salinity'], A1, A2, #Aiso,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
 
-        return  Tdeg, pK, e1, e2, e3, Anir,R, Aiso,self.dye, pH
+        return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
         
     def pH_eval(self):
         # pH ref

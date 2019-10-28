@@ -293,7 +293,27 @@ class Panel(QtGui.QWidget):
         self.btn_wpump.isChecked())
 
     def btn_cont_meas_clicked(self):
-        self.on_deploy_clicked(self.btn_cont_meas.isChecked())
+        state = self.btn_cont_meas.isChecked()
+
+        if state:
+           self.instrument.flnmStr=''
+           self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
+           nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
+           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
+        else:
+           self.timer_contin_mode.stop()
+
+        #self.on_deploy_clicked(state)
+
+    '''def on_deploy_clicked(self, state):
+        newText =''
+        if state:
+           self.instrument.flnmStr=''
+           self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
+           nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
+           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
+        else:
+           self.timer_contin_mode.stop()'''
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -475,15 +495,7 @@ class Panel(QtGui.QWidget):
                      self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
             self.textBoxSens.setText(text)
 
-    def on_deploy_clicked(self, state):
-        newText =''
-        if state:
-           self.instrument.flnmStr=''
-           self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
-           nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
-        else:
-           self.timer_contin_mode.stop()
+
                
     def on_sigle_meas_clicked(self):
         # Button "single" is clicked
@@ -627,7 +639,7 @@ class Panel(QtGui.QWidget):
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
-	txtData = ''
+	    txtData = ''
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
@@ -639,7 +651,7 @@ class Panel(QtGui.QWidget):
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
         # T_probe_coef_a, T_probe_coef_b 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr+'.evl','w')
-        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
+        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
         for i in range(len(self.instrument.evalPar)):
             txtData += strFormat % tuple(self.instrument.evalPar[i])
@@ -691,7 +703,8 @@ class Panel(QtGui.QWidget):
         self.timerSpectra.start(500)
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
-            self.on_deploy_clicked(True)
+            self.btn_cont_meas_clicked()
+            #self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
             self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.e6) #milliseconds
@@ -708,8 +721,8 @@ class Panel(QtGui.QWidget):
         self.btn_spectro.setChecked(False)
         self.btn_leds.setChecked(False)
         self.btn_cont_meas.setChecked(False)
-
-        self.on_deploy_clicked(False)
+        self.btn_cont_meas_clicked()
+        #self.on_deploy_clicked(False)
         self.timerSpectra.stop()
         self.timer_contin_mode.stop()
         #self.timerSensUpd.stop()
