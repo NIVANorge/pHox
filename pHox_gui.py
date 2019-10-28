@@ -301,7 +301,7 @@ class Panel(QtGui.QWidget):
 
     def btn_cont_meas_clicked(self):
         state = self.btn_cont_meas.isChecked()
-        self.logTextBox.appendPlainText('Continuous measerement mode is '.format(str(state)))
+        self.logTextBox.appendPlainText('Continuous measerement mode is {}'.format(str(state)))
         if state:
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
@@ -543,7 +543,8 @@ class Panel(QtGui.QWidget):
         #former Underway
         self.logTextBox.appendPlainText('Inside continuous_mode...')
         # stop the spectrophotometer update precautionally
-        self.btn_spectro.setChecked(False)
+        ###self.btn_spectro.setChecked(False)
+
         self.timerSpectra.stop()
         [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
@@ -564,7 +565,7 @@ class Panel(QtGui.QWidget):
         oldText = self.textBox.toPlainText()
         self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
         # TODO:should it be FAlse here??
-        self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
+        ####self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
         #self.check('Spectrophotometer',True)    
         self.timerSpectra.start()
     
