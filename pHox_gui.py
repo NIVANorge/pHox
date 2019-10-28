@@ -215,7 +215,7 @@ class Panel(QtGui.QWidget):
         self.cuv_v_value = QtGui.QSpinBox()
 
 
-        self.tab3.layout.addWidget(self.reload_config,0,0,0,-1)
+        self.tab3.layout.addWidget(self.reload_config,0,0,0,1)
 
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_value,1,1,1,1)
@@ -478,14 +478,11 @@ class Panel(QtGui.QWidget):
            self.instrument.flnmStr=''
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           text = 'Continuous measurement mode is ON\nNext sample %s\n\n' %(nextSample.isoformat())
            self.textBox.setText(text)
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
-           #self.timerFIA.stop()
-           self.textBox.setText('Continuous measurement mode is OFF')
-                
+               
     def on_sigle_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)

@@ -412,8 +412,8 @@ class pH_instrument(object):
         #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
-        A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
-                           absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
+        A1,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
+                           absSp[self.wvlPixels[2]])
 
         # volume in ml
         fcS = self.fb_data['salinity'] * (
