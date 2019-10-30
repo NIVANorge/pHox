@@ -243,7 +243,7 @@ class Cbon(object):
         self.LED2 = default["LED2"]
         self.LED3 = default["LED3"]
 
-        self.folderPath ='/home/pi/pHox/data' # relative path
+        self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
@@ -397,7 +397,8 @@ class Cbon(object):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-        print 'T sample : %.2f' %Tdeg
+        #print 'T sample : %.2f' %Tdeg
+        #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
         A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
@@ -412,10 +413,10 @@ class Cbon(object):
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
             e3 = 0.0223 + 0.0003917*T
-            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*log10(T) - 0.017316*fcS
+            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*fcS
             arg = (R - e1)/(e2 - R*e3)
-            pH = 0.0047 + pK + log10(arg)
-            print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
+            pH = 0.0047 + pK + np.log10(arg)
+            #print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
             e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
@@ -427,18 +428,20 @@ class Cbon(object):
                 pH = pK + np.log10(arg)
             else:
                 pH = 99.9999
-            print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+            #print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
             ## to fit the log file
             e2,e3 =e2e3,-99
         else:
             raise ValueError('wrong DYE: ' + self.dye)
 
-        print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
-        print ('dye: ', self.dye)
-        print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
+        #print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
+        #print ('dye: ', self.dye)
+        #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2, Aiso,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
+
+        return  Tdeg, pK, e1, e2, e3, Anir,R, Aiso,self.dye, pH
         
     def pH_eval(self):
         # pH ref
@@ -462,6 +465,6 @@ class Cbon(object):
             A = np.vstack([x, np.ones(len(x))]).T
             pert,pH_t = np.linalg.lstsq(A, y)[0]
             
-        pH_t = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
+        pH_insitu = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
 
         return (pH_t, refT, pert, evalAnir)

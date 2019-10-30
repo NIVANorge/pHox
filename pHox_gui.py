@@ -72,6 +72,7 @@ class Panel(QtGui.QWidget):
         self.timerSensUpd.start(2000)
 
     def init_ui(self):
+
         self.setWindowTitle('NIVA - pH')
         self.timerSpectra.timeout.connect(self.update_spectra)
         self.timer_contin_mode.timeout.connect(self.continuous_mode)
@@ -84,17 +85,23 @@ class Panel(QtGui.QWidget):
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
+        self.tab3 = QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,"Tab 1")
         self.tabs.addTab(self.tab2,"Log")
+        self.tabs.addTab(self.tab3,"Config")
+
 
         self.tab1.layout = QtGui.QGridLayout() #.addLayout(grid)
         self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab3.layout = QtGui.QGridLayout() #.addLayout(grid)
 
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         self.logTextBox.appendPlainText('Text message in log')
+        if self.args.debug:
+            self.logTextBox.appendPlainText('Starting in debug mode')
 
         self.tab2.layout.addWidget(self.logTextBox) 
 
@@ -121,12 +128,13 @@ class Panel(QtGui.QWidget):
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
         self.btn_sigle_meas = create_button('Single measurement',False)
         self.btn_dye_pmp = create_button('Dye pump',False)
+        self.reload_config = create_button('Reload config',False)        
 
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump, self.btn_deploy]
 
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
-                             self.btn_sigle_meas, self.btn_dye_pmp]
+                             self.btn_sigle_meas, self.btn_dye_pmp,self.reload_config]
 
         for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
@@ -143,6 +151,8 @@ class Panel(QtGui.QWidget):
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
+            self.sliders[sldInd].setTracking(True) # to track changes on sliders
+            # otherwise value change is triggere only when you unclick slider 
             self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
             self.tab1.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
             self.tab1.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
@@ -194,12 +204,22 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_deploy.clicked.connect(self.btn_deploy_clicked)
+        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
 
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
         self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
+
+    def btn_reload_config_clicked(self):
+        self.logTextBox.appendPlainText('Button reload config was clicked')
+        self.instrument.load_config()
+        state = self.btn_leds.isChecked()
+        self.sliders[0].setValue(self.instrument.LED1)
+        self.sliders[1].setValue(self.instrument.LED2)
+        self.sliders[2].setValue(self.instrument.LED3)
+        self.set_LEDs(state)
 
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
@@ -281,46 +301,6 @@ class Panel(QtGui.QWidget):
     def update_spectra(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
         self.plotSpc.setData(self.instrument.wvls,datay)                  
-
-    '''def simulate(self):
-        self.puckEm.LAST_pH = 8+random.gauss(0,0.05)
-        self.puckEm.LAST_CO2 = 350+random.gauss(0,10)
-        self.puckEm.LAST_TA = 2200+random.gauss(0,25)
-        print '%.1f %.4f %.1f' %(self.puckEm.LAST_CO2,self.puckEm.LAST_pH,self.puckEm.LAST_TA)'''
-
-    '''def on_combo_clicked(self, text):
-        comboItems = ['Set integration time','Set averaging scans',
-                      'Set sampling interval','Auto adjust',
-                      'Set pCO2 data saving rate',
-                      'BOTTLE setup','UNDERWAY setup']
-        choice = comboItems.index(text)
-        if choice == 0:
-            self.on_intTime_clicked()
-        elif choice == 1:
-            self.on_scans_clicked() 
-        elif choice == 2:
-            self.on_samT_clicked()
-        elif choice == 4:
-            self.on_data_saving_rate_clicked()
-        elif choice == 3:
-            self.on_autoAdjust_clicked()
-        elif choice == 5:
-            dialog = inputDialog(parent= self, title='BOTTLE setup', parString=self.instrument.BOTTLE)
-            dialog.exec_()
-            try:
-               self.instrument.BOTTLE = dialog.parString
-            except AttributeError:
-               pass
-            print self.instrument.BOTTLE
-        if choice == 6:
-            dialog = inputDialog(parent= self, title='UNDERWAY setup', parString= self.instrument.UNDERWAY)
-            dialog.exec_()
-            try:
-               self.instrument.UNDERWAY = dialog.parString
-            except AttributeError:
-               pass
-            print self.instrument.UNDERWAY'''
-
 
     def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
@@ -580,12 +560,17 @@ class Panel(QtGui.QWidget):
                 spAbsMA[i]= np.mean(v)
     
             self.plotAbs.setData(self.instrument.wvls,spAbs)
-            self.instrument.calc_pH(spAbs,vNTC)
+            Tdeg, pK, e1, e2, e3, Anir,R, Aiso, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
+
+            self.logTextBox.appendPlainText(
+                'Tdeg = {}, pK = {}, e1= {}, e2= {}, e3 = {}'.format(Tdeg, pK, e1, e2, e3))
+            self.logTextBox.appendPlainText(
+                'Anir = {},R = {}, Aiso = {}, dye = {}, pH = {}'.format(Anir,R, Aiso, dye, pH))
         # opening the valve
         self.instrument.set_TV(False)
 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
-        txtData = ''
+	txtData = ''
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
@@ -603,13 +588,13 @@ class Panel(QtGui.QWidget):
         flnm.close()
 
         pHeval = self.instrument.pH_eval()
+        pH_t, refT, pert, evalAnir = pHeval
+
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
-        self.logTextBox.appendPlainText('pH_eval')
-        print ('pH_eval', pHeval) 
-        #t= %.4f, Tref= %.4f,  pert= %.3f, Anir= %.1f' % pHeval)
-        
+
+        self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         logf = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
@@ -651,7 +636,7 @@ class Panel(QtGui.QWidget):
         return
 
     def _autostop(self):
-        self.logTextBox.appendPlainText('Inside _autostop...')
+        #self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         #TODO: why do we need it 
         self.sliders[0].setValue(0)
@@ -716,8 +701,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        self.logTextBox.appendPlainText('Inside autostop_pump...')
-        self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
+        #self.logTextBox.appendPlainText('Inside autostop_pump...')
+        #self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
         if not fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
