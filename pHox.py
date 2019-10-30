@@ -20,6 +20,7 @@ import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
+#import pandas as pd 
 
 # UDP stuff
 import udp
@@ -110,7 +111,7 @@ class STSVIS(object):
             rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000)
             #wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
-        print 'calibration coefficients: ', wvlCalCoeff,'\n'
+        
         return wvlCalCoeff
           
     def get_corrected_spectra(self):
@@ -121,7 +122,7 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
-class Cbon(object):
+class pH_instrument(object):
     # Instrument constructor #
     def __init__(self):
         # For signaling to threads
@@ -133,6 +134,7 @@ class Cbon(object):
         # load instrument general configuration
       
         self.evalPar = []
+        #self.evalPar_df = pd.DataFrame()
         self.ledDC = [0]*4 
         self.spectrometer = STSVIS()
         self.wvlPixels = []
@@ -164,26 +166,35 @@ class Cbon(object):
             self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
-        print 'calculating wavelengths...\n'
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
-        print ("wavelengths", self.wvls)
+        try: 
+            self.textBox.append("wavelengths {}".format(self.wvls))
+        except: 
+            pass
         self.reset_lines()
 
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
         default =   j['default']
+        try: 
+            self.textBox.append('Loading config.json')
+        except: 
+            pass
 
-        print ('Loading pHaro parameters...')
 
-        self.HI =  int(default['HI-'])
-        self.I2 =  int(default['I2-'])
-        self.Iso = int(default['ISO'])
+        self.dye = default['DYE'] 
+        if self.dye == 'MCP':
+            self.HI =  int(default['MCP_wl_HI'])
+            self.I2 =  int(default['MCP_wl_I2-'])         
+        elif self.dye == "TB":   
+            self.HI =  int(default['TB_wl_HI-'])
+            self.I2 =  int(default['TB_wl_I2-'])
+
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
         self._automode  = default['AUTOSTART_MODE']
 
-        print ('AUTOSTART',self._autostart,'AUTOSTART_MODE',self._automode)
         self.DURATION =  int(default['DURATION'])
 
         #TODO: should be replaced by value from config?
@@ -212,11 +223,9 @@ class Cbon(object):
         self.nshots = int(default["dye_nshots"])
         
         self.molAbsRats = default['MOL_ABS_RATIOS']
-        print ('Molar absorption ratios: ',self.molAbsRats)
 
         self.pwmLines =  default['PWM_LINES']
-        print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
-        print ('0 = will be skipped')
+
 
         self.ssrLines = default['GPIO_SSR']
         #TODO: Replace ssrlines with new lines 
@@ -229,11 +238,6 @@ class Cbon(object):
 
         # NTC Temperature calibration coefficients
         self.ntcCalCoef = default['NTC_CAL_COEF']
-        print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
-
-        self.dye = default['DYE'] 
-        #type of dye(default value, will be changed inside gui )
-        print ('Dye type',self.dye,'\n')
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
@@ -253,9 +257,8 @@ class Cbon(object):
         pixels = np.arange(self.spectrometer.pixels)
         wvls = coeffs[0] + coeffs[1]* pixels + coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3)
         self.wvlPixels = []
-        for wl in (self.HI, self.Iso, self.I2, self.NIR):
+        for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
-        print 'Analysis pixels : ', self.wvlPixels
         return wvls
 
     def find_nearest(self, items, value):
@@ -273,6 +276,7 @@ class Cbon(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def auto_adjust(self):
+        # TODO, implement it, now now used 
         # auto adjust integration time, scans and light levels #
         THR = 11500
         STEP = 5
@@ -329,7 +333,6 @@ class Cbon(object):
 
     def wait(self, secs):
         t0 = time.time()
-        print('Waiting...')
         while (time.time()-t0)<secs:
             try:
                 time.sleep(0.1)
@@ -397,12 +400,13 @@ class Cbon(object):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-        #print 'T sample : %.2f' %Tdeg
-        #self.logTextBox.appendPlainText('Taking dark level...')
+            #print 'T sample : %.2f' %Tdeg
+            #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
-        A1,Aiso,A2,Anir = (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]],
-                           absSp[self.wvlPixels[2]], absSp[self.wvlPixels[3]])
+        A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
+                        absSp[self.wvlPixels[1]],
+                        absSp[self.wvlPixels[2]])
 
         # volume in ml
         fcS = self.fb_data['salinity'] * (
@@ -416,7 +420,7 @@ class Cbon(object):
             pK = 4.706*(fcS/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*fcS
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + np.log10(arg)
-            #print 'pK = ', pK,'  e1 = ',e1, '  e2 = ',e2, '  e3 = ',e3, ' Anir = ',Anir
+
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
             e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
@@ -428,7 +432,7 @@ class Cbon(object):
                 pH = pK + np.log10(arg)
             else:
                 pH = 99.9999
-            #print 'pK = ', pK,'  e1 = ',e1, '  e2e3 = ',e2e3, ' Anir = ',Anir
+
             ## to fit the log file
             e2,e3 =e2e3,-99
         else:
@@ -438,33 +442,31 @@ class Cbon(object):
         #print ('dye: ', self.dye)
         #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2, Aiso,
+                            self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
-
-        return  Tdeg, pK, e1, e2, e3, Anir,R, Aiso,self.dye, pH
+        return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
         
     def pH_eval(self):
         # pH ref
         dpH_dT = -0.0155
         n = len(self.evalPar)
-        evalAnir = [self.evalPar[i][13] for i in range(n)]
+        evalAnir = [self.evalPar[i][12] for i in range(n)]
         evalAnir = np.mean(evalAnir)
-        print 'Anir = %.4f' % (evalAnir)
-        evalAiso = [self.evalPar[i][9] for i in range(n)]
-        evalT = [self.evalPar[i][10] for i in range(n)]
-        refT = evalT[0]
-        #print refT
+
+        evalT = [self.evalPar[i][9] for i in range(n)]
+        T_lab = evalT[0]
+
         evalpH = [self.evalPar[i][0] for i in range(n)]
-        pH_t = evalpH[0]
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-evalT[0] ) for i in range(n)]
+        pH_lab = evalpH[0] # pH at cuvette temp at this step
+        refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
         if n>1:
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
-            pert,pH_t = np.linalg.lstsq(A, y)[0]
-            
-        pH_insitu = pH_t + dpH_dT * (evalT[0] - self.fb_data['temperature'])
+            pert,pH_lab = np.linalg.lstsq(A, y)[0]
+        # pH at in situ 
+        pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
-        return (pH_t, refT, pert, evalAnir)
+        return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
