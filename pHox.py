@@ -31,13 +31,14 @@ class STSVIS(object):
     # spectrophotometer functions, used for pH 
 
     def __init__(self):
+        # Create object (connection) for the device 
         self._dev = usb.core.find(idVendor=0x2457, idProduct=0x4000)
         if (self._dev == None):
             raise ValueError ('OceanOptics STS: device not found\n')
         else:
             print ('Initializing STS spectrophotometer...')
         
-        self.EP1_out = 0x01
+        self.EP1_out = 0x01 # endpoint address 
         self.EP1_in = 0x81
         self.EP2_in = 0x82
         self.EP2_out = 0x02
@@ -108,10 +109,10 @@ class STSVIS(object):
         for i in range(4):
             immData = struct.pack('B',i)+'\x00\x00\x00'
             self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
-            rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000)
+            rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000) #reseive message 
             #wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
-        
+        print
         return wvlCalCoeff
           
     def get_corrected_spectra(self):
@@ -138,10 +139,13 @@ class pH_instrument(object):
         self.ledDC = [0]*4 
         self.spectrometer = STSVIS()
         self.wvlPixels = []
+        # array of Ncycle's lines (make connection after ) 
+        # should be ncycles + 2 
+        # raw measurements
         self.spCounts = np.zeros((6,1024))
         self.nlCoeff = [1.0229, -9E-6, 6E-10]
         self.specIntTime = 500 #spectrometer integration time (ms)
-        self.specAvScans = 6
+        self.specAvScans = 6 # Spectrums to take, they will be averaged to make one measurement 
 
         # Ferrybox data
         self.fb_data = udp.Ferrybox
@@ -255,8 +259,11 @@ class pH_instrument(object):
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
         pixels = np.arange(self.spectrometer.pixels)
+        # all wvl we get from the instrument, calculated from the coefficients 
+        #TODO:  wvls should be a header for the .spt log file 1024 wv values 
         wvls = coeffs[0] + coeffs[1]* pixels + coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3)
         self.wvlPixels = []
+        # find the indices of pixels that give the wavelength corresponding to self.HI, self.I2, self.NIR
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
         return wvls
@@ -362,7 +369,7 @@ class pH_instrument(object):
         pass
     
     
-    def set_TV (self, status):
+    def set_Valve(self, status):
         chEn = self.GPIO_TV[0]
         ch1 =  self.GPIO_TV[1]
         ch2 =  self.GPIO_TV[2]
@@ -377,12 +384,12 @@ class pH_instrument(object):
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
 
-    def movAverage(self, dataSet, nPoints):
+    '''def movAverage(self, dataSet, nPoints):
         spAbsMA = dataSet
         for i in range(3,len(dataSet)-3):
             v = dataSet[i-nPoints:i+nPoints+1]
             spAbsMA[i]= np.mean(v)
-        return spAbsMA
+        return spAbsMA'''
 
     def get_Vd(self, nAver, ch):
         V = 0.0000

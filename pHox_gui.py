@@ -67,7 +67,7 @@ class Panel(QtGui.QWidget):
         self.init_ui()
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
-
+        self.plotAbs_non_corr = self.plotwidget2.plot()
 
         self.timerSensUpd.start(2000)
 
@@ -84,7 +84,7 @@ class Panel(QtGui.QWidget):
         tabs_layout = QtGui.QVBoxLayout()
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
-	self.tab_manual = QtGui.QWidget()
+    	self.tab_manual = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
         self.tab3 = QtGui.QWidget()
 
@@ -327,7 +327,7 @@ class Panel(QtGui.QWidget):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
     def btn_valve_clicked(self):
-        self.instrument.set_TV(self.btn_valve.isChecked())
+        self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def spectro_clicked(self):
         if self.btn_spectro.isChecked():
@@ -549,6 +549,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra.stop()
         [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
+        # write (reques) 6 times smth to the device 
         self.instrument.spectrometer.set_scans_average(
                                   self.instrument.specAvScans)
         t = datetime.now()
@@ -575,17 +576,20 @@ class Panel(QtGui.QWidget):
             return
         if self.instrument._autodark:
             now = datetime.now()
+            # self.instrument._autodark should be interval 
             if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
                 self.logTextBox.appendPlainText('New dark required')
                 self.on_dark_clicked()
-        else:
-            self.logTextBox.appendPlainText('next dark at time..x') #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+            else:
+                self.logTextBox.appendPlainText('next dark at time..x') 
+                #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
+                
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        if self.instrument.pT > 0:
+        if self.instrument.pT > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
             self.logTextBox.appendPlainText("wait for pumping time")
@@ -594,13 +598,18 @@ class Panel(QtGui.QWidget):
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
-        self.instrument.set_TV(True)
+        self.instrument.set_Valve(True)
         self.logTextBox.appendPlainText("wait for instrument waiting time")
         self.instrument.wait(self.instrument.wT)
 
+        # Take the last measured dark
+        dark = self.instrument.spCounts[0]
+
         self.logTextBox.appendPlainText('Measuring blank...')
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
-        dark = self.instrument.spCounts[0]
+
+        # limit the number by the range 1,16000
+        # blank minus dark 
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
@@ -622,24 +631,31 @@ class Panel(QtGui.QWidget):
 
             self.logTextBox.appendPlainText("wait before to start the measurment")
             self.instrument.wait(self.instrument.wT)
-            # measure spectrum
+
+            # measure spectrum after injecting nshots of dye 
             postinj = self.instrument.spectrometer.get_corrected_spectra()
+
             self.instrument.spCounts[2+pinj] = postinj 
             # measuring Voltage for temperature probe
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
-                
+
+            # postinjection minus dark     
             pmd = np.clip(postinj - dark,1,16000)
+            # self.nlCoeff = [1.0229, -9E-6, 6E-10]
+            # coefficient for blank ??? 
             cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*bmd + self.instrument.nlCoeff[2] * bmd**2
             cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*pmd + self.instrument.nlCoeff[2] * pmd**2
             bmdCorr = bmd * cfb
             pmdCorr = pmd * cfp
             spAbs = np.log10(bmdCorr/pmdCorr)
-            spAbsMA = spAbs
-            nPoints = 3
-            for i in range(3,len(spAbs)-3):
-                v = spAbs[i-nPoints:i+nPoints+1]
-                spAbsMA[i]= np.mean(v)
-    
+            sp = np.log10(bmd/pmd)            
+            # moving average 
+            """  spAbsMA = spAbs
+                nPoints = 3
+                for i in range(3,len(spAbs)-3):
+                    v = spAbs[i-nPoints:i+nPoints+1]
+                    spAbsMA[i]= np.mean(v)"""
+            self.plotAbs_non_corr.setData(self.instrument.wvls,spAbs)
             self.plotAbs.setData(self.instrument.wvls,spAbs)
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
 
@@ -649,7 +665,7 @@ class Panel(QtGui.QWidget):
                 'Anir = {},R = {}, dye = {}, pH = {}'.format(Anir,R, dye, pH))
 
         # opening the valve
-        self.instrument.set_TV(False)
+        self.instrument.set_Valve(False)
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
@@ -705,6 +721,7 @@ class Panel(QtGui.QWidget):
     def _autostart(self):
         self.logTextBox.appendPlainText('Inside _autostart...')
         time.sleep(10)
+        # Take dark for the first time 
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
