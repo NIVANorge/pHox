@@ -655,7 +655,11 @@ class Panel(QtGui.QWidget):
                 for i in range(3,len(spAbs)-3):
                     v = spAbs[i-nPoints:i+nPoints+1]
                     spAbsMA[i]= np.mean(v)"""
-            self.plotAbs_non_corr.setData(self.instrument.wvls,spAbs)
+
+	    self.plotAbs_non_corr.setData(
+		self.instrument.wvls,sp,symbol='o',
+		 symbolPen=None, symbolSize=4, symbolBrush=('b'))
+            #self.plotAbs_non_corr.setData(self.instrument.wvls,spAbs)
             self.plotAbs.setData(self.instrument.wvls,spAbs)
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
 
