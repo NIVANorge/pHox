@@ -19,7 +19,7 @@ import numpy as np
 import pyqtgraph as pg 
 import argparse
 import socket
-impor pandas as pd 
+import pandas as pd 
 # Ferrybox data
 import udp
 from udp import Ferrybox as fbox
