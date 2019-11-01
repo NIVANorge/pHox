@@ -671,7 +671,7 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-        self.instrument.spCounts_df.T.to_csv('spcounts.spt',index = True)
+        self.instrument.spCounts_df.T.to_csv('spcounts.spt',index = False)
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')

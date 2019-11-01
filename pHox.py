@@ -173,7 +173,8 @@ class pH_instrument(object):
 
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
         self.spCounts_df = pd.DataFrame(
-            index=self.wvls, columns=['dark','blank','0','1','2','3'])
+            columns=['Wavelengths','dark','blank'])
+        self.spCounts_df['Wavelengths'] = self.wvls
         try: 
             self.textBox.append("Wavelengths {}".format(self.wvls))
         except: 
