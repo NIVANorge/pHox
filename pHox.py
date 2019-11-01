@@ -266,13 +266,11 @@ class pH_instrument(object):
         # find the indices of pixels that give the wavelength corresponding to self.HI, self.I2, self.NIR
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
-        print ('wvls',wvls)
-        np.savetxt("data/wavelengths.csv", wvls, delimiter=",")
+
         print (wvls[self.wvlPixels[0]],
                wvls[self.wvlPixels[1]],
                wvls[self.wvlPixels[2]])
-        
-	print ('self.wvlPixels',self.wvlPixels)
+
 	return wvls
 
     def find_nearest(self, items, value):

@@ -356,9 +356,10 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(False)
 
         self.logTextBox.appendPlainText('Measuring dark...')
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
-        self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
+        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
+        dark = self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts[0] = dark #self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts_df['dark'] = dark #self.instrument.spectrometer.get_corrected_spectra()        
         self.instrument.spectrometer.set_scans_average(1)
         self.logTextBox.appendPlainText('Done')
 
@@ -607,8 +608,9 @@ class Panel(QtGui.QWidget):
         dark = self.instrument.spCounts[0]
 
         self.logTextBox.appendPlainText('Measuring blank...')
-        self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts_df['blank'] = self.instrument.spectrometer.get_corrected_spectra()
+        blank = self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts[1] = blank  #self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts_df['blank'] = blank  #self.instrument.spectrometer.get_corrected_spectra()
         # limit the number by the range 1,16000
         # blank minus dark 
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
