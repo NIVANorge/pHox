@@ -660,16 +660,13 @@ class Panel(QtGui.QWidget):
                     v = spAbs[i-nPoints:i+nPoints+1]
                     spAbsMA[i]= np.mean(v)"""
 
-	    self.plotAbs_non_corr.setData(self.instrument.wvls,sp,symbol='o',
-		 symbolPen=None, symbolSize=4, symbolBrush=('b'))
-            #self.plotAbs_non_corr.setData(self.instrument.wvls,spAbs)
             self.plotAbs.setData(self.instrument.wvls,spAbs)
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
-
+            
             self.logTextBox.appendPlainText(
-                'Tdeg = {}, pK = {}, e1= {}, e2= {}, e3 = {}'.format(Tdeg, pK, e1, e2, e3))
+                'Tdeg = {.4f}, pK = {.4f}, e1= {.6f}, e2= {.6f}, e3 = {.6f}'.format(Tdeg, pK, e1, e2, e3))
             self.logTextBox.appendPlainText(
-                'Anir = {},R = {}, dye = {}, pH = {}'.format(Anir,R, dye, pH))
+                'Anir = {.2f},R = {}, dye = {}, pH = {.4f}'.format(Anir,R, dye, pH))
 
         # opening the valve
         self.instrument.set_Valve(False)
