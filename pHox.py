@@ -174,11 +174,7 @@ class pH_instrument(object):
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
         self.spCounts_df = pd.DataFrame(
             columns=['Wavelengths','dark','blank'])
-        self.spCounts_df['Wavelengths'] = self.wvls
-        try: 
-            self.textBox.append("Wavelengths {}".format(self.wvls))
-        except: 
-            pass
+        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
         self.reset_lines()
 
     def load_config(self):
