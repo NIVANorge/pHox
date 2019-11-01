@@ -664,9 +664,9 @@ class Panel(QtGui.QWidget):
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
             
             self.logTextBox.appendPlainText(
-                'Tdeg = {.4f}, pK = {.4f}, e1= {.6f}, e2= {.6f}, e3 = {.6f}'.format(Tdeg, pK, e1, e2, e3))
+                'Tdeg = {:.4f}, pK = {:.4f}, e1= {:.6f}, e2= {:.6f}, e3 = {:.6f}'.format(Tdeg, pK, e1, e2, e3))
             self.logTextBox.appendPlainText(
-                'Anir = {.2f},R = {}, dye = {}, pH = {.4f}'.format(Anir,R, dye, pH))
+                'Anir = {:.2f},R = {}, dye = {}, pH = {:.4f}'.format(Anir,R, dye, pH))
 
         # opening the valve
         self.instrument.set_Valve(False)
