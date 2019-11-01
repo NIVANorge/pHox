@@ -401,17 +401,12 @@ class pH_instrument(object):
             spAbsMA[i]= np.mean(v)
         return spAbsMA'''
 
-    def get_Vd(self, nAver, ch):
+    def get_Vd(self, nAver, channel):
         V = 0.0000
         for i in range (nAver):
-            V += self.adc.read_voltage(ch)
+            V += self.adc.read_voltage(channel)
         return V/nAver
-         
-    def get_Vd(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.adc.read_voltage(ch)
-        return V/nAver
+
 
     def calc_pH(self,absSp, vNTC):
         for i in range(4):

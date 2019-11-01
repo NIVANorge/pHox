@@ -608,7 +608,7 @@ class Panel(QtGui.QWidget):
 
         self.logTextBox.appendPlainText('Measuring blank...')
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts['blank'] = self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts_df['blank'] = self.instrument.spectrometer.get_corrected_spectra()
         # limit the number by the range 1,16000
         # blank minus dark 
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
