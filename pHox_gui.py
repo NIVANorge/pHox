@@ -19,7 +19,7 @@ import numpy as np
 import pyqtgraph as pg 
 import argparse
 import socket
-
+impor pandas as pd 
 # Ferrybox data
 import udp
 from udp import Ferrybox as fbox
@@ -358,6 +358,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Measuring dark...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)   
         self.instrument.spCounts[0] = self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
         self.instrument.spectrometer.set_scans_average(1)
         self.logTextBox.appendPlainText('Done')
 
@@ -607,7 +608,7 @@ class Panel(QtGui.QWidget):
 
         self.logTextBox.appendPlainText('Measuring blank...')
         self.instrument.spCounts[1] = self.instrument.spectrometer.get_corrected_spectra()
-
+        self.instrument.spCounts['blank'] = self.instrument.spectrometer.get_corrected_spectra()
         # limit the number by the range 1,16000
         # blank minus dark 
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
@@ -636,6 +637,7 @@ class Panel(QtGui.QWidget):
             postinj = self.instrument.spectrometer.get_corrected_spectra()
 
             self.instrument.spCounts[2+pinj] = postinj 
+            self.instrument.spCounts_df[str(pinj)] = postinj 
             # measuring Voltage for temperature probe
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
@@ -656,8 +658,7 @@ class Panel(QtGui.QWidget):
                     v = spAbs[i-nPoints:i+nPoints+1]
                     spAbsMA[i]= np.mean(v)"""
 
-	    self.plotAbs_non_corr.setData(
-		self.instrument.wvls,sp,symbol='o',
+	    self.plotAbs_non_corr.setData(self.instrument.wvls,sp,symbol='o',
 		 symbolPen=None, symbolSize=4, symbolBrush=('b'))
             #self.plotAbs_non_corr.setData(self.instrument.wvls,spAbs)
             self.plotAbs.setData(self.instrument.wvls,spAbs)
@@ -670,10 +671,12 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
+        self.instrument.spCounts.to_csv('spcounts.csv',index = True)
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
-	txtData = ''
+        txtData = ''
+        # spcoounts is np.array  np.zeros((6,1024))
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','

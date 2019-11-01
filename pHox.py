@@ -20,7 +20,7 @@ import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import random
-#import pandas as pd 
+import pandas as pd 
 
 # UDP stuff
 import udp
@@ -143,6 +143,7 @@ class pH_instrument(object):
         # should be ncycles + 2 
         # raw measurements
         self.spCounts = np.zeros((6,1024))
+
         self.nlCoeff = [1.0229, -9E-6, 6E-10]
         self.specIntTime = 500 #spectrometer integration time (ms)
         self.specAvScans = 6 # Spectrums to take, they will be averaged to make one measurement 
@@ -171,8 +172,10 @@ class pH_instrument(object):
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
+        self.spCounts_df = pd.DataFrame(
+            index=self.wvls, columns=['dark','blank','0','1','2','3'])
         try: 
-            self.textBox.append("wavelengths {}".format(self.wvls))
+            self.textBox.append("Wavelengths {}".format(self.wvls))
         except: 
             pass
         self.reset_lines()
