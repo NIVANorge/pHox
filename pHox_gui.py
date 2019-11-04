@@ -53,8 +53,6 @@ class Panel(QtGui.QWidget):
 
         self.args = parser.parse_args()
 
-
-
         #self.puckEm = PuckManager()
         self.timerSpectra = QtCore.QTimer()
         self.timer_contin_mode = QtCore.QTimer()
@@ -63,13 +61,15 @@ class Panel(QtGui.QWidget):
         #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
 
+        self.instrument = pH_instrument()
+        if self.args.pco2:
+            self.CO2_instrument = CO2_instrument()
+
         self.init_ui()
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
 
-        self.instrument = pH_instrument()
-        if self.args.pco2:
-            self.CO2_instrument = CO2_instrument()
+
 
         self.timerSensUpd.start(2000)
 
@@ -150,22 +150,48 @@ class Panel(QtGui.QWidget):
             self.group.addButton(btn, idx)
             self.tab_manual.layout.addWidget(btn, idx, 2)
 
-        sldRow = 6
+        sliders_groupBox = QGroupBox("Sliders Group Box")
+
+       # sldRow = 6
         sldNames = ['Blue','Orange','Red']
         self.sliders = []
         self.sldLabels = []
+        self.spinboxes = []
+
+        # create widgets
         for sldInd in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
             self.sliders[sldInd].setTracking(True) # to track changes on sliders
-            # otherwise value change is triggere only when you unclick slider 
-            self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
-            self.tab_manual.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
-            self.tab_manual.layout.addWidget(self.sldLabels[sldInd],sldRow+sldInd,2)
+            self.spinboxes[sldInd].append(QtGui.QSpinBox())
+
+        grid = QGridLayout()
+
+        grid.addWidget(self.sliders[0],0,0)
+        grid.addWidget(QtGui.QLabel('Blue:',0,1)
+        grid.addWidget(self.spinboxes[0],0,2)
+
+        grid.addWidget(self.sliders[0],1,0)
+        grid.addWidget(QtGui.QLabel('Orange:',1,1)
+        grid.addWidget(QtGui.QSpinBox(),1,2)
+
+        grid.addWidget(self.sliders[0],2,0) 
+        grid.addWidget(QtGui.QLabel('Red:',2,1)
+        grid.addWidget(QtGui.QSpinBox(),2,2)
+
+        sliders_groupBox.setLayout(grid)
+        
+        # otherwise value change is triggere only when you unclick slider 
+        #self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
+        #self.tab_manual.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
+        #self.tab_manual.layout.addWidget(QtGui.QLabel(sldInd),sldRow+sldInd,2)
+
+        self.tab_manual.layout.addWidget(sliders_groupBox)
 
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
+
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
