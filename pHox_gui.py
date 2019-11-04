@@ -163,7 +163,7 @@ class Panel(QtGui.QWidget):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
             self.sliders[sldInd].setTracking(True) # to track changes on sliders
-            self.spinboxes[sldInd].append(QtGui.QSpinBox())
+            self.spinboxes.append(QtGui.QSpinBox())
 
         grid = QGridLayout()
 
@@ -173,11 +173,11 @@ class Panel(QtGui.QWidget):
 
         grid.addWidget(self.sliders[0],1,0)
         grid.addWidget(QtGui.QLabel('Orange:',1,1))
-        grid.addWidget(QtGui.QSpinBox(),1,2)
+        grid.addWidget(self.spinboxes[1],1,2)
 
         grid.addWidget(self.sliders[0],2,0) 
         grid.addWidget(QtGui.QLabel('Red:',2,1))
-        grid.addWidget(QtGui.QSpinBox(),2,2)
+        grid.addWidget(self.spinboxes[2],2,2)
 
         sliders_groupBox.setLayout(grid)
 
