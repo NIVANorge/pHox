@@ -122,16 +122,23 @@ class Panel(QtGui.QWidget):
 
         # Define widgets for main tab 
         # Create checkabple buttons
+        buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
+        btn_grid = QtGui.QGridLayout()
+
+        self.btn_sigle_meas = create_button('Single measurement',False)   
+        self.btn_t_dark = create_button('Take dark',False)
+
         self.btn_spectro = create_button('Spectrophotometer',True)
         self.btn_leds = create_button('LEDs',True)
         self.btn_valve = create_button('Inlet valve',True)
         self.btn_stirr = create_button('Stirrer',True)
         self.btn_wpump = create_button('Water pump',True)
+
         self.btn_cont_meas = create_button('Continuous measurements',True)
         # Unchecable buttons
-        self.btn_t_dark = create_button('Take dark',False)
+
         self.btn_sampl_int = create_button( 'Set sampling interval',False)
-        self.btn_sigle_meas = create_button('Single measurement',False)
+
         self.btn_dye_pmp = create_button('Dye pump',False)
    
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
@@ -140,17 +147,31 @@ class Panel(QtGui.QWidget):
         self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
                              self.btn_sigle_meas, self.btn_dye_pmp] 
 
-        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 2)
+        btn_grid.addWidget(self.btn_sigle_meas, 0, 0)
+        btn_grid.addWidget(self.btn_t_dark , 0, 1)
 
-        for idx,btn in enumerate(self.buttons_ch):
+        btn_grid.addWidget(self.btn_spectro, 1, 0)
+        btn_grid.addWidget(self.btn_leds, 1, 1)
+
+        btn_grid.addWidget(self.btn_valve, 2, 0)
+        btn_grid.addWidget(self.btn_stirr, 2, 1)
+
+        btn_grid.addWidget(self.btn_sigle_meas, 3, 0)
+        btn_grid.addWidget(self.btn_sigle_meas, 3, 1)
+
+        btn_grid.addWidget(self.btn_wpump, 4, 0)
+
+        buttons_groupBox.setLayout(btn_grid)
+
+        '''for idx,btn in enumerate(self.buttons_ch):
             self.group.addButton(btn, idx)
-            self.tab_manual.layout.addWidget(btn, idx, 1) #row,col
+            btn_grid.addWidget(btn, idx, 0) #row,col
 
         for idx,btn in enumerate(self.buttons_unch):
             self.group.addButton(btn, idx)
-            self.tab_manual.layout.addWidget(btn, idx, 2)
+            self.tab_manual.layout.addWidget(btn, idx, 1)'''
 
-        sliders_groupBox = QtGui.QGroupBox("Sliders Group Box")
+        sliders_groupBox = QtGui.QGroupBox("Sliders GroupBox")
 
        # sldRow = 6
         sldNames = ['Blue','Orange','Red']
@@ -171,11 +192,11 @@ class Panel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('Blue:'),0,1)
         grid.addWidget(self.spinboxes[0],0,2)
 
-        grid.addWidget(self.sliders[0],1,0)
+        grid.addWidget(self.sliders[1],1,0)
         grid.addWidget(QtGui.QLabel('Orange:'),1,1)
         grid.addWidget(self.spinboxes[1],1,2)
 
-        grid.addWidget(self.sliders[0],2,0) 
+        grid.addWidget(self.sliders[2],2,0) 
         grid.addWidget(QtGui.QLabel('Red:'),2,1)
         grid.addWidget(self.spinboxes[2],2,2)
 
@@ -187,7 +208,8 @@ class Panel(QtGui.QWidget):
         #self.tab_manual.layout.addWidget(QtGui.QLabel(sldInd),sldRow+sldInd,2)
 
         self.tab_manual.layout.addWidget(sliders_groupBox)
-
+        self.tab_manual.layout.addWidget(buttons_groupBox)
+        
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
@@ -199,8 +221,9 @@ class Panel(QtGui.QWidget):
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
 
-        self.tab1.layout.addWidget(self.textBox, sldRow+4,0)
-        self.tab1.layout.addWidget(self.textBoxSens, sldRow+4,1)
+        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.textBox,      1,0)
+        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
 
         #create plotwidgets
         self.plotwidget1 = pg.PlotWidget()
