@@ -44,7 +44,7 @@ class Console(QtGui.QWidget):
 class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
-        self.instrument = pH_instrument()
+
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
                             action="store_true")
@@ -53,8 +53,7 @@ class Panel(QtGui.QWidget):
 
         self.args = parser.parse_args()
 
-        if self.args.pco2:
-            self.CO2_instrument = CO2_instrument()
+
 
         #self.puckEm = PuckManager()
         self.timerSpectra = QtCore.QTimer()
@@ -67,7 +66,10 @@ class Panel(QtGui.QWidget):
         self.init_ui()
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
-        self.plotAbs_non_corr = self.plotwidget2.plot()
+
+        self.instrument = pH_instrument()
+        if self.args.pco2:
+            self.CO2_instrument = CO2_instrument()
 
         self.timerSensUpd.start(2000)
 
@@ -670,7 +672,7 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-        self.instrument.spCounts_df.T.to_csv('spcounts.spt',index = True, header=False)
+        self.instrument.spCounts_df.T.to_csv(self.instrument.folderPath + self.instrument.flnmStr + '_spcounts.spt',index = True, header=False)
         # LOg files 
         # 4 full spectrums for all mesaurements 
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
