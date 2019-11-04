@@ -168,15 +168,15 @@ class Panel(QtGui.QWidget):
         grid = QtGui.QGridLayout()
 
         grid.addWidget(self.sliders[0],0,0)
-        grid.addWidget(QtGui.QLabel('Blue:',0,1))
+        grid.addWidget(QtGui.QLabel('Blue:'),0,1)
         grid.addWidget(self.spinboxes[0],0,2)
 
         grid.addWidget(self.sliders[0],1,0)
-        grid.addWidget(QtGui.QLabel('Orange:',1,1))
+        grid.addWidget(QtGui.QLabel('Orange:'),1,1)
         grid.addWidget(self.spinboxes[1],1,2)
 
         grid.addWidget(self.sliders[0],2,0) 
-        grid.addWidget(QtGui.QLabel('Red:',2,1))
+        grid.addWidget(QtGui.QLabel('Red:'),2,1)
         grid.addWidget(self.spinboxes[2],2,2)
 
         sliders_groupBox.setLayout(grid)
