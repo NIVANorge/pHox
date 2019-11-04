@@ -150,7 +150,7 @@ class Panel(QtGui.QWidget):
             self.group.addButton(btn, idx)
             self.tab_manual.layout.addWidget(btn, idx, 2)
 
-        sliders_groupBox = QGroupBox("Sliders Group Box")
+        sliders_groupBox = QtGui.QGroupBox("Sliders Group Box")
 
        # sldRow = 6
         sldNames = ['Blue','Orange','Red']
@@ -168,19 +168,19 @@ class Panel(QtGui.QWidget):
         grid = QGridLayout()
 
         grid.addWidget(self.sliders[0],0,0)
-        grid.addWidget(QtGui.QLabel('Blue:',0,1)
+        grid.addWidget(QtGui.QLabel('Blue:',0,1))
         grid.addWidget(self.spinboxes[0],0,2)
 
         grid.addWidget(self.sliders[0],1,0)
-        grid.addWidget(QtGui.QLabel('Orange:',1,1)
+        grid.addWidget(QtGui.QLabel('Orange:',1,1))
         grid.addWidget(QtGui.QSpinBox(),1,2)
 
         grid.addWidget(self.sliders[0],2,0) 
-        grid.addWidget(QtGui.QLabel('Red:',2,1)
+        grid.addWidget(QtGui.QLabel('Red:',2,1))
         grid.addWidget(QtGui.QSpinBox(),2,2)
 
         sliders_groupBox.setLayout(grid)
-        
+
         # otherwise value change is triggere only when you unclick slider 
         #self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
         #self.tab_manual.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
