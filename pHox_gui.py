@@ -127,19 +127,19 @@ class Panel(QtGui.QWidget):
 
         self.btn_sigle_meas = create_button('Single measurement',False)   
         self.btn_t_dark = create_button('Take dark',False)
-
         self.btn_spectro = create_button('Spectrophotometer',True)
         self.btn_leds = create_button('LEDs',True)
         self.btn_valve = create_button('Inlet valve',True)
+        self.btn_sampl_int = create_button( 'Set sampling interval',False)     
         self.btn_stirr = create_button('Stirrer',True)
+        self.btn_dye_pmp = create_button('Dye pump',False)        
         self.btn_wpump = create_button('Water pump',True)
 
         self.btn_cont_meas = create_button('Continuous measurements',True)
         # Unchecable buttons
 
-        self.btn_sampl_int = create_button( 'Set sampling interval',False)
 
-        self.btn_dye_pmp = create_button('Dye pump',False)
+
    
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump]
@@ -148,7 +148,6 @@ class Panel(QtGui.QWidget):
                              self.btn_sigle_meas, self.btn_dye_pmp] 
 
         btn_grid.addWidget(self.btn_sigle_meas, 0, 0)
-        btn_grid.addWidget(self.btn_t_dark , 0, 1)
 
         btn_grid.addWidget(self.btn_spectro, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
@@ -156,20 +155,13 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-        btn_grid.addWidget(self.btn_sigle_meas, 3, 0)
-        btn_grid.addWidget(self.btn_sigle_meas, 3, 1)
+        btn_grid.addWidget( self.btn_sampl_int, 3, 0)
+        btn_grid.addWidget(self.btn_dye_pmp, 3, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
+        btn_grid.addWidget(self.btn_t_dark , 4, 1)
 
         buttons_groupBox.setLayout(btn_grid)
-
-        '''for idx,btn in enumerate(self.buttons_ch):
-            self.group.addButton(btn, idx)
-            btn_grid.addWidget(btn, idx, 0) #row,col
-
-        for idx,btn in enumerate(self.buttons_unch):
-            self.group.addButton(btn, idx)
-            self.tab_manual.layout.addWidget(btn, idx, 1)'''
 
         sliders_groupBox = QtGui.QGroupBox("Sliders GroupBox")
 
@@ -209,7 +201,7 @@ class Panel(QtGui.QWidget):
 
         self.tab_manual.layout.addWidget(sliders_groupBox)
         self.tab_manual.layout.addWidget(buttons_groupBox)
-        
+
         self.sliders[0].valueChanged[int].connect(self.sld0_change)
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
@@ -389,16 +381,19 @@ class Panel(QtGui.QWidget):
     def sld0_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
+        self.spinboxes[0].setValue(self.sliders[0].value())
         self.btn_leds.setChecked(True)
 
     def sld1_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
+        self.spinboxes[1].setValue(self.sliders[1].value())
         self.btn_leds.setChecked(True)
 
     def sld2_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
+        self.spinboxes[2].setValue(self.sliders[2].value())
         self.btn_leds.setChecked(True)
 
     def on_dark_clicked(self):
