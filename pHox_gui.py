@@ -165,7 +165,7 @@ class Panel(QtGui.QWidget):
             self.sliders[sldInd].setTracking(True) # to track changes on sliders
             self.spinboxes.append(QtGui.QSpinBox())
 
-        grid = QGridLayout()
+        grid = QtGui.QGridLayout()
 
         grid.addWidget(self.sliders[0],0,0)
         grid.addWidget(QtGui.QLabel('Blue:',0,1))
