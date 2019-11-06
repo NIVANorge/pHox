@@ -258,7 +258,7 @@ class Panel(QtGui.QWidget):
 
         self.fill_table(7,0,'pH samplingg interval')
         self.fill_table(7,1, str(self.instrument.samplingInterval))
-
+        self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab3.layout.addWidget(self.tableWidget,1,0,1,1)
@@ -881,7 +881,7 @@ class Panel(QtGui.QWidget):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
-    app.setStyleSheet(" * {font-size: 12 pt} QPushButton:checked{ background-color: #56b8a4 }")
+    app.setStyleSheet(" * {font-size: 14 pt} QPushButton:checked{ background-color: #56b8a4 }")
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
