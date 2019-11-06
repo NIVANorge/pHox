@@ -245,11 +245,11 @@ class Panel(QtGui.QWidget):
         self.dyecal_value = QtGui.QLabel('to be added')
         
         self.dyev_inj_label = QtGui.QLabel('Dye injection volume: ')
-        self.dyev_inj_value = QtGui.QLabel(self.dyeinj_vol_inj)
+        self.dyev_inj_value = QtGui.QLabel(self.instrument.dyeinj_vol_inj)
  
         self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
         self.cuv_v_value = QtGui.QSpinBox()
-        self.cuv_v_valu0.setValue(self.Cuvette_V)
+        self.cuv_v_valu0.setValue(self.instrument.Cuvette_V)
 
 
         self.tableWidget = QtGui.QTableWidget()
