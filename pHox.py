@@ -95,24 +95,17 @@ class STSVIS(object):
         time.sleep(0.5)
 
     def get_wvlCalCoeff(self):
-        #msgType = '\x00\x01\x18\x00'
-        #immDataLength= '\x00'
-        #immData = '\x00' *4
-        #self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
-        #nWvlCoeff = self._dev.read(self.EP1_in, 64, timeout=10000)[24]
         #get the coefficients
         print 'Getting wavelength calibration coefficients...'
         msgType = '\x01\x01\x18\x00'
         immDataLength= '\x01'
-        #wvlCalCoeff = np.zeros(4, dtype=float)
+
         wvlCalCoeff = []
         for i in range(4):
             immData = struct.pack('B',i)+'\x00\x00\x00'
             self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
             rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000) #reseive message 
-            #wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
-        print ('wvlCalCoeff', wvlCalCoeff)
         return wvlCalCoeff
           
     def get_corrected_spectra(self):
@@ -441,9 +434,6 @@ class pH_instrument(object):
         else:
             raise ValueError('wrong DYE: ' + self.dye)
 
-        #print 'R = %.5f,  Aiso = %.3f' %(R,Aiso)
-        #print ('dye: ', self.dye)
-        #print 'pH = %.4f, T = %.2f' % (pH,Tdeg) 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, fcS, Anir])
