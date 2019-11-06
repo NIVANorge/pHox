@@ -250,17 +250,15 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setItem(0,1, QtGui.QTableWidgetItem(str(self.instrument.NIR)))
 
         self.tableWidget.setItem(1,0, QtGui.QTableWidgetItem("HI-"))
-        self.tableWidget.setItem(1,1, QtGui.QTableWidgetItem(str(self.instrument.HI)")
+        self.tableWidget.setItem(1,1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
 
-        self.tableWidget.setItem(2,0, QtGui.QTableWidgetItem(I2-"))
+        self.tableWidget.setItem(2,0, QtGui.QTableWidgetItem("I2-"))
         self.tableWidget.setItem(2,1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
 
         self.tableWidget.setItem(3,0, QtGui.QTableWidgetItem("Cell (4,1)"))
         self.tableWidget.setItem(3,1, QtGui.QTableWidgetItem("Cell (4,2)"))
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
-
-        self.tab3.layout.addWidget(self.reload_config,0,0,1,1)
 
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_combo,1,1,1,1)
