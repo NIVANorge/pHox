@@ -230,6 +230,7 @@ class Panel(QtGui.QWidget):
         #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
+        self.tableWidget.setHorizontalHeaderLabels(['Parameter','Value'])
         self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
@@ -260,7 +261,7 @@ class Panel(QtGui.QWidget):
 
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
-        self.tab3.layout.addWidget(self.tableWidget,1,0,1,2)
+        self.tab3.layout.addWidget(self.tableWidget,1,0,1,1)
 
 
         self.tab1.setLayout(self.tab1.layout)
@@ -297,7 +298,7 @@ class Panel(QtGui.QWidget):
 
     def fill_table(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
-        
+
     def btn_reload_config_clicked(self):
         self.logTextBox.appendPlainText('Button reload config was clicked')
         self.instrument.load_config()
