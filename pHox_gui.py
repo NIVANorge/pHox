@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # Check not used functions
 from pHox import *
-from pco2 import *
+from pco2 import CO2_instrument
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
@@ -218,7 +218,7 @@ class Panel(QtGui.QWidget):
 
         # Define widgets for config tab 
         self.reload_config = create_button('Reload config',False)     
-        self.dye_label = QtGui.QLabel('DYE: ')
+
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
         self.dye_combo.addItem('MCP')        
@@ -229,53 +229,41 @@ class Panel(QtGui.QWidget):
             
         #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
         
-
-
-        self.dyecal_label = QtGui.QLabel('DYE calibration: ')
-        self.dyecal_value = QtGui.QLabel('to be added')
-        
-        self.dyev_inj_label = QtGui.QLabel('Dye injection volume: ')
-        self.dyev_inj_value = QtGui.QLabel(str(self.instrument.dyeinj_vol_inj))
- 
-        self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
-        self.cuv_v_value = QtGui.QSpinBox()
-        self.cuv_v_value.setValue(self.instrument.Cuvette_V)
-
-
         self.tableWidget = QtGui.QTableWidget()
-        self.tableWidget.setRowCount(4)
+        self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
-        self.tableWidget.setItem(0,0, QtGui.QTableWidgetItem('NIR: '))
-        self.tableWidget.setItem(0,1, QtGui.QTableWidgetItem(str(self.instrument.NIR)))
+        def fill_table(self,x,y,item):
+            self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
-        self.tableWidget.setItem(1,0, QtGui.QTableWidgetItem("HI-"))
-        self.tableWidget.setItem(1,1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
+        self.fill_table(0,0,'DYE type')
+        self.tableWidget.setCellWidget(0,1,self.dye_combo)
 
-        self.tableWidget.setItem(2,0, QtGui.QTableWidgetItem("I2-"))
-        self.tableWidget.setItem(2,1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
+        self.fill_table(1,0,'NIR:')
+        self.fill_table(1,1,str(self.instrument.NIR))
 
-        self.tableWidget.setItem(3,0, QtGui.QTableWidgetItem("Cell (4,1)"))
-        self.tableWidget.setItem(3,1, QtGui.QTableWidgetItem("Cell (4,2)"))
+        self.fill_table(2,0,'HI-')
+        self.fill_table(2,1,str(self.instrument.HI))
+
+        self.fill_table(3,0,'I2-')
+        self.fill_table(3,1, str(self.instrument.I2))
+
+        self.fill_table(4,0,'Cuvette volume:')
+        self.fill_table(4,1, str(self.instrument.Cuvette_V))
+
+        self.fill_table(5,0,'DYE calibration:')
+        self.fill_table(5,1,' not used yet:')        
+
+        self.fill_table(6,0,'Dye injection volume: ')
+        self.fill_table(6,1, str(self.instrument.dye_vol_inj))
+
+        self.fill_table(7,0,'pH samplingg interval')
+        self.fill_table(7,1, str(self.instrument.samplingInterval))
+
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
+        self.tab3.layout.addWidget(self.tableWidget,1,0,1,2)
 
-        self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
-        self.tab3.layout.addWidget(self.dye_combo,1,1,1,1)
-
-        self.tab3.layout.addWidget(self.tableWidget,2,0,1,2)
-
-        self.tab3.layout.addWidget(self.dyecal_label,5,0,1,1)
-        self.tab3.layout.addWidget(self.dyecal_value,5,1,1,1)
-
-        self.tab3.layout.addWidget(self.dyev_inj_label,6,0,1,1)
-        self.tab3.layout.addWidget(self.dyev_inj_value,6,1,1,1)
-
-        self.tab3.layout.addWidget(self.cuv_v_label,7,0,1,1)
-        self.tab3.layout.addWidget(self.cuv_v_value,7,1,1,1)
-
-
-        #self.tab3.layout.addWidget(self.list_config)       
 
         self.tab1.setLayout(self.tab1.layout)
         self.tab_manual.setLayout(self.tab_manual.layout)
@@ -898,7 +886,7 @@ if __name__ == '__main__':
     udp.UDP_EXIT = True
     udp.server.join()
     if not udp.server.is_alive():
-        print 'UDP server closed'
+        print ('UDP server closed')
     myPanel.timerSpectra.stop()
     print ('timer is stopped')
     myPanel.timer_contin_mode.stop()

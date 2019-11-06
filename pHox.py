@@ -96,7 +96,7 @@ class STSVIS(object):
 
     def get_wvlCalCoeff(self):
         #get the coefficients
-        print 'Getting wavelength calibration coefficients...'
+        print ('Getting wavelength calibration coefficients...')
         msgType = '\x01\x01\x18\x00'
         immDataLength= '\x01'
 
@@ -235,7 +235,7 @@ class pH_instrument(object):
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
-        self.dyeinj_vol_inj = default["DYE_V_INJ"]
+        self.dye_vol_inj = default["DYE_V_INJ"]
 
         self.LED1 = default["LED1"]
         self.LED2 = default["LED2"]
@@ -259,7 +259,7 @@ class pH_instrument(object):
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
 
-	return wvls
+        return wvls
 
     def find_nearest(self, items, value):
         idx = (abs(items-value)).argmin()
@@ -282,48 +282,48 @@ class pH_instrument(object):
         STEP = 5
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
-        print 'Adjusting light levels with %i spectral counts threshold...' %THR
+        print ('Adjusting light levels with %i spectral counts threshold...' %THR)
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             self.adjust_LED(0,0)
             self.adjust_LED(1,0)
             self.adjust_LED(2,0)
             self.spectrometer.set_integration_time(sptIt)
-            print 'Trying %i ms integration time...' % sptIt
-            print 'Adjusting LED 1'
+            print ('Trying %i ms integration time...' % sptIt)
+            print ('Adjusting LED 1')
             for DC1 in range(5,100,STEP):
                self.adjust_LED(1, DC1)
                pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[0])
-               print pixelLevel, maxLevel
+               print (pixelLevel, maxLevel)
                if (pixelLevel>THR) and (maxLevel<15500):  
                   adj1 = True
-                  print 'Led 1 adjusted'
+                  print ('Led 1 adjusted')
                   break
             if adj1:
                STEP2 = 3
-               print 'Adjusting LED 2'            
+               print ('Adjusting LED 2')            
                for DC2 in range(5,100,STEP2):
                   self.adjust_LED(2, DC2)
                   # I think there is a problem with indices, should be 0,1,2 no 1,2,3
                   pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[2])
-                  print pixelLevel,maxLevel
+                  print (pixelLevel,maxLevel)
                   if (pixelLevel>THR) and (maxLevel<15500):  
                      adj2 = True
-                     print 'LED 2 adjusted'
+                     print ('LED 2 adjusted')
                      break
             if adj2:
                STEP2 = 3
-               print 'Adjusting LED 3'            
+               print ('Adjusting LED 3')            
                for DC3 in range(5,100,STEP2):
                   self.adjust_LED(3, DC3)
                   pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[3])
-                  print pixelLevel,maxLevel
+                  print (pixelLevel,maxLevel)
                   if (pixelLevel>THR) and (maxLevel<15500):  
                      adj3 = True
-                     print 'LED 3 adjusted'
+                     print ('LED 3 adjusted')
                      break
             if (adj1 and adj2 and adj3):
-               print 'Levels adjusted'
+               print ('Levels adjusted')
                break
                #self.specIntTime = sptIt
                #self.specAvScans = 3000/sptIt
