@@ -86,7 +86,7 @@ class Panel(QtGui.QWidget):
         tabs_layout = QtGui.QVBoxLayout()
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
-    	self.tab_manual = QtGui.QWidget()
+        self.tab_manual = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
         self.tab3 = QtGui.QWidget()
 
@@ -194,17 +194,14 @@ class Panel(QtGui.QWidget):
 
         sliders_groupBox.setLayout(grid)
 
-        # otherwise value change is triggere only when you unclick slider 
-        #self.sldLabels.append(QtGui.QLabel(sldNames[sldInd]))
-        #self.tab_manual.layout.addWidget(self.sliders[sldInd],sldRow+sldInd,1)
-        #self.tab_manual.layout.addWidget(QtGui.QLabel(sldInd),sldRow+sldInd,2)
 
         self.tab_manual.layout.addWidget(sliders_groupBox)
         self.tab_manual.layout.addWidget(buttons_groupBox)
 
-        self.sliders[0].valueChanged[int].connect(self.sld0_change)
-        self.sliders[1].valueChanged[int].connect(self.sld1_change)
-        self.sliders[2].valueChanged[int].connect(self.sld2_change)
+        self.spinboxes[0].valueChanged.connect(self.spin_change)      
+        self.sliders[0].valueChanged[int].connect(self.sld_change)
+        self.sliders[1].valueChanged[int].connect(self.sld_change)
+        self.sliders[2].valueChanged[int].connect(self.sld_change)
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
@@ -258,13 +255,6 @@ class Panel(QtGui.QWidget):
 
         self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
         self.cuv_v_value = QtGui.QSpinBox()
-
-        # print 'calibration coefficients: ', wvlCalCoeff,'\n'
-        # print ('Using default BCM lines for PWM LEDs: ',self.pwmLines)
-        # print ('0 = will be skipped')
-        # print ('NTC calibration coefficients :',self.ntcCalCoef, '\n')
-        # print 'Analysis pixels : ', self.wvlPixels
-
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)
 
@@ -353,18 +343,6 @@ class Panel(QtGui.QWidget):
         else:
            self.timer_contin_mode.stop()
 
-        #self.on_deploy_clicked(state)
-
-    '''def on_deploy_clicked(self, state):
-        newText =''
-        if state:
-           self.instrument.flnmStr=''
-           self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
-           nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
-        else:
-           self.timer_contin_mode.stop()'''
-
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
@@ -376,24 +354,38 @@ class Panel(QtGui.QWidget):
             self.timerSpectra.start(500)
         else:
             self.timerSpectra.stop()
+    
+    def spin_change(self,value):
+        source = self.sender()
+        ind = self.spinboxes.index(source)
+        self.instrument.adjust_LED(ind,value)
+        self.sliders[ind].setValue(value)
+        self.btn_leds.setChecked(True)
 
-    def sld0_change(self,DC): 
+    def sld_change(self,value):
+        source = self.sender()
+        ind = self.sliders.index(source)
+        self.instrument.adjust_LED(ind,value)
+        self.spinboxes[ind].setValue(value)
+        self.btn_leds.setChecked(True)        
+
+    '''def sld0_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(0,DC)
-        self.spinboxes[0].setValue(self.sliders[0].value())
+        self.spinboxes[0].setValue(DC)
         self.btn_leds.setChecked(True)
 
     def sld1_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(1,DC)
-        self.spinboxes[1].setValue(self.sliders[1].value())
+        self.spinboxes[1].setValue(DC)
         self.btn_leds.setChecked(True)
 
     def sld2_change(self,DC): 
         #get the value from the connect method
         self.instrument.adjust_LED(2,DC)
         self.spinboxes[2].setValue(self.sliders[2].value())
-        self.btn_leds.setChecked(True)
+        self.btn_leds.setChecked(True)'''
 
     def on_dark_clicked(self):
         self.logTextBox.appendPlainText('Taking dark level...')
