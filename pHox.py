@@ -228,8 +228,6 @@ class pH_instrument(object):
         self.molAbsRats = default['MOL_ABS_RATIOS']
 
         self.pwmLines =  default['PWM_LINES']
-
-
         self.ssrLines = default['GPIO_SSR']
         #TODO: Replace ssrlines with new lines 
         self.wpump_slot = default["WPUMP_SLOT"]
@@ -244,7 +242,7 @@ class pH_instrument(object):
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
-        self.dye_vol_inj = default["DYE_V_INJ"]
+        self.dyeinj_vol_inj = default["DYE_V_INJ"]
 
         self.LED1 = default["LED1"]
         self.LED2 = default["LED2"]

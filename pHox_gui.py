@@ -219,38 +219,57 @@ class Panel(QtGui.QWidget):
         # Define widgets for config tab 
         self.reload_config = create_button('Reload config',False)     
         self.dye_label = QtGui.QLabel('DYE: ')
-        self.dye_value = QtGui.QComboBox()
-        self.dye_value.addItem('TB')
-        self.dye_value.addItem('MCP')        
-        index = self.dye_value.findText(self.instrument.dye, 
+        self.dye_combo = QtGui.QComboBox()
+        self.dye_combo.addItem('TB')
+        self.dye_combo.addItem('MCP')        
+        index = self.dye_combo.findText(self.instrument.dye, 
                                 QtCore.Qt.MatchFixedString)
         if index >= 0: 
-            self.dye_value.setCurrentIndex(index)
-
+            self.dye_combo.setCurrentIndex(index)
+            
+        #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
+        
         self.nir_label = QtGui.QLabel('NIR: ')
         self.nir_value = QtGui.QSpinBox()
         self.nir_value.setValue(self.instrument.NIR)
 
         self.hi_label = QtGui.QLabel('HI-: ')
         self.hi_value = QtGui.QSpinBox()
-        self.nir_value.setValue(self.instrument.HI)
+        self.hi_value.setValue(self.instrument.HI)
 
         self.i2_label = QtGui.QLabel('I2-: ')
         self.i2_value = QtGui.QSpinBox()
+        self.i2_value.setValue(self.instrument.I2)
 
         self.dyecal_label = QtGui.QLabel('DYE calibration: ')
         self.dyecal_value = QtGui.QLabel('to be added')
         
         self.dyev_inj_label = QtGui.QLabel('Dye injection volume: ')
-        self.dyev_inj_value = QtGui.QSpinBox()
-
+        self.dyev_inj_value = QtGui.QLabel(self.dyeinj_vol_inj)
+ 
         self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
         self.cuv_v_value = QtGui.QSpinBox()
+        self.cuv_v_valu0.setValue(self.Cuvette_V)
+
+
+        self.tableWidget = QtGui.QTableWidget()
+        self.tableWidget.setRowCount(4)
+        self.tableWidget.setColumnCount(2)
+        self.tableWidget.setItem(0,0, QTableWidgetItem("Cell (1,1)"))
+        self.tableWidget.setItem(0,1, QTableWidgetItem("Cell (1,2)"))
+        self.tableWidget.setItem(1,0, QTableWidgetItem("Cell (2,1)"))
+        self.tableWidget.setItem(1,1, QTableWidgetItem("Cell (2,2)"))
+        self.tableWidget.setItem(2,0, QTableWidgetItem("Cell (3,1)"))
+        self.tableWidget.setItem(2,1, QTableWidgetItem("Cell (3,2)"))
+        self.tableWidget.setItem(3,0, QTableWidgetItem("Cell (4,1)"))
+        self.tableWidget.setItem(3,1, QTableWidgetItem("Cell (4,2)"))
+
+        self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
 
         self.tab3.layout.addWidget(self.reload_config,0,0,1,1)
 
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
-        self.tab3.layout.addWidget(self.dye_value,1,1,1,1)
+        self.tab3.layout.addWidget(self.dye_combo,1,1,1,1)
 
         self.tab3.layout.addWidget(self.nir_label,2,0,1,1)
         self.tab3.layout.addWidget(self.nir_value,2,1,1,1)
@@ -270,6 +289,7 @@ class Panel(QtGui.QWidget):
         self.tab3.layout.addWidget(self.cuv_v_label,7,0,1,1)
         self.tab3.layout.addWidget(self.cuv_v_value,7,1,1,1)
 
+        self.tab3.layout.addWidget(self.tableWidget,8,1,1,1)
         #self.tab3.layout.addWidget(self.list_config)       
 
         self.tab1.setLayout(self.tab1.layout)
@@ -344,7 +364,22 @@ class Panel(QtGui.QWidget):
             self.timerSpectra.start(500)
         else:
             self.timerSpectra.stop()
-    
+    # not sure about connections, 
+    # do we need it?
+    # if yes, then wavelengths and pixels should
+    # be also recalculated 
+    # comment out for now       
+    """def dye_combo_chngd(self,value):
+        self.dye = value
+        print (value)
+        if self.dye == 'MCP':
+            self.HI =  int(default['MCP_wl_HI'])
+            self.I2 =  int(default['MCP_wl_I2-'])         
+        elif self.dye == "TB":   
+            self.HI =  int(default['TB_wl_HI-'])
+            self.I2 =  int(default['TB_wl_I2-'])"""
+
+
     def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
