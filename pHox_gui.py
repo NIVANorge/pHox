@@ -231,6 +231,8 @@ class Panel(QtGui.QWidget):
         
         self.tableWidget = QtGui.QTableWidget()
         self.tableWidget.setHorizontalHeaderLabels(['Parameter','Value'])
+        header = self.tableWidget.horizontalHeader()
+        header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
         self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
