@@ -69,8 +69,6 @@ class Panel(QtGui.QWidget):
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
 
-
-
         self.timerSensUpd.start(2000)
 
     def init_ui(self):
@@ -95,7 +93,6 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_manual,"Manual mode")
         self.tabs.addTab(self.tab2,"Log")
         self.tabs.addTab(self.tab3,"Config")
-
 
         self.tab1.layout = QtGui.QGridLayout()
         self.tab_manual.layout  = QtGui.QGridLayout()
@@ -138,9 +135,6 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas = create_button('Continuous measurements',True)
         # Unchecable buttons
 
-
-
-   
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump]
 
@@ -172,11 +166,14 @@ class Panel(QtGui.QWidget):
         self.spinboxes = []
 
         # create widgets
-        for sldInd in range(3):
+        for ind in range(3):
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
-            self.sliders[sldInd].setFocusPolicy(QtCore.Qt.NoFocus)
-            self.sliders[sldInd].setTracking(True) # to track changes on sliders
+            self.sliders[ind].setFocusPolicy(QtCore.Qt.NoFocus)
+            self.sliders[ind].setTracking(True) # to track changes on sliders
             self.spinboxes.append(QtGui.QSpinBox())
+            # create connections 
+            self.sliders[ind].valueChanged[int].connect(self.sld_change)   
+            self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
         grid = QtGui.QGridLayout()
 
@@ -194,14 +191,8 @@ class Panel(QtGui.QWidget):
 
         sliders_groupBox.setLayout(grid)
 
-
         self.tab_manual.layout.addWidget(sliders_groupBox)
         self.tab_manual.layout.addWidget(buttons_groupBox)
-
-        self.spinboxes[0].valueChanged.connect(self.spin_change)      
-        self.sliders[0].valueChanged[int].connect(self.sld_change)
-        self.sliders[1].valueChanged[int].connect(self.sld_change)
-        self.sliders[2].valueChanged[int].connect(self.sld_change)
 
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
@@ -280,7 +271,6 @@ class Panel(QtGui.QWidget):
         self.tab3.layout.addWidget(self.cuv_v_value,7,1,1,1)
 
         #self.tab3.layout.addWidget(self.list_config)       
-
 
         self.tab1.setLayout(self.tab1.layout)
         self.tab_manual.setLayout(self.tab_manual.layout)

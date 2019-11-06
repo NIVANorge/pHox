@@ -186,7 +186,6 @@ class pH_instrument(object):
         except: 
             pass
 
-
         self.dye = default['DYE'] 
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
@@ -259,17 +258,15 @@ class pH_instrument(object):
     def calc_wavelengths(self,coeffs):   # assign wavelengths to pixels and find pixel number of reference wavelengths
         wvls = np.zeros(self.spectrometer.pixels, dtype=float)
         pixels = np.arange(self.spectrometer.pixels)
+
         # all wvl we get from the instrument, calculated from the coefficients 
         #TODO:  wvls should be a header for the .spt log file 1024 wv values 
         wvls = coeffs[0] + coeffs[1]* pixels + coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3)
+        
         self.wvlPixels = []
         # find the indices of pixels that give the wavelength corresponding to self.HI, self.I2, self.NIR
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
-
-        print (wvls[self.wvlPixels[0]],
-               wvls[self.wvlPixels[1]],
-               wvls[self.wvlPixels[2]])
 
 	return wvls
 
@@ -316,6 +313,7 @@ class pH_instrument(object):
                print 'Adjusting LED 2'            
                for DC2 in range(5,100,STEP2):
                   self.adjust_LED(2, DC2)
+                  # I think there is a problem with indices, should be 0,1,2 no 1,2,3
                   pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[2])
                   print pixelLevel,maxLevel
                   if (pixelLevel>THR) and (maxLevel<15500):  
@@ -355,9 +353,9 @@ class pH_instrument(object):
     def reset_lines(self):
         # set values in outputs of pins 
         self.rpi.write(   self.wpump_slot, 0)
-        self.rpi.write(self.dyepump_slot, 0)
-        self.rpi.write(self.stirrer_slot, 0)
-        self.rpi.write(  self.extra_slot, 0)
+        self.rpi.write( self.dyepump_slot, 0)
+        self.rpi.write( self.stirrer_slot, 0)
+        self.rpi.write(   self.extra_slot, 0)
 
     def set_line (self, line, status):
         # change status of the relay 
