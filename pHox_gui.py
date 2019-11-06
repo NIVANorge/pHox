@@ -233,8 +233,6 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
-        def fill_table(self,x,y,item):
-            self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
         self.fill_table(0,0,'DYE type')
         self.tableWidget.setCellWidget(0,1,self.dye_combo)
@@ -297,6 +295,9 @@ class Panel(QtGui.QWidget):
         self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
+    def fill_table(self,x,y,item):
+        self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
+        
     def btn_reload_config_clicked(self):
         self.logTextBox.appendPlainText('Button reload config was clicked')
         self.instrument.load_config()
