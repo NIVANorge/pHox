@@ -206,7 +206,6 @@ class Panel(QtGui.QWidget):
         self.sliders[1].valueChanged[int].connect(self.sld1_change)
         self.sliders[2].valueChanged[int].connect(self.sld2_change)
 
-
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
 
@@ -890,10 +889,10 @@ class Panel(QtGui.QWidget):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
+    app.setStyleSheet("QPushButton:checked{ background-color: #56b8a4 }")
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
-    print ('ending')
     udp.UDP_EXIT = True
     udp.server.join()
     if not udp.server.is_alive():
@@ -904,6 +903,5 @@ if __name__ == '__main__':
 
     myPanel.timerSensUpd.stop()
     myPanel.close()
-
     print ('ended')
     app.quit()
