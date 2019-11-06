@@ -229,17 +229,7 @@ class Panel(QtGui.QWidget):
             
         #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
         
-        self.nir_label = QtGui.QLabel('NIR: ')
-        self.nir_value = QtGui.QSpinBox()
-        self.nir_value.setValue(self.instrument.NIR)
 
-        self.hi_label = QtGui.QLabel('HI-: ')
-        self.hi_value = QtGui.QSpinBox()
-        self.hi_value.setValue(self.instrument.HI)
-
-        self.i2_label = QtGui.QLabel('I2-: ')
-        self.i2_value = QtGui.QSpinBox()
-        self.i2_value.setValue(self.instrument.I2)
 
         self.dyecal_label = QtGui.QLabel('DYE calibration: ')
         self.dyecal_value = QtGui.QLabel('to be added')
@@ -255,12 +245,16 @@ class Panel(QtGui.QWidget):
         self.tableWidget = QtGui.QTableWidget()
         self.tableWidget.setRowCount(4)
         self.tableWidget.setColumnCount(2)
-        self.tableWidget.setItem(0,0, QtGui.QTableWidgetItem("Cell (1,1)"))
-        self.tableWidget.setItem(0,1, QtGui.QTableWidgetItem("Cell (1,2)"))
-        self.tableWidget.setItem(1,0, QtGui.QTableWidgetItem("Cell (2,1)"))
-        self.tableWidget.setItem(1,1, QtGui.QTableWidgetItem("Cell (2,2)"))
-        self.tableWidget.setItem(2,0, QtGui.QTableWidgetItem("Cell (3,1)"))
-        self.tableWidget.setItem(2,1, QtGui.QTableWidgetItem("Cell (3,2)"))
+
+        self.tableWidget.setItem(0,0, QtGui.QTableWidgetItem('NIR: '))
+        self.tableWidget.setItem(0,1, QtGui.QTableWidgetItem(str(self.instrument.NIR)))
+
+        self.tableWidget.setItem(1,0, QtGui.QTableWidgetItem("HI-"))
+        self.tableWidget.setItem(1,1, QtGui.QTableWidgetItem(str(self.instrument.HI)")
+
+        self.tableWidget.setItem(2,0, QtGui.QTableWidgetItem(I2-"))
+        self.tableWidget.setItem(2,1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
+
         self.tableWidget.setItem(3,0, QtGui.QTableWidgetItem("Cell (4,1)"))
         self.tableWidget.setItem(3,1, QtGui.QTableWidgetItem("Cell (4,2)"))
 
@@ -271,14 +265,7 @@ class Panel(QtGui.QWidget):
         self.tab3.layout.addWidget(self.dye_label,1,0,1,1)
         self.tab3.layout.addWidget(self.dye_combo,1,1,1,1)
 
-        self.tab3.layout.addWidget(self.nir_label,2,0,1,1)
-        self.tab3.layout.addWidget(self.nir_value,2,1,1,1)
-
-        self.tab3.layout.addWidget(self.hi_label,3,0,1,1)
-        self.tab3.layout.addWidget(self.hi_value,3,1,1,1)
-
-        self.tab3.layout.addWidget(self.i2_label,4,0,1,1)
-        self.tab3.layout.addWidget(self.i2_value,4,1,1,1)
+        self.tab3.layout.addWidget(self.tableWidget,2,0,1,2)
 
         self.tab3.layout.addWidget(self.dyecal_label,5,0,1,1)
         self.tab3.layout.addWidget(self.dyecal_value,5,1,1,1)
@@ -289,7 +276,7 @@ class Panel(QtGui.QWidget):
         self.tab3.layout.addWidget(self.cuv_v_label,7,0,1,1)
         self.tab3.layout.addWidget(self.cuv_v_value,7,1,1,1)
 
-        self.tab3.layout.addWidget(self.tableWidget,8,1,1,1)
+
         #self.tab3.layout.addWidget(self.list_config)       
 
         self.tab1.setLayout(self.tab1.layout)
@@ -906,7 +893,7 @@ class Panel(QtGui.QWidget):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
-    app.setStyleSheet(" * {font-size: 11 pt} QPushButton:checked{ background-color: #56b8a4 }")
+    app.setStyleSheet(" * {font-size: 12 pt} QPushButton:checked{ background-color: #56b8a4 }")
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
