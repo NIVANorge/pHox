@@ -245,7 +245,7 @@ class Panel(QtGui.QWidget):
         self.dyecal_value = QtGui.QLabel('to be added')
         
         self.dyev_inj_label = QtGui.QLabel('Dye injection volume: ')
-        self.dyev_inj_value = QtGui.QLabel(self.instrument.dyeinj_vol_inj)
+        self.dyev_inj_value = QtGui.QLabel(str(self.instrument.dyeinj_vol_inj))
  
         self.cuv_v_label = QtGui.QLabel('Cuvette volume: ')
         self.cuv_v_value = QtGui.QSpinBox()
@@ -906,7 +906,7 @@ class Panel(QtGui.QWidget):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
-    app.setStyleSheet("QPushButton:checked{ background-color: #56b8a4 }")
+    app.setStyleSheet(" * {font-size: 11 pt} QPushButton:checked{ background-color: #56b8a4 }")
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
