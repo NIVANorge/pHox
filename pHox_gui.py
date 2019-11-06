@@ -230,7 +230,7 @@ class Panel(QtGui.QWidget):
         #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
-        self.tableWidget.setHorizontalHeaderLabels(QString("Parameter;Value").split(";"))
+        self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
         header = self.tableWidget.horizontalHeader()
         header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
         self.tableWidget.setRowCount(8)
