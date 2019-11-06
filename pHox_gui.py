@@ -481,11 +481,14 @@ class Panel(QtGui.QWidget):
         self.instrument.specIntTime = sptIt
         self.instrument.specAvScans = 3000/sptIt
 
-    def refresh_settings(self):
-        settings = ('Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time : %d\nDye addition sequence : %s\nSampling interval : %d\nData folder : %s' % (
-                    self.instrument.specIntTime, self.instrument.specAvScans,self.instrument.pumpT, self.instrument.waitT, self.instrument.mixT, self.instrument.dyeAdditions, 
-                    self.instrument.samplingInterval, self.instrument.folderPath))
-        self.textBox.setText(settings)
+    '''def refresh_settings(self):
+        settings = ('Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time :  %s\nSampling interval : %d\nData folder : %s' % (
+                    self.instrument.specIntTime, self.instrument.specAvScans,
+                    self.instrument.pumpT, self.instrument.waitT, 
+                    self.instrument.mixT,
+                    self.instrument.samplingInterval,
+                     self.instrument.folderPath))
+        self.textBox.setText(settings)'''
 
     def update_sensors(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
@@ -630,11 +633,11 @@ class Panel(QtGui.QWidget):
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        if self.instrument.pT > 0: # pump time
+        if self.instrument.pumpT > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
             self.logTextBox.appendPlainText("wait for pumping time")
-            self.instrument.wait(self.instrument.pT) 
+            self.instrument.wait(self.instrument.pumpT) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 

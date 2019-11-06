@@ -201,7 +201,7 @@ class pH_instrument(object):
         self._autolen   = None
         #self._autostop  = None #Not used
         #self._deployed  = False #Not used
-        # self.last_dark  = None #Not used
+        self.last_dark  = None #Not used
 
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
@@ -212,12 +212,12 @@ class pH_instrument(object):
             self.vNTCch = 8
 
         self.samplingInterval = int(default["PH_SAMPLING_INTERVAL_SEC"])
-        self.pT = int(default["pumpTime"])
-        self.mT = int(default["mixTime"])
-        self.wT = int(default["waitTime"])
+        self.pumpT = int(default["pumpTime"])
+        self.mixT = int(default["mixTime"])
+        self.waitT = int(default["waitTime"])
         self.ncycles= int(default["ncycles"]) # Former dA
         self.nshots = int(default["dye_nshots"])
-        
+         
         self.molAbsRats = default['MOL_ABS_RATIOS']
 
         self.pwmLines =  default['PWM_LINES']

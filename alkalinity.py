@@ -28,7 +28,7 @@ HOST_EXIST = False
 FIA_EXIST = False
 USE_FIA_TA = False
 
-print ports
+print (ports)
 for i in range (len(ports)):
    name=ports[i][2]
    port=ports[i][0]
