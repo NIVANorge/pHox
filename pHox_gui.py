@@ -895,7 +895,9 @@ class Panel(QtGui.QWidget):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
-    app.setStyleSheet(" * {font-size: 14 pt} QPushButton:checked{ background-color: #56b8a4 }")
+    #app.setStyleSheet(" * {font-size: 14 pt} QPushButton:checked{ background-color: #56b8a4 }")
+    qss_file = open('styles.qss').read()
+    app.setStyleSheet(qss_file)
     myPanel = Panel()
     myPanel.autorun()
     app.exec_()
