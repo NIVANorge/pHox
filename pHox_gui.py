@@ -87,12 +87,15 @@ class Panel(QtGui.QWidget):
         self.tab_manual = QtGui.QWidget()
         self.tab2 = QtGui.QWidget()
         self.tab3 = QtGui.QWidget()
+        self.tab4 = QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,"Home")
         self.tabs.addTab(self.tab_manual,"Manual mode")
         self.tabs.addTab(self.tab2,"Log")
         self.tabs.addTab(self.tab3,"Config")
+        self.tabs.addTab(self.tab4,"Calibration")
+
 
         self.tab1.layout = QtGui.QGridLayout()
         self.tab_manual.layout  = QtGui.QGridLayout()
@@ -627,7 +630,9 @@ class Panel(QtGui.QWidget):
             else:
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
-                
+
+        # take dark on every sample         
+        self.on_dark_clicked()       
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
@@ -644,7 +649,7 @@ class Panel(QtGui.QWidget):
         # close the valve
         self.instrument.set_Valve(True)
         self.logTextBox.appendPlainText("wait for instrument waiting time")
-        self.instrument.wait(self.instrument.wT)
+        self.instrument.wait(self.instrument.waitT)
 
         # Take the last measured dark
         dark = self.instrument.spCounts[0]
@@ -670,12 +675,12 @@ class Panel(QtGui.QWidget):
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
             self.logTextBox.appendPlainText("wait for mixing time")
-            self.instrument.wait(self.instrument.mT)
+            self.instrument.wait(self.instrument.mixT)
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
 
             self.logTextBox.appendPlainText("wait before to start the measurment")
-            self.instrument.wait(self.instrument.wT)
+            self.instrument.wait(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
             postinj = self.instrument.spectrometer.get_corrected_spectra()
@@ -869,15 +874,19 @@ class Panel(QtGui.QWidget):
         
     def autorun(self):
         self.logTextBox.appendPlainText('Inside continuous_mode...')
+        # Why do we need this 10 seconds? 
         time.sleep(10)
+
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
             self.timerAuto.timeout.connect(self.autostart_time)
             self.timerAuto.start(1000)
+
         elif (self.instrument._autostart) and (self.instrument._automode == 'pump'):
             self.textBox.setText('Automatic start at pump enabled')
             self.timerAuto.timeout.connect(self.autostart_pump)
             self.timerAuto.start(1000)
+            
         elif (self.instrument._autostart) and (self.instrument._automode == 'now'):
             self.textBox.setText('Immediate automatic start enabled')
             self._autostart()

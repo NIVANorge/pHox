@@ -137,7 +137,8 @@ class pH_instrument(object):
         # raw measurements
         self.spCounts = np.zeros((6,1024))
 
-        self.nlCoeff = [1.0229, -9E-6, 6E-10]
+        self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
+
         self.specIntTime = 500 #spectrometer integration time (ms)
         self.specAvScans = 6 # Spectrums to take, they will be averaged to make one measurement 
 
