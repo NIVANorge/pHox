@@ -155,7 +155,10 @@ class pH_instrument(object):
         self.timeStamp = ''
         self.spectrometer.set_integration_time(self.specIntTime)
         self.spectrometer.set_scans_average(1)
-
+        
+        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+        self.adc.set_pga(1)
+        self.adcdac = ADCDACPi()
         self.load_config()
 
         #setup PWM and SSR lines
@@ -166,8 +169,7 @@ class pH_instrument(object):
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
         self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
-        self.spCounts_df = pd.DataFrame(
-            columns=['Wavelengths','dark','blank'])
+        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
         self.reset_lines()
 
@@ -203,10 +205,6 @@ class pH_instrument(object):
         #self._autostop  = None #Not used
         #self._deployed  = False #Not used
         self.last_dark  = None #Not used
-
-        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
-        self.adc.set_pga(1)
-        self.adcdac = ADCDACPi()
 
         self.vNTCch =    int(default['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):

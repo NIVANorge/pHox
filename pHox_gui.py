@@ -143,10 +143,10 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
-
         # Define widgets for config tab 
-        self.reload_config = create_button('Reload config',False)     
-
+        self.reload_config = self.create_button('Reload config',False)     
+        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
+        
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
         self.dye_combo.addItem('MCP')        
@@ -207,24 +207,22 @@ class Panel(QtGui.QWidget):
         self.setLayout(hboxPanel)
         self.showMaximized()
 
-        
     def make_btngroupbox(self):
         # Define widgets for main tab 
         # Create checkabple buttons
         self.buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
         btn_grid = QtGui.QGridLayout()
 
-        self.btn_sigle_meas = create_button('Single measurement',False)   
-        self.btn_t_dark = create_button('Take dark',False)
-        self.btn_spectro = create_button('Spectrophotometer',True)
-        self.btn_leds = create_button('LEDs',True)
-        self.btn_valve = create_button('Inlet valve',True)
-        self.btn_sampl_int = create_button( 'Set sampling interval',False)     
-        self.btn_stirr = create_button('Stirrer',True)
-        self.btn_dye_pmp = create_button('Dye pump',False)        
-        self.btn_wpump = create_button('Water pump',True)
-
-        self.btn_cont_meas = create_button('Continuous measurements',True)
+        self.btn_sigle_meas = self.create_button('Single measurement',False)   
+        self.btn_t_dark = self.create_button('Take dark',False)
+        self.btn_spectro = self.create_button('Spectrophotometer',True)
+        self.btn_leds = self.create_button('LEDs',True)
+        self.btn_valve = self.create_button('Inlet valve',True)
+        self.btn_sampl_int = self.create_button( 'Set sampling interval',False)     
+        self.btn_stirr = self.create_button('Stirrer',True)
+        self.btn_dye_pmp = self.create_button('Dye pump',False)        
+        self.btn_wpump = self.create_button('Water pump',True)
+        self.btn_cont_meas = self.create_button('Continuous measurements',True)
         # Unchecable buttons
 
         self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
@@ -255,7 +253,7 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
-        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
+
 
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
