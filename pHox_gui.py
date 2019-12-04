@@ -81,48 +81,137 @@ class Panel(QtGui.QWidget):
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
         #set grid layout and size columns
-        tabs_layout = QtGui.QVBoxLayout()
+        #tabs_layout = QtGui.QVBoxLayout()
+        
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
         self.tab_manual = QtGui.QWidget()
-        self.tab2 = QtGui.QWidget()
-        self.tab3 = QtGui.QWidget()
-        self.tab4 = QtGui.QWidget()
+        self.tab_log = QtGui.QWidget()
+        self.tab_config = QtGui.QWidget()
+        self.tab_calibr = QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,"Home")
         self.tabs.addTab(self.tab_manual,"Manual mode")
-        self.tabs.addTab(self.tab2,"Log")
-        self.tabs.addTab(self.tab3,"Config")
-        self.tabs.addTab(self.tab4,"Calibration")
+        self.tabs.addTab(self.tab_log,"Log")
+        self.tabs.addTab(self.tab_config,"Config")
+        self.tabs.addTab(self.tab_calibr,"Calibr")
 
-
-        self.tab1.layout = QtGui.QGridLayout()
+        self.tab1.layout =        QtGui.QGridLayout()
         self.tab_manual.layout  = QtGui.QGridLayout()
-        self.tab2.layout = QtGui.QGridLayout() #.addLayout(grid)
-        self.tab3.layout = QtGui.QGridLayout() #.addLayout(grid)
+        self.tab_log.layout =     QtGui.QGridLayout()
+        self.tab_config.layout =  QtGui.QGridLayout()
 
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
-        self.logTextBox.appendPlainText('Text message in log')
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
 
-        self.tab2.layout.addWidget(self.logTextBox) 
+        self.tab_log.layout.addWidget(self.logTextBox) 
 
-        self.group = QtGui.QButtonGroup()
-        self.group.setExclusive(False)
+        ##self.group = QtGui.QButtonGroup()
+        ##self.group.setExclusive(False)
+        self.make_btngroupbox()
+        self.make_slidergroupbox()
 
-        def create_button(name,check):
-            Btn = QtGui.QPushButton(name)
-            Btn.setObjectName(name)
-            if check:
-                Btn.setCheckable(True)
-            return Btn
+        self.tab_manual.layout.addWidget(self.sliders_groupBox)
+        self.tab_manual.layout.addWidget(self.buttons_groupBox)
 
+        self.textBox = QtGui.QTextEdit()
+        self.textBox.setOverwriteMode(True)
+
+        self.textBoxSens = QtGui.QTextEdit()
+        self.textBoxSens.setOverwriteMode(True)
+
+        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.textBox,      1,0)
+        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
+
+        #create plotwidgets
+        self.plotwdigets_groupbox = QtGui.QGroupBox()
+
+        self.plotwidget1 = pg.PlotWidget()
+        self.plotwidget1.setYRange(0,16000)
+        self.plotwidget1.setBackground('#19232D')
+
+        self.plotwidget2 = pg.PlotWidget()
+        self.plotwidget2.setYRange(0,1.3)
+        self.plotwidget2.setXRange(410,610)
+        self.plotwidget2.setBackground('#19232D')     
+
+        vboxPlot = QtGui.QVBoxLayout()
+        vboxPlot.addWidget(self.plotwidget1)
+        vboxPlot.addWidget(self.plotwidget2)
+
+
+        # Define widgets for config tab 
+        self.reload_config = create_button('Reload config',False)     
+
+        self.dye_combo = QtGui.QComboBox()
+        self.dye_combo.addItem('TB')
+        self.dye_combo.addItem('MCP')        
+        index = self.dye_combo.findText(self.instrument.dye, 
+                                QtCore.Qt.MatchFixedString)
+        if index >= 0: 
+            self.dye_combo.setCurrentIndex(index)
+            
+        #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
+        
+        self.tableWidget = QtGui.QTableWidget()
+        self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
+        header = self.tableWidget.horizontalHeader()
+        header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
+        self.tableWidget.setRowCount(8)
+        self.tableWidget.setColumnCount(2)
+
+        self.fill_table(0,0,'DYE type')
+        self.tableWidget.setCellWidget(0,1,self.dye_combo)
+
+        self.fill_table(1,0,'NIR:')
+        self.fill_table(1,1,str(self.instrument.NIR))
+
+        self.fill_table(2,0,'HI-')
+        self.fill_table(2,1,str(self.instrument.HI))
+
+        self.fill_table(3,0,'I2-')
+        self.fill_table(3,1, str(self.instrument.I2))
+
+        self.fill_table(4,0,'Cuvette volume:')
+        self.fill_table(4,1, str(self.instrument.Cuvette_V))
+
+        self.fill_table(5,0,'DYE calibration:')
+        self.fill_table(5,1,' not used yet:')        
+
+        self.fill_table(6,0,'Dye injection volume: ')
+        self.fill_table(6,1, str(self.instrument.dye_vol_inj))
+
+        self.fill_table(7,0,'pH samplingg interval')
+        self.fill_table(7,1, str(self.instrument.samplingInterval))
+        self.tableWidget.horizontalHeader().setStretchLastSection(True)
+
+        self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
+        self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
+
+        self.tab1.setLayout(self.tab1.layout)
+        self.tab_manual.setLayout(self.tab_manual.layout)
+        self.tab_log.setLayout(self.tab_log.layout)
+        self.tab_config.setLayout(self.tab_config.layout)   
+
+        #tabs_layout.addWidget(self.tabs)
+
+        # combine layout for plots and buttons
+        hboxPanel = QtGui.QHBoxLayout()
+        hboxPanel.addLayout(vboxPlot)
+        hboxPanel.addWidget(self.tabs)
+
+        self.setLayout(hboxPanel)
+        self.showMaximized()
+
+        
+    def make_btngroupbox(self):
         # Define widgets for main tab 
         # Create checkabple buttons
-        buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
+        self.buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
         btn_grid = QtGui.QGridLayout()
 
         self.btn_sigle_meas = create_button('Single measurement',False)   
@@ -158,9 +247,26 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_wpump, 4, 0)
         btn_grid.addWidget(self.btn_t_dark , 4, 1)
 
-        buttons_groupBox.setLayout(btn_grid)
 
-        sliders_groupBox = QtGui.QGroupBox("Sliders GroupBox")
+        # Define connections Button clicked - Result 
+        self.btn_spectro.clicked.connect(self.spectro_clicked)
+        self.btn_leds.clicked.connect(self.btn_leds_checked)
+        self.btn_valve.clicked.connect(self.btn_valve_clicked)
+        self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
+        self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
+        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
+        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
+
+        # Define connections for Unchecable buttons
+        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
+        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
+        self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
+
+        self.buttons_groupBox.setLayout(btn_grid)
+
+    def make_slidergroupbox(self):    
+        self.sliders_groupBox = QtGui.QGroupBox("Sliders GroupBox")
 
        # sldRow = 6
         sldNames = ['Blue','Orange','Red']
@@ -192,115 +298,14 @@ class Panel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('Red:'),2,1)
         grid.addWidget(self.spinboxes[2],2,2)
 
-        sliders_groupBox.setLayout(grid)
+        self.sliders_groupBox.setLayout(grid)
 
-        self.tab_manual.layout.addWidget(sliders_groupBox)
-        self.tab_manual.layout.addWidget(buttons_groupBox)
-
-        self.textBox = QtGui.QTextEdit()
-        self.textBox.setOverwriteMode(True)
-
-        self.textBoxSens = QtGui.QTextEdit()
-        self.textBoxSens.setOverwriteMode(True)
-
-        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
-        self.tab1.layout.addWidget(self.textBox,      1,0)
-        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
-
-        #create plotwidgets
-        self.plotwidget1 = pg.PlotWidget()
-        self.plotwidget1.setYRange(0,16000)
-
-        self.plotwidget2 = pg.PlotWidget()
-        self.plotwidget2.setYRange(0,1.3)
-        self.plotwidget2.setXRange(410,610)
-        
-        vboxPlot = QtGui.QVBoxLayout()
-        vboxPlot.addWidget(self.plotwidget1)
-        vboxPlot.addWidget(self.plotwidget2)
-
-        # Define widgets for config tab 
-        self.reload_config = create_button('Reload config',False)     
-
-        self.dye_combo = QtGui.QComboBox()
-        self.dye_combo.addItem('TB')
-        self.dye_combo.addItem('MCP')        
-        index = self.dye_combo.findText(self.instrument.dye, 
-                                QtCore.Qt.MatchFixedString)
-        if index >= 0: 
-            self.dye_combo.setCurrentIndex(index)
-            
-        #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
-        
-        self.tableWidget = QtGui.QTableWidget()
-        self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
-        header = self.tableWidget.horizontalHeader()
-        header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
-        self.tableWidget.setRowCount(8)
-        self.tableWidget.setColumnCount(2)
-
-
-        self.fill_table(0,0,'DYE type')
-        self.tableWidget.setCellWidget(0,1,self.dye_combo)
-
-        self.fill_table(1,0,'NIR:')
-        self.fill_table(1,1,str(self.instrument.NIR))
-
-        self.fill_table(2,0,'HI-')
-        self.fill_table(2,1,str(self.instrument.HI))
-
-        self.fill_table(3,0,'I2-')
-        self.fill_table(3,1, str(self.instrument.I2))
-
-        self.fill_table(4,0,'Cuvette volume:')
-        self.fill_table(4,1, str(self.instrument.Cuvette_V))
-
-        self.fill_table(5,0,'DYE calibration:')
-        self.fill_table(5,1,' not used yet:')        
-
-        self.fill_table(6,0,'Dye injection volume: ')
-        self.fill_table(6,1, str(self.instrument.dye_vol_inj))
-
-        self.fill_table(7,0,'pH samplingg interval')
-        self.fill_table(7,1, str(self.instrument.samplingInterval))
-        self.tableWidget.horizontalHeader().setStretchLastSection(True)
-
-        self.tab3.layout.addWidget(self.reload_config,0,0,1,1)   
-        self.tab3.layout.addWidget(self.tableWidget,1,0,1,1)
-
-
-        self.tab1.setLayout(self.tab1.layout)
-        self.tab_manual.setLayout(self.tab_manual.layout)
-        self.tab2.setLayout(self.tab2.layout)
-        self.tab3.setLayout(self.tab3.layout)   
-
-        tabs_layout.addWidget(self.tabs)
-
-        # combine layout for plots and buttons
-        hboxPanel = QtGui.QHBoxLayout()
-        hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addLayout(tabs_layout)
-        self.setLayout(hboxPanel)
-
-        #self.setLayout(self.layout)
-        #self.setGeometry(20, 150, 1200, 650)
-        self.showMaximized()
-
-        # Define connections Button clicked - Result 
-        self.btn_spectro.clicked.connect(self.spectro_clicked)
-        self.btn_leds.clicked.connect(self.btn_leds_checked)
-        self.btn_valve.clicked.connect(self.btn_valve_clicked)
-        self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
-        self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
-        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
-
-        # Define connections for Unchecable buttons
-        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
-        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
-        self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
-
+    def create_button(self,name,check):
+        Btn = QtGui.QPushButton(name)
+        Btn.setObjectName(name)
+        if check:
+            Btn.setCheckable(True)
+        return Btn
     def fill_table(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
@@ -374,24 +379,6 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
 
-    '''def sld0_change(self,DC): 
-        #get the value from the connect method
-        self.instrument.adjust_LED(0,DC)
-        self.spinboxes[0].setValue(DC)
-        self.btn_leds.setChecked(True)
-
-    def sld1_change(self,DC): 
-        #get the value from the connect method
-        self.instrument.adjust_LED(1,DC)
-        self.spinboxes[1].setValue(DC)
-        self.btn_leds.setChecked(True)
-
-    def sld2_change(self,DC): 
-        #get the value from the connect method
-        self.instrument.adjust_LED(2,DC)
-        self.spinboxes[2].setValue(self.sliders[2].value())
-        self.btn_leds.setChecked(True)'''
-
     def on_dark_clicked(self):
         self.logTextBox.appendPlainText('Taking dark level...')
         self.set_LEDs(False)
@@ -458,7 +445,6 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
         
-
     def on_intTime_clicked(self):
         # Not used now
         intTime, ok = QtGui.QInputDialog.getInt(
@@ -483,15 +469,6 @@ class Panel(QtGui.QWidget):
         self.sliders[1].setValue(DC2)
         self.instrument.specIntTime = sptIt
         self.instrument.specAvScans = 3000/sptIt
-
-    '''def refresh_settings(self):
-        settings = ('Settings:\nSpectrophotometer integration time : %d ms\nSpectrophotometer averaging scans : %d\nPumping time : %d\nWaiting time before scans : %d\nMixing time :  %s\nSampling interval : %d\nData folder : %s' % (
-                    self.instrument.specIntTime, self.instrument.specAvScans,
-                    self.instrument.pumpT, self.instrument.waitT, 
-                    self.instrument.mixT,
-                    self.instrument.samplingInterval,
-                     self.instrument.folderPath))
-        self.textBox.setText(settings)'''
 
     def update_sensors(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
@@ -656,8 +633,8 @@ class Panel(QtGui.QWidget):
 
         self.logTextBox.appendPlainText('Measuring blank...')
         blank = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts[1] = blank  #self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts_df['blank'] = blank  #self.instrument.spectrometer.get_corrected_spectra()
+        self.instrument.spCounts[1] = blank 
+        self.instrument.spCounts_df['blank'] = blank 
         # limit the number by the range 1,16000
         # blank minus dark 
         bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)

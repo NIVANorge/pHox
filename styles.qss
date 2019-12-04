@@ -138,6 +138,6 @@ QCheckBox::indicator::checked {
   border: 2px solid #5A5A5A;
 }
 
-QTabBar::tab {width: 4.3em;height: 3em; font-size: 10pt; 
+QTabBar::tab {width: 4em;height: 2em; font-size: 10pt; 
               margin-bottom: 0;}
 QSpinBox {margin-right: 0px; max-width: 30px;}
