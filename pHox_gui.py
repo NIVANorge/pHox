@@ -122,10 +122,12 @@ class Panel(QtGui.QWidget):
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
-        
+
         self.btn_cont_meas = self.create_button('Continuous measurements',True)
         self.btn_sigle_meas = self.create_button('Single measurement',False)   
-
+        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
+        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
+        
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
         self.tab1.layout.addWidget(self.textBox,      1,0)
@@ -258,13 +260,10 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
-
 
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
