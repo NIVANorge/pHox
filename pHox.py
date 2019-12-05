@@ -274,8 +274,7 @@ class pH_instrument(object):
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
-    def find_DC(self,led_ind,step):
-        adj = False
+    def find_DC(self,led_ind,step,adj):
         THR = 11500
         for DC in range(5,100,step):
             self.adjust_LED(led_ind, DC)
@@ -294,22 +293,22 @@ class pH_instrument(object):
         self.spectrometer.set_scans_average(1)
         print ('Adjusting light levels with %i spectral counts threshold...' %THR)
         for sptIt in sptItRange:
-            #adj1,adj2,adj3 = False, False, False
+            adj1,adj2,adj3 = False, False, False
             self.adjust_LED(0,0)
             self.adjust_LED(1,0)
             self.adjust_LED(2,0)
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
             print ('Adjusting LED 1')
-            DC1,adj1 = self.find_DC(led_ind = 0,step = 5)
+            DC1,adj1 = self.find_DC(led_ind = 0,step = 5,adj = adj1)
 
             if adj1:
                 print ('Adjusting LED 2')                 
-                DC2,adj2 = self.find_DC(led_ind = 1,step = STEP2)
+                DC2,adj2 = self.find_DC(led_ind = 1,step = STEP2,adj = adj2)
 
-            if adj2:
-                print ('Adjusting LED 3')       
-                DC3,adj3 = self.find_DC(led_ind = 2,step = STEP2)    
+                if adj2:
+                    print ('Adjusting LED 3')       
+                    DC3,adj3 = self.find_DC(led_ind = 2,step = STEP2,adj = adj3)    
 
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
