@@ -136,7 +136,7 @@ class Panel(QtGui.QWidget):
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwdigets_groupbox)
-        hboxPanel.addLayout(vboxPlot)
+        hboxPanel.addWidget(vboxPlot)
         self.setLayout(hboxPanel)
         self.showMaximized()
 
