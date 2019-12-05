@@ -230,16 +230,8 @@ class Panel(QtGui.QWidget):
 
         # Unchecable buttons
 
-        '''self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
-                            self.btn_stirr, self.btn_wpump]
-
-        self.c = [self.btn_t_dark, self.btn_sampl_int,
-                             self.btn_sigle_meas, self.btn_dye_pmp] '''
-
-
-
         btn_grid.addWidget(self.btn_spectro, 1, 0)
-        btn_grid.addWidget(self.btn_leds, 1, 1)
+        btn_grid.addWidget(self.btn_leds,    1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
@@ -261,45 +253,59 @@ class Panel(QtGui.QWidget):
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
-
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
 
     def make_slidergroupbox(self):    
-        self.sliders_groupBox = QtGui.QGroupBox("Sliders GroupBox")
+        self.sliders_groupBox = QtGui.QGroupBox("LED values")
 
-       # sldRow = 6
         sldNames = ['Blue','Orange','Red']
         self.sliders = []
-        self.sldLabels = []
-        self.spinboxes = []
+        self.sldLabels,self.spinboxes =  [], []
+        self.plus_btns, self.minus_btns= [], []
 
         # create widgets
         for ind in range(3):
+            self.plus_btns.append(QtGui.QPushButton('+'))
+            self.minus_btns.append(QtGui.QPushButton('-'))
+            self.minus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
+
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[ind].setFocusPolicy(QtCore.Qt.NoFocus)
-            self.sliders[ind].setTracking(True) # to track changes on sliders
+            self.sliders[ind].setTracking(True) 
             self.spinboxes.append(QtGui.QSpinBox())
             # create connections 
             self.sliders[ind].valueChanged[int].connect(self.sld_change)   
             self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
+            
 
         grid = QtGui.QGridLayout()
 
-        grid.addWidget(self.sliders[0],0,0)
-        grid.addWidget(QtGui.QLabel('Blue:'),0,1)
+        grid.addWidget(QtGui.QLabel('Blue:'),0,0)
+        grid.addWidget(QtGui.QLabel('Orange:'),1,0)   
+        grid.addWidget(QtGui.QLabel('Red:'),2,0)       
+
+        for n in range(3):
+            grid.addWidget(self.sliders[n],n,1)
+            grid.addWidget(self.spinboxes[n],n,2)
+            grid.addWidget(self.minus_btns[n],n,3)
+            grid.addWidget(self.plus_btns[n],n,4)
+
+        '''grid.addWidget(self.sliders[0],0,1)
         grid.addWidget(self.spinboxes[0],0,2)
-        grid.addWidget(QtGui.QPushButton('-'),0,3)
-        grid.addWidget(QtGui.QPushButton('+'),0,3)
+        grid.addWidget(self.minus_btns[0],0,3)
+        grid.addWidget(self.plus_btns[0],0,4)
 
-        grid.addWidget(self.sliders[1],1,0)
-        grid.addWidget(QtGui.QLabel('Orange:'),1,1)
+        grid.addWidget(self.sliders[1],1,1)
         grid.addWidget(self.spinboxes[1],1,2)
+        grid.addWidget(self.minus_btns[1],1,3)
+        grid.addWidget(self.plus_btns[1],1,4)
 
-        grid.addWidget(self.sliders[2],2,0) 
-        grid.addWidget(QtGui.QLabel('Red:'),2,1)
+        grid.addWidget(self.sliders[2],2,1) 
         grid.addWidget(self.spinboxes[2],2,2)
+        grid.addWidget(self.minus_btns[2],2,3)
+        grid.addWidget(self.plus_btns[2],2,4)'''
 
         self.sliders_groupBox.setLayout(grid)
 
@@ -367,6 +373,14 @@ class Panel(QtGui.QWidget):
         elif self.dye == "TB":   
             self.HI =  int(default['TB_wl_HI-'])
             self.I2 =  int(default['TB_wl_I2-'])"""
+
+    def led_plus_btn_clicked(self,value):
+        source = self.sender()
+        print (source)
+        #ind = self.spinboxes.index(source)
+        #self.instrument.adjust_LED(ind,value)
+        #self.btn_leds.setChecked(True)
+
 
     def spin_change(self,value):
         source = self.sender()
