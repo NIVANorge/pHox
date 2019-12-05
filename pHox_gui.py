@@ -268,9 +268,9 @@ class Panel(QtGui.QWidget):
         # create widgets
         for ind in range(3):
             self.plus_btns.append(QtGui.QPushButton('+'))
-            self.minus_btns.append(QtGui.QPushButton('-'))
-            self.minus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
-
+            self.minus_btns.append(QtGui.QPushButton('- '))
+            self.plus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
+            self.minus_btns[ind].clicked.connect(self.led_minus_btn_clicked)
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
             self.sliders[ind].setFocusPolicy(QtCore.Qt.NoFocus)
             self.sliders[ind].setTracking(True) 
@@ -285,27 +285,13 @@ class Panel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('Blue:'),0,0)
         grid.addWidget(QtGui.QLabel('Orange:'),1,0)   
         grid.addWidget(QtGui.QLabel('Red:'),2,0)       
-
+        self.plus_btns[0].clicked.connect(self.led_plus_btn_clicked)
+        
         for n in range(3):
             grid.addWidget(self.sliders[n],n,1)
             grid.addWidget(self.spinboxes[n],n,2)
             grid.addWidget(self.minus_btns[n],n,3)
             grid.addWidget(self.plus_btns[n],n,4)
-
-        '''grid.addWidget(self.sliders[0],0,1)
-        grid.addWidget(self.spinboxes[0],0,2)
-        grid.addWidget(self.minus_btns[0],0,3)
-        grid.addWidget(self.plus_btns[0],0,4)
-
-        grid.addWidget(self.sliders[1],1,1)
-        grid.addWidget(self.spinboxes[1],1,2)
-        grid.addWidget(self.minus_btns[1],1,3)
-        grid.addWidget(self.plus_btns[1],1,4)
-
-        grid.addWidget(self.sliders[2],2,1) 
-        grid.addWidget(self.spinboxes[2],2,2)
-        grid.addWidget(self.minus_btns[2],2,3)
-        grid.addWidget(self.plus_btns[2],2,4)'''
 
         self.sliders_groupBox.setLayout(grid)
 
@@ -377,10 +363,11 @@ class Panel(QtGui.QWidget):
     def led_plus_btn_clicked(self,value):
         source = self.sender()
         print (source)
-        #ind = self.spinboxes.index(source)
-        #self.instrument.adjust_LED(ind,value)
-        #self.btn_leds.setChecked(True)
 
+
+    def led_minus_btn_clicked(self,value):
+        source = self.sender()
+        print (source)
 
     def spin_change(self,value):
         source = self.sender()
