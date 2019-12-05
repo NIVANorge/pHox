@@ -274,61 +274,48 @@ class pH_instrument(object):
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
-    def auto_adjust(self):
-        # TODO, implement it, now now used 
-        # auto adjust integration time, scans and light levels #
+    def find_DC(self,led_ind,step):
+        adj = False
         THR = 11500
-        STEP = 5
+        for DC in range(5,100,step):
+            self.adjust_LED(led_ind, DC)
+            pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
+            print (pixelLevel, maxLevel)
+            if (pixelLevel>THR) and (maxLevel<15500):  
+                adj = True
+                print ('Led {} adjusted'.format(led_ind))
+                break
+        return DC,adj
+
+    def auto_adjust(self):
+        THR = 11500
+        STEP,STEP2  = 5,3
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
         print ('Adjusting light levels with %i spectral counts threshold...' %THR)
         for sptIt in sptItRange:
-            adj1,adj2,adj3 = False, False, False
+            #adj1,adj2,adj3 = False, False, False
             self.adjust_LED(0,0)
             self.adjust_LED(1,0)
             self.adjust_LED(2,0)
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
-
             print ('Adjusting LED 1')
-            STEP = 5            
-            for DC1 in range(5,100,STEP):
-               self.adjust_LED(1, DC1)
-               pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[0])
-               print (pixelLevel, maxLevel)
-               if (pixelLevel>THR) and (maxLevel<15500):  
-                  adj1 = True
-                  print ('Led 1 adjusted')
-                  break
+            DC1,adj1 = self.find_DC(led_ind = 0,step = 5)
+
             if adj1:
-               STEP2 = 3
-               print ('Adjusting LED 2')            
-               for DC2 in range(5,100,STEP2):
-                  self.adjust_LED(2, DC2)
-                  # I think there is a problem with indices, should be 0,1,2 no 1,2,3
-                  pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[2])
-                  print (pixelLevel,maxLevel)
-                  if (pixelLevel>THR) and (maxLevel<15500):  
-                     adj2 = True
-                     print ('LED 2 adjusted')
-                     break
+                print ('Adjusting LED 2')                 
+                DC2,adj2 = self.find_DC(led_ind = 1,step = STEP2)
+
             if adj2:
-               STEP2 = 3
-               print ('Adjusting LED 3')            
-               for DC3 in range(5,100,STEP2):
-                  self.adjust_LED(3, DC3)
-                  pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[3])
-                  print (pixelLevel,maxLevel)
-                  if (pixelLevel>THR) and (maxLevel<15500):  
-                     adj3 = True
-                     print ('LED 3 adjusted')
-                     break
+                print ('Adjusting LED 3')       
+                DC3,adj3 = self.find_DC(led_ind = 2,step = STEP2)    
+
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
                break
-               #self.specIntTime = sptIt
-               #self.specAvScans = 3000/sptIt
-        return DC1,DC2,DC3,sptIt,adj1 & adj2 % adj3
+
+        return DC1,DC2,DC3,sptIt #adj1 & adj2 % adj3
 
     def print_Com(self, port, txtData):
         port.write(txtData)

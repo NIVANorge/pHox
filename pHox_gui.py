@@ -220,7 +220,7 @@ class Panel(QtGui.QWidget):
         btn_grid = QtGui.QGridLayout()
 
 
-        self.btn_adjust_leds = self.create_button('Adjust Leds',False) 
+        self.btn_adjust_leds = self.create_button('Adjust Leds',True) 
 
         self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_spectro = self.create_button('Spectrophotometer',True)
@@ -483,10 +483,12 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = scans'''
 
     def on_autoAdjust_clicked(self):
-        # Not used now
-        DC1,DC2, sptIt, Ok  = self.instrument.auto_adjust()
+        
+        DC1,DC2,DC3,sptIt  = self.instrument.auto_adjust()
         self.sliders[0].setValue(DC1)
         self.sliders[1].setValue(DC2)
+        self.sliders[2].setValue(DC3)
+
         self.instrument.specIntTime = sptIt
         self.instrument.specAvScans = 3000/sptIt
 
