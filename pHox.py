@@ -288,6 +288,7 @@ class pH_instrument(object):
                 dif_dc = (dif_counts * 50 / THR)  
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
+                DC = min(99,DC)
                 print ('dc updated',DC) 
             else: 
                 adj = True

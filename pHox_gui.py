@@ -136,7 +136,7 @@ class Panel(QtGui.QWidget):
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-        self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=3, style=QtCore.Qt.DotLine))
+        self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
         self.plotSpc= self.plotwidget1.plot()
 
         self.plotAbs= self.plotwidget2.plot()
