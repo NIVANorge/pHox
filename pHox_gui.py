@@ -81,57 +81,39 @@ class Panel(QtGui.QWidget):
 
         self.setWindowTitle('NIVA - pH')
 
-
-        #set grid layout and size columns
-        #tabs_layout = QtGui.QVBoxLayout()
-        
         self.tabs = QtGui.QTabWidget()
-        self.tab1 = QtGui.QWidget()
-        self.tab_manual = QtGui.QWidget()
-        self.tab_log = QtGui.QWidget()
-        self.tab_config = QtGui.QWidget()
-        self.tab_calibr = QtGui.QWidget()
+
+        self.tab1 =        QtGui.QWidget()
+        self.tab_manual =  QtGui.QWidget()
+        self.tab_log =     QtGui.QWidget()
+        self.tab_config =  QtGui.QWidget()
+        self.tab_calibr =  QtGui.QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.tab1,"Home")
-        self.tabs.addTab(self.tab_manual,"Manual mode")
-        self.tabs.addTab(self.tab_log,"Log")
-        self.tabs.addTab(self.tab_config,"Config")
-        self.tabs.addTab(self.tab_calibr,"Calibr")
+        self.tabs.addTab(self.tab1,       "Home")
+        self.tabs.addTab(self.tab_manual, "Manual")
+        self.tabs.addTab(self.tab_log,    "Log")
+        self.tabs.addTab(self.tab_config, "Config")
+        self.tabs.addTab(self.tab_calibr, "Calibr")
 
-        self.tab1.layout =        QtGui.QGridLayout()
-        self.tab_manual.layout  = QtGui.QGridLayout()
         self.tab_log.layout =     QtGui.QGridLayout()
-        self.tab_config.layout =  QtGui.QGridLayout()
-
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
-
         self.tab_log.layout.addWidget(self.logTextBox) 
+        self.tab_log.setLayout(self.tab_log.layout)
 
+
+        self.tab_manual.layout  = QtGui.QGridLayout()
         self.make_btngroupbox()
         self.make_slidergroupbox()
-
         self.tab_manual.layout.addWidget(self.sliders_groupBox)
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
+        self.tab_manual.setLayout(self.tab_manual.layout)
 
-        self.textBox = QtGui.QTextEdit()
-        self.textBox.setOverwriteMode(True)
-
-        self.textBoxSens = QtGui.QTextEdit()
-        self.textBoxSens.setOverwriteMode(True)
-
-        self.btn_cont_meas = self.create_button('Continuous measurements',True)
-        self.btn_sigle_meas = self.create_button('Single measurement',False)   
-        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
-        self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
-        
-        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
-        self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
-        self.tab1.layout.addWidget(self.textBox,      1,0)
-        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
+        self.make_tab1()
+        self.make_tab_config()
 
         #create plotwidgets
         self.plotwdigets_groupbox = QtGui.QGroupBox()
@@ -151,6 +133,33 @@ class Panel(QtGui.QWidget):
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
+        # combine layout for plots and buttons
+        hboxPanel = QtGui.QHBoxLayout()
+        hboxPanel.addWidget(self.plotwdigets_groupbox)
+        hboxPanel.addLayout(vboxPlot)
+        self.setLayout(hboxPanel)
+        self.showMaximized()
+
+    def make_tab1(self):
+        self.tab1.layout = QtGui.QGridLayout()
+        self.textBox = QtGui.QTextEdit()
+        self.textBox.setOverwriteMode(True)
+
+        self.textBoxSens = QtGui.QTextEdit()
+        self.textBoxSens.setOverwriteMode(True)
+
+        self.btn_cont_meas = self.create_button('Continuous measurements',True)
+        self.btn_sigle_meas = self.create_button('Single measurement',False)   
+        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
+
+        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
+        self.tab1.layout.addWidget(self.textBox,      1,0)
+        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
+        self.tab1.setLayout(self.tab1.layout)
+
+    def make_tab_config(self):
+        self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
         self.reload_config = self.create_button('Reload config',False)     
         self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
@@ -193,27 +202,14 @@ class Panel(QtGui.QWidget):
         self.fill_table(6,0,'Dye injection volume: ')
         self.fill_table(6,1, str(self.instrument.dye_vol_inj))
 
-        self.fill_table(7,0,'pH samplingg interval')
+        self.fill_table(7,0,'pH sampling interval')
         self.fill_table(7,1, str(self.instrument.samplingInterval))
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
         self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
-        self.tab1.setLayout(self.tab1.layout)
-        self.tab_manual.setLayout(self.tab_manual.layout)
-        self.tab_log.setLayout(self.tab_log.layout)
         self.tab_config.setLayout(self.tab_config.layout)   
-
-        #tabs_layout.addWidget(self.tabs)
-
-        # combine layout for plots and buttons
-        hboxPanel = QtGui.QHBoxLayout()
-        hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addWidget(self.plotwdigets_groupbox)
-
-        self.setLayout(hboxPanel)
-        self.showMaximized()
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -264,6 +260,7 @@ class Panel(QtGui.QWidget):
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
+
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -292,6 +289,8 @@ class Panel(QtGui.QWidget):
         grid.addWidget(self.sliders[0],0,0)
         grid.addWidget(QtGui.QLabel('Blue:'),0,1)
         grid.addWidget(self.spinboxes[0],0,2)
+        grid.addWidget(QtGui.QPushButton('-'),0,3)
+        grid.addWidget(QtGui.QPushButton('+'),0,3)
 
         grid.addWidget(self.sliders[1],1,0)
         grid.addWidget(QtGui.QLabel('Orange:'),1,1)
@@ -309,6 +308,7 @@ class Panel(QtGui.QWidget):
         if check:
             Btn.setCheckable(True)
         return Btn
+
     def fill_table(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
