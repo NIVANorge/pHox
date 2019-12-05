@@ -262,13 +262,13 @@ class Panel(QtGui.QWidget):
 
         sldNames = ['Blue','Orange','Red']
         self.sliders = []
-        self.sldLabels,self.spinboxes =  [], []
-        self.plus_btns, self.minus_btns= [], []
+        self.sldLabels, self.spinboxes =  [], []
+        self.plus_btns, self.minus_btns = [], []
 
         # create widgets
         for ind in range(3):
             self.plus_btns.append(QtGui.QPushButton('+'))
-            self.minus_btns.append(QtGui.QPushButton('- '))
+            self.minus_btns.append(QtGui.QPushButton(' - '))
             self.plus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
             self.minus_btns[ind].clicked.connect(self.led_minus_btn_clicked)
             self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
@@ -286,7 +286,7 @@ class Panel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('Orange:'),1,0)   
         grid.addWidget(QtGui.QLabel('Red:'),2,0)       
         self.plus_btns[0].clicked.connect(self.led_plus_btn_clicked)
-        
+
         for n in range(3):
             grid.addWidget(self.sliders[n],n,1)
             grid.addWidget(self.spinboxes[n],n,2)
@@ -360,14 +360,24 @@ class Panel(QtGui.QWidget):
             self.HI =  int(default['TB_wl_HI-'])
             self.I2 =  int(default['TB_wl_I2-'])"""
 
+    def change_plut_minus_butn(self,source,dif):
+        ind = self.plus_btns.index(source)
+        value = self.spinboxes[ind].Value() + dif
+        self.instrument.adjust_LED(ind,value)
+        self.sliders[ind].setValue(value)
+        self.spinboxes[ind].setValue(value)
+
     def led_plus_btn_clicked(self,value):
+        dif = 10 
         source = self.sender()
-        print (source)
+        self.change_plut_minus_butn(
+            self,source,dif)
 
-
-    def led_minus_btn_clicked(self,value):
+    def led_minus_btn_clicked(self,value):  
+        dif = -10 
         source = self.sender()
-        print (source)
+        self.change_plut_minus_butn(
+            self,source,dif)
 
     def spin_change(self,value):
         source = self.sender()
