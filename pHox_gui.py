@@ -483,7 +483,6 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = scans'''
 
     def on_autoAdjust_clicked(self):
-        
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         if result:
             self.sliders[0].setValue(DC1)
@@ -493,7 +492,43 @@ class Panel(QtGui.QWidget):
             self.instrument.specAvScans = 3000/sptIt
         else:
             self.textBox.setText('Could not adjust leds')
-            
+        self.btn_adjust_leds.setChecked(False)
+
+    def add_pco2_info(self,text):
+        self.CO2_instrument.portSens.write(
+            self.CO2_instrument.QUERY_CO2)
+        resp = self.CO2_instrument.portSens.read(15)
+        try:
+            value =  float(resp[3:])
+            value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
+        except ValueError:
+            value = 0
+        self.CO2_instrument.franatech[6] = value
+        #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
+
+        self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
+        resp = self.CO2_instrument.portSens.read(15)
+        try:
+                self.CO2_instrument.franatech[7] = float(resp[3:])
+        except ValueError:
+                self.CO2_instrument.franatech[7] = 0
+
+        for ch in range(5):
+            V = self.get_Vd(2,ch+1)
+            X = 0
+            for i in range(2):
+                X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
+            self.CO2_instrument.franatech[ch] = X
+            text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
+
+        #self.puckEm.LAST_PAR[2] = self.instrument.salinity
+        #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
+        WD = self.get_Vd(1,6)
+        text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
+        text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
+                    self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
+        self.textBoxSens.setText(text)
+
     def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         #Tntc = 0
@@ -510,52 +545,16 @@ class Panel(QtGui.QWidget):
                            fbox['salinity'],
                            fbox['longitude'], 
                            fbox['latitude'])
-        LED1 = self.sliders[0].value()
-        LED2 = self.sliders[1].value()
-        LED3 = self.sliders[2].value()
-        text += 'LED1 = %-d\nLED2 = %-d\nLED3 = %-d\n' % (LED1, LED2, LED3) 
         self.textBoxSens.setText(text)
 
         if self.args.pco2:
-            self.CO2_instrument.portSens.write(
-                self.CO2_instrument.QUERY_CO2)
-            resp = self.CO2_instrument.portSens.read(15)
-            try:
-                value =  float(resp[3:])
-                value = self.CO2_instrument.ftCalCoef[6][0]+self.CO2_instrument.ftCalCoef[6][1]*value
-            except ValueError:
-                value = 0
-            self.CO2_instrument.franatech[6] = value
-            #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
-
-            self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
-            resp = self.CO2_instrument.portSens.read(15)
-            try:
-                    self.CO2_instrument.franatech[7] = float(resp[3:])
-            except ValueError:
-                    self.CO2_instrument.franatech[7] = 0
-
-            for ch in range(5):
-                V = self.get_Vd(2,ch+1)
-                X = 0
-                for i in range(2):
-                    X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
-                self.CO2_instrument.franatech[ch] = X
-                text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
-
-            #self.puckEm.LAST_PAR[2] = self.instrument.salinity
-            #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
-            WD = self.get_Vd(1,6)
-            text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
-            text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
-                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
-            self.textBoxSens.setText(text)
+            self.add_pco2_info(text)
 
     def on_sigle_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
-        self.timerSpectra.stop()
+        #self.timerSpectra.stop()
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
