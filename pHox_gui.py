@@ -360,24 +360,23 @@ class Panel(QtGui.QWidget):
             self.HI =  int(default['TB_wl_HI-'])
             self.I2 =  int(default['TB_wl_I2-'])"""
 
-    def change_plus_minus_butn(self,source,dif):
-        ind = self.plus_btns.index(source)
-        value = self.spinboxes[ind].Value() + dif
+    def change_plus_minus_butn(self,ind,dif):
+        value = self.spinboxes[ind].value() + dif
         self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
         self.spinboxes[ind].setValue(value)
 
-    def led_plus_btn_clicked(self,value):
+    def led_plus_btn_clicked(self):
         dif = 10 
-        source = self.sender()
+        ind = self.plus_btns.index(self.sender())
         self.change_plus_minus_butn(
-            source,dif)
+            ind,dif)
 
-    def led_minus_btn_clicked(self,value):  
+    def led_minus_btn_clicked(self):  
         dif = -10 
-        source = self.sender()
+        ind = self.minus_btns.index(self.sender())        
         self.change_plus_minus_butn(
-            source,dif)
+            ind,dif)
 
     def spin_change(self,value):
         source = self.sender()
