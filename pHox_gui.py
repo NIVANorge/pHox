@@ -484,14 +484,16 @@ class Panel(QtGui.QWidget):
 
     def on_autoAdjust_clicked(self):
         
-        DC1,DC2,DC3,sptIt  = self.instrument.auto_adjust()
-        self.sliders[0].setValue(DC1)
-        self.sliders[1].setValue(DC2)
-        self.sliders[2].setValue(DC3)
-
-        self.instrument.specIntTime = sptIt
-        self.instrument.specAvScans = 3000/sptIt
-
+        DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
+        if result:
+            self.sliders[0].setValue(DC1)
+            self.sliders[1].setValue(DC2)
+            self.sliders[2].setValue(DC3)
+            self.instrument.specIntTime = sptIt
+            self.instrument.specAvScans = 3000/sptIt
+        else:
+            self.textBox.setText('Could not adjust leds')
+            
     def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         #Tntc = 0

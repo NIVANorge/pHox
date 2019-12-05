@@ -294,6 +294,7 @@ class pH_instrument(object):
         print ('Adjusting light levels with %i spectral counts threshold...' %THR)
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
+            DC1,DC2,DC3 = None, None, None
             self.adjust_LED(0,0)
             self.adjust_LED(1,0)
             self.adjust_LED(2,0)
@@ -312,9 +313,13 @@ class pH_instrument(object):
 
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
-               break
+               break 
 
-        return DC1,DC2,DC3,sptIt #adj1 & adj2 % adj3
+        if not adj1 or not adj2 or not adj3:
+            result = False
+        else:
+            result = True 
+        return DC1,DC2,DC3,sptIt,result #adj1 & adj2 % adj3
 
     def print_Com(self, port, txtData):
         port.write(txtData)
