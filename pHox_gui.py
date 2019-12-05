@@ -417,7 +417,6 @@ class Panel(QtGui.QWidget):
 
     def set_LEDs(self, state):
         for i in range(0,3):
-            # state is 1 or 0 
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
         self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
 
@@ -448,16 +447,16 @@ class Panel(QtGui.QWidget):
         t = datetime.now() 
         label = t.isoformat('_')
         labelSample = label[0:19]
-        logf = os.path.join(self.instrument.folderPath, 'pCO2.log')
+        logfile = os.path.join(self.instrument.folderPath, 'pCO2.log')
         hdr  = ''
-        if not os.path.exists(logf):
+        if not os.path.exists(logfile):
             hdr = 'Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2'
         s = labelSample
         s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], fbox['latitude'], 
                 fbox['temperature'], fbox['salinity'])
         s+= ',%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d' %(d[0],d[1],d[2],d[3],d[4],d[6],d[7])
         s+= '\n'
-        with open(logf,'a') as logFile:
+        with open(logfile,'a') as logFile:
             if hdr:
                 logFile.write(hdr + '\n')
             logFile.write(s)
@@ -660,7 +659,7 @@ class Panel(QtGui.QWidget):
         self.instrument.spCounts_df['blank'] = blank 
         # limit the number by the range 1,16000
         # blank minus dark 
-        bmd = np.clip(self.instrument.spCounts[1] - dark,1,16000)
+        blank_min_dark= np.clip(self.instrument.spCounts[1] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
         for pinj in range(self.instrument.ncycles):
@@ -691,15 +690,15 @@ class Panel(QtGui.QWidget):
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
             # postinjection minus dark     
-            pmd = np.clip(postinj - dark,1,16000)
+            postinj_min_dark = np.clip(postinj - dark,1,16000)
             # self.nlCoeff = [1.0229, -9E-6, 6E-10]
             # coefficient for blank ??? 
-            cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*bmd + self.instrument.nlCoeff[2] * bmd**2
-            cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*pmd + self.instrument.nlCoeff[2] * pmd**2
-            bmdCorr = bmd * cfb
-            pmdCorr = pmd * cfp
+            cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*blank_min_dark+ self.instrument.nlCoeff[2] * blank_min_dark**2
+            cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*postinj_min_dark + self.instrument.nlCoeff[2] * postinj_min_dark**2
+            bmdCorr = blank_min_dark* cfb
+            pmdCorr = postinj_min_dark * cfp
             spAbs = np.log10(bmdCorr/pmdCorr)
-            sp = np.log10(bmd/pmd)            
+            sp = np.log10(bmd/postinj_min_dark)            
             # moving average 
             """  spAbsMA = spAbs
                 nPoints = 3
@@ -717,18 +716,20 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-        self.instrument.spCounts_df.T.to_csv(self.instrument.folderPath + self.instrument.flnmStr + '_spcounts.spt',index = True, header=False)
-        # LOg files 
+        self.instrument.spCounts_df.T.to_csv(
+            self.instrument.folderPath + self.instrument.flnmStr + '.spt',
+            index = True, header=False)
+        # LOg files
+        #  
         # 4 full spectrums for all mesaurements 
-        flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
+        '''flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
         txtData = ''
-        # spcoounts is np.array  np.zeros((6,1024))
         for i in range(2+self.instrument.ncycles):
             for j in range (self.instrument.spectrometer.pixels):
                 txtData += str(self.instrument.spCounts[i,j]) + ','
             txtData += '\n'
         flnm.write(txtData)    
-        flnm.close()
+        flnm.close()'''
 
         # 4 measurements for each measure *product of spectrums 
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
@@ -752,17 +753,17 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         # add boat code 
-        # add temperature Caliblrated (TRUE or FALSE)
-        logf = os.path.join(self.instrument.folderPath, 'pH.log')
+        # add temperature Calibrated (TRUE or FALSE)
+        logfile = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
-        if not os.path.exists(logf):
+        if not os.path.exists(logfile):
             hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
         s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], 
             fbox['latitude'], fbox['temperature'], fbox['salinity'])
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
         s+= '\n'
-        with open(logf,'a') as logFile:
+        with open(logfile,'a') as logFile:
             if hdr:
                 logFile.write(hdr + '\n')
             logFile.write(s)

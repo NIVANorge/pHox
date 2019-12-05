@@ -124,12 +124,9 @@ class pH_instrument(object):
         
         #initialize PWM lines
         self.rpi = pigpio.pi()
-         
-        # load instrument general configuration
-      
         self.evalPar = []
         #self.evalPar_df = pd.DataFrame()
-        self.ledDC = [0]*4 
+        #####self.ledDC = [0]*4 
         self.spectrometer = STSVIS()
         self.wvlPixels = []
         # array of Ncycle's lines (make connection after ) 
@@ -269,47 +266,55 @@ class pH_instrument(object):
 
     def get_sp_levels(self,pixel):
         spec = self.get_spectral_data()
+        #full spectrum 
+        print ('spec in get_sp_levels',spec)
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
-    def find_DC(self,led_ind,step,adj):
+    def find_DC(self,led_ind,adj,curr_value):
         THR = 11500
-        for DC in range(5,100,step):
+        DC = curr_value 
+
+        while DC < 100: 
+            #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
             pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
-            print (pixelLevel, maxLevel)
-            if (pixelLevel>THR) and (maxLevel<15500):  
+            dif_counts = THR - pixelLevel
+
+            if dif_counts > 500: 
+                dif_dc = (dif_counts * 100 / THR)                
+                DC += dif_dc   
+            else: 
                 adj = True
                 print ('Led {} adjusted'.format(led_ind))
-                break
+                break           
+
+        print (pixelLevel, maxLevel)
+
         return DC,adj
 
     def auto_adjust(self):
-        THR = 11500
-        STEP,STEP2  = 5,3
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
-        print ('Adjusting light levels with %i spectral counts threshold...' %THR)
+        #print ('Adjusting light levels with %i spectral counts threshold...' %THR)
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             DC1,DC2,DC3 = None, None, None
-            self.adjust_LED(0,0)
-            self.adjust_LED(1,0)
-            self.adjust_LED(2,0)
+            #self.adjust_LED(0,0)#self.adjust_LED(1,0)#self.adjust_LED(2,0)
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
-            print ('Adjusting LED 1')
-            DC1,adj1 = self.find_DC(led_ind = 0,step = 5,adj = adj1)
 
+            print ('Adjusting LED 0')
+            DC1,adj1 = self.find_DC(led_ind = 0,adj = adj1, curr_value = self.LED1)
             if adj1:
-                print ('Adjusting LED 2')                 
-                DC2,adj2 = self.find_DC(led_ind = 1,step = STEP2,adj = adj2)
+                print ('Adjusting LED 1')   
+                DC2,adj2 = self.find_DC(led_ind = 1,adj = adj2, curr_value = self.LED2)
 
                 if adj2:
-                    print ('Adjusting LED 3')       
-                    DC3,adj3 = self.find_DC(led_ind = 2,step = STEP2,adj = adj3)    
+                    print ('Adjusting LED 2')       
+                    DC3,adj3 = self.find_DC(led_ind = 2,adj = adj3, curr_value = self.LED3)    
 
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
@@ -319,6 +324,7 @@ class pH_instrument(object):
             result = False
         else:
             result = True 
+            
         return DC1,DC2,DC3,sptIt,result #adj1 & adj2 % adj3
 
     def print_Com(self, port, txtData):
