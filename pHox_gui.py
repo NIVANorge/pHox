@@ -60,6 +60,12 @@ class Panel(QtGui.QWidget):
         self.timerSave = QtCore.QTimer()
         #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
+        self.timerSpectra.timeout.connect(self.update_spectra)
+        self.timer_contin_mode.timeout.connect(self.continuous_mode)
+        self.timerSensUpd.timeout.connect(self.update_sensors_info)
+        if self.args.pco2:
+            self.timerSave.timeout.connect(self.save_pCO2_data)
+
 
         self.instrument = pH_instrument()
         if self.args.pco2:
@@ -74,11 +80,7 @@ class Panel(QtGui.QWidget):
     def init_ui(self):
 
         self.setWindowTitle('NIVA - pH')
-        self.timerSpectra.timeout.connect(self.update_spectra)
-        self.timer_contin_mode.timeout.connect(self.continuous_mode)
-        self.timerSensUpd.timeout.connect(self.update_sensors)
-        if self.args.pco2:
-            self.timerSave.timeout.connect(self.save_pCO2_data)
+
 
         #set grid layout and size columns
         #tabs_layout = QtGui.QVBoxLayout()
@@ -109,8 +111,6 @@ class Panel(QtGui.QWidget):
 
         self.tab_log.layout.addWidget(self.logTextBox) 
 
-        ##self.group = QtGui.QButtonGroup()
-        ##self.group.setExclusive(False)
         self.make_btngroupbox()
         self.make_slidergroupbox()
 
@@ -122,8 +122,12 @@ class Panel(QtGui.QWidget):
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
+        
+        self.btn_cont_meas = self.create_button('Continuous measurements',True)
+        self.btn_sigle_meas = self.create_button('Single measurement',False)   
 
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
         self.tab1.layout.addWidget(self.textBox,      1,0)
         self.tab1.layout.addWidget(self.textBoxSens,  1,1)
 
@@ -143,10 +147,12 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
+        self.plotwdigets_groupbox.setLayout(vboxPlot)
+
         # Define widgets for config tab 
         self.reload_config = self.create_button('Reload config',False)     
         self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
-        
+
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
         self.dye_combo.addItem('MCP')        
@@ -202,7 +208,7 @@ class Panel(QtGui.QWidget):
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addLayout(vboxPlot)
-        hboxPanel.addWidget(self.tabs)
+        hboxPanel.addWidget(self.plotwdigets_groupbox)
 
         self.setLayout(hboxPanel)
         self.showMaximized()
@@ -213,7 +219,7 @@ class Panel(QtGui.QWidget):
         self.buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
         btn_grid = QtGui.QGridLayout()
 
-        self.btn_sigle_meas = self.create_button('Single measurement',False)   
+
         self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_spectro = self.create_button('Spectrophotometer',True)
         self.btn_leds = self.create_button('LEDs',True)
@@ -222,16 +228,16 @@ class Panel(QtGui.QWidget):
         self.btn_stirr = self.create_button('Stirrer',True)
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
-        self.btn_cont_meas = self.create_button('Continuous measurements',True)
+
         # Unchecable buttons
 
-        self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
+        '''self.buttons_ch = [self.btn_spectro,self.btn_leds, self.btn_valve,
                             self.btn_stirr, self.btn_wpump]
 
-        self.buttons_unch = [self.btn_t_dark, self.btn_sampl_int,
-                             self.btn_sigle_meas, self.btn_dye_pmp] 
+        self.c = [self.btn_t_dark, self.btn_sampl_int,
+                             self.btn_sigle_meas, self.btn_dye_pmp] '''
 
-        btn_grid.addWidget(self.btn_sigle_meas, 0, 0)
+
 
         btn_grid.addWidget(self.btn_spectro, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
@@ -257,7 +263,7 @@ class Panel(QtGui.QWidget):
 
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
-        self.btn_sampl_int.clicked.connect(self.on_samT_clicked)
+        self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
         self.btn_sigle_meas.clicked.connect(self.on_sigle_meas_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
@@ -362,7 +368,6 @@ class Panel(QtGui.QWidget):
             self.HI =  int(default['TB_wl_HI-'])
             self.I2 =  int(default['TB_wl_I2-'])"""
 
-
     def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
@@ -409,7 +414,7 @@ class Panel(QtGui.QWidget):
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         self.instrument.folderPath = folder+'/'
 
-    def on_samT_clicked(self): 
+    def on_sampl_int_clicked(self): 
         time, ok = QtGui.QInputDialog.getInt(
             None, 'Set sampling interval',
             'Interval in seconds',
@@ -443,7 +448,7 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
         
-    def on_intTime_clicked(self):
+    '''def on_intTime_clicked(self):
         # Not used now
         intTime, ok = QtGui.QInputDialog.getInt(
             None, 'Set spectrophotometer integration time',
@@ -452,13 +457,14 @@ class Panel(QtGui.QWidget):
             self.instrument.specIntTime = intTime
             self.instrument.spectrometer.set_integration_time(intTime)
             self.btn_spectro.setText('Spectrophotometer {} ms'.format(str(intTime)))
-            #self.chkBox_caption('Spectrophotometer','%d ms' %intTime)
+            #self.chkBox_caption('Spectrophotometer','%d ms' %intTime)'''
         
-    def on_scans_clicked(self): 
+    '''def on_scans_clicked(self): 
         # Not used now
-        scans, ok = QtGui.QInputDialog.getInt(None, 'Set spectrophotometer averaging scans','',self.instrument.specAvScans,1,20,1)
+        scans, ok = QtGui.QInputDialog.getInt(None,
+         'Set spectrophotometer averaging scans','',self.instrument.specAvScans,1,20,1)
         if ok:
-            self.instrument.specAvScans = scans
+            self.instrument.specAvScans = scans'''
 
     def on_autoAdjust_clicked(self):
         # Not used now
@@ -468,12 +474,12 @@ class Panel(QtGui.QWidget):
         self.instrument.specIntTime = sptIt
         self.instrument.specAvScans = 3000/sptIt
 
-    def update_sensors(self):
+    def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
-        Tntc = 0
+        #Tntc = 0
         Tntc = (self.instrument.ntcCalCoef[0]*vNTC) +self.instrument.ntcCalCoef[1]
-        #for i in range(2):
-            #Tntc += self.instrument.ntcCalCoef[i] * pow(vNTC,i)
+        for i in range(2):
+            Tntc += self.instrument.ntcCalCoef[i] * pow(vNTC,i)
             
            #Tntc = vNTC*(23.1/0.4173)
         text = 'Cuvette temperature \xB0C: %.4f  (%.4f V)\n' %(Tntc,vNTC)
@@ -525,8 +531,6 @@ class Panel(QtGui.QWidget):
                      self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
             self.textBoxSens.setText(text)
 
-
-               
     def on_sigle_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
@@ -593,7 +597,7 @@ class Panel(QtGui.QWidget):
         #self.check('Spectrophotometer',True)    
         self.timerSpectra.start()
     
-    def sample(self): #parString pT, mT, wT, dA
+    def sample(self):
         if not fbox['pumping']:
             return
         if self.instrument._autodark:
