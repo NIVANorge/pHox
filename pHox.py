@@ -289,7 +289,9 @@ class pH_instrument(object):
             self.adjust_LED(2,0)
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
+
             print ('Adjusting LED 1')
+            STEP = 5            
             for DC1 in range(5,100,STEP):
                self.adjust_LED(1, DC1)
                pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[0])

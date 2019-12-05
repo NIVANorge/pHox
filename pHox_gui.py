@@ -1,27 +1,23 @@
 #! /usr/bin/python
-# Check not used functions
+
 from pHox import *
 from pco2 import CO2_instrument
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
 import warnings
-#import usb.core
-#import usb
 import time
 import RPi.GPIO as GPIO
-
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
-#import random
 import pyqtgraph as pg 
 import argparse
 import socket
 import pandas as pd 
-# Ferrybox data
-import udp
+
+import udp # Ferrybox data
 from udp import Ferrybox as fbox
 
 class Console(QtGui.QWidget):
@@ -29,6 +25,7 @@ class Console(QtGui.QWidget):
    def __init__(self):
       super(Console, self).__init__()
       self.init_ui()
+
    def init_ui(self):
       self.setWindowTitle('Console')
       self.textBox = QtGui.QTextEdit()
@@ -52,30 +49,16 @@ class Panel(QtGui.QWidget):
                             action="store_true")
 
         self.args = parser.parse_args()
-
-        #self.puckEm = PuckManager()
-        self.timerSpectra = QtCore.QTimer()
-        self.timer_contin_mode = QtCore.QTimer()
-        self.timerSensUpd = QtCore.QTimer()
-        self.timerSave = QtCore.QTimer()
-        #self.timerFIA = QtCore.QTimer()
-        self.timerAuto = QtCore.QTimer()
-        self.timerSpectra.timeout.connect(self.update_spectra)
-        self.timer_contin_mode.timeout.connect(self.continuous_mode)
-        self.timerSensUpd.timeout.connect(self.update_sensors_info)
-        if self.args.pco2:
-            self.timerSave.timeout.connect(self.save_pCO2_data)
-
-
+        self.create_timers()
+        
         self.instrument = pH_instrument()
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument()
 
         self.init_ui()
-        self.plotSpc= self.plotwidget1.plot()
-        self.plotAbs= self.plotwidget2.plot()
 
         self.timerSensUpd.start(2000)
+
 
     def init_ui(self):
 
@@ -114,7 +97,30 @@ class Panel(QtGui.QWidget):
 
         self.make_tab1()
         self.make_tab_config()
+        self.make_plotwidgets()
 
+        # combine layout for plots and buttons
+        hboxPanel = QtGui.QHBoxLayout()
+        hboxPanel.addWidget(self.plotwdigets_groupbox)    
+        hboxPanel.addWidget(self.tabs)
+    
+        self.setLayout(hboxPanel)
+        self.showMaximized()
+
+    def create_timers(self):
+        self.timerSpectra = QtCore.QTimer()
+        self.timer_contin_mode = QtCore.QTimer()
+        self.timerSensUpd = QtCore.QTimer()
+        self.timerSave = QtCore.QTimer()
+        #self.timerFIA = QtCore.QTimer()
+        self.timerAuto = QtCore.QTimer()
+        self.timerSpectra.timeout.connect(self.update_spectra)
+        self.timer_contin_mode.timeout.connect(self.continuous_mode)
+        self.timerSensUpd.timeout.connect(self.update_sensors_info)
+        if self.args.pco2:
+            self.timerSave.timeout.connect(self.save_pCO2_data)
+
+    def make_plotwidgets(self):
         #create plotwidgets
         self.plotwdigets_groupbox = QtGui.QGroupBox()
 
@@ -131,15 +137,10 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
 
-        self.plotwdigets_groupbox.setLayout(vboxPlot)
+        self.plotSpc= self.plotwidget1.plot()
+        self.plotAbs= self.plotwidget2.plot()
 
-        # combine layout for plots and buttons
-        hboxPanel = QtGui.QHBoxLayout()
-        hboxPanel.addWidget(self.plotwdigets_groupbox)    
-        hboxPanel.addWidget(self.tabs)
-    
-        self.setLayout(hboxPanel)
-        self.showMaximized()
+        self.plotwdigets_groupbox.setLayout(vboxPlot)
 
     def make_tab1(self):
         self.tab1.layout = QtGui.QGridLayout()
@@ -219,6 +220,8 @@ class Panel(QtGui.QWidget):
         btn_grid = QtGui.QGridLayout()
 
 
+        self.btn_adjust_leds = self.create_button('Adjust Leds',False) 
+
         self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_spectro = self.create_button('Spectrophotometer',True)
         self.btn_leds = self.create_button('LEDs',True)
@@ -229,7 +232,7 @@ class Panel(QtGui.QWidget):
         self.btn_wpump = self.create_button('Water pump',True)
 
         # Unchecable buttons
-
+        btn_grid.addWidget(self.btn_adjust_leds,0,0)
         btn_grid.addWidget(self.btn_spectro, 1, 0)
         btn_grid.addWidget(self.btn_leds,    1, 1)
 
@@ -249,7 +252,8 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-
+        self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
+        
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
@@ -285,7 +289,6 @@ class Panel(QtGui.QWidget):
         grid.addWidget(QtGui.QLabel('Blue:'),0,0)
         grid.addWidget(QtGui.QLabel('Orange:'),1,0)   
         grid.addWidget(QtGui.QLabel('Red:'),2,0)       
-        self.plus_btns[0].clicked.connect(self.led_plus_btn_clicked)
 
         for n in range(3):
             grid.addWidget(self.sliders[n],n,1)
@@ -345,6 +348,7 @@ class Panel(QtGui.QWidget):
             self.timerSpectra.start(500)
         else:
             self.timerSpectra.stop()
+            
     # not sure about connections, 
     # do we need it?
     # if yes, then wavelengths and pixels should
@@ -362,6 +366,8 @@ class Panel(QtGui.QWidget):
 
     def change_plus_minus_butn(self,ind,dif):
         value = self.spinboxes[ind].value() + dif
+        if value < 0: 
+            value = 0
         self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
         self.spinboxes[ind].setValue(value)
@@ -608,6 +614,8 @@ class Panel(QtGui.QWidget):
         self.timerSpectra.start()
     
     def sample(self):
+        ## SAMPLE SHOULD BE IN A THREAD
+
         if not fbox['pumping']:
             return
         if self.instrument._autodark:
