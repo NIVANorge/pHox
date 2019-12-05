@@ -282,10 +282,13 @@ class pH_instrument(object):
             self.adjust_LED(led_ind, DC)
             pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
+            print ('dif_counts',dif_counts)
 
             if dif_counts > 500: 
-                dif_dc = (dif_counts * 100 / THR)                
-                DC += dif_dc   
+                dif_dc = (dif_counts * 50 / THR)  
+                print ('dif_dc',dif_dc,'DC',DC)              
+                DC += dif_dc  
+                print ('dc updated',DC) 
             else: 
                 adj = True
                 print ('Led {} adjusted'.format(led_ind))
@@ -324,7 +327,7 @@ class pH_instrument(object):
             result = False
         else:
             result = True 
-            
+
         return DC1,DC2,DC3,sptIt,result #adj1 & adj2 % adj3
 
     def print_Com(self, port, txtData):
