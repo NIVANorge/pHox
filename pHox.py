@@ -180,13 +180,14 @@ class pH_instrument(object):
             pass
 
         self.dye = default['DYE'] 
+
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
             self.I2 =  int(default['MCP_wl_I2-'])         
         elif self.dye == "TB":   
             self.HI =  int(default['TB_wl_HI-'])
             self.I2 =  int(default['TB_wl_I2-'])
-
+        self.THR = int(default["LED_THRESHOLD"])
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
         self._automode  = default['AUTOSTART_MODE']
@@ -272,7 +273,6 @@ class pH_instrument(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def find_DC(self,led_ind,adj,curr_value):
-        THR = 13000
         SAT = 16000
         DC = curr_value 
 
@@ -284,7 +284,7 @@ class pH_instrument(object):
             pixelLevel = spectrum[self.wvlPixels[led_ind]]
 
             maxLevel = spectrum.max()
-            dif_counts = THR - pixelLevel
+            dif_counts = self.THR - pixelLevel
             
             print ('dif_counts',dif_counts)
             if dif_counts > 500 and DC < 99: 
@@ -292,12 +292,12 @@ class pH_instrument(object):
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
-            elif dif_counts < 500 and dif_counts > (THR - SAT) : 
+            elif dif_counts < 500 and dif_counts > (self.THR - SAT) : 
                 adj = True
                 break           
             elif dif_counts > 500 and DC == 99: 
                 break
-            elif dif_counts < (THR - SAT): 
+            elif dif_counts < (self.THR - SAT): 
                 print ('saturation')
                 break
 

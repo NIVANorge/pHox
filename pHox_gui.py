@@ -139,9 +139,7 @@ class Panel(QtGui.QWidget):
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-        self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-
-
+        self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
 
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
         self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
