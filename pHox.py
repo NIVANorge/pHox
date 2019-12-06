@@ -260,12 +260,15 @@ class pH_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
-    def get_spectral_data(self):
-        return self.spectrometer.get_corrected_spectra()
+    #def get_spectral_data(self):
+    #    return self.spectrometer.get_corrected_spectra()
 
     def get_sp_levels(self,pixel):
-        spec = self.get_spectral_data()
+        spec = self.spectrometer.get_corrected_spectra()
+        #spec = self.get_spectral_data()
         return spec[pixel],spec.max()
+
+
 
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
@@ -281,7 +284,10 @@ class pH_instrument(object):
         while DC < 100: 
             #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
-            pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
+            spectrum = self.spectrometer.get_corrected_spectra()
+            pixelLevel = max(spectrum[self.wvlPixels[led_ind]-10,self.wvlPixels[led_ind]+10]) 
+            maxLevel = spectrum.max()
+            #pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
             
             #print ('dif_counts',dif_counts)

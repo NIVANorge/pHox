@@ -146,16 +146,13 @@ class Panel(QtGui.QWidget):
         pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
         pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
 
-
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))        
         self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('g', width=1, style=QtCore.Qt.DotLine))   
         self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))
 
-        self.plotwidget1.addLine(y=pixelLevel_0, x=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))        
-        self.plotwidget1.addLine(y=pixelLevel_1, x=None, pen=pg.mkPen('g', width=1, style=QtCore.Qt.DotLine))   
-        self.plotwidget1.addLine(y=pixelLevel_2, x=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
-
-        self.plotwidget1.pg.plot(self.instrument.HI, pixelLevel_0, pen=None, symbol='o')  ## setting pen=None disables line drawing
+        self.plotwidget1.plot(
+            [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
+            [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='o')  ## setting pen=None disables line drawing
 
         self.plotSpc= self.plotwidget1.plot()
 
