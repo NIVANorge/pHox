@@ -254,7 +254,6 @@ class pH_instrument(object):
         # find the indices of pixels that give the wavelength corresponding to self.HI, self.I2, self.NIR
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
-
         return wvls
 
     def find_nearest(self, items, value):
@@ -274,7 +273,11 @@ class pH_instrument(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def find_DC(self,led_ind,adj,curr_value):
-        THR = 11500
+        test = True
+        if test == True: 
+            THR = 10000
+        else:
+            THR = 11500
         DC = curr_value 
 
         while DC < 100: 
