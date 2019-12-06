@@ -312,7 +312,7 @@ class pH_instrument(object):
 
             elif dif_counts < 500 and dif_counts > -500: 
                 adj = True
-                print ('found adj level for led {}'.formate(led_ind))
+                print ('found adj level for led {}'.format(led_ind))
                 break            
 
             elif dif_counts < (self.THR - SAT): 
