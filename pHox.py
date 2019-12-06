@@ -265,8 +265,6 @@ class pH_instrument(object):
 
     def get_sp_levels(self,pixel):
         spec = self.get_spectral_data()
-        #full spectrum 
-        print ('spec in get_sp_levels',spec)
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, DC):
@@ -275,7 +273,7 @@ class pH_instrument(object):
     def find_DC(self,led_ind,adj,curr_value):
         test = True
         if test == True: 
-            THR = 10000
+            THR = 9000
         else:
             THR = 11500
         DC = curr_value 
@@ -285,13 +283,14 @@ class pH_instrument(object):
             self.adjust_LED(led_ind, DC)
             pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
+            print (pixelLevel, maxLevel)
             print ('dif_counts',dif_counts)
             if dif_counts > 500 and DC < 99: 
-                dif_dc = (dif_counts * 50 / THR)  
+                dif_dc = (dif_counts * 50 / maxLevel)  
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
-                print ('dc updated',DC) 
+                print ('DC updated',DC) 
             elif dif_counts < 500 : 
                 adj = True
                 print ('Led {} adjusted'.format(led_ind))
@@ -299,7 +298,7 @@ class pH_instrument(object):
             elif dif_counts > 500 and DC == 99: 
                 break
 
-        print (pixelLevel, maxLevel)
+        
 
         return DC,adj
 
