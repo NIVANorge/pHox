@@ -185,7 +185,7 @@ class Panel(QtGui.QWidget):
         if index >= 0: 
             self.dye_combo.setCurrentIndex(index)
             
-        self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
+        self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
         self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
@@ -229,7 +229,7 @@ class Panel(QtGui.QWidget):
         if index >= 0: 
             self.samplingInt_combo.setCurrentIndex(index)
 
-        self.samplingInt_combo.valueChanged.connect()
+        self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
             
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
@@ -238,8 +238,10 @@ class Panel(QtGui.QWidget):
 
         self.tab_config.setLayout(self.tab_config.layout)  
 
-    def sampling_int_chngd(self,value):
-        self.instrument.samplingInterval = time*60
+    def sampling_int_chngd(self,ind):
+        print ('value chaged',ind)
+        print (ind)
+        #self.instrument.samplingInterval = time*60
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -386,8 +388,9 @@ class Panel(QtGui.QWidget):
             default =   j['default']
             return default
    
-    def dye_combo_chngd(self,value):
-        self.dye = value
+    def dye_combo_chngd(self,ind):
+        print ('value chaged',ind)
+        self.dye = self.dye_combo.currentText()
         default = self.load_config_file()
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
@@ -398,7 +401,6 @@ class Panel(QtGui.QWidget):
 
         self.fill_table(2,1,str(self.instrument.HI))
         self.fill_table(3,1, str(self.instrument.I2))
-
 
     def change_plus_minus_butn(self,ind,dif):
         value = self.spinboxes[ind].value() + dif
