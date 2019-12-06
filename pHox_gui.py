@@ -718,7 +718,7 @@ class Panel(QtGui.QWidget):
             bmdCorr = blank_min_dark* cfb
             pmdCorr = postinj_min_dark * cfp
             spAbs = np.log10(bmdCorr/pmdCorr)
-            sp = np.log10(bmd/postinj_min_dark)            
+            sp = np.log10(blank_min_dark/postinj_min_dark)            
             # moving average 
             """  spAbsMA = spAbs
                 nPoints = 3
