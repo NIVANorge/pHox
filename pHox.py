@@ -286,10 +286,10 @@ class pH_instrument(object):
             #pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
             
-            #print ('dif_counts',dif_counts)
+            print ('dif_counts',dif_counts)
             if dif_counts > 500 and DC < 99: 
-                dif_dc = (dif_counts * 50 / maxLevel)  
-                #print ('dif_dc',dif_dc,'DC',DC)              
+                dif_dc = (dif_counts * 90 / maxLevel)  
+                print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
             elif dif_counts < 500 and dif_counts > (THR - maxLevel) : 
