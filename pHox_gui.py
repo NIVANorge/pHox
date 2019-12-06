@@ -142,17 +142,12 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
 
 
-        pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
-        pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
-        pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
 
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))        
         self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('g', width=1, style=QtCore.Qt.DotLine))   
         self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))
 
-        self.plotwidget1.plot(
-            [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
-            [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='o')  ## setting pen=None disables line drawing
+
 
         self.plotSpc= self.plotwidget1.plot()
 
@@ -506,6 +501,12 @@ class Panel(QtGui.QWidget):
             self.sliders[0].setValue(DC1)
             self.sliders[1].setValue(DC2)
             self.sliders[2].setValue(DC3)
+            pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
+            pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
+            pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
+            self.plotwidget1.plot(
+            [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
+            [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+')  ## setting pen=None disables line drawing
             self.instrument.specIntTime = sptIt
             self.instrument.specAvScans = 3000/sptIt
         else:
