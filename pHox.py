@@ -287,15 +287,23 @@ class pH_instrument(object):
             dif_counts = self.THR - pixelLevel
             
             print ('dif_counts',dif_counts)
-            if dif_counts > 500 and DC < 99: 
+            if (dif_counts > 500 and DC < 99) : 
+                print ('case dif_counts > 500 and DC < 99')
                 dif_dc = (dif_counts * 30 / maxLevel)  
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
-            elif dif_counts < 500 and dif_counts > (self.THR - SAT) : 
+
+            elif dif_counts < -500 and DC>1:
+                print ('case dif_counts < -500 and DC>1') 
+                dif_dc = (dif_counts * 30 / maxLevel)  
+                print ('dif_dc',dif_dc,'DC',DC)              
+                DC += dif_dc  
+                DC = max(1,DC)
                 adj = True
                 break           
             elif dif_counts > 500 and DC == 99: 
+                print ('case dif_counts > 500 and DC == 99')
                 break
             elif dif_counts < (self.THR - SAT): 
                 print ('saturation')
