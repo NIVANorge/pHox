@@ -127,16 +127,20 @@ class Panel(QtGui.QWidget):
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget1.setYRange(0,16000)
         self.plotwidget1.setBackground('#19232D')
+        self.plotwidget1.showGrid(x=True, y=True)
+
 
         self.plotwidget2 = pg.PlotWidget()
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
+        self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground('#19232D')     
 
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
         self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
+
         self.plotSpc= self.plotwidget1.plot()
 
         self.plotAbs= self.plotwidget2.plot()
