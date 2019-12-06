@@ -129,7 +129,6 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
 
-
         self.plotwidget2 = pg.PlotWidget()
         self.plotwidget2.setYRange(0,1.3)
         self.plotwidget2.setXRange(410,610)
@@ -169,7 +168,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
         self.tab1.layout.addWidget(self.textBox,      1,0)
-        self.tab1.layout.addWidget(self.textBoxSens,  1,1)
+        self.tab1.layout.addWidget(self.textBoxSens,  2,0)
         self.tab1.setLayout(self.tab1.layout)
 
     def make_tab_config(self):
@@ -295,7 +294,6 @@ class Panel(QtGui.QWidget):
             self.sliders[ind].valueChanged[int].connect(self.sld_change)   
             self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
             
-
         grid = QtGui.QGridLayout()
 
         grid.addWidget(QtGui.QLabel('Blue:'),0,0)
@@ -448,7 +446,7 @@ class Panel(QtGui.QWidget):
             value = self.instrument.samplingInterval,
             min = 200,max = 6000,step = 60)
         if ok:
-            self.instrument.samplingInterval = time
+            self.instrument.samplingInterval = time*60
 
     def update_spectra(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
@@ -650,7 +648,8 @@ class Panel(QtGui.QWidget):
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
 
         # take dark on every sample         
-        self.on_dark_clicked()       
+        self.on_dark_clicked() 
+        self.on_autoAdjust_clicked()      
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
