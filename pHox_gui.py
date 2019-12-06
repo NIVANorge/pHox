@@ -143,9 +143,9 @@ class Panel(QtGui.QWidget):
 
 
 
-        self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))        
-        self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('g', width=1, style=QtCore.Qt.DotLine))   
-        self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))
+        self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
+        self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
+        self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
 
 
 
