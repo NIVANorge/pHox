@@ -142,9 +142,9 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
 
 
-        pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.wvlPixels[0])
-        pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.wvlPixels[1])
-        pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.wvlPixels[2])   
+        pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
+        pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
+        pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
 
 
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))        
