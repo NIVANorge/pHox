@@ -167,8 +167,8 @@ class Panel(QtGui.QWidget):
 
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
-        self.tab1.layout.addWidget(self.textBox,      1,0)
-        self.tab1.layout.addWidget(self.textBoxSens,  2,0)
+        self.tab1.layout.addWidget(self.textBox,      1, 0, 1, 2)
+        self.tab1.layout.addWidget(self.textBoxSens,  2, 0, 1, 2)
         self.tab1.setLayout(self.tab1.layout)
 
     def make_tab_config(self):
@@ -185,7 +185,7 @@ class Panel(QtGui.QWidget):
         if index >= 0: 
             self.dye_combo.setCurrentIndex(index)
             
-        #self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
+        self.dye_combo.valueChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
         self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
@@ -215,14 +215,31 @@ class Panel(QtGui.QWidget):
         self.fill_table(6,0,'Dye injection volume: ')
         self.fill_table(6,1, str(self.instrument.dye_vol_inj))
 
-        self.fill_table(7,0,'pH sampling interval')
-        self.fill_table(7,1, str(self.instrument.samplingInterval))
+        self.fill_table(7,0,'pH sampling interval (min)')
+        self.tableWidget.setCellWidget(7,1,self.samplingInt_combo)
+        #self.fill_table(7,1, str(self.instrument.samplingInterval))
+
+
+        self.samplingInt_combo = QtGui.QComboBox()
+        self.samplingInt_combo.addItem('5')
+        self.samplingInt_combo.addItem('10')        
+
+        index = self.dye_combo.findText(self.instrument.samplingInterva, 
+                                QtCore.Qt.MatchFixedString)
+        if index >= 0: 
+            self.samplingInt_combo.setCurrentIndex(index)
+
+        self.samplingInt_combo.valueChanged.connect()
+            
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
         self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
-        self.tab_config.setLayout(self.tab_config.layout)   
+        self.tab_config.setLayout(self.tab_config.layout)  
+
+    def sampling_int_chngd(self,value):
+        self.instrument.samplingInterval = time*60
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -322,9 +339,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Button reload config was clicked')
         self.instrument.load_config()
         state = self.btn_leds.isChecked()
-        self.sliders[0].setValue(self.instrument.LED1)
-        self.sliders[1].setValue(self.instrument.LED2)
-        self.sliders[2].setValue(self.instrument.LED3)
+        self.update_LEDs()
         self.set_LEDs(state)
 
     def btn_stirr_clicked(self):
@@ -363,16 +378,27 @@ class Panel(QtGui.QWidget):
     # do we need it?
     # if yes, then wavelengths and pixels should
     # be also recalculated 
-    # comment out for now       
-    """def dye_combo_chngd(self,value):
+    # comment out for now 
+    # 
+    def load_config_file(self):
+        with open('config.json') as json_file:
+            j = json.load(json_file)
+            default =   j['default']
+            return default
+   
+    def dye_combo_chngd(self,value):
         self.dye = value
-        print (value)
+        default = self.load_config_file()
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
             self.I2 =  int(default['MCP_wl_I2-'])         
         elif self.dye == "TB":   
             self.HI =  int(default['TB_wl_HI-'])
-            self.I2 =  int(default['TB_wl_I2-'])"""
+            self.I2 =  int(default['TB_wl_I2-'])
+
+        self.fill_table(2,1,str(self.instrument.HI))
+        self.fill_table(3,1, str(self.instrument.I2))
+
 
     def change_plus_minus_butn(self,ind,dif):
         value = self.spinboxes[ind].value() + dif
@@ -761,7 +787,7 @@ class Panel(QtGui.QWidget):
         flnm.write(txtData)    
         flnm.close()
 
-        pHeval = self.instrument.pH_eval()
+        pHeval = self.instrument.pH_eval() #matrix with 4 samples pH eval averages something, produces final value 
         pH_t, refT, pert, evalAnir = pHeval
 
         #returns: pH evaluated at reference temperature 
@@ -786,21 +812,21 @@ class Panel(QtGui.QWidget):
                 logFile.write(hdr + '\n')
             logFile.write(s)
         udp.send_data('PH,' + s)
-        self.textBox.setText('pH_t= %.4f, Tref= %.4f, pert= %.3f, Anir= %.1f' %pHeval)
-        #self.puckEm.LAST_PAR[1]= pHeval[1]
-        #self.puckEm.LAST_pH = pHeval[0]
-        
-    def _autostart(self):
-        self.logTextBox.appendPlainText('Inside _autostart...')
-        self.textBox.setText('Inside _autostart...')
-        # ??????? sleep?? 
-        #time.sleep(10)
-        # Take dark for the first time 
-        self.textBox.setText('Taking dark...')
-        self.on_dark_clicked()
+
+        self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+
+    def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
         self.sliders[2].setValue(self.instrument.LED3)
+
+    def _autostart(self):
+        self.logTextBox.appendPlainText('Inside _autostart...')
+        self.textBox.setText('Inside _autostart...')
+        # Take dark for the first time 
+        self.textBox.setText('Taking dark...')
+        self.on_dark_clicked()
+        self.update_LEDs()
 
         self.btn_spectro.setChecked(True)
         #self.spectro_clicked()

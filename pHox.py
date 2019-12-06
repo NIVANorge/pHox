@@ -124,11 +124,12 @@ class pH_instrument(object):
         
         #initialize PWM lines
         self.rpi = pigpio.pi()
+
         self.evalPar = []
         #self.evalPar_df = pd.DataFrame()
-        #####self.ledDC = [0]*4 
+
         self.spectrometer = STSVIS()
-        self.wvlPixels = []
+
         # array of Ncycle's lines (make connection after ) 
         # should be ncycles + 2 
         # raw measurements
@@ -136,7 +137,7 @@ class pH_instrument(object):
 
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
-        self.specIntTime = 500 #spectrometer integration time (ms)
+         #spectrometer integration time (ms)
         self.specAvScans = 6 # Spectrums to take, they will be averaged to make one measurement 
 
         # Ferrybox data
@@ -237,6 +238,7 @@ class pH_instrument(object):
         self.LED1 = default["LED0"]
         self.LED2 = default["LED1"]
         self.LED3 = default["LED2"]
+        self.specIntTime = default['Spectro_Integration_time']
 
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
@@ -252,7 +254,11 @@ class pH_instrument(object):
         wvls = coeffs[0] + coeffs[1]* pixels + coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3)
         
         self.wvlPixels = []
-        # find the indices of pixels that give the wavelength corresponding to self.HI, self.I2, self.NIR
+
+        # find the indices of pixels that give 
+        # the wavelength corresponding to 
+        # self.HI, self.I2, self.NIR
+
         for wl in (self.HI, self.I2, self.NIR):
             self.wvlPixels.append(self.find_nearest(wvls,wl))
         return wvls
@@ -261,12 +267,8 @@ class pH_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
-    #def get_spectral_data(self):
-    #    return self.spectrometer.get_corrected_spectra()
-
     def get_sp_levels(self,pixel):
         spec = self.spectrometer.get_corrected_spectra()
-        #spec = self.get_spectral_data()
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, DC):
@@ -277,32 +279,30 @@ class pH_instrument(object):
         DC = curr_value 
 
         while DC < 100: 
-            #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
-
-            spectrum = self.spectrometer.get_corrected_spectra()
-            pixelLevel = spectrum[self.wvlPixels[led_ind]]
-
-            maxLevel = spectrum.max()
+            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = self.THR - pixelLevel
-            
-            print ('dif_counts',dif_counts)
+
+            #spectrum = self.spectrometer.get_corrected_spectra()
+            #pixelLevel = spectrum[self.wvlPixels[led_ind]]
+            #maxLevel = spectrum.max()
+
 
             if (dif_counts > 500 and DC < 99) : 
-                print ('case dif_counts > 500 and DC < 99')
+                #print ('case dif_counts > 500 and DC < 99')
                 dif_dc = (dif_counts * 30 / maxLevel)  
-                print ('dif_dc',dif_dc,'DC',DC)              
+                #print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
 
             elif dif_counts > 500 and DC == 99: 
-                print ('case dif_counts > 500 and DC == 99 led does not reach the peak')
+                #print ('case dif_counts > 500 and DC == 99 led does not reach the peak')
                 break
 
             elif dif_counts < -500 and DC>1:
-                print ('case dif_counts < -500 and DC>1') 
+                #print ('case dif_counts < -500 and DC>1') 
                 dif_dc = (dif_counts * 30 / maxLevel)  
-                print ('dif_dc',dif_dc,'DC',DC)              
+                #print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = max(1,DC)
 
@@ -326,23 +326,26 @@ class pH_instrument(object):
     def auto_adjust(self):
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
-        #print ('Adjusting light levels with %i spectral counts threshold...' %THR)
+
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             DC1,DC2,DC3 = None, None, None
-            #self.adjust_LED(0,0)#self.adjust_LED(1,0)#self.adjust_LED(2,0)
+
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
             print ('Adjusting LED 0')
-            DC1,adj1 = self.find_DC(led_ind = 0,adj = adj1, curr_value = self.LED1)
+            DC1,adj1 = self.find_DC(led_ind = 0,adj = adj1,
+                                    curr_value = self.LED1)
             if adj1:
                 print ('Adjusting LED 1')   
-                DC2,adj2 = self.find_DC(led_ind = 1,adj = adj2, curr_value = self.LED2)
+                DC2,adj2 = self.find_DC(led_ind = 1,adj = adj2,
+                                        curr_value = self.LED2)
 
                 if adj2:
                     print ('Adjusting LED 2')       
-                    DC3,adj3 = self.find_DC(led_ind = 2,adj = adj3, curr_value = self.LED3)    
+                    DC3,adj3 = self.find_DC(led_ind = 2,adj = adj3, 
+                                        curr_value = self.LED3)    
 
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
@@ -353,7 +356,7 @@ class pH_instrument(object):
         else:
             result = True 
 
-        return DC1,DC2,DC3,sptIt,result #adj1 & adj2 % adj3
+        return DC1,DC2,DC3,sptIt,result
 
     def print_Com(self, port, txtData):
         port.write(txtData)
@@ -387,8 +390,7 @@ class pH_instrument(object):
             self.set_line(line, False)
             time.sleep(OFF)
         pass
-    
-    
+     
     def set_Valve(self, status):
         chEn = self.GPIO_TV[0]
         ch1 =  self.GPIO_TV[1]
@@ -466,9 +468,13 @@ class pH_instrument(object):
         return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
         
     def pH_eval(self):
-        # pH ref
+        # self.evalPar is matrix with 4 samples  (result of running 4 calc_ph in a loop) pH eval averages something, produces final value 
         dpH_dT = -0.0155
+
         n = len(self.evalPar)
+
+
+
         evalAnir = [self.evalPar[i][12] for i in range(n)]
         evalAnir = np.mean(evalAnir)
 
@@ -489,3 +495,4 @@ class pH_instrument(object):
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
         return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
+

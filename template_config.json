@@ -35,7 +35,8 @@
         "mixTime" : 5,
         "waitTime" : 3,
         "ncycles" : 4,
-        "dye_nshots" : 1
+        "dye_nshots" : 1,
+        "Spectro_Integration_time": 500
     },
 
     "intervals":{
