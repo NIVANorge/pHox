@@ -300,11 +300,15 @@ class pH_instrument(object):
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = max(1,DC)
-                adj = True
-                break           
+      
             elif dif_counts > 500 and DC == 99: 
                 print ('case dif_counts > 500 and DC == 99')
                 break
+
+            elif dif_counts < 500 and dif_counts > -500: 
+                adj = True
+                print ('found adj level for led {}'.formate(led_ind))
+                break            
             elif dif_counts < (self.THR - SAT): 
                 print ('saturation')
                 break
