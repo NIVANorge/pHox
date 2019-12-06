@@ -288,7 +288,7 @@ class pH_instrument(object):
             
             print ('dif_counts',dif_counts)
             if dif_counts > 500 and DC < 99: 
-                dif_dc = (dif_counts * 90 / maxLevel)  
+                dif_dc = (dif_counts * 50 / maxLevel)  
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
