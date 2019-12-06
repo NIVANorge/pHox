@@ -233,9 +233,9 @@ class pH_instrument(object):
         self.Cuvette_V = default["CUVETTE_V"] #ml
         self.dye_vol_inj = default["DYE_V_INJ"]
 
-        self.LED1 = default["LED1"]
-        self.LED2 = default["LED2"]
-        self.LED3 = default["LED3"]
+        self.LED1 = default["LED0"]
+        self.LED2 = default["LED1"]
+        self.LED3 = default["LED2"]
 
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
