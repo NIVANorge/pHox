@@ -272,11 +272,7 @@ class pH_instrument(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def find_DC(self,led_ind,adj,curr_value):
-        test = True
-        if test == True: 
-            THR = 9000
-        else:
-            THR = 11500
+        THR = 14000
         DC = curr_value 
 
         while DC < 100: 
