@@ -151,13 +151,15 @@ class pH_instrument(object):
         
         self.flnmStr = ''
         self.timeStamp = ''
+        
+        self.load_config()        
         self.spectrometer.set_integration_time(self.specIntTime)
         self.spectrometer.set_scans_average(1)
         
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
         self.adcdac = ADCDACPi()
-        self.load_config()
+
 
         #setup PWM and SSR lines
         for pin in range (4):
