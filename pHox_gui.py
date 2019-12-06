@@ -794,9 +794,11 @@ class Panel(QtGui.QWidget):
         
     def _autostart(self):
         self.logTextBox.appendPlainText('Inside _autostart...')
+        self.textBox.setText('Inside _autostart...')
         # ??????? sleep?? 
-        time.sleep(10)
+        #time.sleep(10)
         # Take dark for the first time 
+        self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
@@ -806,10 +808,12 @@ class Panel(QtGui.QWidget):
         #self.spectro_clicked()
         self.btn_leds.setChecked(True)
         #self.btn_leds_checked()
+
         self.timerSpectra.start(500)
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
+            self.textBox.setText('The instrument is ready for use')
             #self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
@@ -870,7 +874,7 @@ class Panel(QtGui.QWidget):
     def autostart_pump(self):
         self.logTextBox.appendPlainText('Inside _autostart_pump...')
         self.logTextBox.appendPlainText('Automatic start at pump enabled')
-        self.textBox.setText('Automatic start at pump enabled')
+
         if fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostart_pump)
@@ -897,7 +901,7 @@ class Panel(QtGui.QWidget):
     def autorun(self):
         self.logTextBox.appendPlainText('Inside continuous_mode...')
         # Why do we need this 10 seconds? 
-        time.sleep(10)
+        #time.sleep(10)
 
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')

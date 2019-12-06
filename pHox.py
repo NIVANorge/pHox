@@ -285,7 +285,7 @@ class pH_instrument(object):
             #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
             spectrum = self.spectrometer.get_corrected_spectra()
-            pixelLevel = max(spectrum[self.wvlPixels[led_ind]-10,self.wvlPixels[led_ind]+10]) 
+            pixelLevel = max(list(spectrum[self.wvlPixels[led_ind]-10:self.wvlPixels[led_ind]+10])) 
             maxLevel = spectrum.max()
             #pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
