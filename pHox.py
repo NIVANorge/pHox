@@ -272,7 +272,7 @@ class pH_instrument(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
     def find_DC(self,led_ind,adj,curr_value):
-        THR = 14000
+        THR = 13000
         DC = curr_value 
 
         while DC < 100: 
@@ -297,7 +297,10 @@ class pH_instrument(object):
                 break           
             elif dif_counts > 500 and DC == 99: 
                 break
-
+            elif dif_counts < (THR - maxLevel) and DC == 99: 
+                print ('saturation')
+                break
+            
         print ('DC resulting',DC) 
         print (pixelLevel, maxLevel)
         return DC,adj
