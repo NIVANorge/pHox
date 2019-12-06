@@ -484,6 +484,7 @@ class Panel(QtGui.QWidget):
 
     def on_autoAdjust_clicked(self):
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
+        print (DC1,DC2,DC3)
         if result:
             self.sliders[0].setValue(DC1)
             self.sliders[1].setValue(DC2)
@@ -775,6 +776,7 @@ class Panel(QtGui.QWidget):
         
     def _autostart(self):
         self.logTextBox.appendPlainText('Inside _autostart...')
+        # ??????? sleep?? 
         time.sleep(10)
         # Take dark for the first time 
         self.on_dark_clicked()
