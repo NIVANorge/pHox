@@ -140,9 +140,15 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
         self.plotwidget1.addLine(x=None, y=11500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-        self.plotwidget1.addLine(x=self.instrument.wvlPixels[0], y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))        
-        self.plotwidget1.addLine(x=self.instrument.wvlPixels[1], y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))   
-        self.plotwidget1.addLine(x=self.instrument.wvlPixels[2], y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))           
+
+
+        pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.wvlPixels[0])
+        pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.wvlPixels[1])
+        pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.wvlPixels[2])   
+
+        self.plotwidget1.addLine(x=pixelLevel_0, y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))        
+        self.plotwidget1.addLine(x=pixelLevel_1, y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))   
+        self.plotwidget1.addLine(x=pixelLevel_2, y=None, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))           
         self.plotSpc= self.plotwidget1.plot()
 
         self.plotAbs= self.plotwidget2.plot()
