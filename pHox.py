@@ -273,17 +273,17 @@ class pH_instrument(object):
 
     def find_DC(self,led_ind,adj,curr_value):
         THR = 13000
+        SAT = 16000
         DC = curr_value 
 
         while DC < 100: 
             #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
+
             spectrum = self.spectrometer.get_corrected_spectra()
-            strt = self.wvlPixels[led_ind]-10
-            stp = self.wvlPixels[led_ind]+10
-            pixelLevel = max(list(spectrum[strt:stp])) 
+            pixelLevel = spectrum[self.wvlPixels[led_ind]]
+
             maxLevel = spectrum.max()
-            #pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
             
             print ('dif_counts',dif_counts)
@@ -292,15 +292,15 @@ class pH_instrument(object):
                 print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
-            elif dif_counts < 500 and dif_counts > (THR - maxLevel) : 
+            elif dif_counts < 500 and dif_counts > (THR - SAT) : 
                 adj = True
                 break           
             elif dif_counts > 500 and DC == 99: 
                 break
-            elif dif_counts < (THR - maxLevel) and DC == 99: 
+            elif dif_counts < (THR - SAT): 
                 print ('saturation')
                 break
-            
+
         print ('DC resulting',DC) 
         print (pixelLevel, maxLevel)
         return DC,adj
