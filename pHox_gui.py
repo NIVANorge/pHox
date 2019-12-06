@@ -216,13 +216,15 @@ class Panel(QtGui.QWidget):
         self.fill_table(6,1, str(self.instrument.dye_vol_inj))
 
         self.fill_table(7,0,'pH sampling interval (min)')
+        
+        self.samplingInt_combo = QtGui.QComboBox()
+        self.samplingInt_combo.addItem('5')
+        self.samplingInt_combo.addItem('10')       
         self.tableWidget.setCellWidget(7,1,self.samplingInt_combo)
         #self.fill_table(7,1, str(self.instrument.samplingInterval))
 
 
-        self.samplingInt_combo = QtGui.QComboBox()
-        self.samplingInt_combo.addItem('5')
-        self.samplingInt_combo.addItem('10')        
+ 
 
         index = self.dye_combo.findText(self.instrument.samplingInterva, 
                                 QtCore.Qt.MatchFixedString)
