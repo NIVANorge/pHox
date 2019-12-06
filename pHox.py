@@ -268,8 +268,6 @@ class pH_instrument(object):
         #spec = self.get_spectral_data()
         return spec[pixel],spec.max()
 
-
-
     def adjust_LED(self, led, DC):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
 
@@ -285,7 +283,9 @@ class pH_instrument(object):
             #for DC in range(curr_value,100,step):
             self.adjust_LED(led_ind, DC)
             spectrum = self.spectrometer.get_corrected_spectra()
-            pixelLevel = max(list(spectrum[self.wvlPixels[led_ind]-10:self.wvlPixels[led_ind]+10])) 
+            strt = self.wvlPixels[led_ind]-10
+            stp = self.wvlPixels[led_ind]+10
+            pixelLevel = max(list(spectrum[strt:stp])) 
             maxLevel = spectrum.max()
             #pixelLevel, maxLevel = self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = THR - pixelLevel
@@ -296,10 +296,8 @@ class pH_instrument(object):
                 #print ('dif_dc',dif_dc,'DC',DC)              
                 DC += dif_dc  
                 DC = min(99,DC)
-                #print ('DC updated',DC) 
-            elif dif_counts < 500 : 
+            elif dif_counts < 500 and dif_counts > (THR - maxLevel) : 
                 adj = True
-                #print ('Led {} adjusted'.format(led_ind))
                 break           
             elif dif_counts > 500 and DC == 99: 
                 break
