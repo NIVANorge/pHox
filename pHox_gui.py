@@ -391,11 +391,11 @@ class Panel(QtGui.QWidget):
         self.dye = self.dye_combo.currentText()
         default = self.load_config_file()
         if self.dye == 'MCP':
-            self.HI =  int(default['MCP_wl_HI'])
-            self.I2 =  int(default['MCP_wl_I2'])         
+            self.instrument.HI =  int(default['MCP_wl_HI'])
+            self.instrument.I2 =  int(default['MCP_wl_I2'])         
         elif self.dye == "TB":   
-            self.HI =  int(default['TB_wl_HI'])
-            self.I2 =  int(default['TB_wl_I2'])
+            self.instrument.HI =  int(default['TB_wl_HI'])
+            self.instrument.I2 =  int(default['TB_wl_I2'])
 
         self.tableWidget.setItem(2,1, 
           QtGui.QTableWidgetItem(str(
