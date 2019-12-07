@@ -223,7 +223,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setCellWidget(7,1,self.samplingInt_combo)
         #self.fill_table(7,1, str(self.instrument.samplingInterval))
 
-        index = self.dye_combo.findText(str(self.instrument.samplingInterval), 
+        index = self.samplingInt_combo.findText(str(self.instrument.samplingInterval), 
                                 QtCore.Qt.MatchFixedString)
         if index >= 0: 
             self.samplingInt_combo.setCurrentIndex(index)
