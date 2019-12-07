@@ -216,7 +216,7 @@ class Panel(QtGui.QWidget):
         self.fill_table(6,1, str(self.instrument.dye_vol_inj))
 
         self.fill_table(7,0,'pH sampling interval (min)')
-        
+
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
         self.samplingInt_combo.addItem('10')       
@@ -226,7 +226,7 @@ class Panel(QtGui.QWidget):
 
  
 
-        index = self.dye_combo.findText(self.instrument.samplingInterva, 
+        index = self.dye_combo.findText(self.instrument.samplingInterval, 
                                 QtCore.Qt.MatchFixedString)
         if index >= 0: 
             self.samplingInt_combo.setCurrentIndex(index)
@@ -396,10 +396,10 @@ class Panel(QtGui.QWidget):
         default = self.load_config_file()
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
-            self.I2 =  int(default['MCP_wl_I2-'])         
+            self.I2 =  int(default['MCP_wl_I2'])         
         elif self.dye == "TB":   
-            self.HI =  int(default['TB_wl_HI-'])
-            self.I2 =  int(default['TB_wl_I2-'])
+            self.HI =  int(default['TB_wl_HI'])
+            self.I2 =  int(default['TB_wl_I2'])
 
         self.fill_table(2,1,str(self.instrument.HI))
         self.fill_table(3,1, str(self.instrument.I2))

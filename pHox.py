@@ -186,10 +186,10 @@ class pH_instrument(object):
 
         if self.dye == 'MCP':
             self.HI =  int(default['MCP_wl_HI'])
-            self.I2 =  int(default['MCP_wl_I2-'])         
+            self.I2 =  int(default['MCP_wl_I2'])         
         elif self.dye == "TB":   
-            self.HI =  int(default['TB_wl_HI-'])
-            self.I2 =  int(default['TB_wl_I2-'])
+            self.HI =  int(default['TB_wl_HI'])
+            self.I2 =  int(default['TB_wl_I2'])
         self.THR = int(default["LED_THRESHOLD"])
         self.NIR = int(default['NIR-'])
         self._autostart = bool(default['AUTOSTART'])
