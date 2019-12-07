@@ -399,8 +399,8 @@ class Panel(QtGui.QWidget):
 
         item = QtGui.QTableWidgetItem(str(self.instrument.HI))   
 
-        self.table.setItem(2,1, item)  
-        self.table.setItem(3,1, str(self.instrument.I2))          
+        self.tableWidget.setItem(2,1, item)  
+        self.tableWidget.setItem(3,1, str(self.instrument.I2))          
 
 
     def change_plus_minus_butn(self,ind,dif):
