@@ -255,20 +255,21 @@ class Panel(QtGui.QWidget):
         self.btn_spectro = self.create_button('Spectrophotometer',True)
         self.btn_leds = self.create_button('LEDs',True)
         self.btn_valve = self.create_button('Inlet valve',True)
-        self.btn_sampl_int = self.create_button( 'Set sampling interval',False)     
+        #self.btn_sampl_int = self.create_button( 'Set sampling interval',False)     
         self.btn_stirr = self.create_button('Stirrer',True)
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
 
         # Unchecable buttons
         btn_grid.addWidget(self.btn_adjust_leds,0,0)
-        btn_grid.addWidget(self.btn_spectro, 1, 0)
+
         btn_grid.addWidget(self.btn_leds,    1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-        btn_grid.addWidget( self.btn_sampl_int, 3, 0)
+        #btn_grid.addWidget( self.btn_sampl_int, 3, 0)
+        btn_grid.addWidget(self.btn_spectro, 3, 0)
         btn_grid.addWidget(self.btn_dye_pmp, 3, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
@@ -285,7 +286,7 @@ class Panel(QtGui.QWidget):
         
         # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
-        self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
+        #self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
