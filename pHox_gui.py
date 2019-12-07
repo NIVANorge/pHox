@@ -360,7 +360,7 @@ class Panel(QtGui.QWidget):
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
            self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(str(nextSample)))
-           self.TextBox.setText("Start timer for the next sample at {}".format(str(nextSample)))
+           self.textBox.setText("Start timer for the next sample at {}".format(str(nextSample)))
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
