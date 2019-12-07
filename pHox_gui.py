@@ -223,10 +223,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setCellWidget(7,1,self.samplingInt_combo)
         #self.fill_table(7,1, str(self.instrument.samplingInterval))
 
-
- 
-
-        index = self.dye_combo.findText(self.instrument.samplingInterval, 
+        index = self.dye_combo.findText(str(self.instrument.samplingInterval), 
                                 QtCore.Qt.MatchFixedString)
         if index >= 0: 
             self.samplingInt_combo.setCurrentIndex(index)
@@ -242,8 +239,7 @@ class Panel(QtGui.QWidget):
 
     def sampling_int_chngd(self,ind):
         print ('value chaged',ind)
-        print (ind)
-        #self.instrument.samplingInterval = time*60
+        self.instrument.samplingInterval = time*60
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -401,8 +397,11 @@ class Panel(QtGui.QWidget):
             self.HI =  int(default['TB_wl_HI'])
             self.I2 =  int(default['TB_wl_I2'])
 
-        self.fill_table(2,1,str(self.instrument.HI))
-        self.fill_table(3,1, str(self.instrument.I2))
+        item = QtGui.QTableWidgetItem(str(self.instrument.HI))   
+
+        self.table.setItem(2,1, item)  
+        self.table.setItem(3,1, str(self.instrument.I2))          
+
 
     def change_plus_minus_butn(self,ind,dif):
         value = self.spinboxes[ind].value() + dif
