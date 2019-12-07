@@ -108,13 +108,13 @@ class Panel(QtGui.QWidget):
         self.showMaximized()
 
     def create_timers(self):
-        self.timerSpectra = QtCore.QTimer()
+        self.timerSpectra_plot = QtCore.QTimer()
         self.timer_contin_mode = QtCore.QTimer()
         self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra.timeout.connect(self.update_spectra)
+        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode)
         self.timerSensUpd.timeout.connect(self.update_sensors_info)
         if self.args.pco2:
@@ -239,7 +239,8 @@ class Panel(QtGui.QWidget):
 
     def sampling_int_chngd(self,ind):
         print ('value chaged',ind)
-        self.instrument.samplingInterval = time*60
+        minutes = int(self.samplingInt_combo.currentText())
+        self.instrument.samplingInterval = minutes*60
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -358,6 +359,7 @@ class Panel(QtGui.QWidget):
            self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
            nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
            self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(str(nextSample)))
+           self.TextBox.setText("Start timer for the next sample at {}".format(str(nextSample)))
            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
@@ -370,16 +372,10 @@ class Panel(QtGui.QWidget):
 
     def spectro_clicked(self):
         if self.btn_spectro.isChecked():
-            self.timerSpectra.start(500)
+            self.timerSpectra_plot.start(500)
         else:
-            self.timerSpectra.stop()
-            
-    # not sure about connections, 
-    # do we need it?
-    # if yes, then wavelengths and pixels should
-    # be also recalculated 
-    # comment out for now 
-    # 
+            self.timerSpectra_plot.stop()
+
     def load_config_file(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
@@ -447,14 +443,14 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Measuring dark...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
         dark = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts[0] = dark #self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts_df['dark'] = dark #self.instrument.spectrometer.get_corrected_spectra()        
+        self.instrument.spCounts[0] = dark 
+        self.instrument.spCounts_df['dark'] = dark        
         self.instrument.spectrometer.set_scans_average(1)
         self.logTextBox.appendPlainText('Done')
 
-        self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
+        """self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
             str(self.instrument.specIntTime),
-            str(self.instrument.specAvScans)))
+            str(self.instrument.specAvScans)))"""
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -470,16 +466,7 @@ class Panel(QtGui.QWidget):
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         self.instrument.folderPath = folder+'/'
 
-    def on_sampl_int_clicked(self): 
-        time, ok = QtGui.QInputDialog.getInt(
-            None, 'Set sampling interval',
-            'Interval in seconds',
-            value = self.instrument.samplingInterval,
-            min = 200,max = 6000,step = 60)
-        if ok:
-            self.instrument.samplingInterval = time*60
-
-    def update_spectra(self):
+    def update_spectra_plot(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
         self.plotSpc.setData(self.instrument.wvls,datay)                  
 
@@ -601,7 +588,7 @@ class Panel(QtGui.QWidget):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
-        #self.timerSpectra.stop()
+        #self.timerSpectra_plot.stop()
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
@@ -617,7 +604,7 @@ class Panel(QtGui.QWidget):
             self.sample()
             self.logTextBox.appendPlainText('Single Measurement is Done')
             self.instrument.spectrometer.set_scans_average(1)
-        self.timerSpectra.start()
+        self.timerSpectra_plot.start()
         self.btn_spectro.setChecked(True)
 
     def get_V(self, nAver, ch):
@@ -638,7 +625,7 @@ class Panel(QtGui.QWidget):
         # stop the spectrophotometer update precautionally
         ###self.btn_spectro.setChecked(False)
         
-        self.timerSpectra.stop()
+        self.timerSpectra_plot.stop()
         [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
         # write (reques) 6 times smth to the device 
@@ -661,7 +648,7 @@ class Panel(QtGui.QWidget):
         # TODO:should it be FAlse here??
         self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
         #self.check('Spectrophotometer',True)    
-        self.timerSpectra.start()
+        self.timerSpectra_plot.start()
     
     def sample(self):
         ## SAMPLE SHOULD BE IN A THREAD
@@ -838,7 +825,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
         #self.btn_leds_checked()
 
-        self.timerSpectra.start(500)
+        self.timerSpectra_plot.start(500)
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
@@ -862,7 +849,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
         #self.on_deploy_clicked(False)
-        self.timerSpectra.stop()
+        self.timerSpectra_plot.stop()
         self.timer_contin_mode.stop()
         #self.timerSensUpd.stop()
         #self.timerSave.stop()
@@ -960,7 +947,7 @@ if __name__ == '__main__':
     udp.server.join()
     if not udp.server.is_alive():
         print ('UDP server closed')
-    myPanel.timerSpectra.stop()
+    myPanel.timerSpectra_plot.stop()
     print ('timer is stopped')
     myPanel.timer_contin_mode.stop()
 
