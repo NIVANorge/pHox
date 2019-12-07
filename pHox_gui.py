@@ -240,7 +240,7 @@ class Panel(QtGui.QWidget):
     def sampling_int_chngd(self,ind):
         print ('value chaged',ind)
         minutes = int(self.samplingInt_combo.currentText())
-        self.instrument.samplingInterval = minutes*60
+        self.instrument.samplingInterval = int(minutes)*60
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
