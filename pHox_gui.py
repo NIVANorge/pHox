@@ -548,7 +548,7 @@ class Panel(QtGui.QWidget):
         self.instrument.timeStamp  = t.isoformat('_')
         tsBegin = (t-datetime(1970,1,1)).total_seconds()
         nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
-        return str(nextSamplename)    
+        return str(nextSamplename.strftime("%Y%m%d%H%M"))    
 
     def get_filename(self):
         t = datetime.now()
