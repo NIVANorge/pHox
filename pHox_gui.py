@@ -158,11 +158,12 @@ class Panel(QtGui.QWidget):
         self.textBoxSens.setOverwriteMode(True)
 
         self.btn_cont_meas = self.create_button('Continuous measurements',True)
-        self.btn_sigle_meas = self.create_button('Single measurement',False)   
+        self.btn_single_meas = self.create_button('Single measurement',False)   
+        self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
-        self.tab1.layout.addWidget(self.btn_sigle_meas, 0, 1)
+        self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
         self.tab1.layout.addWidget(self.textBox,      1, 0, 1, 2)
         self.tab1.layout.addWidget(self.textBoxSens,  2, 0, 1, 2)
         self.tab1.setLayout(self.tab1.layout)
@@ -187,7 +188,7 @@ class Panel(QtGui.QWidget):
         #self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
         #header = self.tableWidget.horizontalHeader()
         #header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
-        
+
         self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
@@ -569,7 +570,7 @@ class Panel(QtGui.QWidget):
         if self.args.pco2:
             self.add_pco2_info(text)
 
-    def on_sigle_meas_clicked(self):
+    def btn_single_meas_clicked(self):
         # Button "single" is clicked
         self.btn_spectro.setChecked(False)
         #self.check('Spectrophotometer',False)
