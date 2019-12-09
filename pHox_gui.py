@@ -740,7 +740,9 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.sample()
+            self.sample_thread = Sample_thread()
+            self.sample_thread.start()
+            #self.sample()
         self.timerSpectra_plot.start()
 
     def get_V(self, nAver, ch):
