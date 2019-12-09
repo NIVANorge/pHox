@@ -254,7 +254,6 @@ class Panel(QtGui.QWidget):
         self.buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
         btn_grid = QtGui.QGridLayout()
 
-
         self.btn_adjust_leds = self.create_button('Adjust Leds',True) 
         self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button('LEDs',True)
