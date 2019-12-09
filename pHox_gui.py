@@ -38,7 +38,7 @@ class Console(QtGui.QWidget):
 
 
 
-class Sample_thread(QThread):
+class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
         self.mainclass = mainclass
         self.instrument = pH_instrument()
