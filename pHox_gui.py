@@ -160,6 +160,7 @@ class Panel(QtGui.QWidget):
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
+        self.textBox.setText('Loading...')
 
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
