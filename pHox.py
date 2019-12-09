@@ -475,8 +475,6 @@ class pH_instrument(object):
 
         n = len(self.evalPar)
 
-
-
         evalAnir = [self.evalPar[i][12] for i in range(n)]
         evalAnir = np.mean(evalAnir)
 
@@ -492,6 +490,7 @@ class pH_instrument(object):
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
+            #pert is slope 
             pert,pH_lab = np.linalg.lstsq(A, y)[0]
         # pH at in situ 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])

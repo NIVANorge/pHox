@@ -652,7 +652,8 @@ class Panel(QtGui.QWidget):
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
 
-        # take dark on every sample         
+        # take dark on every sample  
+        #        
         self.on_dark_clicked() 
         self.on_autoAdjust_clicked()      
         self.set_LEDs(True)
@@ -663,40 +664,44 @@ class Panel(QtGui.QWidget):
         if self.instrument.pumpT > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            self.logTextBox.appendPlainText("wait for pumping time")
+            self.logTextBox.appendPlainText("Pumping ")
             self.instrument.wait(self.instrument.pumpT) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
         self.instrument.set_Valve(True)
-        self.logTextBox.appendPlainText("wait for instrument waiting time")
+        self.logTextBox.appendPlainText("Waiting..")
         self.instrument.wait(self.instrument.waitT)
 
         # Take the last measured dark
-        dark = self.instrument.spCounts[0]
+        
+        dark = self.instrument.spCounts_df['dark']   #self.instrument.spCounts[0]
 
         self.logTextBox.appendPlainText('Measuring blank...')
         blank = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts[1] = blank 
+        #self.instrument.spCounts[1] = blank 
         self.instrument.spCounts_df['blank'] = blank 
         # limit the number by the range 1,16000
         # blank minus dark 
-        blank_min_dark= np.clip(self.instrument.spCounts[1] - dark,1,16000)
+        blank_min_dark= np.clip(self.instrument.spCounts_df['blank'] - dark,1,16000)
 
         # lenght of dA = numbers of cycles (4)
+        self.logTextBox.appendPlainText(' ')
+        self.logTextBox.appendPlainText('Start new cycle of {} measurements'.format( self.instrument.nshot))
         for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            self.logTextBox.appendPlainText('Injection %d:, shots %d' %(pinj, self.instrument.nshots))
+            self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
             # turn on the stirrer
+            #self.logTextBox.appendPlainText("Turn on the stirrer")                  
             self.instrument.set_line(self.instrument.stirrer_slot, True)
-            
+
             if not self.args.debug:
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            self.logTextBox.appendPlainText("wait for mixing time")
+            self.logTextBox.appendPlainText("Mixing")
             self.instrument.wait(self.instrument.mixT)
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
@@ -707,16 +712,18 @@ class Panel(QtGui.QWidget):
             # measure spectrum after injecting nshots of dye 
             postinj = self.instrument.spectrometer.get_corrected_spectra()
 
-            self.instrument.spCounts[2+pinj] = postinj 
-            self.instrument.spCounts_df[str(pinj)] = postinj 
             # measuring Voltage for temperature probe
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
+            # Write spectrum to the file 
+            self.instrument.spCounts_df[str(pinj)] = postinj 
+
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
-            # self.nlCoeff = [1.0229, -9E-6, 6E-10]
+
             # coefficient for blank ??? 
             cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*blank_min_dark+ self.instrument.nlCoeff[2] * blank_min_dark**2
+            
             cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*postinj_min_dark + self.instrument.nlCoeff[2] * postinj_min_dark**2
             bmdCorr = blank_min_dark* cfb
             pmdCorr = postinj_min_dark * cfp
