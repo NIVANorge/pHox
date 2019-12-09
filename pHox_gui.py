@@ -152,9 +152,11 @@ class Panel(QtGui.QWidget):
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
 
+        self.nextSampleBox = QtGui.QLineEdit()
+        self.nextSampleBox.setOverwriteMode(True)
+
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
-
 
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
@@ -169,11 +171,13 @@ class Panel(QtGui.QWidget):
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
+
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
-        self.tab1.layout.addWidget(self.textBox,      1, 0, 1, 2)
-        self.tab1.layout.addWidget(self.textBoxSens,  2, 0, 1, 2)
-        self.tab1.layout.addWidget(self.logTextBox,  3, 0, 1, 2)        
+        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 2)     
+        self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
+        self.tab1.layout.addWidget(self.textBoxSens,  3, 0, 1, 2)
+        self.tab1.layout.addWidget(self.logTextBox,  4, 0, 1, 2)        
         self.tab1.setLayout(self.tab1.layout)
 
     def make_tab_config(self):
@@ -553,7 +557,7 @@ class Panel(QtGui.QWidget):
 
             nextSamplename = self.get_next_sample()
             self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(nextSamplename))
-            self.textBox.setText("Start timer for the next sample at {}".format(nextSamplename))
+            self.nextSampleBox.setText("Start timer for the next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
            self.timer_contin_mode.stop()
