@@ -5,16 +5,14 @@ from pco2 import CO2_instrument
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
-import warnings
-import time
+
+import warnings, time, pigpio
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
-import pigpio
 from PyQt4 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg 
-import argparse
-import socket
+import argparse, socket
 import pandas as pd 
 
 import udp # Ferrybox data
@@ -38,6 +36,12 @@ class Console(QtGui.QWidget):
    def printText(self, text):
       self.textBox.append(text)
 
+
+
+class Sample_thread(QTread):
+    _init_(self):
+
+
 class Panel(QtGui.QWidget):
     def __init__(self):
         super(Panel, self).__init__()
@@ -58,7 +62,6 @@ class Panel(QtGui.QWidget):
         self.init_ui()
 
         self.timerSensUpd.start(2000)
-
 
     def init_ui(self):
 
@@ -694,7 +697,7 @@ class Panel(QtGui.QWidget):
                     spAbsMA[i]= np.mean(v)"""
 
             self.plotAbs.setData(self.instrument.wvls,spAbs)
-            Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC)
+            Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
             
             '''self.logTextBox.appendPlainText(
                 'Tdeg = {:.4f}, pK = {:.4f}, e1= {:.6f}, e2= {:.6f}, e3 = {:.6f}'.format(Tdeg, pK, e1, e2, e3))
@@ -719,17 +722,18 @@ class Panel(QtGui.QWidget):
             pass
         flnm.write(txtData)    
         flnm.close()
-
-        pHeval = self.instrument.pH_eval() #matrix with 4 samples pH eval averages something, produces final value 
+        
+        #matrix with 4 samples pH eval averages something, produces final value
+        pHeval = self.instrument.pH_eval()  
         pH_t, refT, pert, evalAnir = pHeval
 
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
 
-        self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
+        ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
-        # add boat code 
+
         # add temperature Calibrated (TRUE or FALSE)
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''

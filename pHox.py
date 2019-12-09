@@ -401,7 +401,7 @@ class pH_instrument(object):
         return V/nAver
 
 
-    def calc_pH(self,absSp, vNTC):
+    def calc_pH(self,absSp, vNTC,pinj):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
@@ -415,7 +415,7 @@ class pH_instrument(object):
 
         # volume in ml
         fcS = self.fb_data['salinity'] * (
-              (self.Cuvette_V)/(self.dye_vol_inj+self.Cuvette_V))
+              (self.Cuvette_V)/(self.dye_vol_inj*(pinj+1)+self.Cuvette_V))
         R = A2/A1
         
         if self.dye == 'TB':
@@ -450,6 +450,7 @@ class pH_instrument(object):
         
     def pH_eval(self):
         # self.evalPar is matrix with 4 samples  (result of running 4 calc_ph in a loop) pH eval averages something, produces final value 
+        # constant for T effect correction 
         dpH_dT = -0.0155
 
         n = len(self.evalPar)
@@ -469,7 +470,7 @@ class pH_instrument(object):
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
-            #pert is slope 
+            #pert is slope , Ph-lab is intersept
             pert,pH_lab = np.linalg.lstsq(A, y)[0]
         # pH at in situ 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
