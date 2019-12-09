@@ -184,9 +184,10 @@ class Panel(QtGui.QWidget):
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
-        self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
-        header = self.tableWidget.horizontalHeader()
-        header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
+        #self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
+        #header = self.tableWidget.horizontalHeader()
+        #header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
+        
         self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
 
@@ -202,21 +203,15 @@ class Panel(QtGui.QWidget):
         self.fill_table(3,0,'I2-')
         self.fill_table(3,1, str(self.instrument.I2))
 
-        self.fill_table(4,0,'Cuvette volume:')
-        self.fill_table(4,1, str(self.instrument.Cuvette_V))
+        self.fill_table(4,0,'Last calibration:')
+        self.fill_table(4,1,' not used yet:')        
 
-        self.fill_table(5,0,'DYE calibration:')
-        self.fill_table(5,1,' not used yet:')        
-
-        self.fill_table(6,0,'Dye injection volume: ')
-        self.fill_table(6,1, str(self.instrument.dye_vol_inj))
-
-        self.fill_table(7,0,'pH sampling interval (min)')
+        self.fill_table(5,0,'pH sampling interval (min)')
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
         self.samplingInt_combo.addItem('10')       
-        self.tableWidget.setCellWidget(7,1,self.samplingInt_combo)
+        self.tableWidget.setCellWidget(5,1,self.samplingInt_combo)
         #self.fill_table(7,1, str(self.instrument.samplingInterval))
 
         index = self.samplingInt_combo.findText(str(self.instrument.samplingInterval), 
@@ -246,12 +241,9 @@ class Panel(QtGui.QWidget):
 
 
         self.btn_adjust_leds = self.create_button('Adjust Leds',True) 
-
         self.btn_t_dark = self.create_button('Take dark',False)
-        self.btn_spectro = self.create_button('Spectrophotometer',True)
         self.btn_leds = self.create_button('LEDs',True)
-        self.btn_valve = self.create_button('Inlet valve',True)
-        #self.btn_sampl_int = self.create_button( 'Set sampling interval',False)     
+        self.btn_valve = self.create_button('Inlet valve',True)   
         self.btn_stirr = self.create_button('Stirrer',True)
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
@@ -263,8 +255,6 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-        #btn_grid.addWidget( self.btn_sampl_int, 3, 0)
-        btn_grid.addWidget(self.btn_spectro, 3, 0)
         btn_grid.addWidget(self.btn_dye_pmp, 3, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
@@ -272,7 +262,6 @@ class Panel(QtGui.QWidget):
 
 
         # Define connections Button clicked - Result 
-        self.btn_spectro.clicked.connect(self.spectro_clicked)
         self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
@@ -622,11 +611,12 @@ class Panel(QtGui.QWidget):
         ###self.btn_spectro.setChecked(False)
         
         self.timerSpectra_plot.stop()
-        [self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
+        #[self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
         # write (reques) 6 times smth to the device 
         self.instrument.spectrometer.set_scans_average(
                                   self.instrument.specAvScans)
+
         t = datetime.now()
         self.instrument.timeStamp = t.isoformat('_')
         self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
@@ -752,17 +742,6 @@ class Panel(QtGui.QWidget):
         self.instrument.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
-        # LOg files
-        #  
-        # 4 full spectrums for all mesaurements 
-        '''flnm = open(self.instrument.folderPath + self.instrument.flnmStr +'.spt','w')
-        txtData = ''
-        for i in range(2+self.instrument.ncycles):
-            for j in range (self.instrument.spectrometer.pixels):
-                txtData += str(self.instrument.spCounts[i,j]) + ','
-            txtData += '\n'
-        flnm.write(txtData)    
-        flnm.close()'''
 
         # 4 measurements for each measure *product of spectrums 
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
@@ -815,10 +794,14 @@ class Panel(QtGui.QWidget):
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
+
+        #TDO: autoadjust 
+
         self.update_LEDs()
 
-        self.btn_spectro.setChecked(True)
+        ##self.btn_spectro.setChecked(True)
         #self.spectro_clicked()
+        # turn on leds 
         self.btn_leds.setChecked(True)
         #self.btn_leds_checked()
 
