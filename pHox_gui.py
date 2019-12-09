@@ -546,10 +546,8 @@ class Panel(QtGui.QWidget):
 
     def btn_cont_meas_clicked(self):
         state = self.btn_cont_meas.isChecked()
-        self.logTextBox.appendPlainText('Continuous measerement mode is {}'.format(str(state)))
         if state:
             nextSamplename = self.get_next_sample()
-            #self.logTextBox.appendPlainText("Next sample at {}".format(nextSamplename))
             self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
