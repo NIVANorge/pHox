@@ -553,9 +553,8 @@ class Panel(QtGui.QWidget):
         state = self.btn_cont_meas.isChecked()
         self.logTextBox.appendPlainText('Continuous measerement mode is {}'.format(str(state)))
         if state:
-
             nextSamplename = self.get_next_sample()
-            self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(nextSamplename))
+            self.logTextBox.appendPlainText("Next sample at {}".format(nextSamplename))
             self.nextSampleBox.setText("Start timer for the next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
@@ -596,7 +595,7 @@ class Panel(QtGui.QWidget):
         self.sample()
 
         oldText = self.textBox.toPlainText()
-        self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample())
+        self.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
         self.timerSpectra_plot.start()
     
     def sample(self):
