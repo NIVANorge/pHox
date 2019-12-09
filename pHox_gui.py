@@ -112,7 +112,6 @@ class Panel(QtGui.QWidget):
         self.timer_contin_mode = QtCore.QTimer()
         self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
-        #self.timerFIA = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode)
@@ -139,7 +138,6 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
         self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
         self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
         self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
@@ -195,11 +193,8 @@ class Panel(QtGui.QWidget):
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
-        #self.tableWidget.setHorizontalHeaderLabels(QtCore.QString("Parameter;Value").split(";"))
-        #header = self.tableWidget.horizontalHeader()
-        #header.setResizeMode(1, QtGui.QHeaderView.ResizeToContents)
 
-        self.tableWidget.setRowCount(8)
+        self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(2)
 
         self.fill_table(0,0,'DYE type')
@@ -219,11 +214,14 @@ class Panel(QtGui.QWidget):
 
         self.fill_table(5,0,'pH sampling interval (min)')
 
+
+        self.fill_table(6,0,'Spectroph intergration time')
+        self.fill_table(6,1,str(self.instrument.specIntTime))
+
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
         self.samplingInt_combo.addItem('10')       
         self.tableWidget.setCellWidget(5,1,self.samplingInt_combo)
-        #self.fill_table(7,1, str(self.instrument.samplingInterval))
 
         index = self.samplingInt_combo.findText(str(self.instrument.samplingInterval), 
                                 QtCore.Qt.MatchFixedString)
@@ -259,18 +257,17 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
 
-        # Unchecable buttons
+
+        btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
+
         btn_grid.addWidget(self.btn_adjust_leds,1,0)
         btn_grid.addWidget(self.btn_leds,    1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-        btn_grid.addWidget(self.btn_dye_pmp, 3, 1)
-
         btn_grid.addWidget(self.btn_wpump, 4, 0)
         btn_grid.addWidget(self.btn_t_dark , 4, 1)
-
 
         # Define connections Button clicked - Result 
         self.btn_leds.clicked.connect(self.btn_leds_checked)
@@ -278,10 +275,7 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
-        
-        # Define connections for Unchecable buttons
         self.btn_t_dark.clicked.connect(self.on_dark_clicked)
-        #self.btn_sampl_int.clicked.connect(self.on_sampl_int_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -294,7 +288,6 @@ class Panel(QtGui.QWidget):
         self.sldLabels, self.spinboxes =  [], []
         self.plus_btns, self.minus_btns = [], []
 
-        # create widgets
         for ind in range(3):
             self.plus_btns.append(QtGui.QPushButton('+'))
             self.minus_btns.append(QtGui.QPushButton(' - '))
@@ -425,10 +418,6 @@ class Panel(QtGui.QWidget):
         self.instrument.spectrometer.set_scans_average(1)
         self.logTextBox.appendPlainText('Done')
 
-        """self.btn_t_dark.setText('Take dark ({} ms, n= {})'.format(
-            str(self.instrument.specIntTime),
-            str(self.instrument.specAvScans)))"""
-
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
@@ -475,13 +464,14 @@ class Panel(QtGui.QWidget):
             self.sliders[0].setValue(DC1)
             self.sliders[1].setValue(DC2)
             self.sliders[2].setValue(DC3)
-            pixelLevel_0, maxLevel_0 = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
-            pixelLevel_1, maxLevel_1 = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
-            pixelLevel_2, maxLevel_2 = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
+            pixelLevel_0, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
+            pixelLevel_1, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
+            pixelLevel_2, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
             self.plotwidget1.plot(
             [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
             [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+')  ## setting pen=None disables line drawing
             self.instrument.specIntTime = sptIt
+            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(str(self.instrument.specIntTime)))  
             self.instrument.specAvScans = 3000/sptIt
         else:
             self.textBox.setText('Could not adjust leds')
@@ -548,7 +538,7 @@ class Panel(QtGui.QWidget):
         self.instrument.timeStamp  = t.isoformat('_')
         tsBegin = (t-datetime(1970,1,1)).total_seconds()
         nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
-        return str(nextSamplename.strftime("%Y%m%d%H%M"))    
+        return str(nextSamplename.strftime("%H:%M"))    
 
     def get_filename(self):
         t = datetime.now()
@@ -801,9 +791,9 @@ class Panel(QtGui.QWidget):
         #self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         #TODO: why do we need it 
-        self.sliders[0].setValue(0)
-        self.sliders[1].setValue(0)
-        self.sliders[2].setValue(0) 
+        #self.sliders[0].setValue(0)
+        #self.sliders[1].setValue(0)
+        #self.sliders[2].setValue(0) 
 
         #self.btn_spectro.setChecked(False)
         self.timerSpectra_plot.stop()
