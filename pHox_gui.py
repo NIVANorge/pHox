@@ -458,7 +458,6 @@ class Panel(QtGui.QWidget):
         return
 
     def plot_sp_levels(self):
-
         pixelLevel_0, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
         pixelLevel_1, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
         pixelLevel_2, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
@@ -599,7 +598,11 @@ class Panel(QtGui.QWidget):
         self.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
         self.timerSpectra_plot.start()
     
-    def sample(self):
+
+
+
+    def sample(self):        
+        self.textBox.setText('Start sample')
         self.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
 
@@ -627,22 +630,26 @@ class Panel(QtGui.QWidget):
         if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            self.logTextBox.appendPlainText("Pumping ")
+            self.logTextBox.appendPlainText("Pumping")
+            self.textBox.setText('Pumping')
             self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
         self.instrument.set_Valve(True)
-        self.logTextBox.appendPlainText("Waiting..")
+        self.logTextBox.appendPlainText("Waiting...")
+        self.textBox.setText("Waiting...")
         self.instrument.wait(self.instrument.waitT)
 
         # Take the last measured dark
         dark = self.instrument.spCounts_df['dark']
 
         self.logTextBox.appendPlainText('Measuring blank...')
-
+        self.textBox.setText('Measuring blank...')
+        
         blank = self.instrument.spectrometer.get_corrected_spectra()
+        
         blank_min_dark= np.clip(blank - dark,1,16000)
         self.instrument.spCounts_df['blank'] = blank 
 
@@ -653,6 +660,7 @@ class Panel(QtGui.QWidget):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
+            self.textBox.setText('Injection %d:' %(pinj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -665,7 +673,7 @@ class Panel(QtGui.QWidget):
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
 
-            self.logTextBox.appendPlainText("wait before to start the measurment")
+            self.logTextBox.appendPlainText("wait before starting the measurment")
             self.instrument.wait(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
@@ -769,18 +777,14 @@ class Panel(QtGui.QWidget):
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
-
-        #TDO: autoadjust 
-
         self.update_LEDs()
 
         ##self.btn_spectro.setChecked(True)
         #self.spectro_clicked()
         # turn on leds 
         self.btn_leds.setChecked(True)
-        #self.btn_leds_checked()
-
         self.timerSpectra_plot.start(500)
+
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
@@ -872,8 +876,6 @@ class Panel(QtGui.QWidget):
         
     def autorun(self):
         self.logTextBox.appendPlainText('Inside continuous_mode...')
-        # Why do we need this 10 seconds? 
-        #time.sleep(10)
 
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
