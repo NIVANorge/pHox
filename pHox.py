@@ -470,8 +470,8 @@ class pH_instrument(object):
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
-            #pert is slope , Ph-lab is intersept
-            pert,pH_lab = np.linalg.lstsq(A, y)[0]
+            #pert is slope , Ph-lab is intercept
+            pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
         # pH at in situ 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
