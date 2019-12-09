@@ -49,8 +49,8 @@ class Sample_thread(QtCore.QThread):
         nextSample = self.mainclass.get_next_sample()
         self.mainclass.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
    
-        self.textBox.setText('Start sample')
-        self.logTextBox.appendPlainText('Start sample')
+        self.mainclass.textBox.setText('Start sample')
+        self.mainclass.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
 
         if not fbox['pumping']:
@@ -70,8 +70,8 @@ class Sample_thread(QtCore.QThread):
         # take dark on every sample        
         self.mainclass.on_dark_clicked() 
         self.mainclass.on_autoAdjust_clicked()      
-        self.set_LEDs(True)
-        self.btn_leds.setChecked(True)
+        self.mainclass.set_LEDs(True)
+        self.mainclass.btn_leds.setChecked(True)
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
