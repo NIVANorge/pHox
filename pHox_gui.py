@@ -138,17 +138,13 @@ class Panel(QtGui.QWidget):
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-        self.plotwidget1.addLine(x=None, y=self.instrument.THR+500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-        self.plotwidget1.addLine(x=None, y=self.instrument.THR-500, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
+        self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
 
         self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
         self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
         self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
 
-
-
         self.plotSpc= self.plotwidget1.plot()
-
         self.plotAbs= self.plotwidget2.plot()
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
@@ -261,8 +257,7 @@ class Panel(QtGui.QWidget):
         self.btn_wpump = self.create_button('Water pump',True)
 
         # Unchecable buttons
-        btn_grid.addWidget(self.btn_adjust_leds,0,0)
-
+        btn_grid.addWidget(self.btn_adjust_leds,1,0)
         btn_grid.addWidget(self.btn_leds,    1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
@@ -753,6 +748,7 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
+
         self.instrument.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
