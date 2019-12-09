@@ -153,7 +153,6 @@ class Panel(QtGui.QWidget):
         self.textBox.setOverwriteMode(True)
 
         self.nextSampleBox = QtGui.QLineEdit()
-        self.nextSampleBox.setOverwriteMode(True)
 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
