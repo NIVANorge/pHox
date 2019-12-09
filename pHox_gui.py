@@ -688,7 +688,8 @@ class Panel(QtGui.QWidget):
 
         # lenght of dA = numbers of cycles (4)
         self.logTextBox.appendPlainText(' ')
-        self.logTextBox.appendPlainText('Start new cycle of {} measurements'.format( self.instrument.nshot))
+        self.logTextBox.appendPlainText(
+            'Start new cycle of {} measurements'.format( self.instrument.nshots))
         for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
@@ -723,7 +724,7 @@ class Panel(QtGui.QWidget):
 
             # coefficient for blank ??? 
             cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*blank_min_dark+ self.instrument.nlCoeff[2] * blank_min_dark**2
-            
+
             cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*postinj_min_dark + self.instrument.nlCoeff[2] * postinj_min_dark**2
             bmdCorr = blank_min_dark* cfb
             pmdCorr = postinj_min_dark * cfp
