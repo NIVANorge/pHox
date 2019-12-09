@@ -337,19 +337,6 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.wpump_slot,
         self.btn_wpump.isChecked())
 
-    def btn_cont_meas_clicked(self):
-        state = self.btn_cont_meas.isChecked()
-        self.logTextBox.appendPlainText('Continuous measerement mode is {}'.format(str(state)))
-        if state:
-           self.instrument.flnmStr=''
-           self.tsBegin = (datetime.now()-datetime(1970,1,1)).total_seconds()
-           nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
-           self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(str(nextSample)))
-           self.textBox.setText("Start timer for the next sample at {}".format(str(nextSample)))
-           self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
-        else:
-           self.timer_contin_mode.stop()
-
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
@@ -477,24 +464,6 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
         
-    '''def on_intTime_clicked(self):
-        # Not used now
-        intTime, ok = QtGui.QInputDialog.getInt(
-            None, 'Set spectrophotometer integration time',
-             'ms',self.instrument.specIntTime,100,3000,100)
-        if ok:
-            self.instrument.specIntTime = intTime
-            self.instrument.spectrometer.set_integration_time(intTime)
-            self.btn_spectro.setText('Spectrophotometer {} ms'.format(str(intTime)))
-            #self.chkBox_caption('Spectrophotometer','%d ms' %intTime)'''
-        
-    '''def on_scans_clicked(self): 
-        # Not used now
-        scans, ok = QtGui.QInputDialog.getInt(None,
-         'Set spectrophotometer averaging scans','',self.instrument.specAvScans,1,20,1)
-        if ok:
-            self.instrument.specAvScans = scans'''
-
     def on_autoAdjust_clicked(self):
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         print (DC1,DC2,DC3)
@@ -570,14 +539,35 @@ class Panel(QtGui.QWidget):
         if self.args.pco2:
             self.add_pco2_info(text)
 
-    def btn_single_meas_clicked(self):
-        # Button "single" is clicked
-        self.timerSpectra_plot.stop()
-        #self.check('Spectrophotometer',False)
-        #self.timerSpectra_plot.stop()
+    def get_next_sample(self):
         t = datetime.now()
-        self.instrument.timeStamp = t.isoformat('_')
-        self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
+        self.instrument.timeStamp  = t.isoformat('_')
+        tsBegin = (t-datetime(1970,1,1)).total_seconds()
+        nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
+        return str(nextSamplename)    
+
+    def get_filename(self):
+        t = datetime.now()
+        self.instrument.timeStamp  = t.isoformat('_')
+        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d%H%M") 
+        return
+
+    def btn_cont_meas_clicked(self):
+        state = self.btn_cont_meas.isChecked()
+        self.logTextBox.appendPlainText('Continuous measerement mode is {}'.format(str(state)))
+        if state:
+
+            nextSamplename = self.get_next_sample()
+            self.logTextBox.appendPlainText("Start timer for the next sample at {}".format(nextSamplename))
+            self.textBox.setText("Start timer for the next sample at {}".format(nextSamplename))
+            self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
+        else:
+           self.timer_contin_mode.stop()
+
+    def btn_single_meas_clicked(self):
+        self.timerSpectra_plot.stop()
+        self.get_filename()
+
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', 
                                         self.instrument.flnmStr)
@@ -585,13 +575,8 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.logTextBox.appendPlainText(
-                'Start single measurement ')
             self.sample()
-            self.logTextBox.appendPlainText('Single Measurement is Done')
-            self.instrument.spectrometer.set_scans_average(1)
         self.timerSpectra_plot.start()
-
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -606,38 +591,19 @@ class Panel(QtGui.QWidget):
         return V/nAver
 
     def continuous_mode(self):
-        #former Underway
         self.logTextBox.appendPlainText('Inside continuous_mode...')
-        # stop the spectrophotometer update precautionally
-        ###self.btn_spectro.setChecked(False)
-        
         self.timerSpectra_plot.stop()
-        #[self.instrument.adjust_LED(n,self.sliders[n].value()) for n in range(3)]
         self.instrument.reset_lines()
-        # write (reques) 6 times smth to the device 
-        self.instrument.spectrometer.set_scans_average(
-                                  self.instrument.specAvScans)
 
-        t = datetime.now()
-        self.instrument.timeStamp = t.isoformat('_')
-        self.instrument.flnmStr =   t.strftime("%Y%m%d%H%M") 
-        self.tsBegin = (t-datetime(1970,1,1)).total_seconds()
-
-        self.logTextBox.appendPlainText('sampling...')
+        nextSample = self.get_next_sample()
         self.sample()
-        self.logTextBox.appendPlainText('done...')
 
-        self.instrument.spectrometer.set_scans_average(1)
-        
-        nextSample = datetime.fromtimestamp(self.tsBegin + self.instrument.samplingInterval)
         oldText = self.textBox.toPlainText()
-        self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
-        # TODO:should it be FAlse here??
-        #self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
-        #self.check('Spectrophotometer',True)    
+        self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample())
         self.timerSpectra_plot.start()
     
     def sample(self):
+        self.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
 
         if not fbox['pumping']:
@@ -645,15 +611,15 @@ class Panel(QtGui.QWidget):
         if self.instrument._autodark:
             now = datetime.now()
             # self.instrument._autodark should be interval 
-            if (self.instrument.last_dark is None) or ((now - self.instrument.last_dark) >= self.instrument._autodark):
+            if (self.instrument.last_dark is None) or (
+                (now - self.instrument.last_dark) >= self.instrument._autodark):
                 self.logTextBox.appendPlainText('New dark required')
                 self.on_dark_clicked()
             else:
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
 
-        # take dark on every sample  
-        #        
+        # take dark on every sample        
         self.on_dark_clicked() 
         self.on_autoAdjust_clicked()      
         self.set_LEDs(True)
@@ -661,11 +627,11 @@ class Panel(QtGui.QWidget):
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        if self.instrument.pumpT > 0: # pump time
+        if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
             self.logTextBox.appendPlainText("Pumping ")
-            self.instrument.wait(self.instrument.pumpT) 
+            self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
@@ -675,18 +641,14 @@ class Panel(QtGui.QWidget):
         self.instrument.wait(self.instrument.waitT)
 
         # Take the last measured dark
-        
-        dark = self.instrument.spCounts_df['dark']   #self.instrument.spCounts[0]
+        dark = self.instrument.spCounts_df['dark']
 
         self.logTextBox.appendPlainText('Measuring blank...')
-        blank = self.instrument.spectrometer.get_corrected_spectra()
-        #self.instrument.spCounts[1] = blank 
-        self.instrument.spCounts_df['blank'] = blank 
-        # limit the number by the range 1,16000
-        # blank minus dark 
-        blank_min_dark= np.clip(self.instrument.spCounts_df['blank'] - dark,1,16000)
 
-        # lenght of dA = numbers of cycles (4)
+        blank = self.instrument.spectrometer.get_corrected_spectra()
+        blank_min_dark= np.clip(blank - dark,1,16000)
+        self.instrument.spCounts_df['blank'] = blank 
+
         self.logTextBox.appendPlainText(' ')
         self.logTextBox.appendPlainText(
             'Start new cycle of {} measurements'.format( self.instrument.nshots))
@@ -694,8 +656,7 @@ class Panel(QtGui.QWidget):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
-            # turn on the stirrer
-            #self.logTextBox.appendPlainText("Turn on the stirrer")                  
+            # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
             if not self.args.debug:
@@ -723,9 +684,14 @@ class Panel(QtGui.QWidget):
             postinj_min_dark = np.clip(postinj - dark,1,16000)
 
             # coefficient for blank ??? 
-            cfb = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*blank_min_dark+ self.instrument.nlCoeff[2] * blank_min_dark**2
+            cfb = (self.instrument.nlCoeff[0] + 
+                    self.instrument.nlCoeff[1]*blank_min_dark + 
+                    self.instrument.nlCoeff[2] * blank_min_dark**2)
 
-            cfp = self.instrument.nlCoeff[0] + self.instrument.nlCoeff[1]*postinj_min_dark + self.instrument.nlCoeff[2] * postinj_min_dark**2
+            cfp = (self.instrument.nlCoeff[0] +
+                    self.instrument.nlCoeff[1]*postinj_min_dark + 
+                    self.instrument.nlCoeff[2] * postinj_min_dark**2)
+
             bmdCorr = blank_min_dark* cfb
             pmdCorr = postinj_min_dark * cfp
             spAbs = np.log10(bmdCorr/pmdCorr)
@@ -791,6 +757,8 @@ class Panel(QtGui.QWidget):
         udp.send_data('PH,' + s)
 
         self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+        self.instrument.spectrometer.set_scans_average(1)        
+        self.logTextBox.appendPlainText('Single measurement is done...')
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)

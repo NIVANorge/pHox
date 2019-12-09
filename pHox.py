@@ -212,7 +212,7 @@ class pH_instrument(object):
             self.vNTCch = 8
 
         self.samplingInterval = int(default["PH_SAMPLING_INTERVAL_SEC"])
-        self.pumpT = int(default["pumpTime"])
+        self.pumpTime = int(default["pumpTime"])
         self.mixT = int(default["mixTime"])
         self.waitT = int(default["waitTime"])
         self.ncycles= int(default["ncycles"]) # Former dA
