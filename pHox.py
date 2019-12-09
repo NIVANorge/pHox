@@ -130,11 +130,6 @@ class pH_instrument(object):
 
         self.spectrometer = STSVIS()
 
-        # array of Ncycle's lines (make connection after ) 
-        # should be ncycles + 2 
-        # raw measurements
-        self.spCounts = np.zeros((6,1024))
-
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
          #spectrometer integration time (ms)

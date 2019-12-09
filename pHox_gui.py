@@ -409,17 +409,12 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)        
 
     def on_dark_clicked(self):
-        self.logTextBox.appendPlainText('Taking dark level...')
+        self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
-
-        self.logTextBox.appendPlainText('Measuring dark...')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
-        dark = self.instrument.spectrometer.get_corrected_spectra()
-        self.instrument.spCounts[0] = dark 
-        self.instrument.spCounts_df['dark'] = dark        
+        self.instrument.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
         self.instrument.spectrometer.set_scans_average(1)
-        self.logTextBox.appendPlainText('Done')
 
     def set_LEDs(self, state):
         for i in range(0,3):
