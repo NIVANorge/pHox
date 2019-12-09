@@ -356,11 +356,11 @@ class Panel(QtGui.QWidget):
     def btn_valve_clicked(self):
         self.instrument.set_Valve(self.btn_valve.isChecked())
 
-    def spectro_clicked(self):
+    '''def spectro_clicked(self):
         if self.btn_spectro.isChecked():
             self.timerSpectra_plot.start(500)
         else:
-            self.timerSpectra_plot.stop()
+            self.timerSpectra_plot.stop()'''
 
     def load_config_file(self):
         with open('config.json') as json_file:
@@ -572,7 +572,7 @@ class Panel(QtGui.QWidget):
 
     def btn_single_meas_clicked(self):
         # Button "single" is clicked
-        self.btn_spectro.setChecked(False)
+        self.timerSpectra_plot.stop()
         #self.check('Spectrophotometer',False)
         #self.timerSpectra_plot.stop()
         t = datetime.now()
@@ -591,7 +591,7 @@ class Panel(QtGui.QWidget):
             self.logTextBox.appendPlainText('Single Measurement is Done')
             self.instrument.spectrometer.set_scans_average(1)
         self.timerSpectra_plot.start()
-        self.btn_spectro.setChecked(True)
+
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -633,7 +633,7 @@ class Panel(QtGui.QWidget):
         oldText = self.textBox.toPlainText()
         self.textBox.setText(oldText + '\n\nNext pH sample %s' % nextSample.isoformat())
         # TODO:should it be FAlse here??
-        self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
+        #self.btn_spectro.setChecked(True) # stop the spectrophotometer update precautionally
         #self.check('Spectrophotometer',True)    
         self.timerSpectra_plot.start()
     
@@ -825,7 +825,8 @@ class Panel(QtGui.QWidget):
         self.sliders[1].setValue(0)
         self.sliders[2].setValue(0) 
 
-        self.btn_spectro.setChecked(False)
+        #self.btn_spectro.setChecked(False)
+        self.timerSpectra_plot.stop()
         self.btn_leds.setChecked(False)
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
