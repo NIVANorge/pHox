@@ -285,26 +285,16 @@ class pH_instrument(object):
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = self.THR - pixelLevel
 
-            #spectrum = self.spectrometer.get_corrected_spectra()
-            #pixelLevel = spectrum[self.wvlPixels[led_ind]]
-            #maxLevel = spectrum.max()
-
-
             if (dif_counts > 500 and DC < 99) : 
-                #print ('case dif_counts > 500 and DC < 99')
-                dif_dc = (dif_counts * 30 / maxLevel)  
-                #print ('dif_dc',dif_dc,'DC',DC)              
+                dif_dc = (dif_counts * 30 / maxLevel)            
                 DC += dif_dc  
                 DC = min(99,DC)
 
             elif dif_counts > 500 and DC == 99: 
-                #print ('case dif_counts > 500 and DC == 99 led does not reach the peak')
                 break
 
             elif dif_counts < -500 and DC>1:
-                #print ('case dif_counts < -500 and DC>1') 
-                dif_dc = (dif_counts * 30 / maxLevel)  
-                #print ('dif_dc',dif_dc,'DC',DC)              
+                dif_dc = (dif_counts * 30 / maxLevel)              
                 DC += dif_dc  
                 DC = max(1,DC)
 
@@ -314,15 +304,12 @@ class pH_instrument(object):
 
             elif dif_counts < 500 and dif_counts > -500: 
                 adj = True
-                print ('found adj level for led {}'.format(led_ind))
                 break            
 
             elif dif_counts < (self.THR - SAT): 
                 print ('saturation')
                 break
 
-        print ('DC resulting',DC) 
-        print (pixelLevel, maxLevel)
         return DC,adj
 
     def auto_adjust(self):
@@ -336,16 +323,13 @@ class pH_instrument(object):
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
-            print ('Adjusting LED 0')
             DC1,adj1 = self.find_DC(led_ind = 0,adj = adj1,
                                     curr_value = self.LED1)
             if adj1:
-                print ('Adjusting LED 1')   
                 DC2,adj2 = self.find_DC(led_ind = 1,adj = adj2,
                                         curr_value = self.LED2)
 
-                if adj2:
-                    print ('Adjusting LED 2')       
+                if adj2:    
                     DC3,adj3 = self.find_DC(led_ind = 2,adj = adj3, 
                                         curr_value = self.LED3)    
 
