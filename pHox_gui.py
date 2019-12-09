@@ -38,8 +38,8 @@ class Console(QtGui.QWidget):
 
 
 
-class Sample_thread(QTread):
-    _init_(self):
+#class Sample_thread(QTread):
+#    _init_(self):
 
 
 class Panel(QtGui.QWidget):
@@ -83,11 +83,12 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_calibr, "Calibr")
 
         self.tab_log.layout =     QtGui.QGridLayout()
-        '''self.logTextBox = QtGui.QPlainTextEdit()
+        self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
-        self.tab_log.layout.addWidget(self.logTextBox) '''
+            
+        self.tab_log.layout.addWidget(self.logTextBox)
         self.tab_log.setLayout(self.tab_log.layout)
 
 
@@ -160,8 +161,6 @@ class Panel(QtGui.QWidget):
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
 
-        self.logTextBox = QtGui.QPlainTextEdit()
-        self.logTextBox.setReadOnly(True)
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
         #self.tab_log.layout.addWidget(self.logTextBox) 
@@ -179,7 +178,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 2)     
         self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
         self.tab1.layout.addWidget(self.textBoxSens,  3, 0, 1, 2)
-        self.tab1.layout.addWidget(self.logTextBox,  4, 0, 1, 2)        
+ 
         self.tab1.setLayout(self.tab1.layout)
 
     def make_tab_config(self):
