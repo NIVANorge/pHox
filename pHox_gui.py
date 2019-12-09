@@ -80,11 +80,11 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_calibr, "Calibr")
 
         self.tab_log.layout =     QtGui.QGridLayout()
-        self.logTextBox = QtGui.QPlainTextEdit()
+        '''self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
-        self.tab_log.layout.addWidget(self.logTextBox) 
+        self.tab_log.layout.addWidget(self.logTextBox) '''
         self.tab_log.setLayout(self.tab_log.layout)
 
 
@@ -157,6 +157,15 @@ class Panel(QtGui.QWidget):
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
 
+
+        self.logTextBox = QtGui.QPlainTextEdit()
+        self.logTextBox.setReadOnly(True)
+        if self.args.debug:
+            self.logTextBox.appendPlainText('Starting in debug mode')
+        #self.tab_log.layout.addWidget(self.logTextBox) 
+
+
+
         self.btn_cont_meas = self.create_button('Continuous measurements',True)
         self.btn_single_meas = self.create_button('Single measurement',False)   
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
@@ -166,6 +175,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
         self.tab1.layout.addWidget(self.textBox,      1, 0, 1, 2)
         self.tab1.layout.addWidget(self.textBoxSens,  2, 0, 1, 2)
+        self.tab1.layout.addWidget(self.logTextBox,  3, 0, 1, 2)        
         self.tab1.setLayout(self.tab1.layout)
 
     def make_tab_config(self):
@@ -342,12 +352,6 @@ class Panel(QtGui.QWidget):
 
     def btn_valve_clicked(self):
         self.instrument.set_Valve(self.btn_valve.isChecked())
-
-    '''def spectro_clicked(self):
-        if self.btn_spectro.isChecked():
-            self.timerSpectra_plot.start(500)
-        else:
-            self.timerSpectra_plot.stop()'''
 
     def load_config_file(self):
         with open('config.json') as json_file:
