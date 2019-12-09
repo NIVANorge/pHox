@@ -42,6 +42,7 @@ class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
         self.mainclass = mainclass
         self.instrument = pH_instrument()
+        super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
 
@@ -740,7 +741,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.sample_thread = Sample_thread()
+            self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
             #self.sample()
         self.timerSpectra_plot.start()
