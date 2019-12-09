@@ -87,7 +87,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
-            
+
         self.tab_log.layout.addWidget(self.logTextBox)
         self.tab_log.setLayout(self.tab_log.layout)
 
@@ -456,7 +456,16 @@ class Panel(QtGui.QWidget):
             logFile.write(s)
         udp.send_data('PCO2,' + s)
         return
-        
+
+    def plot_sp_levels(self):
+
+        pixelLevel_0, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
+        pixelLevel_1, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
+        pixelLevel_2, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
+        self.plotwidget1.plot(
+        [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
+        [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
+
     def on_autoAdjust_clicked(self):
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         print (DC1,DC2,DC3)
@@ -464,12 +473,8 @@ class Panel(QtGui.QWidget):
             self.sliders[0].setValue(DC1)
             self.sliders[1].setValue(DC2)
             self.sliders[2].setValue(DC3)
-            pixelLevel_0, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
-            pixelLevel_1, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
-            pixelLevel_2, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
-            self.plotwidget1.plot(
-            [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
-            [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+')  ## setting pen=None disables line drawing
+
+            #self.plot_sp_levels()
             self.instrument.specIntTime = sptIt
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(str(self.instrument.specIntTime)))  
             self.instrument.specAvScans = 3000/sptIt
