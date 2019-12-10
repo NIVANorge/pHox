@@ -1,6 +1,7 @@
-
+from datetime import datetime, timedelta
 import socket
 import threading
+import os
 
 UDP_SEND = 6801
 UDP_RECV = 6802
@@ -21,20 +22,20 @@ def udp_server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
     sock.bind(('', UDP_RECV))
-    print 'UDP server started'
+    print ('UDP server started')
     while not UDP_EXIT:
         try:
             (data,addr) = sock.recvfrom(500)
         except:
             pass
         else:
-            print 'received: %s' % (data.strip())
+            print ('received: %s' % (data.strip()))
             w = data.split(',')
             if data.startswith('$PFBOX,TIME,'):
                 v = datetime.strptime(w[2], '%Y-%m-%dT%H:%M:%S')
                 t = datetime.now()
                 if abs(t-v).total_seconds() > 5:
-                    print 'will correct time'
+                    print ('will correct time')
                     os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith('$PFBOX,SAL,'):
                 v = float(w[2])

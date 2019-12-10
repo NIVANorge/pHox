@@ -10,54 +10,20 @@ import time
 
 class CO2_instrument(object):
    def __init__(self):
-      #locate serial port
-      ports = list(serial.tools.list_ports.comports())
-
-      print (ports)
-      for i in range (len(ports)):
-         name=ports[i][2]
-         port=ports[i][0]
-         #USB-RS485 CO2 sensor
-         # Delete condition or not? 
-         if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3': 
-            self.portSens = serial.Serial(port,
-                                    baudrate=9600,
-                                    parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE,
-                                    bytesize=serial.EIGHTBITS,
-                                    writeTimeout = 0,
-                                    timeout = 0.5,
-                                    rtscts=False,
-                                    dsrdtr=False,
-                                    xonxoff=False)
-
-         if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ': #USB-RS232 host
-            self.host = serial.Serial(port,
-                                    baudrate=9600,
-                                    parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE,
-                                    bytesize=serial.EIGHTBITS,
-                                    writeTimeout = 0,
-                                    timeout = 0.25,
-                                    rtscts=False,
-                                    dsrdtr=False,
-                                    xonxoff=False)
-      HOST_EXIST = True
-      SENS_EXIST = True
       self.load_config()
 
-   """def get_V(self, nAver, ch):
-      V = 0.0000
-      for i in range (nAver):
-            #1: read channel in differential mode
-         V += adcdac.read_adc_voltage(ch,0) 
-      return V/nAver
-      
-   def get_Vd(self, nAver, ch):
-      V = 0.0000
-      for i in range (nAver):
-         V += adc.read_voltage(ch)
-      return V/nAver"""
+      """def get_V(self, nAver, ch):
+         V = 0.0000
+         for i in range (nAver):
+               #1: read channel in differential mode
+            V += adcdac.read_adc_voltage(ch,0) 
+         return V/nAver
+         
+      def get_Vd(self, nAver, ch):
+         V = 0.0000
+         for i in range (nAver):
+            V += adc.read_voltage(ch)
+         return V/nAver"""
 
    def load_config(self):
       with open('config.json') as json_file:
@@ -216,7 +182,7 @@ class PuckManager(object):
       try:
          nBytesToRead = int(args[0])
       except IndexError:
-         print 'Missing argument'
+         print ('Missing argument')
       for n in range (nBytesToRead):
          bytesRead += self.memDumpStr[self.memPtr]
          self.memPtr += 1
