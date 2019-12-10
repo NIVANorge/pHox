@@ -276,7 +276,7 @@ class Panel(QtGui.QWidget):
         hboxPanel.addWidget(self.tabs)
     
         self.setLayout(hboxPanel)
-        self.showMaximized()
+        #self.showMaximized()
 
     def create_timers(self):
         self.timerSpectra_plot = QtCore.QTimer()
@@ -912,6 +912,7 @@ class boxUI(QtGui.QMainWindow):
 
         self.main_widget = Panel()
         self.setCentralWidget(self.main_widget)
+        self.showMaximized()        
         self.main_widget.autorun()
 
         udp.UDP_EXIT = True
@@ -919,11 +920,11 @@ class boxUI(QtGui.QMainWindow):
         if not udp.server.is_alive():
             print ('UDP server closed')
 
-        myPanel.timerSpectra_plot.stop()
+        self.main_widget.timerSpectra_plot.stop()
         print ('timer is stopped')
-        myPanel.timer_contin_mode.stop()
-        myPanel.timerSensUpd.stop()
-        myPanel.close()
+        self.main_widget.timer_contin_mode.stop()
+        self.main_widget.timerSensUpd.stop()
+        self.main_widget.close()
         print ('ended')
         
         '''if screen_width > 1200: 
