@@ -12,9 +12,6 @@ from ADCDifferentialPi import ADCDifferentialPi
 import struct
 import time
 import RPi.GPIO as GPIO
-#from ADCDACPi import ADCDACPi
-#from ADCDifferentialPi import ADCDifferentialPi
-#from helpers import ABEHelpers
 from datetime import datetime, timedelta
 import pigpio
 from PyQt4 import QtGui, QtCore
@@ -142,7 +139,7 @@ class pH_instrument(object):
         self.status = [False]*16
         self.intvStatus = False
         
-        self.CO2UpT = 5
+        #self.CO2UpT = 5
         
         self.flnmStr = ''
         self.timeStamp = ''

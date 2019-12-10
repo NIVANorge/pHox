@@ -36,12 +36,10 @@ class Console(QtGui.QWidget):
    def printText(self, text):
       self.textBox.append(text)
 
-
-
 class Sample_thread(QtCore.QThread):
-    def __init__(self,mainclass,instrument):
+    def __init__(self,mainclass):
         self.mainclass = mainclass
-        self.instrument = instrument
+        #self.instrument = pH_instrument()
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
@@ -73,7 +71,9 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)
 
-        self.instrument.evalPar =[]
+        print ('TEST THREAD')
+
+        '''self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
         if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
@@ -82,9 +82,9 @@ class Sample_thread(QtCore.QThread):
             self.mainclass.textBox.setText('Pumping')
             self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer'''
 
-        # close the valve
+        '''# close the valve
         self.instrument.set_Valve(True)
         self.mainclass.logTextBox.appendPlainText("Waiting...")
         self.mainclass.textBox.setText("Waiting...")
@@ -208,8 +208,7 @@ class Sample_thread(QtCore.QThread):
 
         self.mainclass.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         self.instrument.spectrometer.set_scans_average(1)        
-        self.mainclass.logTextBox.appendPlainText('Single measurement is done...')
-
+        self.mainclass.logTextBox.appendPlainText('Single measurement is done...')'''
 
 class Panel(QtGui.QWidget):
     def __init__(self):
@@ -740,7 +739,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.sample_thread = Sample_thread(self, self.instrument)
+            self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
             #self.sample()
         self.timerSpectra_plot.start()
