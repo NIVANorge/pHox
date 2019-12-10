@@ -31,7 +31,7 @@ from udp import Ferrybox as fbox
       grid.addWidget(self.textBox)
       self.setLayout(grid)
       self.resize(800,200)
-      self.show()'''
+      self.show()
 
    def printText(self, text):
       self.textBox.append(text)'''
