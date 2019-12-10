@@ -18,7 +18,7 @@ import pandas as pd
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
 
-class Console(QtGui.QWidget):
+'''class Console(QtGui.QWidget):
    
    def __init__(self):
       super(Console, self).__init__()
@@ -31,10 +31,10 @@ class Console(QtGui.QWidget):
       grid.addWidget(self.textBox)
       self.setLayout(grid)
       self.resize(800,200)
-      self.show()
+      self.show()'''
 
    def printText(self, text):
-      self.textBox.append(text)
+      self.textBox.append(text)'''
 
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
@@ -233,7 +233,7 @@ class Panel(QtGui.QWidget):
 
     def init_ui(self):
 
-        self.setWindowTitle('NIVA - pH')
+        
 
         self.tabs = QtGui.QTabWidget()
 
@@ -899,23 +899,52 @@ class Panel(QtGui.QWidget):
             self.textBox.setText('Immediate automatic start enabled')
             self._autostart()
         return
+      
+class boxUI(QMainWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #
+        self.setWindowTitle('NIVA - pH')
+
+        '''root = tk.Tk()
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()'''
+
+        self.main_widget = Panel(self)
+        self.setCentralWidget(self.main_widget)
+        self.main_widget.autorun()
+
+        udp.UDP_EXIT = True
+        udp.server.join()
+        if not udp.server.is_alive():
+            print ('UDP server closed')
+
+        myPanel.timerSpectra_plot.stop()
+        print ('timer is stopped')
+        myPanel.timer_contin_mode.stop()
+        myPanel.timerSensUpd.stop()
+        myPanel.close()
+        print ('ended')
+
+        '''if screen_width > 1200: 
+            self.resize(0.6*screen_width, 0.6*screen_height)
+            self.show()
+        else:
+            self.resize(0.99*screen_width, 0.88*screen_height)
+            self.showMaximized()
+
+
+        if self.table_widget.instrument.value == 'Fail' : 
+            self.table_widget.showdialog()'''        
+        return
 
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     qss_file = open('styles.qss').read()
     app.setStyleSheet(qss_file)
-    myPanel = Panel()
-    myPanel.autorun()
+    ui  = boxUI()
     app.exec_()
-    udp.UDP_EXIT = True
-    udp.server.join()
-    if not udp.server.is_alive():
-        print ('UDP server closed')
-    myPanel.timerSpectra_plot.stop()
-    print ('timer is stopped')
-    myPanel.timer_contin_mode.stop()
-    myPanel.timerSensUpd.stop()
-    myPanel.close()
-    print ('ended')
-    app.quit()
+
+    #app.quit()
