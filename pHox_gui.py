@@ -224,6 +224,7 @@ class Panel(QtGui.QWidget):
         self.create_timers()
         
         self.instrument = pH_instrument()
+        print ('instrument created')
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument()
 
@@ -232,8 +233,6 @@ class Panel(QtGui.QWidget):
         self.timerSensUpd.start(2000)
 
     def init_ui(self):
-
-        
 
         self.tabs = QtGui.QTabWidget()
 
@@ -902,7 +901,7 @@ class Panel(QtGui.QWidget):
       
 class boxUI(QMainWindow):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(boxUI,self).__init__(*args, **kwargs)
         #
         self.setWindowTitle('NIVA - pH')
 
@@ -911,7 +910,7 @@ class boxUI(QMainWindow):
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()'''
 
-        self.main_widget = Panel(self)
+        self.main_widget = Panel()
         self.setCentralWidget(self.main_widget)
         self.main_widget.autorun()
 
@@ -926,7 +925,7 @@ class boxUI(QMainWindow):
         myPanel.timerSensUpd.stop()
         myPanel.close()
         print ('ended')
-
+        
         '''if screen_width > 1200: 
             self.resize(0.6*screen_width, 0.6*screen_height)
             self.show()
