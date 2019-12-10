@@ -899,7 +899,7 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
       
-class boxUI(QMainWindow):
+class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(boxUI,self).__init__(*args, **kwargs)
         #
