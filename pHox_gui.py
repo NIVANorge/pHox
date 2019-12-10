@@ -915,17 +915,7 @@ class boxUI(QtGui.QMainWindow):
         self.showMaximized()        
         self.main_widget.autorun()
 
-        udp.UDP_EXIT = True
-        udp.server.join()
-        if not udp.server.is_alive():
-            print ('UDP server closed')
 
-        self.main_widget.timerSpectra_plot.stop()
-        print ('timer is stopped')
-        self.main_widget.timer_contin_mode.stop()
-        self.main_widget.timerSensUpd.stop()
-        self.main_widget.close()
-        print ('ended')
         
         '''if screen_width > 1200: 
             self.resize(0.6*screen_width, 0.6*screen_height)
@@ -947,4 +937,15 @@ if __name__ == '__main__':
     ui  = boxUI()
     app.exec_()
 
-    #app.quit()
+    udp.UDP_EXIT = True
+    udp.server.join()
+    if not udp.server.is_alive():
+        print ('UDP server closed')
+
+    '''self.main_widget.timerSpectra_plot.stop()
+    print ('timer is stopped')
+    self.main_widget.timer_contin_mode.stop()
+    self.main_widget.timerSensUpd.stop()
+    self.main_widget.close()
+    print ('ended')'''
+#app.quit()
