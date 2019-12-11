@@ -53,7 +53,7 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)
 
-        ''
+        '''
 
         '''self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
