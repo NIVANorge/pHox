@@ -4,7 +4,7 @@ import serial.tools.list_ports
 #from ADCDifferentialPi import ADCDifferentialPi
 import json
 import numpy as np
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import time
 
 
