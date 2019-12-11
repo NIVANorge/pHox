@@ -919,10 +919,10 @@ if __name__ == '__main__':
     ui  = boxUI()
     app.exec_()
 
-    udp.UDP_EXIT = True
-    udp.server.join()
-    if not udp.server.is_alive():
-        print ('UDP server closed')
+    #udp.UDP_EXIT = True
+    #udp.server.join()
+    #if not udp.server.is_alive():
+    #    print ('UDP server closed')
 
     '''self.main_widget.timerSpectra_plot.stop()
     print ('timer is stopped')
