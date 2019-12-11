@@ -37,6 +37,12 @@ class Sample_thread(QtCore.QThread):
         ## SAMPLE SHOULD BE IN A THREAD
 
         self.mainclass.on_dark_clicked()
+        # take dark on every sample        
+         
+        self.mainclass.on_autoAdjust_clicked()      
+        self.mainclass.set_LEDs(True)
+        self.mainclass.btn_leds.setChecked(True)    
+            
         print ('TEST THREAD')
         '''if not fbox['pumping']:
             return
@@ -52,11 +58,7 @@ class Sample_thread(QtCore.QThread):
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))'
 
-        # take dark on every sample        
-         
-        self.mainclass.on_autoAdjust_clicked()      
-        self.mainclass.set_LEDs(True)
-        self.mainclass.btn_leds.setChecked(True)
+
 
     
         self.instrument.evalPar =[]
