@@ -29,9 +29,11 @@ class Sample_thread(QtCore.QThread):
         nextSample = self.mainclass.get_next_sample()
         print ('nothing2')        
         self.mainclass.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
-         print ('nothing3')  
+        print ('nothing3')  
         self.mainclass.textBox.setText('Start sample')
-        self.mainclass.logTextBox.appendPlainText('Start sample')
+        print ('nothing3')  
+        #self.mainclass.logTextBox.appendPlainText('Start sample')
+        print ('nothing3')  
         ## SAMPLE SHOULD BE IN A THREAD
         print ('TEST THREAD')
 
