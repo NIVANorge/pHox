@@ -14,7 +14,7 @@ import numpy as np
 import pyqtgraph as pg 
 import argparse, socket
 import pandas as pd 
-
+import time 
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
 
@@ -42,8 +42,21 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.on_autoAdjust_clicked()      
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)    
-            
+
         print ('TEST THREAD')
+
+        self.instrument.evalPar =[]
+        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+        if self.instrument.pumpTime > 0: # pump time
+            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
+            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
+            #self.mainclass.logTextBox.appendPlainText("Pumping")
+            #self.mainclass.textBox.setText('Pumping')
+            time.sleep(self.instrument.pumpTime) 
+            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
+            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+
+
         '''if not fbox['pumping']:
             return
         if self.instrument._autodark:
@@ -61,16 +74,7 @@ class Sample_thread(QtCore.QThread):
 
 
     
-        self.instrument.evalPar =[]
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
-        if self.instrument.pumpTime > 0: # pump time
-            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
-            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            self.mainclass.logTextBox.appendPlainText("Pumping")
-            self.mainclass.textBox.setText('Pumping')
-            self.instrument.wait(self.instrument.pumpTime) 
-            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+
 
         # close the valve
         self.instrument.set_Valve(True)
