@@ -21,7 +21,7 @@ from udp import Ferrybox as fbox
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
         self.mainclass = mainclass
-        #self.instrument = pH_instrument()
+        self.instrument = pH_instrument()
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
