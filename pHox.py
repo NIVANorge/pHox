@@ -87,7 +87,7 @@ class STSVIS(object):
     def set_scans_average(self,nscans):
         msgType= '\x10\x00\x12\x00'
         immDataLength = '\x02'
-        immData = struct.pack('<H',nscans)+'\x00\x00'
+        immData = struct.pack('<H',nscans) + b'\x00\x00'
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
         time.sleep(0.5)
 
@@ -99,9 +99,9 @@ class STSVIS(object):
 
         wvlCalCoeff = []
         for i in range(4):
-            immData = struct.pack('B',i)+'\x00\x00\x00'
+            immData = struct.pack('B',i) + b'\x00\x00\x00'
             self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
-            rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000) #reseive message 
+            rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000) #receive message 
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
         return wvlCalCoeff
           
