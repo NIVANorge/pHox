@@ -194,7 +194,7 @@ class Sample_thread(QtCore.QThread):
 
 class Panel(QtGui.QWidget):
     def __init__(self):
-        super(Panel, self).__init__()
+        #super(Panel, self).__init__()
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--debug",
@@ -883,33 +883,14 @@ class Panel(QtGui.QWidget):
       
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
-        super(boxUI,self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         #
         self.setWindowTitle('NIVA - pH')
 
-        '''root = tk.Tk()
-
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()'''
-
-        self.main_widget = Panel()
+        self.main_widget = Panel(self)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
-
-
-        
-        '''if screen_width > 1200: 
-            self.resize(0.6*screen_width, 0.6*screen_height)
-            self.show()
-        else:
-            self.resize(0.99*screen_width, 0.88*screen_height)
-            self.showMaximized()
-
-
-        if self.table_widget.instrument.value == 'Fail' : 
-            self.table_widget.showdialog()'''        
-        return
 
 if __name__ == '__main__':
 
