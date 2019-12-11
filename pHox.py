@@ -40,9 +40,9 @@ class STSVIS(object):
         self.EP2_in = 0x82
         self.EP2_out = 0x02
 
-        self.gcsCmd = self.build_packet('\x00\x10\x10\x00','\x00','\x00\x00\x00\x00')
+        self.gcsCmd = self.build_packet(b'\x00\x10\x10\x00',b'\x00',b'\x00\x00\x00\x00')
         self.pixels = 1024
-        self.nWvlCalCoeff = '\x00\x01\x02\x03'
+        self.nWvlCalCoeff = b'\x00\x01\x02\x03'
         self.reset_device()
         time.sleep(0.5)
         self.wvlCalCoeff = self.get_wvlCalCoeff()
@@ -65,9 +65,9 @@ class STSVIS(object):
         return packet
     
     def reset_device (self):
-        msgType = '\x00'*4
-        immDataLength = '\x00'
-        immData = '\x00'*4
+        msgType = b'\x00'*4
+        immDataLength = b'\x00'
+        immData = b'\x00'*4
         try:
             self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
         except usb.core.USBError:
@@ -78,15 +78,15 @@ class STSVIS(object):
             raise ValueError('Device not found')        
             
     def set_integration_time(self,time_ms):
-        msgType= '\x10\x00\x11\x00'
-        immDataLength = '\x04'
+        msgType= b'\x10\x00\x11\x00'
+        immDataLength = b'\x04'
         immData = struct.pack('<I',time_ms*1000)
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
         time.sleep(0.5)
 
     def set_scans_average(self,nscans):
-        msgType= '\x10\x00\x12\x00'
-        immDataLength = '\x02'
+        msgType= b'\x10\x00\x12\x00'
+        immDataLength = b'\x02'
         immData = struct.pack('<H',nscans) + b'\x00\x00'
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
         time.sleep(0.5)
@@ -94,8 +94,8 @@ class STSVIS(object):
     def get_wvlCalCoeff(self):
         #get the coefficients
         print ('Getting wavelength calibration coefficients...')
-        msgType = '\x01\x01\x18\x00'
-        immDataLength= '\x01'
+        msgType = b'\x01\x01\x18\x00'
+        immDataLength= b'\x01'
 
         wvlCalCoeff = []
         for i in range(4):
