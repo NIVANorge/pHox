@@ -14,7 +14,7 @@ import time
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
 import pigpio
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import numpy as np
 import random
 import pandas as pd 

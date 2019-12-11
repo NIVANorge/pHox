@@ -6,10 +6,10 @@ import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
 
-import warnings, time, pigpio
+import warnings, time, RPi.GPIO 
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg 
 import argparse, socket
@@ -17,24 +17,6 @@ import pandas as pd
 
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
-
-'''class Console(QtGui.QWidget):
-   
-   def __init__(self):
-      super(Console, self).__init__()
-      self.init_ui()
-
-   def init_ui(self):
-      self.setWindowTitle('Console')
-      self.textBox = QtGui.QTextEdit()
-      grid = QtGui.QGridLayout()
-      grid.addWidget(self.textBox)
-      self.setLayout(grid)
-      self.resize(800,200)
-      self.show()
-
-   def printText(self, text):
-      self.textBox.append(text)'''
 
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
