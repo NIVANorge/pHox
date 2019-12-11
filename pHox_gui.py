@@ -194,7 +194,7 @@ class Sample_thread(QtCore.QThread):
 
 class Panel(QtGui.QWidget):
     def __init__(self,parent):
-        super(QWidget, self).__init__(parent)
+        super(QtGui.QWidget, self).__init__(parent)
         #super(Panel, self).__init__()
 
         parser = argparse.ArgumentParser()
