@@ -25,17 +25,17 @@ class Sample_thread(QtCore.QThread):
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
-
+        print ('nothing')
         nextSample = self.mainclass.get_next_sample()
         self.mainclass.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
    
         self.mainclass.textBox.setText('Start sample')
         self.mainclass.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
-
-        if not fbox['pumping']:
+        print ('TEST THREAD')
+        '''if not fbox['pumping']:
             return
-        '''if self.instrument._autodark:
+        if self.instrument._autodark:
 
             now = datetime.now()
             # self.instrument._autodark should be interval 
@@ -45,7 +45,7 @@ class Sample_thread(QtCore.QThread):
                 self.on_dark_clicked()
             else:
                 self.logTextBox.appendPlainText('next dark at time..x') 
-                #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))'''
+                #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))'
 
         # take dark on every sample        
         self.mainclass.on_dark_clicked() 
@@ -53,7 +53,7 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)
 
-        print ('TEST THREAD')
+        ''
 
         '''self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
@@ -213,7 +213,7 @@ class Panel(QtGui.QWidget):
 
         self.init_ui()
 
-        self.timerSensUpd.start(2000)
+        #self.timerSensUpd.start(2000)
 
     def init_ui(self):
 
