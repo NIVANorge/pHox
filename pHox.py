@@ -61,7 +61,7 @@ class STSVIS(object):
         footer = '\xC5\xC4\xC3\xC2'
         packet = headerTop + protocolVersion + flags + errorNumber + messageType +\
             regarding + reserved + checksumType + immediateDataLength +\
-            immediateData + unused + bytesRemaining + checksum + footer
+            str(immediateData) + unused + bytesRemaining + checksum + footer
         return packet
     
     def reset_device (self):
