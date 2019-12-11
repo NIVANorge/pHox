@@ -33,6 +33,7 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
         print ('TEST THREAD')
+        
         '''if not fbox['pumping']:
             return
         if self.instrument._autodark:
@@ -53,9 +54,8 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)
 
-        '''
-
-        '''self.instrument.evalPar =[]
+    
+        self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
         if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
@@ -64,9 +64,9 @@ class Sample_thread(QtCore.QThread):
             self.mainclass.textBox.setText('Pumping')
             self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer'''
+            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
-        '''# close the valve
+        # close the valve
         self.instrument.set_Valve(True)
         self.mainclass.logTextBox.appendPlainText("Waiting...")
         self.mainclass.textBox.setText("Waiting...")
