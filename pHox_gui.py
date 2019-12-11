@@ -193,7 +193,8 @@ class Sample_thread(QtCore.QThread):
         self.mainclass.logTextBox.appendPlainText('Single measurement is done...')'''
 
 class Panel(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self,parent):
+        super(QWidget, self).__init__(parent)
         #super(Panel, self).__init__()
 
         parser = argparse.ArgumentParser()
