@@ -48,20 +48,20 @@ class STSVIS(object):
         self.wvlCalCoeff = self.get_wvlCalCoeff()
                
     def build_packet(self,messageType, immediateDataLength, immediateData):
-        headerTop = '\xC1\xC0'
-        protocolVersion = '\x00\x10'
-        flags = '\x00\x00'
-        errorNumber = '\x00\x00'
-        regarding = '\x00'*4
-        reserved = '\x00'*6
-        checksumType = '\x00'
-        unused = '\x00'*12
-        bytesRemaining = '\x14\x00\x00\x00'
-        checksum = '\x00'*16
-        footer = '\xC5\xC4\xC3\xC2'
+        headerTop = b'\xC1\xC0'
+        protocolVersion = b'\x00\x10'
+        flags = b'\x00\x00'
+        errorNumber = b'\x00\x00'
+        regarding = b'\x00'*4
+        reserved = b'\x00'*6
+        checksumType = b'\x00'
+        unused = b'\x00'*12
+        bytesRemaining = b'\x14\x00\x00\x00'
+        checksum = b'\x00'*16
+        footer = b'\xC5\xC4\xC3\xC2'
         packet = headerTop + protocolVersion + flags + errorNumber + messageType +\
             regarding + reserved + checksumType + immediateDataLength +\
-            str(immediateData) + unused + bytesRemaining + checksum + footer
+            immediateData + unused + bytesRemaining + checksum + footer
         return packet
     
     def reset_device (self):
