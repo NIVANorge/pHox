@@ -30,13 +30,14 @@ class Sample_thread(QtCore.QThread):
         print ('nothing2')        
         self.mainclass.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
         print ('nothing3')  
-        self.mainclass.textBox.setText('Start sample')
+        #self.mainclass.textBox.setText('Start sample')
         print ('nothing3')  
         #self.mainclass.logTextBox.appendPlainText('Start sample')
         print ('nothing3')  
         ## SAMPLE SHOULD BE IN A THREAD
-        print ('TEST THREAD')
 
+        self.mainclass.on_dark_clicked()
+        print ('TEST THREAD')
         '''if not fbox['pumping']:
             return
         if self.instrument._autodark:
@@ -52,7 +53,7 @@ class Sample_thread(QtCore.QThread):
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))'
 
         # take dark on every sample        
-        self.mainclass.on_dark_clicked() 
+         
         self.mainclass.on_autoAdjust_clicked()      
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)
