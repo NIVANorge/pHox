@@ -27,13 +27,14 @@ class Sample_thread(QtCore.QThread):
     def run(self):
         print ('nothing')
         nextSample = self.mainclass.get_next_sample()
+        print ('nothing2')        
         self.mainclass.nextSampleBox.setText('Next pH sample at {}'.format(nextSample))
-   
+         print ('nothing3')  
         self.mainclass.textBox.setText('Start sample')
         self.mainclass.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
         print ('TEST THREAD')
-        
+
         '''if not fbox['pumping']:
             return
         if self.instrument._autodark:
