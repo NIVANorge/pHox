@@ -995,21 +995,21 @@ class Panel(QtGui.QWidget):
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
             # Write spectrum to the file 
-            self.instrument.spCounts_df[str(pinj)] = postinj 
+            self.spCounts_df[str(pinj)] = postinj 
 
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
             print ('postinj_min_dark')
             # coefficient for blank ??? 
             cfb = (self.instrument.nlCoeff[0] + 
-                    self.instrument.nlCoeff[1]*blank_min_dark + 
+                    self.instrument.nlCoeff[1] * blank_min_dark + 
                     self.instrument.nlCoeff[2] * blank_min_dark**2)
 
             cfp = (self.instrument.nlCoeff[0] +
-                    self.instrument.nlCoeff[1]*postinj_min_dark + 
+                    self.instrument.nlCoeff[1] * postinj_min_dark + 
                     self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
-            bmdCorr = blank_min_dark* cfb
+            bmdCorr = blank_min_dark * cfb
             pmdCorr = postinj_min_dark * cfp
             spAbs = np.log10(bmdCorr/pmdCorr)
             sp = np.log10(blank_min_dark/postinj_min_dark)            
@@ -1031,7 +1031,7 @@ class Panel(QtGui.QWidget):
         # opening the valve
         self.instrument.set_Valve(False)
 
-        self.instrument.spCounts_df.T.to_csv(
+        self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
 
