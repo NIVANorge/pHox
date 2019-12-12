@@ -307,6 +307,7 @@ class pH_instrument(object):
         return DC,adj
 
     def auto_adjust(self):
+        self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
 

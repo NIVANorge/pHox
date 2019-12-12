@@ -635,7 +635,7 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     def on_autoAdjust_clicked(self):
-        self.textBox.setText('Autoadjusting leds')
+        #
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         print (DC1,DC2,DC3)
         if result:
