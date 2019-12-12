@@ -89,7 +89,7 @@ class STSVIS(object):
         msgType= b'\x10\x00\x12\x00'
         immDataLength = b'\x02'
         print ('struct')
-        immData = struct.pack('<H',nscans) + b'\x00\x00'
+        immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
         time.sleep(0.5)
 
