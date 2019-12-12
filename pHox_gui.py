@@ -17,6 +17,9 @@ import pandas as pd
 import time 
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
+import util
+
+
 
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
@@ -574,19 +577,21 @@ class Panel(QtGui.QWidget):
         return
 
     def btn_cont_meas_clicked(self):
+        self.mode = 'Continuous'
         state = self.btn_cont_meas.isChecked()
         if state:
             nextSamplename = self.get_next_sample()
             self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
+            self.mode = 'Single'
             self.nextSampleBox.clear()            
             self.timer_contin_mode.stop()
 
     def btn_single_meas_clicked(self):
         #self.timerSpectra_plot.stop()
         self.get_filename()
-
+        self.mode = 'Single'
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', 
                                         self.instrument.flnmStr)
@@ -617,6 +622,7 @@ class Panel(QtGui.QWidget):
 
     def continuous_mode_timer_finished(self):
         self.logTextBox.appendPlainText('Inside continuous_mode...')
+
         #self.timerSpectra_plot.stop()
         self.instrument.reset_lines()
 
@@ -775,14 +781,13 @@ class Panel(QtGui.QWidget):
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
-        if self.instrument.pumpTime > 0: # pump time
-            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
-            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            time.sleep(self.instrument.pumpTime)
-            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+        if self.deployment == 'Standalone' and self.mode == 'Continuous':
+            self.pumping(self.instrument.pumpTime) 
+            self.logTextBox.appendPlainText('Pumping, Standalone, Continous')
 
-        # close the valve
+        elif self.mode == 'Calibration':
+            self.pumping(self.instrument.pumpTime) 
+            self.logTextBox.appendPlainText('Pumping, Calibration')     
 
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
@@ -797,15 +802,14 @@ class Panel(QtGui.QWidget):
         blank_min_dark= np.clip(blank - dark,1,16000)
         self.spCounts_df['blank'] = blank 
 
-        #self.logTextBox.appendPlainText(' ')
-        #self.logTextBox.appendPlainText(
-        #    'Start new cycle of {} measurements'.format( self.instrument.nshots))
-
-        for pinj in range(self.instrument.ncycles):
-            self.sample_steps[pinj+3].setChecked(True)
+        for n_inj in range(self.instrument.ncycles):
+            self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
+
+            dilution = (self.Cuvette_V) / (self.dye_vol_inj*(n_inj+1)*nshots +self.Cuvette_V))
+
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
+            self.logTextBox.appendPlainText('Injection %d:' %(n_inj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -827,7 +831,7 @@ class Panel(QtGui.QWidget):
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
             # Write spectrum to the file 
-            self.spCounts_df[str(pinj)] = postinj 
+            self.spCounts_df[str(n_inj)] = postinj 
 
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
@@ -853,7 +857,7 @@ class Panel(QtGui.QWidget):
                     spAbsMA[i]= np.mean(v)"""
 
             self.plotAbs.setData(self.wvls,spAbs)
-            self.instrument.calc_pH(spAbs,vNTC,pinj)
+            self.instrument.calc_pH(spAbs,vNTC,dilution)
 
         # opening the valve
         self.instrument.set_Valve(False)
@@ -897,6 +901,13 @@ class Panel(QtGui.QWidget):
         self.instrument.spectrometer.set_scans_average(1)        
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
+
+        def pumping(self,pumpTime):    
+            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
+            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
+            time.sleep(pumpTime)
+            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
+            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
     def save_logfile(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)

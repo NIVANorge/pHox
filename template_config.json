@@ -36,7 +36,9 @@
         "waitTime" : 3,
         "ncycles" : 4,
         "dye_nshots" : 1,
-        "Spectro_Integration_time": 500
+        "Spectro_Integration_time": 500,
+        "Deployment_mode": "Ferry",
+        "comment Deployment_mode":"#modes can be Ferry or Standalone "
     },
 
     "intervals":{

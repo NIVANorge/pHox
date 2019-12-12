@@ -18,7 +18,7 @@ from PyQt5 import QtGui, QtCore
 import numpy as np
 import random
 import pandas as pd 
-
+import util
 # UDP stuff
 import udp
 
@@ -232,7 +232,7 @@ class pH_instrument(object):
         self.LED2 = default["LED1"]
         self.LED3 = default["LED2"]
         self.specIntTime = default['Spectro_Integration_time']
-
+        self.deployment = default['Deployment_mode']
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
@@ -399,38 +399,35 @@ class pH_instrument(object):
         return V/nAver
 
 
-    def calc_pH(self,absSp, vNTC,pinj):
+    def calc_pH(self,absSp, vNTC,dilution):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-            #print 'T sample : %.2f' %Tdeg
-            #self.logTextBox.appendPlainText('Taking dark level...')
 
         T = 273.15 + Tdeg
         A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
                         absSp[self.wvlPixels[1]],
                         absSp[self.wvlPixels[2]])
 
-        # volume in ml
-        fcS = self.fb_data['salinity'] * (
-              (self.Cuvette_V)/(self.dye_vol_inj*(pinj+1)+self.Cuvette_V))
+        S_corr = self.fb_data['salinity'] * dilution 
+
         R = A2/A1
         
         if self.dye == 'TB':
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
             e3 = 0.0223 + 0.0003917*T
-            pK = 4.706*(fcS/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*fcS
+            pK = 4.706*(S_corr/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*S_corr
             arg = (R - e1)/(e2 - R*e3)
             pH = 0.0047 + pK + np.log10(arg)
 
         elif self.dye == 'MCP':
             e1=-0.007762+(4.5174*10**-5)*T
-            e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(fcS-35)
+            e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(S_corr-35)
             arg = (R - e1)/(1 - R*e2e3)
-            pK = (5.561224-(0.547716*fcS**0.5)+(0.123791*fcS)-(0.0280156*fcS**1.5)+
-                 (0.00344940*fcS**2)-(0.000167297*fcS**2.5)+
-                 ((52.640726*fcS**0.5)*T**-1)+(815.984591*T**-1))
+            pK = (5.561224-(0.547716*S_corr**0.5)+(0.123791*S_corr)-(0.0280156*S_corr**1.5)+
+                 (0.00344940*S_corr**2)-(0.000167297*S_corr**2.5)+
+                 ((52.640726*S_corr**0.5)*T**-1)+(815.984591*T**-1))
             if arg > 0: 
                 pH = pK + np.log10(arg)
             else:
@@ -443,7 +440,7 @@ class pH_instrument(object):
 
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
-                            Tdeg, self.dye_vol_inj, fcS, Anir])
+                            Tdeg, self.dye_vol_inj, S_corr, Anir])
         return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
         
     def pH_eval(self):
@@ -461,6 +458,7 @@ class pH_instrument(object):
 
         evalpH = [self.evalPar[i][0] for i in range(n)]
         pH_lab = evalpH[0] # pH at cuvette temp at this step
+
         refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
@@ -470,6 +468,12 @@ class pH_instrument(object):
             A = np.vstack([x, np.ones(len(x))]).T
             #pert is slope , Ph-lab is intercept
             pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
+            # calc r square between pert,pH_lab
+            # if r_square  > 0.9 
+            # pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
+            # else: 
+            #  pass
+
         # pH at in situ 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
