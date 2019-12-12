@@ -1058,6 +1058,11 @@ class Panel(QtGui.QWidget):
         # estimated dye perturbation
 
         ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
+
+
+
+
+        print ('log')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
 
         # add temperature Calibrated (TRUE or FALSE)
@@ -1074,9 +1079,10 @@ class Panel(QtGui.QWidget):
             if hdr:
                 logFile.write(hdr + '\n')
             logFile.write(s)
+        print ('udp')
         udp.send_data('PH,' + s)
 
-        self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         self.instrument.spectrometer.set_scans_average(1)        
         self.logTextBox.appendPlainText('Single measurement is done...')
 
