@@ -635,6 +635,7 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     def on_autoAdjust_clicked(self):
+        self.textBox.setText('Autoadjusting leds')
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         print (DC1,DC2,DC3)
         if result:
@@ -944,29 +945,31 @@ class Panel(QtGui.QWidget):
         # close the valve
         print ('valve')
         self.instrument.set_Valve(True)
-        self.logTextBox.appendPlainText("Waiting...")
-        self.textBox.setText("Waiting...")
-        self.instrument.wait(self.instrument.waitT)
+        #self.logTextBox.appendPlainText("Waiting...")
+        #self.textBox.setText("Waiting...")
+        time.sleep(self.instrument.waitT)
+        #self.instrument.wait()
 
         # Take the last measured dark
         dark = self.instrument.spCounts_df['dark']
 
-        self.logTextBox.appendPlainText('Measuring blank...')
-        self.textBox.setText('Measuring blank...')
+        #self.logTextBox.appendPlainText('Measuring blank...')
+        #self.textBox.setText('Measuring blank...')
         
         blank = self.instrument.spectrometer.get_corrected_spectra()
         
         blank_min_dark= np.clip(blank - dark,1,16000)
         self.instrument.spCounts_df['blank'] = blank 
 
-        self.logTextBox.appendPlainText(' ')
-        self.logTextBox.appendPlainText(
-            'Start new cycle of {} measurements'.format( self.instrument.nshots))
+        #self.logTextBox.appendPlainText(' ')
+        #self.logTextBox.appendPlainText(
+        #    'Start new cycle of {} measurements'.format( self.instrument.nshots))
         for pinj in range(self.instrument.ncycles):
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
-            self.textBox.setText('Injection %d:' %(pinj+1))
+            print ('Injection %d:' %(pinj+1))
+            #self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
+            #self.textBox.setText('Injection %d:' %(pinj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -974,13 +977,15 @@ class Panel(QtGui.QWidget):
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            self.logTextBox.appendPlainText("Mixing")
-            self.instrument.wait(self.instrument.mixT)
+            #self.logTextBox.appendPlainText("Mixing")
+            time.sleep(self.instrument.mixT)
+            #self.instrument.wait(self.instrument.mixT)
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
 
-            self.logTextBox.appendPlainText("wait before starting the measurment")
-            self.instrument.wait(self.instrument.waitT)
+            #self.logTextBox.appendPlainText("wait before starting the measurment")
+            time.sleep(self.instrument.waitT)
+            #self.instrument.wait(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
             postinj = self.instrument.spectrometer.get_corrected_spectra()
@@ -993,7 +998,7 @@ class Panel(QtGui.QWidget):
 
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
-
+            print ('postinj_min_dark')
             # coefficient for blank ??? 
             cfb = (self.instrument.nlCoeff[0] + 
                     self.instrument.nlCoeff[1]*blank_min_dark + 
