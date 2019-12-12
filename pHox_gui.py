@@ -142,7 +142,7 @@ class Panel(QtGui.QWidget):
 
     def make_tab_progress(self):
 
-        self.sample_steps_groupBox = QWidgets.QGroupBox("Measuring Progress")
+        self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [  
                         QCheckBox('0. step'),
