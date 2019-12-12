@@ -145,17 +145,16 @@ class Panel(QtGui.QWidget):
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [  
-                        QtWidgets.QCheckBox('0. Start new sample'),
-                        QtWidgets.QCheckBox('1. step'),
-                        QtWidgets.QCheckBox('2  step?'),
+                        QtWidgets.QCheckBox('0. Start new measurement'),
+                        QtWidgets.QCheckBox('1. Adjusting LEDS'),
+                        QtWidgets.QCheckBox('2  Measuring blank'),
 
-                        QtWidgets.QCheckBox('3. step'), 
-                        QtWidgets.QCheckBox('4. step'),                        
-                        QtWidgets.QCheckBox('5. step'),
-
-                        QtWidgets.QCheckBox("6. step"),
-                        QtWidgets.QCheckBox("7. step"),
-                        QtWidgets.QCheckBox("8. step")
+                        QtWidgets.QCheckBox('3. Measurement 1'), 
+                        QtWidgets.QCheckBox('4. Measurement 2'),                        
+                        QtWidgets.QCheckBox('5. Measurement 3'),
+                        QtWidgets.QCheckBox("6. Measurement 4"),
+                        QtWidgets.QCheckBox("7. Save the Data"),
+                        QtWidgets.QCheckBox("8. Finished")
                         ]
 
         ###self.calibr_timer = QLineEdit()
@@ -603,6 +602,7 @@ class Panel(QtGui.QWidget):
     def sample_finished(self):
         self.nextSampleBox.clear()  
 
+
     def get_V(self, nAver, ch):
         V = 0.0000
         for i in range (nAver):
@@ -626,9 +626,6 @@ class Panel(QtGui.QWidget):
         #
         self.sample_thread.finished.connect(self.sample_finished)
 
-
-
-    
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
@@ -642,9 +639,6 @@ class Panel(QtGui.QWidget):
         self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
         self.update_LEDs()
-
-        ##self.btn_spectro.setChecked(True)
-        #self.spectro_clicked()
         # turn on leds 
         self.btn_leds.setChecked(True)
         self.timerSpectra_plot.start(500)
@@ -753,17 +747,12 @@ class Panel(QtGui.QWidget):
     def sample(self):   
 
         self.sample_steps[0].setChecked(True)
-        
-        print ('Start sample')
-        #self.textBox.setText('Start sample')
-        self.logTextBox.appendPlainText('Start sample')
-        ## SAMPLE SHOULD BE IN A THREAD
+        self.logTextBox.appendPlainText('Start new measurement')
 
         if not fbox['pumping']:
             return
         if self.instrument._autodark:
             now = datetime.now()
-            # self.instrument._autodark should be interval 
             if (self.instrument.last_dark is None) or (
                 (now - self.instrument.last_dark) >= self.instrument._autodark):
                 self.logTextBox.appendPlainText('New dark required')
@@ -775,36 +764,34 @@ class Panel(QtGui.QWidget):
         # take dark on every sample
         print ('dark')        
         self.on_dark_clicked() 
-        self.on_autoAdjust_clicked()      
+
+        self.logTextBox.appendPlainText('Autoadjust LEDS')
+        self.sample_steps[1].setChecked(True)
+        self.on_autoAdjust_clicked()  
+
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+
         if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            #self.logTextBox.appendPlainText("Pumping")
-            #self.textBox.setText('Pumping')
             time.sleep(self.instrument.pumpTime)
-            #self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
-        print ('valve')
+
         self.instrument.set_Valve(True)
-        #self.logTextBox.appendPlainText("Waiting...")
-        #self.textBox.setText("Waiting...")
         time.sleep(self.instrument.waitT)
-        #self.instrument.wait()
 
         # Take the last measured dark
         dark = self.spCounts_df['dark']
 
-        #self.logTextBox.appendPlainText('Measuring blank...')
-        #self.textBox.setText('Measuring blank...')
-        
+        self.logTextBox.appendPlainText('Measuring blank...')
+        self.sample_steps[2].setChecked(True)
         blank = self.instrument.spectrometer.get_corrected_spectra()
         
         blank_min_dark= np.clip(blank - dark,1,16000)
@@ -813,12 +800,12 @@ class Panel(QtGui.QWidget):
         #self.logTextBox.appendPlainText(' ')
         #self.logTextBox.appendPlainText(
         #    'Start new cycle of {} measurements'.format( self.instrument.nshots))
+
         for pinj in range(self.instrument.ncycles):
+            self.sample_steps[pinj+3].setChecked(True)
             shots = self.instrument.nshots
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            print ('Injection %d:' %(pinj+1))
-            #self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
-            #self.textBox.setText('Injection %d:' %(pinj+1))
+            self.logTextBox.appendPlainText('Injection %d:' %(pinj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -828,13 +815,10 @@ class Panel(QtGui.QWidget):
 
             self.logTextBox.appendPlainText("Mixing")
             time.sleep(self.instrument.mixT)
-            #self.instrument.wait(self.instrument.mixT)
+
             # turn off the stirrer
             self.instrument.set_line(self.instrument.stirrer_slot, False)
-
-            #self.logTextBox.appendPlainText("wait before starting the measurment")
             time.sleep(self.instrument.waitT)
-            #self.instrument.wait(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
             postinj = self.instrument.spectrometer.get_corrected_spectra()
@@ -848,7 +832,7 @@ class Panel(QtGui.QWidget):
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
             print ('postinj_min_dark')
-            # coefficient for blank ??? 
+
             cfb = (self.instrument.nlCoeff[0] + 
                     self.instrument.nlCoeff[1] * blank_min_dark + 
                     self.instrument.nlCoeff[2] * blank_min_dark**2)
@@ -869,7 +853,8 @@ class Panel(QtGui.QWidget):
                     spAbsMA[i]= np.mean(v)"""
 
             self.plotAbs.setData(self.wvls,spAbs)
-            Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
+            self.instrument.calc_pH(spAbs,vNTC,pinj)
+            #Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
             
             '''self.logTextBox.appendPlainText(
                 'Tdeg = {:.4f}, pK = {:.4f}, e1= {:.6f}, e2= {:.6f}, e3 = {:.6f}'.format(Tdeg, pK, e1, e2, e3))
@@ -878,8 +863,10 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-        print ('create sptfile ')
+
         time.sleep(2)
+        self.logTextBox.appendPlainText('Save data to file')
+        self.sample_steps[7].setChecked(True)
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
@@ -907,32 +894,34 @@ class Panel(QtGui.QWidget):
 
         ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
-
-
-
         print ('log')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        
+        self.save_logfile()
 
+        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+        self.instrument.spectrometer.set_scans_average(1)        
+        self.logTextBox.appendPlainText('Single measurement is done...')
+        self.sample_steps[8].setChecked(True)
+
+    def save_logfile(self):
         # add temperature Calibrated (TRUE or FALSE)
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
         if not os.path.exists(logfile):
             hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
         s = self.instrument.timeStamp[0:16]
-        s+= ',%.6f,%.6f,%.3f,%.3f' % (fbox['longitude'], 
-            fbox['latitude'], fbox['temperature'], fbox['salinity'])
+        s+= ',%.6f,%.6f,%.3f,%.3f' % (
+            fbox['longitude'], fbox['latitude'],
+            fbox['temperature'], fbox['salinity'])
+
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
         s+= '\n'
         with open(logfile,'a') as logFile:
             if hdr:
                 logFile.write(hdr + '\n')
             logFile.write(s)
-        print ('udp')
         udp.send_data('PH,' + s)
-
-        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
-        self.instrument.spectrometer.set_scans_average(1)        
-        self.logTextBox.appendPlainText('Single measurement is done...')
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
