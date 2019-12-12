@@ -908,7 +908,7 @@ class Panel(QtGui.QWidget):
 
         print ('Start sample')
         #self.textBox.setText('Start sample')
-        #self.logTextBox.appendPlainText('Start sample')
+        self.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
 
         if not fbox['pumping']:
@@ -952,7 +952,7 @@ class Panel(QtGui.QWidget):
         #self.instrument.wait()
 
         # Take the last measured dark
-        dark = self.instrument.spCounts_df['dark']
+        dark = self.spCounts_df['dark']
 
         #self.logTextBox.appendPlainText('Measuring blank...')
         #self.textBox.setText('Measuring blank...')
@@ -960,7 +960,7 @@ class Panel(QtGui.QWidget):
         blank = self.instrument.spectrometer.get_corrected_spectra()
         
         blank_min_dark= np.clip(blank - dark,1,16000)
-        self.instrument.spCounts_df['blank'] = blank 
+        self.spCounts_df['blank'] = blank 
 
         #self.logTextBox.appendPlainText(' ')
         #self.logTextBox.appendPlainText(
@@ -978,7 +978,7 @@ class Panel(QtGui.QWidget):
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            #self.logTextBox.appendPlainText("Mixing")
+            self.logTextBox.appendPlainText("Mixing")
             time.sleep(self.instrument.mixT)
             #self.instrument.wait(self.instrument.mixT)
             # turn off the stirrer
