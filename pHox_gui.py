@@ -56,7 +56,7 @@ class Panel(QtGui.QWidget):
         self.tabs = QtGui.QTabWidget()
 
         self.tab1 =        QtGui.QWidget()
-        self.progress =    QtGui.QWidget()        
+        self.tab_progress =    QtGui.QWidget()        
         self.tab_manual =  QtGui.QWidget()
         self.tab_log =     QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
@@ -88,7 +88,7 @@ class Panel(QtGui.QWidget):
         self.tab_manual.setLayout(self.tab_manual.layout)
 
         self.make_tab1()
-        self.make_tabprogress()        
+        self.make_tab_progress()        
         self.make_tab_config()
         self.make_plotwidgets()
 
@@ -140,7 +140,7 @@ class Panel(QtGui.QWidget):
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
-    def make_tabprogress(self):
+    def make_tab_progress(self):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
@@ -163,14 +163,14 @@ class Panel(QtGui.QWidget):
         
         layout = QGridLayout() 
         
-        self.progress.layout = QtGui.QGridLayout()
+        self.tab_progress.layout = QtGui.QGridLayout()
 
         [step.setEnabled (False) for step in self.sample_steps]      
         [layout.addWidget(step) for step in self.sample_steps]
 
         self.sample_steps_groupBox.setLayout(layout)
-        self.progress.layoutaddWidget(self.sample_steps_groupBox)
-        self.progress.setLayout(self.progress.layout)
+        self.tab_progress.layoutaddWidget(self.sample_steps_groupBox)
+        self.tab_progress.setLayout(self.tab_progress.layout)
         
         #self.tab3.layout.addWidget(self.calibr_progressbars_groupBox,0,0,1,1)  
 
