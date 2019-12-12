@@ -582,6 +582,7 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
+        print ('self.instrument.specAvScans',self.instrument.specAvScans)
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
         self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
         self.instrument.spectrometer.set_scans_average(1)
