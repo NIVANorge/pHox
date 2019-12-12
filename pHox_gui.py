@@ -9,7 +9,7 @@ os.system('clear')
 import warnings, time, RPi.GPIO 
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import numpy as np
 import pyqtgraph as pg 
 import argparse, socket
@@ -142,7 +142,7 @@ class Panel(QtGui.QWidget):
 
     def make_tab_progress(self):
 
-        self.sample_steps_groupBox = QGroupBox("Measuring Progress")
+        self.sample_steps_groupBox = QWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [  
                         QCheckBox('0. step'),
