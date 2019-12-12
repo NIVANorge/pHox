@@ -57,7 +57,7 @@ def udp_server():
 
 def send_data(s):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
-    sock.sendto(bytes(s), (UDP_IP, UDP_SEND))
+    sock.sendto(bytes(s, encoding='utf8'), (UDP_IP, UDP_SEND))
     sock.close()
     return 
     
