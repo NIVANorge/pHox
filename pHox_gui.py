@@ -789,7 +789,7 @@ class Panel(QtGui.QWidget):
         self.instrument.evalPar =[]
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
-        if self.deployment == 'Standalone' and self.mode == 'Continuous':
+        if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
             self.logTextBox.appendPlainText('Pumping, Standalone, Continous')
 
