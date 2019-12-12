@@ -169,7 +169,7 @@ class Panel(QtGui.QWidget):
         [layout.addWidget(step) for step in self.sample_steps]
 
         self.sample_steps_groupBox.setLayout(layout)
-        self.tab_progress.layoutaddWidget(self.sample_steps_groupBox)
+        self.tab_progress.layout.addWidget(self.sample_steps_groupBox)
         self.tab_progress.setLayout(self.tab_progress.layout)
         
         #self.tab3.layout.addWidget(self.calibr_progressbars_groupBox,0,0,1,1)  
