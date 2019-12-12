@@ -192,7 +192,7 @@ class Panel(QtGui.QWidget):
         #self.tab_log.layout.addWidget(self.logTextBox) 
 
         self.btn_cont_meas = self.create_button('Continuous measurements',True)
-        self.btn_single_meas = self.create_button('Single measurement',False)   
+        self.btn_single_meas = self.create_button('Single measurement', True)   
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
@@ -580,16 +580,19 @@ class Panel(QtGui.QWidget):
         self.mode = 'Continuous'
         state = self.btn_cont_meas.isChecked()
         if state:
+            self.btn_single_meas.setEnabled(False) 
             nextSamplename = self.get_next_sample()
             self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
+            self.btn_single_meas.setEnabled(True) 
             self.mode = 'Single'
             self.nextSampleBox.clear()            
             self.timer_contin_mode.stop()
 
     def btn_single_meas_clicked(self):
         #self.timerSpectra_plot.stop()
+        self.btn_cont_meas.setEnabled(False) 
         self.get_filename()
         self.mode = 'Single'
         # dialog sample name  
@@ -601,10 +604,16 @@ class Panel(QtGui.QWidget):
             self.instrument.reset_lines()
             self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
-            self.sample_thread.finished.connect(self.sample_finished)
+            self.sample_thread.finished.connect(self.single_sample_finished)
             #self.sample()
 
-    def sample_finished(self):
+    def single_sample_finished(self):
+        self.nextSampleBox.clear()  
+        self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        self.btn_single_meas.setChecked(False)
+        self.btn_cont_meas.setEnabled(True) 
+
+    def continuous_sample_finished(self):
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
 
@@ -629,8 +638,7 @@ class Panel(QtGui.QWidget):
         #self.sample()
         self.sample_thread = Sample_thread(self)
         self.sample_thread.start()
-        #
-        self.sample_thread.finished.connect(self.sample_finished)
+        self.sample_thread.finished.connect(self.continuous_sample_finished)
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
