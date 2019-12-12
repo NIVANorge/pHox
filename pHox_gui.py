@@ -597,7 +597,7 @@ class Panel(QtGui.QWidget):
             self.instrument.reset_lines()
             self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
-            self.thread.finished.connect(self.sample_finished)
+            self.sample_thread.finished.connect(self.sample_finished)
             #self.sample()
 
     def sample_finished(self):
