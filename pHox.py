@@ -164,9 +164,6 @@ class pH_instrument(object):
 
         self.reset_lines()
 
-
-
-
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
@@ -307,7 +304,8 @@ class pH_instrument(object):
         return DC,adj
 
     def auto_adjust(self):
-        self.textBox.setText('Autoadjusting leds')
+        
+        #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
         self.spectrometer.set_scans_average(1)
 

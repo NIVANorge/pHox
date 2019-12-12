@@ -636,6 +636,7 @@ class Panel(QtGui.QWidget):
 
     def on_autoAdjust_clicked(self):
         #
+        self.logTextBox.appendPlainText('on_autoAdjust_clicked')
         DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
         print (DC1,DC2,DC3)
         if result:
