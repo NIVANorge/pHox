@@ -38,7 +38,7 @@ class Sample_thread(QtCore.QThread):
 
         self.mainclass.on_dark_clicked()
         # take dark on every sample        
-         
+        time.sleep(10) 
         self.mainclass.on_autoAdjust_clicked()      
         self.mainclass.set_LEDs(True)
         self.mainclass.btn_leds.setChecked(True)    
