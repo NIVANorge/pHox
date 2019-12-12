@@ -601,7 +601,7 @@ class Panel(QtGui.QWidget):
 
     def sample_finished(self):
         self.nextSampleBox.clear()  
-
+        self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -854,12 +854,6 @@ class Panel(QtGui.QWidget):
 
             self.plotAbs.setData(self.wvls,spAbs)
             self.instrument.calc_pH(spAbs,vNTC,pinj)
-            #Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
-            
-            '''self.logTextBox.appendPlainText(
-                'Tdeg = {:.4f}, pK = {:.4f}, e1= {:.6f}, e2= {:.6f}, e3 = {:.6f}'.format(Tdeg, pK, e1, e2, e3))
-            self.logTextBox.appendPlainText(
-                'Anir = {:.2f},R = {}, dye = {}, pH = {:.4f}'.format(Anir,R, dye, pH))'''
 
         # opening the valve
         self.instrument.set_Valve(False)
@@ -887,7 +881,7 @@ class Panel(QtGui.QWidget):
         #matrix with 4 samples pH eval averages something, produces final value
         pHeval = self.instrument.pH_eval()  
         pH_t, refT, pert, evalAnir = pHeval
-
+        self.last_ph = pH_t
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
         # estimated dye perturbation
@@ -897,14 +891,14 @@ class Panel(QtGui.QWidget):
         print ('log')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
-        self.save_logfile()
+        self.save_logfile(pHeval)
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         self.instrument.spectrometer.set_scans_average(1)        
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
 
-    def save_logfile(self):
+    def save_logfile(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
