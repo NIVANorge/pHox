@@ -901,8 +901,11 @@ class Panel(QtGui.QWidget):
         return
 
     def sample(self):        
-        self.textBox.setText('Start sample')
-        self.logTextBox.appendPlainText('Start sample')
+
+
+        print ('Start sample')
+        #self.textBox.setText('Start sample')
+        #self.logTextBox.appendPlainText('Start sample')
         ## SAMPLE SHOULD BE IN A THREAD
 
         if not fbox['pumping']:
@@ -918,7 +921,8 @@ class Panel(QtGui.QWidget):
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
 
-        # take dark on every sample        
+        # take dark on every sample
+        print ('dark')        
         self.on_dark_clicked() 
         self.on_autoAdjust_clicked()      
         self.set_LEDs(True)
@@ -929,13 +933,15 @@ class Panel(QtGui.QWidget):
         if self.instrument.pumpTime > 0: # pump time
             self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
             self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            self.logTextBox.appendPlainText("Pumping")
-            self.textBox.setText('Pumping')
-            self.instrument.wait(self.instrument.pumpTime) 
+            #self.logTextBox.appendPlainText("Pumping")
+            #self.textBox.setText('Pumping')
+            time.sleep(self.instrument.pumpTime)
+            #self.instrument.wait(self.instrument.pumpTime) 
             self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
             self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
         # close the valve
+        print ('valve')
         self.instrument.set_Valve(True)
         self.logTextBox.appendPlainText("Waiting...")
         self.textBox.setText("Waiting...")
