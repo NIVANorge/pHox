@@ -1031,6 +1031,7 @@ class Panel(QtGui.QWidget):
         # opening the valve
         self.instrument.set_Valve(False)
         print ('create sptfile ')
+        time.sleep(2)
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
