@@ -145,17 +145,17 @@ class Panel(QtGui.QWidget):
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [  
-                        QCheckBox('0. step'),
-                        QCheckBox('1. step'),
-                        QCheckBox('2  step?'),
+                        QtWidgets.QCheckBox('0. step'),
+                        QtWidgets.QCheckBox('1. step'),
+                        QtWidgets.QCheckBox('2  step?'),
 
-                        QCheckBox('3. step'), 
-                        QCheckBox('4. step'),                        
-                        QCheckBox('5. step'),
+                        QtWidgets.QCheckBox('3. step'), 
+                        QtWidgets.QCheckBox('4. step'),                        
+                        QtWidgets.QCheckBox('5. step'),
 
-                        QCheckBox("6. step"),
-                        QCheckBox("7. step"),
-                        QCheckBox("8. step")
+                        QtWidgets.QCheckBox("6. step"),
+                        QtWidgets.QCheckBox("7. step"),
+                        QtWidgets.QCheckBox("8. step")
                         ]
 
         ###self.calibr_timer = QLineEdit()
