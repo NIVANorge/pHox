@@ -145,7 +145,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [  
-                        QtWidgets.QCheckBox('0. step'),
+                        QtWidgets.QCheckBox('0. Start new sample'),
                         QtWidgets.QCheckBox('1. step'),
                         QtWidgets.QCheckBox('2  step?'),
 
@@ -750,9 +750,10 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    def sample(self):        
+    def sample(self):   
 
-
+        self.sample_steps[0].setChecked(True)
+        
         print ('Start sample')
         #self.textBox.setText('Start sample')
         self.logTextBox.appendPlainText('Start sample')
