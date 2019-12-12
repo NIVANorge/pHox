@@ -161,7 +161,7 @@ class Panel(QtGui.QWidget):
         ###self.calibr_timer = QLineEdit()
         ####self.calibr_timer.setText('Next calibration after N samples')
         
-        layout = QGridLayout() 
+        layout = QtGui.QGridLayout() 
         
         self.tab_progress.layout = QtGui.QGridLayout()
 
