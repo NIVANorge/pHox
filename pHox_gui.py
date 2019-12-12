@@ -162,10 +162,17 @@ class Panel(QtGui.QWidget):
         ####self.calibr_timer.setText('Next calibration after N samples')
         
         layout = QGridLayout() 
+        
+        self.progress.layout = QtGui.QGridLayout()
+
         [step.setEnabled (False) for step in self.sample_steps]      
         [layout.addWidget(step) for step in self.sample_steps]
-        
+
         self.sample_steps_groupBox.setLayout(layout)
+        self.progress.layoutaddWidget(self.sample_steps_groupBox)
+        self.progress.setLayout(self.progress.layout)
+        
+        #self.tab3.layout.addWidget(self.calibr_progressbars_groupBox,0,0,1,1)  
 
     def make_tab1(self):
         self.tab1.layout = QtGui.QGridLayout()
