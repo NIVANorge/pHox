@@ -221,7 +221,7 @@ class Panel(QtGui.QWidget):
         
         self.instrument = pH_instrument()
 
-        self.wvls = self.instrument.calc_wavelengths(self.spectrometer.wvlCalCoeff)
+        self.wvls = self.instrument.calc_wavelengths(self.instrument.spectrometer.wvlCalCoeff)
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
 
