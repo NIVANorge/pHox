@@ -160,10 +160,10 @@ class pH_instrument(object):
             self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
 
-        self.wvls = self.calc_wavelengths(self.spectrometer.wvlCalCoeff)
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
-        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
         self.reset_lines()
+
+
+
 
     def load_config(self):
         with open('config.json') as json_file:
