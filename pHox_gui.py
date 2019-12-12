@@ -151,7 +151,7 @@ class Sample_thread(QtCore.QThread):
                     v = spAbs[i-nPoints:i+nPoints+1]
                     spAbsMA[i]= np.mean(v)"""
 
-            self.mainclass.plotAbs.setData(self.instrument.wvls,spAbs)
+            self.mainclass.plotAbs.setData(self.wvls,spAbs)
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
             
 
@@ -602,7 +602,7 @@ class Panel(QtGui.QWidget):
 
     def update_spectra_plot(self):
         datay = self.instrument.spectrometer.get_corrected_spectra()
-        self.plotSpc.setData(self.instrument.wvls,datay)                  
+        self.plotSpc.setData(self.wvls,datay)                  
 
     def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
@@ -1007,7 +1007,7 @@ class Panel(QtGui.QWidget):
                     v = spAbs[i-nPoints:i+nPoints+1]
                     spAbsMA[i]= np.mean(v)"""
 
-            self.plotAbs.setData(self.instrument.wvls,spAbs)
+            self.plotAbs.setData(self.wvls,spAbs)
             Tdeg, pK, e1, e2, e3, Anir,R, dye, pH = self.instrument.calc_pH(spAbs,vNTC,pinj)
             
             '''self.logTextBox.appendPlainText(
