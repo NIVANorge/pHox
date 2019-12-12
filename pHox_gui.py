@@ -1030,7 +1030,7 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-
+        print ('create sptfile ')
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
@@ -1038,6 +1038,7 @@ class Panel(QtGui.QWidget):
         # 4 measurements for each measure *product of spectrums 
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
         # T_probe_coef_a, T_probe_coef_b 
+        print ('evl file save')
         flnm = open(self.instrument.folderPath + self.instrument.flnmStr+'.evl','w')
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
