@@ -621,11 +621,13 @@ class Panel(QtGui.QWidget):
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
         self.btn_single_meas.setChecked(False)
+        [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True) 
 
     def continuous_sample_finished(self):
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        [step.setChecked(False) for step in self.sample_steps]
 
     def get_V(self, nAver, ch):
         V = 0.0000
