@@ -35,9 +35,9 @@ QLabel {
 }
 
 
-QSlider::handle:horizontal {
-background: #79c98d;}
+QSlider::handle:horizontal { background: #505F69;}
 
+QSlider::sub-page {background: #79c98d;}
 
 QPushButton {
   font-size: 10pt;
