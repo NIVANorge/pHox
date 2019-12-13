@@ -59,7 +59,7 @@ class Panel(QtGui.QWidget):
         self.tabs = QtGui.QTabWidget()
 
         self.tab1 =        QtGui.QWidget()
-        self.tab_progress =    QtGui.QWidget()        
+        #self.tab_progress =    QtGui.QWidget()        
         self.tab_manual =  QtGui.QWidget()
         self.tab_log =     QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
@@ -67,7 +67,7 @@ class Panel(QtGui.QWidget):
 
         # Add tabs
         self.tabs.addTab(self.tab1,       "Home")
-        self.tabs.addTab(self.tab_progress, "Progress")          
+        #self.tabs.addTab(self.tab_progress, "Progress")          
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_log,    "Log")
         self.tabs.addTab(self.tab_config, "Config") 
@@ -90,10 +90,18 @@ class Panel(QtGui.QWidget):
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
         self.tab_manual.setLayout(self.tab_manual.layout)
 
+        self.make_steps_groupBox()     
         self.make_tab1()
-        self.make_tab_progress()        
+   
         self.make_tab_config()
         self.make_plotwidgets()
+
+
+        #self.tab_progress.layout = QtGui.QGridLayout()
+
+        #self.tab_progress.setLayout(self.tab_progress.layout)
+
+
 
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
@@ -143,7 +151,7 @@ class Panel(QtGui.QWidget):
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
-    def make_tab_progress(self):
+    def make_steps_groupBox(self):
 
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
@@ -151,7 +159,6 @@ class Panel(QtGui.QWidget):
                         QtWidgets.QCheckBox('0. Start new measurement'),
                         QtWidgets.QCheckBox('1. Adjusting LEDS'),
                         QtWidgets.QCheckBox('2  Measuring blank'),
-
                         QtWidgets.QCheckBox('3. Measurement 1'), 
                         QtWidgets.QCheckBox('4. Measurement 2'),                        
                         QtWidgets.QCheckBox('5. Measurement 3'),
@@ -164,15 +171,14 @@ class Panel(QtGui.QWidget):
         ####self.calibr_timer.setText('Next calibration after N samples')
         
         layout = QtGui.QGridLayout() 
-        
-        self.tab_progress.layout = QtGui.QGridLayout()
+
 
         [step.setEnabled (False) for step in self.sample_steps]      
         [layout.addWidget(step) for step in self.sample_steps]
-
         self.sample_steps_groupBox.setLayout(layout)
-        self.tab_progress.layout.addWidget(self.sample_steps_groupBox)
-        self.tab_progress.setLayout(self.tab_progress.layout)
+
+        
+
         
         #self.tab3.layout.addWidget(self.calibr_progressbars_groupBox,0,0,1,1)  
 
@@ -198,9 +204,13 @@ class Panel(QtGui.QWidget):
 
         self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
-        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 2)     
-        self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
-        self.tab1.layout.addWidget(self.textBoxSens,  3, 0, 1, 2)
+
+        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 2)    
+
+        self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,2) 
+
+        #self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
+        #self.tab1.layout.addWidget(self.textBoxSens,  3, 0, 1, 2)
  
         self.tab1.setLayout(self.tab1.layout)
 
@@ -909,12 +919,12 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
 
-        def pumping(self,pumpTime):    
-            self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
-            self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
-            time.sleep(pumpTime)
-            self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-            self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+    def pumping(self,pumpTime):    
+        self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
+        self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
+        time.sleep(pumpTime)
+        self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
+        self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
     def save_logfile(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)

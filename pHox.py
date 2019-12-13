@@ -1,26 +1,21 @@
 #! /usr/bin/python
 
-import json
+import json, warnings
 import os,sys
 os.chdir('/home/pi/pHox')
 os.system('clear')
-import warnings
-import usb.core
-import usb
+import usb, usb.core
 from ADCDACPi import ADCDACPi
 from ADCDifferentialPi import ADCDifferentialPi
-import struct
-import time
+import struct, time
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
 import pigpio
 from PyQt5 import QtGui, QtCore
 import numpy as np
-import random
 import pandas as pd 
-import util
-# UDP stuff
-import udp
+import util,random,udp
+
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
