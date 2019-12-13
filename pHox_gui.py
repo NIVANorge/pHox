@@ -900,7 +900,7 @@ class Panel(QtGui.QWidget):
         time.sleep(2)
         self.logTextBox.appendPlainText('Save data to file')
         self.sample_steps[7].setChecked(True)
-        
+
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
@@ -935,8 +935,7 @@ class Panel(QtGui.QWidget):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
         fl = open(flnm,'w')
 
-        self.evalPar_df.T.to_csv(
-            flnm, index = False, header=True) 
+        self.evalPar_df.T.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl', index = False, header=True) 
 
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
