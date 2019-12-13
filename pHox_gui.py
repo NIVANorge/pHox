@@ -914,6 +914,9 @@ class Panel(QtGui.QWidget):
         #matrix with 4 samples pH eval averages something, produces final value
         pHeval = self.instrument.pH_eval()  
         pH_t, refT, pert, evalAnir = pHeval
+
+
+        
         self.last_ph = pH_t
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
