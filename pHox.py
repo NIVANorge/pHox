@@ -120,7 +120,7 @@ class pH_instrument(object):
         self.rpi = pigpio.pi()
 
         self.evalPar = []
-        #self.evalPar_df = pd.DataFrame()
+        
 
         self.spectrometer = STSVIS()
 
@@ -394,6 +394,52 @@ class pH_instrument(object):
             V += self.adc.read_voltage(channel)
         return V/nAver
 
+    def calc_pH_no_eval(self,absSp, vNTC,dilution):
+        for i in range(4):
+           vNTC2 = self.get_Vd(3, self.vNTCch)
+           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
+
+        T = 273.15 + Tdeg
+        A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
+                        absSp[self.wvlPixels[1]],
+                        absSp[self.wvlPixels[2]])
+
+        S_corr = self.fb_data['salinity'] * dilution 
+
+        R = A2/A1
+        
+        if self.dye == 'TB':
+            e1 = -0.00132 + 1.6E-5*T
+            e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
+            e3 = 0.0223 + 0.0003917*T
+            pK = 4.706*(S_corr/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*S_corr
+            arg = (R - e1)/(e2 - R*e3)
+            pH = 0.0047 + pK + np.log10(arg)
+
+        elif self.dye == 'MCP':
+            e1=-0.007762+(4.5174*10**-5)*T
+            e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(S_corr-35)
+            arg = (R - e1)/(1 - R*e2e3)
+            pK = (5.561224-(0.547716*S_corr**0.5)+(0.123791*S_corr)-(0.0280156*S_corr**1.5)+
+                 (0.00344940*S_corr**2)-(0.000167297*S_corr**2.5)+
+                 ((52.640726*S_corr**0.5)*T**-1)+(815.984591*T**-1))
+            if arg > 0: 
+                pH = pK + np.log10(arg)
+            else:
+                pH = 99.9999
+
+            ## to fit the log file
+            e2,e3 =e2e3,-99
+        else:
+            raise ValueError('wrong DYE: ' + self.dye)
+
+        '''self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
+                            self.fb_data['salinity'], A1, A2,
+                            Tdeg, self.dye_vol_inj, S_corr, Anir])'''
+                            
+        return  [pH, pK, e1, e2, e3, vNTC,
+                            self.fb_data['salinity'], A1, A2,
+                            Tdeg, self.dye_vol_inj, S_corr, Anir]
 
     def calc_pH(self,absSp, vNTC,dilution):
         for i in range(4):

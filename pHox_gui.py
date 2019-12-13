@@ -830,6 +830,11 @@ class Panel(QtGui.QWidget):
         blank_min_dark= np.clip(blank - dark,1,16000)
         self.spCounts_df['blank'] = blank 
 
+        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1", "e2", "e3", "vNTC",
+                 'salinity', "A1", "A2","Tdeg", "self.dye_vol_inj", "S_corr", "Anir"])
+
+
+        # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
@@ -886,12 +891,16 @@ class Panel(QtGui.QWidget):
             self.plotAbs.setData(self.wvls,spAbs)
             self.instrument.calc_pH(spAbs,vNTC,dilution)
 
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_eval(spAbs,vNTC,dilution)
+
+
         # opening the valve
         self.instrument.set_Valve(False)
 
         time.sleep(2)
         self.logTextBox.appendPlainText('Save data to file')
         self.sample_steps[7].setChecked(True)
+        
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
@@ -900,15 +909,8 @@ class Panel(QtGui.QWidget):
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
         # T_probe_coef_a, T_probe_coef_b 
         print ('evl file save')
-        flnm = open(self.instrument.folderPath + self.instrument.flnmStr+'.evl','w')
-        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
-        txtData = ''    
-        for i in range(len(self.instrument.evalPar)):
-            txtData += strFormat % tuple(self.instrument.evalPar[i])
-            pass
-        flnm.write(txtData)    
-        flnm.close()
-        
+        self.save_evl()
+
         #matrix with 4 samples pH eval averages something, produces final value
         pHeval = self.instrument.pH_eval()  
         pH_t, refT, pert, evalAnir = pHeval
@@ -928,6 +930,21 @@ class Panel(QtGui.QWidget):
         self.instrument.spectrometer.set_scans_average(1)        
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
+
+    def save_evl(self):
+        flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
+        fl = open(flnm,'w')
+
+        self.evalPar_df.T.to_csv(
+            flnm, index = False, header=True) 
+
+        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
+        txtData = ''    
+        for i in range(len(self.instrument.evalPar)):
+            txtData += strFormat % tuple(self.instrument.evalPar[i])
+            pass
+        fl.write(txtData)    
+        fl.close()
 
     def pumping(self,pumpTime):    
         self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
