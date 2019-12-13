@@ -34,6 +34,11 @@ QLabel {
   margin: 0px;
 }
 
+
+QSlider::handle:horizontal {
+background: #79c98d;}
+
+
 QPushButton {
   font-size: 10pt;
   background-color: #505F69;
@@ -44,6 +49,7 @@ QPushButton {
   outline: none;
 
 }
+
 /*  max-width: 120px;*/
 QPushButton:disabled {
   background-color: #32414B;
