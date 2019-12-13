@@ -627,12 +627,15 @@ class Panel(QtGui.QWidget):
 
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
-        self.nextSampleBox.clear()  
+        self.nextSampleBox.setText('Waiting for new sample')
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
         [step.setChecked(False) for step in self.sample_steps]
 
         if not self.btn_cont_meas.isChecked():
+            self.nextSampleBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
+        else: 
+            self.nextSampleBox.setText('Waiting for new sample')
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -650,10 +653,8 @@ class Panel(QtGui.QWidget):
         print ('start continuous mode')
         self.logTextBox.appendPlainText('Inside continuous_mode...')
 
-        #self.timerSpectra_plot.stop()
         self.instrument.reset_lines()
 
-        #self.sample()
         self.sample_thread = Sample_thread(self)
         self.continous_mode_is_on = True
         self.sample_thread.start()
