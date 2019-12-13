@@ -603,14 +603,13 @@ class Panel(QtGui.QWidget):
             self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
-            self.btn_single_meas.setEnabled(True) 
-            self.mode = 'Single'
             self.nextSampleBox.clear()            
             self.timer_contin_mode.stop()
 
     def btn_single_meas_clicked(self):
         #self.timerSpectra_plot.stop()
-        self.btn_cont_meas.setEnabled(False) 
+        self.btn_cont_meas.setEnabled(False)
+        self.btn_single_meas.setEnabled(False) 
         self.get_filename()
         self.mode = 'Single'
         # dialog sample name  
@@ -629,6 +628,7 @@ class Panel(QtGui.QWidget):
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
         self.btn_single_meas.setChecked(False)
+        self.btn_single_meas.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True) 
 
@@ -636,6 +636,9 @@ class Panel(QtGui.QWidget):
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
         [step.setChecked(False) for step in self.sample_steps]
+
+        if not self.btn_cont_meas.isChecked():
+            self.btn_single_meas.setEnabled(True) 
 
     def get_V(self, nAver, ch):
         V = 0.0000
