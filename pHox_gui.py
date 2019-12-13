@@ -891,7 +891,7 @@ class Panel(QtGui.QWidget):
             self.plotAbs.setData(self.wvls,spAbs)
             self.instrument.calc_pH(spAbs,vNTC,dilution)
 
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_eval(spAbs,vNTC,dilution)
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution)
 
 
         # opening the valve
