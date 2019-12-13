@@ -73,6 +73,7 @@ class Panel(QtGui.QWidget):
 
 
         self.tab_log.layout =     QtGui.QGridLayout()
+        
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
@@ -163,23 +164,13 @@ class Panel(QtGui.QWidget):
                         QtWidgets.QCheckBox('5. Measurement 3'),
                         QtWidgets.QCheckBox("6. Measurement 4"),
                         QtWidgets.QCheckBox("7. Save the Data"),
-                        QtWidgets.QCheckBox("8. Finished")
-                        ]
+                        QtWidgets.QCheckBox("8. Finished")]
 
-        ###self.calibr_timer = QLineEdit()
-        ####self.calibr_timer.setText('Next calibration after N samples')
-        
         layout = QtGui.QGridLayout() 
-
 
         [step.setEnabled (False) for step in self.sample_steps]      
         [layout.addWidget(step) for step in self.sample_steps]
         self.sample_steps_groupBox.setLayout(layout)
-
-        
-
-        
-        #self.tab3.layout.addWidget(self.calibr_progressbars_groupBox,0,0,1,1)  
 
     def make_tab1(self):
         self.tab1.layout = QtGui.QGridLayout()
@@ -187,7 +178,7 @@ class Panel(QtGui.QWidget):
         self.textBox.setOverwriteMode(True)
 
         self.nextSampleBox = QtGui.QLineEdit()
-
+        #self..state_widget.setText(text) 
         self.textBoxSens = QtGui.QTextEdit()
         self.textBoxSens.setOverwriteMode(True)
         self.textBox.setText('Loading...')
@@ -653,6 +644,7 @@ class Panel(QtGui.QWidget):
         return V/nAver
 
     def continuous_mode_timer_finished(self):
+        print ('start continuous mode')
         self.logTextBox.appendPlainText('Inside continuous_mode...')
 
         #self.timerSpectra_plot.stop()
@@ -782,7 +774,7 @@ class Panel(QtGui.QWidget):
         return
 
     def sample(self):   
-
+        self.nextSampleBox.setText('Start new measurement')
         self.sample_steps[0].setChecked(True)
         self.logTextBox.appendPlainText('Start new measurement')
 
