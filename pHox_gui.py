@@ -201,11 +201,14 @@ class Panel(QtGui.QWidget):
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
-        self.tab1.layout.addWidget(self.btn_cont_meas,0, 0, 1, 1)
+        self.ferrypump_box = QtWidgets.QCheckBox('Ferrybox pump is on)
+
+
+        self.tab1.layout.addWidget(self.btn_cont_meas,   0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
 
-        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 2)    
-
+        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 1)    
+        self.tab1.layout.addWidget(self.ferrypump_box,  1, 1, 1, 1)
         self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,2) 
 
         #self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
@@ -568,6 +571,10 @@ class Panel(QtGui.QWidget):
                            fbox['salinity'],
                            fbox['longitude'], 
                            fbox['latitude'])
+        if fbox['pumping']:
+            self.ferrypump_box.setChecked(True)
+        else: 
+            self.ferrypump_box.setChecked(False)                 
         self.textBoxSens.setText(text)
 
         if self.args.pco2:
