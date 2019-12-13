@@ -814,7 +814,7 @@ class Panel(QtGui.QWidget):
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
 
-            dilution = (self.instrument.Cuvette_V) / (self.dye_vol_inj*(n_inj+1)*nshots +self.instrument.Cuvette_V)
+            dilution = (self.instrument.Cuvette_V) / (self.instrument.dye_vol_inj*(n_inj+1)*nshots +self.instrument.Cuvette_V)
 
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             self.logTextBox.appendPlainText('Injection %d:' %(n_inj+1))
