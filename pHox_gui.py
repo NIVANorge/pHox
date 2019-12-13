@@ -911,7 +911,7 @@ class Panel(QtGui.QWidget):
 
         ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
-        print ('log')
+        print ('logTextBox.appendPlainText')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
         self.save_logfile(pHeval)
