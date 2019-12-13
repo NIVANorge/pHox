@@ -263,6 +263,7 @@ class pH_instrument(object):
         self.rpi.set_PWM_dutycycle(self.pwmLines[led],LED)
 
     def find_LED(self,led_ind,adj,curr_value):
+        print ('led_ind',led_ind)
         SAT = 16000
         LED = curr_value 
 

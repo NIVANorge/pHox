@@ -63,7 +63,6 @@ class Panel(QtGui.QWidget):
         self.tab_manual =  QtGui.QWidget()
         self.tab_log =     QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
-        self.tab_calibr =  QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,       "Home")
@@ -71,7 +70,7 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_log,    "Log")
         self.tabs.addTab(self.tab_config, "Config") 
-        self.tabs.addTab(self.tab_calibr, "Calibr")
+
 
         self.tab_log.layout =     QtGui.QGridLayout()
         self.logTextBox = QtGui.QPlainTextEdit()
@@ -293,9 +292,10 @@ class Panel(QtGui.QWidget):
         self.btn_stirr = self.create_button('Stirrer',True)
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
-
+        self.btn_calibr = self.create_button('Make calibration',True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
+        btn_grid.addWidget(self.btn_calibr, 0, 1)
 
         btn_grid.addWidget(self.btn_adjust_leds,1,0)
         btn_grid.addWidget(self.btn_leds,    1, 1)
