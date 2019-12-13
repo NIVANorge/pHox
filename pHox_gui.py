@@ -202,6 +202,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
         self.ferrypump_box = QtWidgets.QCheckBox('Ferrybox pump is on')
+        self.ferrypump_box.setEnabled(False)
         self.ferrypump_box.setChecked(True)
 
         self.tab1.layout.addWidget(self.btn_cont_meas,   0, 0, 1, 1)
