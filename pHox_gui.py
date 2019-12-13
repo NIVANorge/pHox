@@ -935,7 +935,7 @@ class Panel(QtGui.QWidget):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
         fl = open(flnm,'w')
 
-        self.evalPar_df.T.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl', index = False, header=True) 
+        self.evalPar_df.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl', index = False, header=True) 
 
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    
