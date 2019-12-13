@@ -491,12 +491,12 @@ class Panel(QtGui.QWidget):
     def on_autoAdjust_clicked(self):
         #
         self.logTextBox.appendPlainText('on_autoAdjust_clicked')
-        DC1,DC2,DC3,sptIt,result  = self.instrument.auto_adjust()
-        print (DC1,DC2,DC3)
+        self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
+        print (self.LED1,self.LED2,self.LED3)
         if result:
-            self.sliders[0].setValue(DC1)
-            self.sliders[1].setValue(DC2)
-            self.sliders[2].setValue(DC3)
+            self.sliders[0].setValue(self.LED1)
+            self.sliders[1].setValue(self.LED2)
+            self.sliders[2].setValue(self.LED3)
 
             #self.plot_sp_levels()
             self.instrument.specIntTime = sptIt

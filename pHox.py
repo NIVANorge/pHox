@@ -264,32 +264,32 @@ class pH_instrument(object):
         spec = self.spectrometer.get_corrected_spectra()
         return spec[pixel],spec.max()
 
-    def adjust_LED(self, led, DC):
-        self.rpi.set_PWM_dutycycle(self.pwmLines[led],DC)
+    def adjust_LED(self, led, LED):
+        self.rpi.set_PWM_dutycycle(self.pwmLines[led],LED)
 
-    def find_DC(self,led_ind,adj,curr_value):
+    def find_LED(self,led_ind,adj,curr_value):
         SAT = 16000
-        DC = curr_value 
+        LED = curr_value 
 
-        while DC < 100: 
-            self.adjust_LED(led_ind, DC)
+        while LED < 100: 
+            self.adjust_LED(led_ind, LED)
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
             dif_counts = self.THR - pixelLevel
 
-            if (dif_counts > 500 and DC < 99) : 
-                dif_dc = (dif_counts * 30 / maxLevel)            
-                DC += dif_dc  
-                DC = min(99,DC)
+            if (dif_counts > 500 and LED < 99) : 
+                dif_LED = (dif_counts * 30 / maxLevel)            
+                LED += dif_LED  
+                LED = min(99,LED)
 
-            elif dif_counts > 500 and DC == 99: 
+            elif dif_counts > 500 and LED == 99: 
                 break
 
-            elif dif_counts < -500 and DC>1:
-                dif_dc = (dif_counts * 30 / maxLevel)              
-                DC += dif_dc  
-                DC = max(1,DC)
+            elif dif_counts < -500 and LED>1:
+                dif_LED = (dif_counts * 30 / maxLevel)              
+                LED += dif_LED  
+                LED = max(1,LED)
 
-            elif dif_counts < -500 and DC == 19: 
+            elif dif_counts < -500 and LED == 1: 
                 print ('too high values')
                 break   
 
@@ -301,7 +301,7 @@ class pH_instrument(object):
                 print ('saturation')
                 break
 
-        return DC,adj
+        return LED,adj
 
     def auto_adjust(self):
         
@@ -311,19 +311,19 @@ class pH_instrument(object):
 
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
-            DC1,DC2,DC3 = None, None, None
+            LED1,LED2,LED3 = None, None, None
 
             self.spectrometer.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
-            DC1,adj1 = self.find_DC(led_ind = 0,adj = adj1,
+            LED1,adj1 = self.find_LED(led_ind = 0,adj = adj1,
                                     curr_value = self.LED1)
             if adj1:
-                DC2,adj2 = self.find_DC(led_ind = 1,adj = adj2,
+                LED2,adj2 = self.find_LED(led_ind = 1,adj = adj2,
                                         curr_value = self.LED2)
 
                 if adj2:    
-                    DC3,adj3 = self.find_DC(led_ind = 2,adj = adj3, 
+                    LED3,adj3 = self.find_LED(led_ind = 2,adj = adj3, 
                                         curr_value = self.LED3)    
 
             if (adj1 and adj2 and adj3):
@@ -335,7 +335,7 @@ class pH_instrument(object):
         else:
             result = True 
 
-        return DC1,DC2,DC3,sptIt,result
+        return LED1,LED2,LED3,sptIt,result
 
     def print_Com(self, port, txtData):
         port.write(txtData)
