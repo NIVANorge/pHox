@@ -39,7 +39,7 @@ class Panel(QtGui.QWidget):
                             action="store_true")
         parser.add_argument("--pco2",
                             action="store_true")
-
+        self.continous_mode_is_on = False
         self.args = parser.parse_args()
         self.create_timers()
         self.instrument = pH_instrument()
@@ -596,6 +596,8 @@ class Panel(QtGui.QWidget):
         else:
             self.nextSampleBox.clear()            
             self.timer_contin_mode.stop()
+            if not self.continous_mode_is_on:
+                self.btn_single_meas.setEnabled(True) 
 
     def btn_single_meas_clicked(self):
         #self.timerSpectra_plot.stop()
@@ -624,6 +626,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setEnabled(True) 
 
     def continuous_sample_finished(self):
+        self.continous_mode_is_on = False
         self.nextSampleBox.clear()  
         self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
         [step.setChecked(False) for step in self.sample_steps]
@@ -652,6 +655,7 @@ class Panel(QtGui.QWidget):
 
         #self.sample()
         self.sample_thread = Sample_thread(self)
+        self.continous_mode_is_on = True
         self.sample_thread.start()
         self.sample_thread.finished.connect(self.continuous_sample_finished)
 
