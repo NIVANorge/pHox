@@ -550,9 +550,9 @@ class Panel(QtGui.QWidget):
     def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         #Tntc = 0
-        Tntc = (self.instrument.ntcCalCoef[0]*vNTC) +self.instrument.ntcCalCoef[1]
+        Tntc = (self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1]
         for i in range(2):
-            Tntc += self.instrument.ntcCalCoef[i] * pow(vNTC,i)
+            Tntc += self.instrument.TempCalCoef[i] * pow(vNTC,i)
             
            #Tntc = vNTC*(23.1/0.4173)
         text = 'Cuvette temperature \xB0C: %.4f  (%.4f V)\n' %(Tntc,vNTC)
@@ -794,9 +794,7 @@ class Panel(QtGui.QWidget):
             else:
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
-
-        # take dark on every sample
-        print ('dark')        
+  
         self.on_dark_clicked() 
 
         self.logTextBox.appendPlainText('Autoadjust LEDS')
@@ -832,7 +830,6 @@ class Panel(QtGui.QWidget):
 
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1", "e2", "e3", "vNTC",
                  'salinity', "A1", "A2","Tdeg", "self.dye_vol_inj", "S_corr", "Anir"])
-
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
@@ -893,7 +890,6 @@ class Panel(QtGui.QWidget):
 
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution)
 
-
         # opening the valve
         self.instrument.set_Valve(False)
 
@@ -905,18 +901,17 @@ class Panel(QtGui.QWidget):
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
 
-        # 4 measurements for each measure *product of spectrums 
-        # Write Temp_probe calibration coefficients , ntc cal now, a,b 
-        # T_probe_coef_a, T_probe_coef_b 
+
         print ('evl file save')
         self.save_evl()
 
         #matrix with 4 samples pH eval averages something, produces final value
         pHeval = self.instrument.pH_eval()  
+        pHeval_df = self.instrument.pH_eval_df()  
+
+        print ('pHeval',pHeval)
+        print ('pHeval_df',pHeval_df)        
         pH_t, refT, pert, evalAnir = pHeval
-
-
-        
         self.last_ph = pH_t
         #returns: pH evaluated at reference temperature 
         # (cuvette water temperature), reference temperature, salinity, 
@@ -935,10 +930,14 @@ class Panel(QtGui.QWidget):
         self.sample_steps[8].setChecked(True)
 
     def save_evl(self):
+        # 4 measurements for each measure *product of spectrums 
+        # Write Temp_probe calibration coefficients , ntc cal now, a,b 
+        # T_probe_coef_a, T_probe_coef_b 
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
         fl = open(flnm,'w')
 
-        self.evalPar_df.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl', index = False, header=True) 
+        self.evalPar_df.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl',
+                                 index = False, header=True) 
 
         strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
         txtData = ''    

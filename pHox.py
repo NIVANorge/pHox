@@ -217,7 +217,7 @@ class pH_instrument(object):
         self.GPIO_TV = default['GPIO_TV']
 
         # NTC Temperature calibration coefficients
-        self.ntcCalCoef = default['NTC_CAL_COEF']
+        self.TempCalCoef = default['NTC_CAL_COEF']
 
         # self.dyeCal = default['DYE_CAL']
         self.Cuvette_V = default["CUVETTE_V"] #ml
@@ -395,9 +395,9 @@ class pH_instrument(object):
         return V/nAver
 
     def calc_pH_no_eval(self,absSp, vNTC,dilution):
-        for i in range(4):
-           vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
+        #for i in range(4):
+        vNTC2 = self.get_Vd(3, self.vNTCch)
+        Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
 
         T = 273.15 + Tdeg
         A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
@@ -432,11 +432,7 @@ class pH_instrument(object):
             e2,e3 =e2e3,-99
         else:
             raise ValueError('wrong DYE: ' + self.dye)
-
-        '''self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2,
-                            Tdeg, self.dye_vol_inj, S_corr, Anir])'''
-                            
+            
         return  [pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, S_corr, Anir]
@@ -444,7 +440,7 @@ class pH_instrument(object):
     def calc_pH(self,absSp, vNTC,dilution):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
+           Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
 
         T = 273.15 + Tdeg
         A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
@@ -483,25 +479,37 @@ class pH_instrument(object):
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, S_corr, Anir])
-        return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
+        #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
 
-     def pH_eval_df(self):
-            # self.evalPar is matrix with 4 samples  (result of running 4 calc_ph in a loop) pH eval averages something, produces final value 
+    def pH_eval_df(self):
+        # self.evalPar is matrix with 4 samples  
+        # (result of running 4 calc_ph in a loop)
+        #  pH eval averages something, produces final value 
         # constant for T effect correction 
+        #self.evalPar_df
+
         dpH_dT = -0.0155
 
-        n = len(self.evalPar)
+        #n = len(self.evalPar)
 
-        evalAnir = [self.evalPar[i][12] for i in range(n)]
-        evalAnir = np.mean(evalAnir)
+        evalAnir =  self.evalPar_df['Anir'].mean()
+        #evalAnir = [self.evalPar[i][12] for i in range(n)]
+        #evalAnir = np.mean(evalAnir)
 
-        evalT = [self.evalPar[i][9] for i in range(n)]
+        evalT =  self.evalPar_df["Tdeg"]
         T_lab = evalT[0]
+        #evalT = [self.evalPar[i][9] for i in range(n)]
+        #T_lab = evalT[0]
 
-        evalpH = [self.evalPar[i][0] for i in range(n)]
-        pH_lab = evalpH[0] # pH at cuvette temp at this step
 
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
+
+        evalpH = self.evalPar_df["pH"]
+        pH_lab = evalpH[0]
+        refpH = evalpH + dpH_dT * (evalT-T_lab)
+        
+        #evalpH = [self.evalPar[i][0] for i in range(n)]
+        #pH_lab = evalpH[0] # pH at cuvette temp at this step
+        #refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
         if n>1:
@@ -520,9 +528,6 @@ class pH_instrument(object):
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
         return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']       
-
-
-
 
     def pH_eval(self):
         # self.evalPar is matrix with 4 samples  (result of running 4 calc_ph in a loop) pH eval averages something, produces final value 
