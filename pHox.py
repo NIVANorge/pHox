@@ -438,50 +438,6 @@ class pH_instrument(object):
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, S_corr, Anir]
 
-    '''def calc_pH(self,absSp, vNTC,dilution):
-        for i in range(4):
-           vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
-
-        T = 273.15 + Tdeg
-        A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
-                        absSp[self.wvlPixels[1]],
-                        absSp[self.wvlPixels[2]])
-
-        S_corr = self.fb_data['salinity'] * dilution 
-
-        R = A2/A1
-        
-        if self.dye == 'TB':
-            e1 = -0.00132 + 1.6E-5*T
-            e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
-            e3 = 0.0223 + 0.0003917*T
-            pK = 4.706*(S_corr/T) + 26.3300 - 7.17218*np.log10(T) - 0.017316*S_corr
-            arg = (R - e1)/(e2 - R*e3)
-            pH = 0.0047 + pK + np.log10(arg)
-
-        elif self.dye == 'MCP':
-            e1=-0.007762+(4.5174*10**-5)*T
-            e2e3=-0.020813+((2.60262*10**-4)*T)+(1.0436*10**-4)*(S_corr-35)
-            arg = (R - e1)/(1 - R*e2e3)
-            pK = (5.561224-(0.547716*S_corr**0.5)+(0.123791*S_corr)-(0.0280156*S_corr**1.5)+
-                 (0.00344940*S_corr**2)-(0.000167297*S_corr**2.5)+
-                 ((52.640726*S_corr**0.5)*T**-1)+(815.984591*T**-1))
-            if arg > 0: 
-                pH = pK + np.log10(arg)
-            else:
-                pH = 99.9999
-
-            ## to fit the log file
-            e2,e3 =e2e3,-99
-        else:
-            raise ValueError('wrong DYE: ' + self.dye)
-
-        self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2,
-                            Tdeg, self.dye_vol_inj, S_corr, Anir])
-        #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH'''
-
     def pH_eval_df(self,evalPar_df):
 
         dpH_dT = -0.0155
@@ -489,20 +445,31 @@ class pH_instrument(object):
         T_lab = evalPar_df["Tdeg"][0]
         pH_lab = evalPar_df["pH"][0]
 
-        refpH = evalPar_df["pH"] + dpH_dT * ( evalPar_df["Tdeg"] -T_lab)
-        
+        #refpH = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] -T_lab)
+        pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] -T_lab) 
         nrows = evalPar_df.shape[0]
+
+
+        from scipy import stats
+
         if nrows>1:
             x = np.array(range(nrows)) # [0,1,2,3]
             print ('X',x)
             # fit on equally spaced points instead of Aiso SAM 
-            print ('refpH',refpH)
-            y = np.array(refpH)
+            #print ('pH_t_corr',pH_t_corr)
+            y = pH_t_corr.values  #np.array(pH_t_corr)
+
+
+        
             print ('Y',y)
             A = np.vstack([x, np.ones(len(x))]).T
             print ('A',A)
             #pert is slope , Ph-lab is intercept
             pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
+            print ('pert,pH_lab',pert,pH_lab)
+            slope, intercept, r_value, p_value, std_err = stats.linregress(x,y) 
+            print ('slope, intercept, r_value, p_value, std_err')         
+            print (slope, intercept, r_value, p_value, std_err)    
             # calc r square between pert,pH_lab
             # if r_square  > 0.9 
             # pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
