@@ -15,7 +15,7 @@ from PyQt5 import QtGui, QtCore
 import numpy as np
 import pandas as pd 
 import util,random,udp
-
+from scipy import stats
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -395,7 +395,7 @@ class pH_instrument(object):
             V += self.adc.read_voltage(channel)
         return V/nAver
 
-    def calc_pH_no_eval(self,absSp, vNTC,dilution):
+    def calc_pH_no_eval(self,absSp, vNTC,dilution,vol_injected):
         #for i in range(4):
         vNTC2 = self.get_Vd(3, self.vNTCch)
         Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
@@ -436,48 +436,34 @@ class pH_instrument(object):
             
         return  [pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
-                            Tdeg, self.dye_vol_inj, S_corr, Anir]
+                            Tdeg, S_corr, Anir,vol_injected]
 
-    def pH_eval_df(self,evalPar_df):
+    def pH_eval(self,evalPar_df):
 
         dpH_dT = -0.0155
         evalAnir =  evalPar_df['Anir'].mean()
         T_lab = evalPar_df["Tdeg"][0]
         pH_lab = evalPar_df["pH"][0]
-
-        #refpH = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] -T_lab)
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] -T_lab) 
         nrows = evalPar_df.shape[0]
 
-
-        from scipy import stats
-
         if nrows>1:
-            x = np.array(range(nrows)) # [0,1,2,3]
-            print ('X',x)
-            # fit on equally spaced points instead of Aiso SAM 
-            #print ('pH_t_corr',pH_t_corr)
-            y = pH_t_corr.values  #np.array(pH_t_corr)
+            x = evalPar_df['Vol_injected'].values
+            y = pH_t_corr.values
+            slope1, intercept, r_value,_, _ = stats.linregress(x,y) 
+            if r_value**2  > 0.9 :
+                pH_lab = intercept 
+                print ('r_value **2 > 0.9')
+            else: 
+                x = x[:-2]
+                y = y[:-2]
+                slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
+                if r_value**2  > 0.9 :  
+                    pH_lab = intercept
+                else: 
+                    pH_t_corr[0]
 
-
-        
-            print ('Y',y)
-            A = np.vstack([x, np.ones(len(x))]).T
-            print ('A',A)
-            #pert is slope , Ph-lab is intercept
-            pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
-            print ('pert,pH_lab',pert,pH_lab)
-            slope, intercept, r_value, p_value, std_err = stats.linregress(x,y) 
-            print ('slope, intercept, r_value, p_value, std_err')         
-            print (slope, intercept, r_value, p_value, std_err)    
-            # calc r square between pert,pH_lab
-            # if r_square  > 0.9 
-            # pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
-            # else: 
-            #  pass
-
-        # pH at in situ 
+        perturbation = slope1 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
-
-        return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']       
+        return (pH_lab, T_lab, perturbation, evalAnir) #pH_insitu,self.fb_data['temperature']       
 

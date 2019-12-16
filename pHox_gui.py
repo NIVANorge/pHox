@@ -828,14 +828,18 @@ class Panel(QtGui.QWidget):
         blank_min_dark= np.clip(blank - dark,1,16000)
         self.spCounts_df['blank'] = blank 
 
-        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1", "e2", "e3", "vNTC",
-                 'salinity', "A1", "A2","Tdeg", "self.dye_vol_inj", "S_corr", "Anir"])
+        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
+                                                "e2", "e3", "vNTC",
+                                        'salinity', "A1", "A2","Tdeg",  
+                                       "S_corr", "Anir",'Vol_injected'])
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
-            dilution = (self.instrument.Cuvette_V) / (self.instrument.dye_vol_inj*(n_inj+1)*shots +self.instrument.Cuvette_V)
+            vol_injected = self.instrument.dye_vol_inj*(n_inj+1)*shots
+            dilution = (self.instrument.Cuvette_V) / (
+                        vol_injected  + self.instrument.Cuvette_V)
 
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
             self.logTextBox.appendPlainText('Injection %d:' %(n_inj+1))
@@ -887,7 +891,7 @@ class Panel(QtGui.QWidget):
 
             self.plotAbs.setData(self.wvls,spAbs)
             #self.instrument.calc_pH(spAbs,vNTC,dilution)
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution)
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution,vol_injected)
 
         # opening the valve
         self.instrument.set_Valve(False)
@@ -900,13 +904,12 @@ class Panel(QtGui.QWidget):
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
 
-
         print ('evl file save')
         self.save_evl()
 
         #matrix with 4 samples pH eval averages something, produces final value
         
-        pHeval = self.instrument.pH_eval_df(self.evalPar_df)  
+        pHeval = self.instrument.pH_eval(self.evalPar_df)  
         pH_t, refT, pert, evalAnir = pHeval
         self.last_ph = pH_t
 
