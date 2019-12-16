@@ -918,6 +918,7 @@ class Panel(QtGui.QWidget):
         self.save_logfile(pHeval)
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+        time.sleep(2)
         self.instrument.spectrometer.set_scans_average(1)        
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
