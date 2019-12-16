@@ -482,15 +482,7 @@ class pH_instrument(object):
         #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
 
     def pH_eval_df(self,evalPar_df):
-        # self.evalPar is matrix with 4 samples  
-        # (result of running 4 calc_ph in a loop)
-        #  pH eval averages something, produces final value 
-        # constant for T effect correction 
-        #self.evalPar_df
-
         dpH_dT = -0.0155
-
-        #n = len(self.evalPar)
 
         evalAnir =  evalPar_df['Anir'].mean()
         #evalAnir = [self.evalPar[i][12] for i in range(n)]
@@ -512,7 +504,7 @@ class pH_instrument(object):
         #refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
         # temperature drift correction based on the 1st measurment SAM 
 
-        if n>1:
+        if evalPar_df.shape[0]>1:
             x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
             y = np.array(refpH)
             A = np.vstack([x, np.ones(len(x))]).T
