@@ -437,7 +437,7 @@ class pH_instrument(object):
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, S_corr, Anir]
 
-    def calc_pH(self,absSp, vNTC,dilution):
+    '''def calc_pH(self,absSp, vNTC,dilution):
         for i in range(4):
            vNTC2 = self.get_Vd(3, self.vNTCch)
            Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
@@ -479,35 +479,26 @@ class pH_instrument(object):
         self.evalPar.append([pH, pK, e1, e2, e3, vNTC,
                             self.fb_data['salinity'], A1, A2,
                             Tdeg, self.dye_vol_inj, S_corr, Anir])
-        #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
+        #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH'''
 
     def pH_eval_df(self,evalPar_df):
+
         dpH_dT = -0.0155
-
         evalAnir =  evalPar_df['Anir'].mean()
-        #evalAnir = [self.evalPar[i][12] for i in range(n)]
-        #evalAnir = np.mean(evalAnir)
+        T_lab = evalPar_df["Tdeg"][0]
+        pH_lab = evalPar_df["pH"][0]
 
-        evalT =  evalPar_df["Tdeg"]
-        T_lab = evalT[0]
-        #evalT = [self.evalPar[i][9] for i in range(n)]
-        #T_lab = evalT[0]
-
-
-
-        evalpH = evalPar_df["pH"]
-        pH_lab = evalpH[0]
-        refpH = evalpH + dpH_dT * (evalT-T_lab)
+        refpH = evalPar_df["pH"] + dpH_dT * ( evalPar_df["Tdeg"] -T_lab)
         
-        #evalpH = [self.evalPar[i][0] for i in range(n)]
-        #pH_lab = evalpH[0] # pH at cuvette temp at this step
-        #refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
-        # temperature drift correction based on the 1st measurment SAM 
-
         if evalPar_df.shape[0]>1:
-            x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
+            x = np.array(evalPar_df.shape[0]) 
+            print ('X',x)
+            # fit on equally spaced points instead of Aiso SAM 
+            print ('refpH',refpH)
             y = np.array(refpH)
+            print ('Y',y)
             A = np.vstack([x, np.ones(len(x))]).T
+            print ('A',A)
             #pert is slope , Ph-lab is intercept
             pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
             # calc r square between pert,pH_lab
@@ -520,40 +511,4 @@ class pH_instrument(object):
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
         return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']       
-
-    def pH_eval(self):
-        # self.evalPar is matrix with 4 samples  (result of running 4 calc_ph in a loop) pH eval averages something, produces final value 
-        # constant for T effect correction 
-        dpH_dT = -0.0155
-
-        n = len(self.evalPar)
-
-        evalAnir = [self.evalPar[i][12] for i in range(n)]
-        evalAnir = np.mean(evalAnir)
-
-        evalT = [self.evalPar[i][9] for i in range(n)]
-        T_lab = evalT[0]
-
-        evalpH = [self.evalPar[i][0] for i in range(n)]
-        pH_lab = evalpH[0] # pH at cuvette temp at this step
-
-        refpH = [evalpH[i] + dpH_dT *(evalT[i]-T_lab) for i in range(n)]
-        # temperature drift correction based on the 1st measurment SAM 
-
-        if n>1:
-            x = np.array(range(4)) # fit on equally spaced points instead of Aiso SAM 
-            y = np.array(refpH)
-            A = np.vstack([x, np.ones(len(x))]).T
-            #pert is slope , Ph-lab is intercept
-            pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
-            # calc r square between pert,pH_lab
-            # if r_square  > 0.9 
-            # pert,pH_lab = np.linalg.lstsq(A, y,rcond=-1)[0]
-            # else: 
-            #  pass
-
-        # pH at in situ 
-        pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
-
-        return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
 

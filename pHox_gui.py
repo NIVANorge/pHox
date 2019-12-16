@@ -906,16 +906,10 @@ class Panel(QtGui.QWidget):
         self.save_evl()
 
         #matrix with 4 samples pH eval averages something, produces final value
-        pHeval = self.instrument.pH_eval()  
-        pHeval_df = self.instrument.pH_eval_df(self.evalPar_df)  
-
-        print ('pHeval',pHeval)
-        print ('pHeval_df',pHeval_df)        
+        
+        pHeval = self.instrument.pH_eval_df(self.evalPar_df)  
         pH_t, refT, pert, evalAnir = pHeval
         self.last_ph = pH_t
-        #returns: pH evaluated at reference temperature 
-        # (cuvette water temperature), reference temperature, salinity, 
-        # estimated dye perturbation
 
         ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
@@ -934,18 +928,16 @@ class Panel(QtGui.QWidget):
         # Write Temp_probe calibration coefficients , ntc cal now, a,b 
         # T_probe_coef_a, T_probe_coef_b 
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
-        fl = open(flnm,'w')
+        #fl = open(flnm,'w')
+        self.evalPar_df.to_csv(flnm, index = False, header=True) 
 
-        self.evalPar_df.to_csv(self.instrument.folderPath + self.instrument.flnmStr+'_df.evl',
-                                 index = False, header=True) 
-
-        strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
-        txtData = ''    
-        for i in range(len(self.instrument.evalPar)):
-            txtData += strFormat % tuple(self.instrument.evalPar[i])
-            pass
-        fl.write(txtData)    
-        fl.close()
+        #strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
+        #txtData = ''    
+        #for i in range(len(self.instrument.evalPar)):
+        #    txtData += strFormat % tuple(self.instrument.evalPar[i])
+        #    pass
+        #fl.write(txtData)    
+        #fl.close()
 
     def pumping(self,pumpTime):    
         self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
