@@ -94,7 +94,7 @@ QGroupBox::title {
 
  QLineEdit, QTextEdit {
   font-size: 10pt;
-  background-color:#f3f5d5;
+  background-color: #caedd2;
   padding-top: 0em;
   /* This QLineEdit fix  103, 111 */
   padding-bottom: 2px;
