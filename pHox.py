@@ -490,8 +490,9 @@ class pH_instrument(object):
 
         refpH = evalPar_df["pH"] + dpH_dT * ( evalPar_df["Tdeg"] -T_lab)
         
-        if evalPar_df.shape[0]>1:
-            x = np.array(evalPar_df.shape[0]) 
+        nrows = evalPar_df.shape[0]
+        if nrows>1:
+            x = np.array(range(nrows)) # [0,1,2,3]
             print ('X',x)
             # fit on equally spaced points instead of Aiso SAM 
             print ('refpH',refpH)
