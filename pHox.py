@@ -481,7 +481,7 @@ class pH_instrument(object):
                             Tdeg, self.dye_vol_inj, S_corr, Anir])
         #return  Tdeg, pK, e1, e2, e3, Anir,R, self.dye, pH
 
-    def pH_eval_df(self):
+    def pH_eval_df(self,evalPar_df):
         # self.evalPar is matrix with 4 samples  
         # (result of running 4 calc_ph in a loop)
         #  pH eval averages something, produces final value 
@@ -492,18 +492,18 @@ class pH_instrument(object):
 
         #n = len(self.evalPar)
 
-        evalAnir =  self.evalPar_df['Anir'].mean()
+        evalAnir =  evalPar_df['Anir'].mean()
         #evalAnir = [self.evalPar[i][12] for i in range(n)]
         #evalAnir = np.mean(evalAnir)
 
-        evalT =  self.evalPar_df["Tdeg"]
+        evalT =  evalPar_df["Tdeg"]
         T_lab = evalT[0]
         #evalT = [self.evalPar[i][9] for i in range(n)]
         #T_lab = evalT[0]
 
 
 
-        evalpH = self.evalPar_df["pH"]
+        evalpH = evalPar_df["pH"]
         pH_lab = evalpH[0]
         refpH = evalpH + dpH_dT * (evalT-T_lab)
         

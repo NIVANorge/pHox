@@ -907,7 +907,7 @@ class Panel(QtGui.QWidget):
 
         #matrix with 4 samples pH eval averages something, produces final value
         pHeval = self.instrument.pH_eval()  
-        pHeval_df = self.instrument.pH_eval_df()  
+        pHeval_df = self.instrument.pH_eval_df(self.evalPar_df)  
 
         print ('pHeval',pHeval)
         print ('pHeval_df',pHeval_df)        
