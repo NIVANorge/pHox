@@ -402,11 +402,8 @@ class pH_instrument(object):
 
 
     def calc_pH(self,absSp, vNTC,pinj):
-        for i in range(4):
-           vNTC2 = self.get_Vd(3, self.vNTCch)
-           Tdeg = (self.ntcCalCoef[0]*vNTC2) + self.ntcCalCoef[1]
-            #print 'T sample : %.2f' %Tdeg
-            #self.logTextBox.appendPlainText('Taking dark level...')
+
+        Tdeg = (self.ntcCalCoef[0]*vNTC) + self.ntcCalCoef[1]
 
         T = 273.15 + Tdeg
         A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
@@ -477,3 +474,30 @@ class pH_instrument(object):
 
         return (pH_lab, T_lab, pert, evalAnir) #pH_insitu,self.fb_data['temperature']
 
+    def calc_CO3(self,absSp, vNTC,dilution):
+
+        Tdeg = (self.ntcCalCoef[0]*vNTC) + self.ntcCalCoef[1]
+        T = 273.15 + Tdeg
+        
+        # volume in ml
+        fcS = self.fb_data['salinity'] * dilution
+        # or fcS = self.fb_data['salinity'] * (
+             # (self.Cuvette_V)/(self.dye_vol_inj*(pinj+1)*shot+self.Cuvette_V))
+
+        A1,A2 =   (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]])      
+        R = A2/A1
+ 
+        e1 = 0.311907-0.002396*fcS
+        e2e3 = 3.061-0.0873*fcS+0.0009363*fcS**2
+        log_beta1_e2 = 5.507074-0.041259*fcS+ 0.000180*fcS**2
+        arg = (R - e1)/(1 - R*e2e3) 
+
+        CO3 = dilution * 1E6*(10**-(log_beta1_e2+log10(arg)))  # umol/kg
+        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", "fcS"])
+        return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
+
+
+
+def CO3_eval(self):
+    ##
