@@ -886,8 +886,7 @@ class Panel(QtGui.QWidget):
                     spAbsMA[i]= np.mean(v)"""
 
             self.plotAbs.setData(self.wvls,spAbs)
-            self.instrument.calc_pH(spAbs,vNTC,dilution)
-
+            #self.instrument.calc_pH(spAbs,vNTC,dilution)
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution)
 
         # opening the valve
