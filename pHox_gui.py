@@ -356,13 +356,6 @@ class Panel(QtGui.QWidget):
     def fill_table(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
-    '''def btn_reload_config_clicked(self):
-        self.logTextBox.appendPlainText('Button reload config was clicked')
-        self.instrument.load_config()
-        state = self.btn_leds.isChecked()
-        self.update_LEDs()
-        self.set_LEDs(state)'''
-
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
         self.btn_stirr.isChecked())
@@ -521,7 +514,6 @@ class Panel(QtGui.QWidget):
         except ValueError:
             value = 0
         self.CO2_instrument.franatech[6] = value
-        #self.puckEm.LAST_CO2 = self.CO2_instrument.franatech[6]
 
         self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
         resp = self.CO2_instrument.portSens.read(15)
@@ -538,8 +530,6 @@ class Panel(QtGui.QWidget):
             self.CO2_instrument.franatech[ch] = X
             text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
 
-        #self.puckEm.LAST_PAR[2] = self.instrument.salinity
-        #self.puckEm.LAST_PAR[0]= self.instrument.franatech[0]   #pCO2 water loop temperature
         WD = self.get_Vd(1,6)
         text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
         text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
@@ -616,11 +606,12 @@ class Panel(QtGui.QWidget):
             self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
-            #self.sample()
 
     def single_sample_finished(self):
         self.StatusBox.clear()  
-        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        self.textBox_LastpH.setText('Last measured pH_lab: {}'.format(
+            str(self.pH_log_row["pH_lab"])))
+
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
@@ -630,7 +621,7 @@ class Panel(QtGui.QWidget):
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
         self.StatusBox.setText('Waiting for new sample')
-        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.pH_log_row["pH_lab"])))
         [step.setChecked(False) for step in self.sample_steps]
 
         if not self.btn_cont_meas.isChecked():
@@ -873,7 +864,7 @@ class Panel(QtGui.QWidget):
 
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
-            print ('postinj_min_dark')
+            #print ('postinj_min_dark')
 
             cfb = (self.instrument.nlCoeff[0] + 
                     self.instrument.nlCoeff[1] * blank_min_dark + 
@@ -913,7 +904,7 @@ class Panel(QtGui.QWidget):
         self.save_evl()
   
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
-        pH_log_row =[{
+        self.pH_log_row =[{
             "Time"         : self.instrument.timeStamp[0:16],
             "Lon"          : fbox['longitude'], 
             "Lat"          : fbox['latitude'] ,
@@ -927,17 +918,16 @@ class Panel(QtGui.QWidget):
             "pH_insitu"    : pH_insitu}]
 
         pHeval = (pH_lab, T_lab, perturbation, evalAnir)
-        self.last_ph = pH_lab
+
 
         ########self.logTextBox.appendPlainText('
         #pH_t = {}, refT = {}, pert = {},
         #evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
-        print ('logTextBox.appendPlainText')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
         self.save_logfile_udp(pHeval)
-        self.save_logfile_df(pH_log_row)
+        self.save_logfile_df()
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
@@ -956,7 +946,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
         self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
-    def save_logfile_df(self,pH_log_row):
+    def save_logfile_df(self):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
         if os.path.exists(logfile):
             log_df = pd.read_csv(logfile,sep = '\t')
@@ -966,7 +956,7 @@ class Panel(QtGui.QWidget):
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
 
-        log_df =  log_df.append(pH_log_row, ignore_index=True)           
+        log_df =  log_df.append(self.pH_log_row, ignore_index=True)           
         print ('log_df')
         print (log_df.head())
 
