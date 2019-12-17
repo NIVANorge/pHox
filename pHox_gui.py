@@ -950,7 +950,7 @@ class Panel(QtGui.QWidget):
     def save_logfile_df(self):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
         if os.path.exists(logfile):
-            log_df = pd.read_csv(logfile,sep = '\t')
+            log_df = pd.read_csv(logfile,sep = ',')
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
