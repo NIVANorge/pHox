@@ -589,6 +589,7 @@ class Panel(QtGui.QWidget):
         state = self.btn_cont_meas.isChecked()
         if state:
             self.btn_single_meas.setEnabled(False) 
+            # disable all btns in manual tab 
             nextSamplename = self.get_next_sample()
             self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
@@ -599,9 +600,10 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True) 
 
     def btn_single_meas_clicked(self):
-        #self.timerSpectra_plot.stop()
+
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
+        # disable all btns in manual tab 
         self.get_filename()
         self.mode = 'Single'
         # dialog sample name  
@@ -623,6 +625,7 @@ class Panel(QtGui.QWidget):
         self.btn_single_meas.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True) 
+        # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
@@ -633,6 +636,7 @@ class Panel(QtGui.QWidget):
         if not self.btn_cont_meas.isChecked():
             self.nextSampleBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
+            # enable all btns in manual tab 
         else: 
             self.nextSampleBox.setText('Waiting for new sample')
 
@@ -934,6 +938,7 @@ class Panel(QtGui.QWidget):
         
         self.save_logfile_udp(pHeval)
         self.save_logfile_df(pH_log_row)
+
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
         self.instrument.spectrometer.set_scans_average(1)        
@@ -955,17 +960,18 @@ class Panel(QtGui.QWidget):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
         if os.path.exists(logfile):
             log_df = pd.read_csv(logfile,sep = '\t')
-            log_df =  log_df.append(pH_log_row, ignore_index=True)
-            
-            print ('log_df')
-            print (log_df)
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
+                        
+        log_df =  log_df.append(pH_log_row, ignore_index=True)           
+        print ('log_df')
+        print (log_df)
 
         log_df.to_csv(logfile, index = False, header=True) 
+
 
     def save_logfile_udp(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)
