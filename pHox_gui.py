@@ -965,7 +965,7 @@ class Panel(QtGui.QWidget):
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
 
-        self.log_df.to_csv(logfile, index = False, header=True) 
+        log_df.to_csv(logfile, index = False, header=True) 
 
     def save_logfile_udp(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)
