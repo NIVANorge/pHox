@@ -1,5 +1,6 @@
 {
     "default":{
+
         "NTC_CAL_COEF" : [70.582,16.213],
         "T_PROBE_CH" : 8,
         "HI-" : 434,
@@ -38,6 +39,7 @@
         "dye_nshots" : 1,
         "Spectro_Integration_time": 500,
         "Deployment_mode": "Ferry",
+        "Ship_Code": "Standalone",
         "comment Deployment_mode":"#modes can be Ferry or Standalone "
     },
 

@@ -210,8 +210,8 @@ class Panel(QtGui.QWidget):
     def make_tab_config(self):
         self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
-        self.reload_config = self.create_button('Reload config',False)     
-        self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
+        #self.reload_config = self.create_button('Reload config',False)     
+        #self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
 
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
@@ -263,7 +263,7 @@ class Panel(QtGui.QWidget):
             
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
 
-        self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
+        #self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
         self.tab_config.setLayout(self.tab_config.layout)  
@@ -356,12 +356,12 @@ class Panel(QtGui.QWidget):
     def fill_table(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
-    def btn_reload_config_clicked(self):
+    '''def btn_reload_config_clicked(self):
         self.logTextBox.appendPlainText('Button reload config was clicked')
         self.instrument.load_config()
         state = self.btn_leds.isChecked()
         self.update_LEDs()
-        self.set_LEDs(state)
+        self.set_LEDs(state)'''
 
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
@@ -907,20 +907,33 @@ class Panel(QtGui.QWidget):
 
         print ('evl file save')
         self.save_evl()
+  
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
+        pH_log_row =[{
+            "Time"         : self.instrument.timeStamp[0:16],
+            "Lon"          : fbox['longitude'], 
+            "Lat"          : fbox['latitude'] ,
+            "fb_temp"      : fbox['temperature'], 
+            "fb_sal"       : fbox['salinity'],         
+            "SHIP"         : self.instrument.ship_code,
+            "pH_lab"       : pH_lab, 
+            "T_lab"        : T_lab,
+            "perturbation" : perturbation,
+            "evalAnir"     : evalAnir,
+            "pH_insitu"    : pH_insitu}]
 
-        #matrix with 4 samples pH eval averages something, produces final value
-        
-        pHeval = self.instrument.pH_eval(self.evalPar_df)  
-        pH_t, refT, pert, evalAnir = pHeval
+        pHeval = (pH_t, refT, pert, evalAnir)
         self.last_ph = pH_t
 
-        ########self.logTextBox.appendPlainText('pH_t = {}, refT = {}, pert = {}, evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
+        ########self.logTextBox.appendPlainText('
+        #pH_t = {}, refT = {}, pert = {},
+        #evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
         print ('logTextBox.appendPlainText')
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
-        self.save_logfile(pHeval)
-
+        self.save_logfile_udp(pHeval)
+        self.save_logfile_df(pH_log_row)
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
         self.instrument.spectrometer.set_scans_average(1)        
@@ -928,20 +941,8 @@ class Panel(QtGui.QWidget):
         self.sample_steps[8].setChecked(True)
 
     def save_evl(self):
-        # 4 measurements for each measure *product of spectrums 
-        # Write Temp_probe calibration coefficients , ntc cal now, a,b 
-        # T_probe_coef_a, T_probe_coef_b 
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
-        #fl = open(flnm,'w')
         self.evalPar_df.to_csv(flnm, index = False, header=True) 
-
-        #strFormat = '%.4f,%.4f,%.6f,%.6f,%.6f,%.5f,%.2f,%.5f,%.5f,%.4f,%.2f,%.2f,%.2f\n'
-        #txtData = ''    
-        #for i in range(len(self.instrument.evalPar)):
-        #    txtData += strFormat % tuple(self.instrument.evalPar[i])
-        #    pass
-        #fl.write(txtData)    
-        #fl.close()
 
     def pumping(self,pumpTime):    
         self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
@@ -950,7 +951,20 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
         self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
-    def save_logfile(self,pHeval):
+    def save_logfile_df(self,pH_log_row):
+        logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
+        if os.path.exists(logfile):
+            log_df = pd.read_csv(logfile,sep = '\')
+            log_df =  log_df.append(pH_log_row, ignore_index=True)
+            print ('log_df')
+            print (log_df)
+        else: 
+            log_df = pd.DataFrame(
+                columns= ["Time","Lon","Lat","fb_temp",
+                        "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
+                        "evalAnir", "pH_insitu"])
+
+    def save_logfile_udp(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
         hdr  = ''
