@@ -176,11 +176,10 @@ class Panel(QtGui.QWidget):
         self.textBox = QtGui.QTextEdit()
         self.textBox.setOverwriteMode(True)
 
-        self.nextSampleBox = QtGui.QLineEdit()
-        #self..state_widget.setText(text) 
-        self.textBoxSens = QtGui.QTextEdit()
-        self.textBoxSens.setOverwriteMode(True)
-        self.textBox.setText('Loading...')
+        self.StatusBox = QtGui.QLineEdit()
+        self.textBox_LastpH = QtGui.QTextEdit()
+        self.textBox_LastpH.setOverwriteMode(True)
+        #self.textBox.setText('Last .')
 
         if self.args.debug:
             self.logTextBox.appendPlainText('Starting in debug mode')
@@ -198,12 +197,13 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.btn_cont_meas,   0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
 
-        self.tab1.layout.addWidget(self.nextSampleBox,  1, 0, 1, 1)    
+        self.tab1.layout.addWidget(self.StatusBox,  1, 0, 1, 1)    
         self.tab1.layout.addWidget(self.ferrypump_box,  1, 1, 1, 1)
-        self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,2) 
+        self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,1) 
+        self.tab1.layout.addWidget(self.textBox_LastpH,2,1,1,1) 
 
         #self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
-        #self.tab1.layout.addWidget(self.textBoxSens,  3, 0, 1, 2)
+        #self.tab1.layout.addWidget(self.textBox_LastpH,  3, 0, 1, 2)
  
         self.tab1.setLayout(self.tab1.layout)
 
@@ -544,7 +544,7 @@ class Panel(QtGui.QWidget):
         text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
         text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
-        self.textBoxSens.setText(text)
+        self.textBox_LastpH.setText(text)
 
     def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
@@ -566,7 +566,7 @@ class Panel(QtGui.QWidget):
             self.ferrypump_box.setChecked(True)
         else: 
             self.ferrypump_box.setChecked(False)                 
-        self.textBoxSens.setText(text)
+        self.textBox_LastpH.setText(text)
 
         if self.args.pco2:
             self.add_pco2_info(text)
@@ -591,10 +591,10 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(False) 
             # disable all btns in manual tab 
             nextSamplename = self.get_next_sample()
-            self.nextSampleBox.setText("Next sample at {}".format(nextSamplename))
+            self.StatusBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
-            self.nextSampleBox.clear()            
+            self.StatusBox.clear()            
             self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
                 self.btn_single_meas.setEnabled(True) 
@@ -619,8 +619,8 @@ class Panel(QtGui.QWidget):
             #self.sample()
 
     def single_sample_finished(self):
-        self.nextSampleBox.clear()  
-        self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        self.StatusBox.clear()  
+        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.last_ph)))
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
@@ -629,16 +629,16 @@ class Panel(QtGui.QWidget):
 
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
-        self.nextSampleBox.setText('Waiting for new sample')
-        self.textBox.setText('Last measured pH: {}'.format(str(self.last_ph)))
+        self.StatusBox.setText('Waiting for new sample')
+        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.last_ph)))
         [step.setChecked(False) for step in self.sample_steps]
 
         if not self.btn_cont_meas.isChecked():
-            self.nextSampleBox.setText('Continuous mode is off')
+            self.StatusBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
             # enable all btns in manual tab 
         else: 
-            self.nextSampleBox.setText('Waiting for new sample')
+            self.StatusBox.setText('Waiting for new sample')
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -782,7 +782,7 @@ class Panel(QtGui.QWidget):
         return
 
     def sample(self):   
-        self.nextSampleBox.setText('Start new measurement')
+        self.StatusBox.setText('Start new measurement')
         self.sample_steps[0].setChecked(True)
         self.logTextBox.appendPlainText('Start new measurement')
 
@@ -965,10 +965,10 @@ class Panel(QtGui.QWidget):
                 columns= ["Time","Lon","Lat","fb_temp",
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
-                        
+
         log_df =  log_df.append(pH_log_row, ignore_index=True)           
         print ('log_df')
-        print (log_df)
+        print (log_df.head())
 
         log_df.to_csv(logfile, index = False, header=True) 
 
