@@ -14,7 +14,7 @@ import pigpio
 from PyQt5 import QtGui, QtCore
 import numpy as np
 import pandas as pd 
-import util,random,udp
+import random,udp
 from scipy import stats
 from precisions import precision as prec 
 
