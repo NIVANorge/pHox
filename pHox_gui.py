@@ -803,7 +803,7 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
-        self.instrument.evalPar =[]
+        self.instrument.evalPar = []
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
@@ -955,8 +955,9 @@ class Panel(QtGui.QWidget):
     def save_logfile_df(self,pH_log_row):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
         if os.path.exists(logfile):
-            log_df = pd.read_csv(logfile,sep = '\')
+            log_df = pd.read_csv(logfile,sep = '\t')
             log_df =  log_df.append(pH_log_row, ignore_index=True)
+            
             print ('log_df')
             print (log_df)
         else: 
@@ -964,6 +965,8 @@ class Panel(QtGui.QWidget):
                 columns= ["Time","Lon","Lat","fb_temp",
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
+
+        self.log_df.to_csv(logfile, index = False, header=True) 
 
     def save_logfile_udp(self,pHeval):
         # add temperature Calibrated (TRUE or FALSE)
