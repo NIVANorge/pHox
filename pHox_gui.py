@@ -830,7 +830,8 @@ class Panel(QtGui.QWidget):
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
                                                 "e2", "e3", "vNTC",
                                         'salinity', "A1", "A2","Tdeg",  
-                                       "S_corr", "Anir",'Vol_injected'])
+                                       "S_corr", "Anir",'Vol_injected',
+                                        'TempCalCoef1','TempCalCoef2'])
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
