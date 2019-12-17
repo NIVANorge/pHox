@@ -465,7 +465,7 @@ class pH_instrument(object):
                 if r_value**2  > 0.9 :  
                     pH_lab = intercept
                 else: 
-                    pH_t_corr[0]
+                    pH_lab = pH_t_corr[0]
 
         perturbation = slope1 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
