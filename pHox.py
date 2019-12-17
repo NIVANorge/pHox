@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd 
 import util,random,udp
 from scipy import stats
+from precisions import precision as prec 
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -395,17 +396,18 @@ class pH_instrument(object):
             V += self.adc.read_voltage(channel)
         return V/nAver
 
-    def calc_pH_no_eval(self,absSp, vNTC,dilution,vol_injected):
-        #for i in range(4):
-        vNTC2 = self.get_Vd(3, self.vNTCch)
-        Tdeg = (self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1]
+    def calc_pH(self,absSp, vNTC,dilution,vol_injected):
+
+        vNTC = round(self.get_Vd(3, self.vNTCch), prec['vNTC'])
+        Tdeg = round((self.TempCalCoef[0]*vNTC2) + self.TempCalCoef[1], prec['Tdeg'])
 
         T = 273.15 + Tdeg
-        A1,A2,Anir =   (absSp[self.wvlPixels[0]], 
-                        absSp[self.wvlPixels[1]],
-                        absSp[self.wvlPixels[2]])
+        A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
+        A2   = round(absSp[self.wvlPixels[1]], prec['A2'])
+        Anir = round(absSp[self.wvlPixels[2]], prec['Anir']) 
 
-        S_corr = self.fb_data['salinity'] * dilution 
+        fb_sal = round(pH, prec['salinity'])
+        S_corr = round(fb_sal * dilution , prec['salinity'])
 
         R = A2/A1
         
@@ -434,9 +436,20 @@ class pH_instrument(object):
         else:
             raise ValueError('wrong DYE: ' + self.dye)
             
+   
+
+        pH = round(pH, prec['pH'])
+        pK = round(pH, prec['pK'])        
+        e1 = round(pH, prec['e1'])  
+        e2 = round(pH, prec['e2'])  
+        e3 = round(pH, prec['e3']) 
+
+
+
+
         return  [pH, pK, e1, e2, e3, vNTC,
-                            self.fb_data['salinity'], A1, A2,
-                            Tdeg, S_corr, Anir,vol_injected]
+                fb_sal, A1, A2, Tdeg, S_corr, 
+                Anir,vol_injected]
 
     def pH_eval(self,evalPar_df):
 

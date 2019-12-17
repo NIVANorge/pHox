@@ -65,7 +65,7 @@ QPushButton:checked:enabled {
   outline: none;}
 
 QPushButton:checked:disabled {
-  background-color: #3b637e;
+  background-color: #79c98d;
   color: #9c9c9c;
   border: 1px solid #32414B;
   border-radius: 4px;

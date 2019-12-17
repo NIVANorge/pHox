@@ -17,8 +17,7 @@ import pandas as pd
 import time 
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
-import util
-
+from precisions import precision as prec 
 
 
 class Sample_thread(QtCore.QThread):
@@ -837,7 +836,9 @@ class Panel(QtGui.QWidget):
         for n_inj in range(self.instrument.ncycles):
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
+
             vol_injected = self.instrument.dye_vol_inj*(n_inj+1)*shots
+            vol_injected = round(pH, prec['vol_injected'])
             dilution = (self.instrument.Cuvette_V) / (
                         vol_injected  + self.instrument.Cuvette_V)
 
@@ -891,7 +892,7 @@ class Panel(QtGui.QWidget):
 
             self.plotAbs.setData(self.wvls,spAbs)
             #self.instrument.calc_pH(spAbs,vNTC,dilution)
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH_no_eval(spAbs,vNTC,dilution,vol_injected)
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
 
         # opening the valve
         self.instrument.set_Valve(False)
