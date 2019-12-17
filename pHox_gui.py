@@ -922,7 +922,7 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : evalAnir,
             "pH_insitu"    : pH_insitu}]
 
-        pHeval = (pH_lab, refT, pert, evalAnir)
+        pHeval = (pH_lab, T_lab, perturbation, evalAnir)
         self.last_ph = pH_lab
 
         ########self.logTextBox.appendPlainText('
