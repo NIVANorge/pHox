@@ -838,8 +838,7 @@ class Panel(QtGui.QWidget):
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
 
-            vol_injected = self.instrument.dye_vol_inj*(n_inj+1)*shots
-            vol_injected = round(pH, prec['vol_injected'])
+            vol_injected = round(self.instrument.dye_vol_inj*(n_inj+1)*shots, prec['vol_injected'])
             dilution = (self.instrument.Cuvette_V) / (
                         vol_injected  + self.instrument.Cuvette_V)
 
