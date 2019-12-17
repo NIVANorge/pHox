@@ -904,18 +904,19 @@ class Panel(QtGui.QWidget):
         self.save_evl()
   
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
-        self.pH_log_row ={
-            "Time"         : self.instrument.timeStamp[0:16],
-            "Lon"          : fbox['longitude'], 
-            "Lat"          : fbox['latitude'] ,
-            "fb_temp"      : fbox['temperature'], 
-            "fb_sal"       : fbox['salinity'],         
-            "SHIP"         : self.instrument.ship_code,
-            "pH_lab"       : pH_lab, 
-            "T_lab"        : T_lab,
-            "perturbation" : perturbation,
-            "evalAnir"     : evalAnir,
-            "pH_insitu"    : pH_insitu}
+
+        self.pH_log_row = pd.DataFrame({
+            "Time"         : [self.instrument.timeStamp[0:16]],
+            "Lon"          : [fbox['longitude']], 
+            "Lat"          : [fbox['latitude']] ,
+            "fb_temp"      : [fbox['temperature']], 
+            "fb_sal"       : [fbox['salinity']],         
+            "SHIP"         : [self.instrument.ship_code],
+            "pH_lab"       : [pH_lab], 
+            "T_lab"        : [T_lab],
+            "perturbation" : [perturbation],
+            "evalAnir"     : [evalAnir],
+            "pH_insitu"    : [pH_insitu]})
 
         pHeval = (pH_lab, T_lab, perturbation, evalAnir)
 
@@ -956,7 +957,7 @@ class Panel(QtGui.QWidget):
                         "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
                         "evalAnir", "pH_insitu"])
 
-        log_df =  log_df.append([self.pH_log_row], ignore_index=True)           
+        log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
         print (log_df.head())
 
