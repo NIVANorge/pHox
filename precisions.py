@@ -13,7 +13,7 @@ precision  = {
     "Anir": 2,
     "longitude": 6,
     "latitude": 6,
-    "fb_temperature": 3
+    "fb_temperature": 3,
     "pH_lab": 4,
     "T_lab": 4,
     "perturbation": 3,
