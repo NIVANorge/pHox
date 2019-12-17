@@ -399,7 +399,7 @@ class pH_instrument(object):
         A2   = round(absSp[self.wvlPixels[1]], prec['A2'])
         Anir = round(absSp[self.wvlPixels[2]], prec['Anir']) 
 
-        fb_sal = round(pH, prec['salinity'])
+        fb_sal = round(self.fb_data['salinity'], prec['salinity'])
         S_corr = round(fb_sal * dilution , prec['salinity'])
 
         R = A2/A1
