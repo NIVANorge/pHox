@@ -246,7 +246,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setColumnCount(2)
 
         self.fill_table_config(0,0,'DYE type')
-        self.fill_table_config(0,1,self.dye_combo)
+        self.tableWidget.setCellWidget(0,1,self.dye_combo)
 
         self.fill_table_config(1,0,'NIR:')
         self.fill_table_config(1,1,str(self.instrument.NIR))
