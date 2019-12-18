@@ -473,8 +473,9 @@ class Panel(QtGui.QWidget):
         self.instrument.folderPath = folder+'/'
 
     def update_spectra_plot(self):
-        datay = self.instrument.spectrometer.get_corrected_spectra()
-        self.plotSpc.setData(self.wvls,datay)                  
+        pass 
+        #datay = self.instrument.spectrometer.get_corrected_spectra()
+        #self.plotSpc.setData(self.wvls,datay)                  
 
     def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
