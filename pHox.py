@@ -439,8 +439,7 @@ class pH_instrument(object):
                 fb_sal, A1, A2, Tdeg, S_corr, 
                 Anir,vol_injected,
                 self.TempCalCoef[0],
-                self.TempCalCoef[1]
-                ]
+                self.TempCalCoef[1]]
 
     def pH_eval(self,evalPar_df):
 

@@ -177,6 +177,20 @@ class Panel(QtGui.QWidget):
         self.textBox.setOverwriteMode(True)
 
         self.StatusBox = QtGui.QLineEdit()
+
+        self.table_pH = QtGui.QTableWidget()
+
+        self.table_pH.setRowCount(5)
+        self.table_pH.setColumnCount(2)
+
+        self.table_pH.setCellWidget(0,0,'pH lab')
+        self.table_pH.setCellWidget(1,0,'T lab')
+        self.table_pH.setCellWidget(2,0,'pH insitu')
+        self.table_pH.setCellWidget(3,0,'T insitu')
+        self.table_pH.setCellWidget(4,0,'S insitu')
+
+
+
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
         #self.textBox.setText('Last .')
@@ -200,7 +214,8 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.StatusBox,  1, 0, 1, 1)    
         self.tab1.layout.addWidget(self.ferrypump_box,  1, 1, 1, 1)
         self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,1) 
-        self.tab1.layout.addWidget(self.textBox_LastpH,2,1,1,1) 
+        self.tab1.layout.addWidget(self.table_pH,2,1,1,1)         
+        #self.tab1.layout.addWidget(self.textBox_LastpH,2,1,1,1) 
 
         #self.tab1.layout.addWidget(self.textBox,      2, 0, 1, 2)
         #self.tab1.layout.addWidget(self.textBox_LastpH,  3, 0, 1, 2)
@@ -228,26 +243,26 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(2)
 
-        self.fill_table(0,0,'DYE type')
+        self.tableWidget.setCellWidget(0,0,'DYE type')
         self.tableWidget.setCellWidget(0,1,self.dye_combo)
 
-        self.fill_table(1,0,'NIR:')
-        self.fill_table(1,1,str(self.instrument.NIR))
+        self.tableWidget.setCellWidget(1,0,'NIR:')
+        self.tableWidget.setCellWidget(1,1,str(self.instrument.NIR))
 
-        self.fill_table(2,0,'HI-')
-        self.fill_table(2,1,str(self.instrument.HI))
+        self.tableWidget.setCellWidget(2,0,'HI-')
+        self.tableWidget.setCellWidget(2,1,str(self.instrument.HI))
 
-        self.fill_table(3,0,'I2-')
-        self.fill_table(3,1, str(self.instrument.I2))
+        self.tableWidget.setCellWidget(3,0,'I2-')
+        self.tableWidget.setCellWidget(3,1, str(self.instrument.I2))
 
-        self.fill_table(4,0,'Last calibration:')
-        self.fill_table(4,1,' not used yet:')        
+        self.tableWidget.setCellWidget(4,0,'Last calibration:')
+        self.tableWidget.setCellWidget(4,1,' not used yet:')        
 
-        self.fill_table(5,0,'pH sampling interval (min)')
+        self.tableWidget.setCellWidget(5,0,'pH sampling interval (min)')
 
 
-        self.fill_table(6,0,'Spectroph intergration time')
-        self.fill_table(6,1,str(self.instrument.specIntTime))
+        self.tableWidget.setCellWidget(6,0,'Spectroph intergration time')
+        self.tableWidget.setCellWidget(6,1,str(self.instrument.specIntTime))
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
@@ -352,9 +367,6 @@ class Panel(QtGui.QWidget):
         if check:
             Btn.setCheckable(True)
         return Btn
-
-    def fill_table(self,x,y,item):
-        self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
@@ -621,7 +633,7 @@ class Panel(QtGui.QWidget):
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
         self.StatusBox.setText('Waiting for new sample')
-        self.textBox_LastpH.setText('Last measured pH: {}'.format(str(self.pH_log_row["pH_lab"])))
+
         [step.setChecked(False) for step in self.sample_steps]
 
         if not self.btn_cont_meas.isChecked():
@@ -630,6 +642,16 @@ class Panel(QtGui.QWidget):
             # enable all btns in manual tab 
         else: 
             self.StatusBox.setText('Waiting for new sample')
+
+    def append_text_box(self):
+        pH_lab = str(self.pH_log_row["pH_lab"])
+        T_lab = str(self.pH_log_row["T_lab"])
+        pH_insitu = str(self.pH_log_row["pH_insitu"])
+
+        self.textBox_LastpH.setText('Last measured pH: {}'.format(pH_lab))
+        ########self.logTextBox.appendPlainText('
+        #pH_t = {}, refT = {}, pert = {},
+        #evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -866,11 +888,11 @@ class Panel(QtGui.QWidget):
             postinj_min_dark = np.clip(postinj - dark,1,16000)
             #print ('postinj_min_dark')
 
-            cfb = (self.instrument.nlCoeff[0] + 
+            cfb =  (self.instrument.nlCoeff[0] + 
                     self.instrument.nlCoeff[1] * blank_min_dark + 
                     self.instrument.nlCoeff[2] * blank_min_dark**2)
 
-            cfp = (self.instrument.nlCoeff[0] +
+            cfp =  (self.instrument.nlCoeff[0] +
                     self.instrument.nlCoeff[1] * postinj_min_dark + 
                     self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
@@ -918,16 +940,9 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
-        pHeval = (pH_lab, T_lab, perturbation, evalAnir)
-
-
-        ########self.logTextBox.appendPlainText('
-        #pH_t = {}, refT = {}, pert = {},
-        #evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
-
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
-        self.save_logfile_udp(pHeval)
+        self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
         self.save_logfile_df()
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
@@ -954,8 +969,9 @@ class Panel(QtGui.QWidget):
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
-                        "fb_sal",'SHIP',"pH_lab", "T_lab", "perturbation",
-                        "evalAnir", "pH_insitu"])
+                         "fb_sal",'SHIP',"pH_lab", 
+                          "T_lab", "perturbation",
+                          "evalAnir", "pH_insitu"])
 
         log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
@@ -964,12 +980,7 @@ class Panel(QtGui.QWidget):
         log_df.to_csv(logfile, index = False, header=True) 
 
 
-    def save_logfile_udp(self,pHeval):
-        # add temperature Calibrated (TRUE or FALSE)
-        logfile = os.path.join(self.instrument.folderPath, 'pH.log')
-        hdr  = ''
-        if not os.path.exists(logfile):
-            hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
+    def send_to_ferrybox(self,pHeval):
         s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (
             fbox['longitude'], fbox['latitude'],
@@ -977,11 +988,18 @@ class Panel(QtGui.QWidget):
 
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
         s+= '\n'
+        udp.send_data('PH,' + s)
+
+        '''logfile = os.path.join(self.instrument.folderPath, 'pH.log')
+        hdr  = ''
+        if not os.path.exists(logfile):
+            hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
         with open(logfile,'a') as logFile:
             if hdr:
                 logFile.write(hdr + '\n')
-            logFile.write(s)
-        udp.send_data('PH,' + s)
+            logFile.write(s)'''
+
+
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
