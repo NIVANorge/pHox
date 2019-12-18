@@ -18,6 +18,40 @@ import random,udp
 from scipy import stats
 from precisions import precision as prec 
 
+import seabreeze
+from seabreeze.spectrometers import Spectrometer
+
+
+class Spectro_seabreeze(object):
+    def __init__(self):
+       self.spec =  Spectrometer.from_first_available()
+       print (self.spec)
+
+    def set_integration_time(self,sec):
+        microsec = sec * 1000000
+        self.spec.integration_time_micros(microsec)  # 0.1 seconds
+
+    def get_wvlengths(self):
+        #wavelengths in (nm) corresponding to each pixel of the spectrometer
+        return self.spec.wavelengths()
+
+    def get_intensities_raw(self):
+        # measured intensity array in (a.u.)
+        return self.spec.intensities(correct_nonlinearity=False)
+
+    def get_intensities_corr_nonlinear(self):
+        return self.spec.intensities(correct_nonlinearity=True)
+
+    def get_intensities_corr_dark(self):
+        return self.spec.intensities(correct_dark_counts=True)
+
+    def get_intensities_corr_all(self):
+        return self.spec.intensities(correct_dark_counts=True,correct_nonlinearity=True)
+
+    def get_spectrum_raw(self):
+        wavelengths, intensities = self.spec.spectrum()
+        return (wavelengths, intensities)
+
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
     # DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #
@@ -121,7 +155,9 @@ class pH_instrument(object):
         #initialize PWM lines
         self.rpi = pigpio.pi()
         self.spectrometer = STSVIS()
-
+        print ('second connection')
+        self.spectro_seabreeze = Spectro_seabreeze()
+        print ('done')
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
          #spectrometer integration time (ms)
