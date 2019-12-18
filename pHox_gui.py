@@ -178,10 +178,9 @@ class Panel(QtGui.QWidget):
 
         self.StatusBox = QtGui.QLineEdit()
 
-        self.table_pH = QtGui.QTableWidget()
-
-        self.table_pH.setRowCount(5)
-        self.table_pH.setColumnCount(2)
+        self.table_pH = QtGui.QTableWidget(5,2)
+        self.table_pH.verticalHeader().hide()
+        self.table_pH.horizontalHeader().hide()    
 
         self.fill_table_pH(0,0,'pH lab')
         self.fill_table_pH(1,0,'T lab')
@@ -241,6 +240,9 @@ class Panel(QtGui.QWidget):
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
         
         self.tableWidget = QtGui.QTableWidget()
+
+        self.tableWidget.verticalHeader().hide()
+        self.tableWidget.horizontalHeader().hide()    
 
         self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(2)
