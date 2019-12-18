@@ -702,7 +702,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot.start()
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
-        self.on_dark_clicked()
+        #####self.on_dark_clicked()
         self.update_LEDs()
         # turn on leds 
         self.btn_leds.setChecked(True)
@@ -826,7 +826,7 @@ class Panel(QtGui.QWidget):
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
-        self.on_dark_clicked() 
+        #####self.on_dark_clicked() 
 
         self.logTextBox.appendPlainText('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
@@ -864,7 +864,7 @@ class Panel(QtGui.QWidget):
             blank_min_dark= np.clip(blank - dark,1,16000)
         else: 
             blank = self.instrument.spectrometer.get_intensities_corr_nonlinear()    
-            
+
         self.spCounts_df['blank'] = blank 
 
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
