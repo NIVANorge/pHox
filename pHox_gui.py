@@ -455,8 +455,7 @@ class Panel(QtGui.QWidget):
         print ('self.instrument.specAvScans',self.instrument.specAvScans)
         if not self.args.seabreeze:
             self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
-        self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()
-        if not self.args.seabreeze:        
+            self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
             self.instrument.spectrometer.set_scans_average(1)
 
     def set_LEDs(self, state):
