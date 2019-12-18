@@ -38,12 +38,18 @@ class Panel(QtGui.QWidget):
                             action="store_true")
         parser.add_argument("--pco2",
                             action="store_true")
+        parser.add_argument("--seabreeze",
+                            action="store_true")                            
         self.continous_mode_is_on = False
         self.args = parser.parse_args()
         self.create_timers()
         self.instrument = pH_instrument()
+        if args.seabreeze:
+            self.wvls = self.instrument.get_wavelengths()
+        else:
+            self.wvls = self.instrument.calc_wavelengths(
+            self.instrument.spectrometer.wvlCalCoeff)
 
-        self.wvls = self.instrument.calc_wavelengths(self.instrument.spectrometer.wvlCalCoeff)
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
 
@@ -447,9 +453,11 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
         print ('self.instrument.specAvScans',self.instrument.specAvScans)
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
-        self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
-        self.instrument.spectrometer.set_scans_average(1)
+        if not self.args.seabreeze:
+            self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
+        self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()
+        if not self.args.seabreeze:        
+            self.instrument.spectrometer.set_scans_average(1)
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -510,8 +518,10 @@ class Panel(QtGui.QWidget):
 
             #self.plot_sp_levels()
             self.instrument.specIntTime = sptIt
-            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(str(self.instrument.specIntTime)))  
-            self.instrument.specAvScans = 3000/sptIt
+            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
+                str(self.instrument.specIntTime)))  
+            if not aelf.args.seabreeze:    
+                self.instrument.specAvScans = 3000/sptIt
         else:
             pass
             #self.textBox.setText('Could not adjust leds')
@@ -827,7 +837,8 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
 
         self.instrument.evalPar = []
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+        if not self.args.seabreeze:
+            self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
@@ -882,40 +893,49 @@ class Panel(QtGui.QWidget):
             time.sleep(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
-            postinj = self.instrument.spectrometer.get_corrected_spectra()
+            if not self.args.seabreeze:
+                postinj = self.instrument.spectrometer.get_corrected_spectra()
 
             # measuring Voltage for temperature probe
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
 
             # Write spectrum to the file 
-            self.spCounts_df[str(n_inj)] = postinj 
+            if self.args.seabreeze:
+                self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw()
+                time.sleep(10)
+                self.spCounts_df[str(n_inj)+'corr_nonlin'] = self.instrument.spectrometer.get_intensities_corr_nonlinear()
+                time.sleep(10)
+                self.spCounts_df[str(n_inj)+'corr_dark'] = self.instrument.spectrometer.get_intensities_corr_dark()
+                time.sleep(10)
+                self.spCounts_df[str(n_inj)+'corr_all'] = self.instrument.spectrometer.get_intensities_corr_all()
 
-            # postinjection minus dark     
-            postinj_min_dark = np.clip(postinj - dark,1,16000)
-            #print ('postinj_min_dark')
+            else:     
+                # postinjection minus dark     
+                postinj_min_dark = np.clip(postinj - dark,1,16000)
+                #print ('postinj_min_dark')
 
-            cfb =  (self.instrument.nlCoeff[0] + 
-                    self.instrument.nlCoeff[1] * blank_min_dark + 
-                    self.instrument.nlCoeff[2] * blank_min_dark**2)
+                cfb =  (self.instrument.nlCoeff[0] + 
+                        self.instrument.nlCoeff[1] * blank_min_dark + 
+                        self.instrument.nlCoeff[2] * blank_min_dark**2)
 
-            cfp =  (self.instrument.nlCoeff[0] +
-                    self.instrument.nlCoeff[1] * postinj_min_dark + 
-                    self.instrument.nlCoeff[2] * postinj_min_dark**2)
+                cfp =  (self.instrument.nlCoeff[0] +
+                        self.instrument.nlCoeff[1] * postinj_min_dark + 
+                        self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
-            bmdCorr = blank_min_dark * cfb
-            pmdCorr = postinj_min_dark * cfp
-            spAbs = np.log10(bmdCorr/pmdCorr)
-            sp = np.log10(blank_min_dark/postinj_min_dark)            
-            # moving average 
-            """  spAbsMA = spAbs
-                nPoints = 3
-                for i in range(3,len(spAbs)-3):
-                    v = spAbs[i-nPoints:i+nPoints+1]
-                    spAbsMA[i]= np.mean(v)"""
+                bmdCorr = blank_min_dark * cfb
+                pmdCorr = postinj_min_dark * cfp
+                spAbs = np.log10(bmdCorr/pmdCorr)
+                sp = np.log10(blank_min_dark/postinj_min_dark)            
+                # moving average 
+                """  spAbsMA = spAbs
+                    nPoints = 3
+                    for i in range(3,len(spAbs)-3):
+                        v = spAbs[i-nPoints:i+nPoints+1]
+                        spAbsMA[i]= np.mean(v)"""
 
-            self.plotAbs.setData(self.wvls,spAbs)
-            #self.instrument.calc_pH(spAbs,vNTC,dilution)
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
+                self.plotAbs.setData(self.wvls,spAbs)
+                #self.instrument.calc_pH(spAbs,vNTC,dilution)
+                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
 
         # opening the valve
         self.instrument.set_Valve(False)
@@ -930,32 +950,33 @@ class Panel(QtGui.QWidget):
 
         print ('evl file save')
         self.save_evl()
-  
-        pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
 
-        self.pH_log_row = pd.DataFrame({
-            "Time"         : [self.instrument.timeStamp[0:16]],
-            "Lon"          : [fbox['longitude']], 
-            "Lat"          : [fbox['latitude']] ,
-            "fb_temp"      : [fbox['temperature']], 
-            "fb_sal"       : [fbox['salinity']],         
-            "SHIP"         : [self.instrument.ship_code],
-            "pH_lab"       : [pH_lab], 
-            "T_lab"        : [T_lab],
-            "perturbation" : [perturbation],
-            "evalAnir"     : [evalAnir],
-            "pH_insitu"    : [pH_insitu]})
+        if not self.args.seabreeze:
+            pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
 
-        self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
-        
-        self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
-        self.save_logfile_df()
+            self.pH_log_row = pd.DataFrame({
+                "Time"         : [self.instrument.timeStamp[0:16]],
+                "Lon"          : [fbox['longitude']], 
+                "Lat"          : [fbox['latitude']] ,
+                "fb_temp"      : [fbox['temperature']], 
+                "fb_sal"       : [fbox['salinity']],         
+                "SHIP"         : [self.instrument.ship_code],
+                "pH_lab"       : [pH_lab], 
+                "T_lab"        : [T_lab],
+                "perturbation" : [perturbation],
+                "evalAnir"     : [evalAnir],
+                "pH_insitu"    : [pH_insitu]})
 
-        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
-        time.sleep(2)
-        self.instrument.spectrometer.set_scans_average(1)        
-        self.logTextBox.appendPlainText('Single measurement is done...')
-        self.sample_steps[8].setChecked(True)
+            self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+            
+            self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
+            self.save_logfile_df()
+
+            #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+            time.sleep(2)
+            self.instrument.spectrometer.set_scans_average(1)        
+            self.logTextBox.appendPlainText('Single measurement is done...')
+            self.sample_steps[8].setChecked(True)
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'

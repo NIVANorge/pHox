@@ -27,11 +27,11 @@ class Spectro_seabreeze(object):
        self.spec =  Spectrometer.from_first_available()
        print (self.spec)
 
-    def set_integration_time(self,sec):
-        microsec = sec * 1000000
+    def set_integration_time(self,time_millisec):
+        microsec = time_millisec * 1000
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
 
-    def get_wvlengths(self):
+    def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrometer
         return self.spec.wavelengths()
 
@@ -51,6 +51,9 @@ class Spectro_seabreeze(object):
     def get_spectrum_raw(self):
         wavelengths, intensities = self.spec.spectrum()
         return (wavelengths, intensities)
+
+    def set_scans_average(self):
+        pass
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -148,15 +151,21 @@ class STSVIS(object):
 
 class pH_instrument(object):
     # Instrument constructor #
-    def __init__(self):
+    def __init__(self,panelargs):
+        self.args = panelargs
+
         # For signaling to threads
         self._exit = False 
         
         #initialize PWM lines
         self.rpi = pigpio.pi()
-        self.spectrometer = STSVIS()
+
+        if self.args.seabreeze:
+            self.spectrometer = Spectro_seabreeze()    
+        else:
+            self.spectrometer = STSVIS()
         print ('second connection')
-        self.spectro_seabreeze = Spectro_seabreeze()
+        
         print ('done')
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
@@ -167,8 +176,6 @@ class pH_instrument(object):
         
         self.tsBegin = float
         self.status = [False]*16
-        #self.intvStatus = False
-        #self.CO2UpT = 5
         
         self.flnmStr = ''
         self.timeStamp = ''
@@ -331,7 +338,8 @@ class pH_instrument(object):
         
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
-        self.spectrometer.set_scans_average(1)
+        if not self.args.seabreeze:
+            self.spectrometer.set_scans_average(1)
 
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
