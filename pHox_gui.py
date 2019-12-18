@@ -850,14 +850,21 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
 
-        # Take the last measured dark
-        dark = self.spCounts_df['dark']
+        if not self.args.seabreeze:
+            # Take the last measured dark
+            dark = self.spCounts_df['dark']
 
-        self.logTextBox.appendPlainText('Measuring blank...')
-        self.sample_steps[2].setChecked(True)
-        blank = self.instrument.spectrometer.get_corrected_spectra()
-        
-        blank_min_dark= np.clip(blank - dark,1,16000)
+            self.logTextBox.appendPlainText('Measuring blank...')
+            self.sample_steps[2].setChecked(True)
+
+
+
+        if not self.args.seabreeze:
+            blank = self.instrument.spectrometer.get_corrected_spectra()
+            blank_min_dark= np.clip(blank - dark,1,16000)
+        else: 
+            blank = self.instrument.spectrometer.get_intensities_corr_nonlinear()    
+            
         self.spCounts_df['blank'] = blank 
 
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
