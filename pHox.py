@@ -183,7 +183,8 @@ class pH_instrument(object):
         self.load_config()       
 
         self.spectrometer.set_integration_time(self.specIntTime)
-        self.spectrometer.set_scans_average(1)
+        if not self.args.seabreeze():
+            self.spectrometer.set_scans_average(1)
         
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
