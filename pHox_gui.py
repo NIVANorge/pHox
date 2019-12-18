@@ -858,8 +858,6 @@ class Panel(QtGui.QWidget):
             self.logTextBox.appendPlainText('Measuring blank...')
             self.sample_steps[2].setChecked(True)
 
-
-
         if not self.args.seabreeze:
             blank = self.instrument.spectrometer.get_corrected_spectra()
             blank_min_dark= np.clip(blank - dark,1,16000)
@@ -911,10 +909,6 @@ class Panel(QtGui.QWidget):
                 self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw()
                 time.sleep(10)
                 self.spCounts_df[str(n_inj)+'corr_nonlin'] = self.instrument.spectrometer.get_intensities_corr_nonlinear()
-                time.sleep(10)
-                self.spCounts_df[str(n_inj)+'corr_dark'] = self.instrument.spectrometer.get_intensities_corr_dark()
-                time.sleep(10)
-                self.spCounts_df[str(n_inj)+'corr_all'] = self.instrument.spectrometer.get_intensities_corr_all()
 
             else:     
                 # postinjection minus dark     
