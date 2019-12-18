@@ -95,13 +95,6 @@ class Panel(QtGui.QWidget):
         self.make_tab_config()
         self.make_plotwidgets()
 
-
-        #self.tab_progress.layout = QtGui.QGridLayout()
-
-        #self.tab_progress.setLayout(self.tab_progress.layout)
-
-
-
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwdigets_groupbox)    
@@ -223,6 +216,10 @@ class Panel(QtGui.QWidget):
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
 
+
+
+
+
     def make_tab_config(self):
         self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
@@ -246,7 +243,8 @@ class Panel(QtGui.QWidget):
 
         self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(2)
-
+        self.tableWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        #self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.fill_table_config(0,0,'DYE type')
         self.tableWidget.setCellWidget(0,1,self.dye_combo)
 
@@ -280,7 +278,7 @@ class Panel(QtGui.QWidget):
 
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
             
-        self.tableWidget.horizontalHeader().setStretchLastSection(True)
+
 
         #self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
@@ -630,19 +628,17 @@ class Panel(QtGui.QWidget):
 
     def single_sample_finished(self):
         self.StatusBox.clear()  
-        self.textBox_LastpH.setText('Last measured pH_lab: {}'.format(
-            str(self.pH_log_row["pH_lab"])))
-
+        self.update_infotable()
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
-        self.btn_cont_meas.setEnabled(True) 
+        self.btn_cont_meas.setEnabled(True)
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
         self.StatusBox.setText('Waiting for new sample')
-
+        self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
 
         if not self.btn_cont_meas.isChecked():
@@ -652,15 +648,22 @@ class Panel(QtGui.QWidget):
         else: 
             self.StatusBox.setText('Waiting for new sample')
 
-    def append_text_box(self):
-        pH_lab = str(self.pH_log_row["pH_lab"])
-        T_lab = str(self.pH_log_row["T_lab"])
-        pH_insitu = str(self.pH_log_row["pH_insitu"])
+    def update_infotable(self):
 
-        self.textBox_LastpH.setText('Last measured pH: {}'.format(pH_lab))
-        ########self.logTextBox.appendPlainText('
-        #pH_t = {}, refT = {}, pert = {},
-        #evalAnir = {}'.format(pH_t, refT, pert, evalAnir))
+        pH_lab = str(self.pH_log_row["pH_lab"])
+        self.fill_table_pH(0,1,pH_lab)
+
+        T_lab = str(self.pH_log_row["T_lab"])
+        self.fill_table_pH(1,1, T_lab)
+
+        pH_insitu = str(self.pH_log_row["pH_insitu"])
+        self.fill_table_pH(2,1,pH_insitu)
+
+        T_insitu = str(self.pH_log_row["fb_temp"])
+        self.fill_table_pH(3,0,'T insitu')
+
+        S_insitu = str(self.pH_log_row["fb_sal"])
+        self.fill_table_pH(4,0,'S insitu')
 
     def get_V(self, nAver, ch):
         V = 0.0000
