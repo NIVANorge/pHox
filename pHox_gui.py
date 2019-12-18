@@ -181,7 +181,7 @@ class Panel(QtGui.QWidget):
         self.table_pH = QtGui.QTableWidget(5,2)
         self.table_pH.verticalHeader().hide()
         self.table_pH.horizontalHeader().hide()    
-
+        self.table_pH.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
         self.fill_table_pH(0,0,'pH lab')
         self.fill_table_pH(1,0,'T lab')
         self.fill_table_pH(2,0,'pH insitu')
