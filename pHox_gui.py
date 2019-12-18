@@ -183,12 +183,11 @@ class Panel(QtGui.QWidget):
         self.table_pH.setRowCount(5)
         self.table_pH.setColumnCount(2)
 
-        self.table_pH.setCellWidget(0,0,'pH lab')
-        self.table_pH.setCellWidget(1,0,'T lab')
-        self.table_pH.setCellWidget(2,0,'pH insitu')
-        self.table_pH.setCellWidget(3,0,'T insitu')
-        self.table_pH.setCellWidget(4,0,'S insitu')
-
+        self.fill_table_pH(0,0,'pH lab')
+        self.fill_table_pH(1,0,'T lab')
+        self.fill_table_pH(2,0,'pH insitu')
+        self.fill_table_pH(3,0,'T insitu')
+        self.fill_table_pH(4,0,'S insitu')
 
 
         self.textBox_LastpH = QtGui.QTextEdit()
@@ -222,6 +221,9 @@ class Panel(QtGui.QWidget):
  
         self.tab1.setLayout(self.tab1.layout)
 
+    def fill_table_pH(self,x,y,item):
+        self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
+
     def make_tab_config(self):
         self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
@@ -243,26 +245,26 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(2)
 
-        self.tableWidget.setCellWidget(0,0,'DYE type')
-        self.tableWidget.setCellWidget(0,1,self.dye_combo)
+        self.fill_table_config(0,0,'DYE type')
+        self.fill_table_config(0,1,self.dye_combo)
 
-        self.tableWidget.setCellWidget(1,0,'NIR:')
-        self.tableWidget.setCellWidget(1,1,str(self.instrument.NIR))
+        self.fill_table_config(1,0,'NIR:')
+        self.fill_table_config(1,1,str(self.instrument.NIR))
 
-        self.tableWidget.setCellWidget(2,0,'HI-')
-        self.tableWidget.setCellWidget(2,1,str(self.instrument.HI))
+        self.fill_table_config(2,0,'HI-')
+        self.fill_table_config(2,1,str(self.instrument.HI))
 
-        self.tableWidget.setCellWidget(3,0,'I2-')
-        self.tableWidget.setCellWidget(3,1, str(self.instrument.I2))
+        self.fill_table_config(3,0,'I2-')
+        self.fill_table_config(3,1, str(self.instrument.I2))
 
-        self.tableWidget.setCellWidget(4,0,'Last calibration:')
-        self.tableWidget.setCellWidget(4,1,' not used yet:')        
+        self.fill_table_config(4,0,'Last calibration:')
+        self.fill_table_config(4,1,' not used yet:')        
 
-        self.tableWidget.setCellWidget(5,0,'pH sampling interval (min)')
+        self.fill_table_config(5,0,'pH sampling interval (min)')
 
 
-        self.tableWidget.setCellWidget(6,0,'Spectroph intergration time')
-        self.tableWidget.setCellWidget(6,1,str(self.instrument.specIntTime))
+        self.fill_table_config(6,0,'Spectroph intergration time')
+        self.fill_table_config(6,1,str(self.instrument.specIntTime))
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
@@ -282,6 +284,11 @@ class Panel(QtGui.QWidget):
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
         self.tab_config.setLayout(self.tab_config.layout)  
+
+
+
+    def fill_table_config(self,x,y,item):
+        self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
     def sampling_int_chngd(self,ind):
         print ('value chaged',ind)
