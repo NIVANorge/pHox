@@ -43,7 +43,7 @@ class Panel(QtGui.QWidget):
         self.continous_mode_is_on = False
         self.args = parser.parse_args()
         self.create_timers()
-        self.instrument = pH_instrument()
+        self.instrument = pH_instrument(self.args)
         if args.seabreeze:
             self.wvls = self.instrument.get_wavelengths()
         else:
