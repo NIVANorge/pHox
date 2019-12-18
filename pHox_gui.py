@@ -328,7 +328,7 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
-        self.btn_t_dark.clicked.connect(self.on_dark_clicked)
+        #self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -448,7 +448,7 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
 
-    def on_dark_clicked(self):
+    '''def on_dark_clicked(self):
         self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
@@ -456,7 +456,7 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
             self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
-            self.instrument.spectrometer.set_scans_average(1)
+            self.instrument.spectrometer.set_scans_average(1)'''
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -821,7 +821,7 @@ class Panel(QtGui.QWidget):
             if (self.instrument.last_dark is None) or (
                 (now - self.instrument.last_dark) >= self.instrument._autodark):
                 self.logTextBox.appendPlainText('New dark required')
-                self.on_dark_clicked()
+                ###self.on_dark_clicked()
             else:
                 self.logTextBox.appendPlainText('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
