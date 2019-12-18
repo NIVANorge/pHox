@@ -828,10 +828,10 @@ class Panel(QtGui.QWidget):
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
         #####self.on_dark_clicked() 
-
-        self.logTextBox.appendPlainText('Autoadjust LEDS')
-        self.sample_steps[1].setChecked(True)
-        self.on_autoAdjust_clicked()  
+        if not self.args.seabreeze:
+            self.logTextBox.appendPlainText('Autoadjust LEDS')
+            self.sample_steps[1].setChecked(True)
+            self.on_autoAdjust_clicked()  
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
