@@ -45,7 +45,7 @@ class Panel(QtGui.QWidget):
         self.create_timers()
         self.instrument = pH_instrument(self.args)
         if self.args.seabreeze:
-            self.wvls = self.instrument.get_wavelengths()
+            self.wvls = self.instrument.spectrometer.get_wavelengths()
         else:
             self.wvls = self.instrument.calc_wavelengths(
             self.instrument.spectrometer.wvlCalCoeff)
