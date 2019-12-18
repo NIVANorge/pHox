@@ -216,10 +216,6 @@ class Panel(QtGui.QWidget):
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
 
-
-
-
-
     def make_tab_config(self):
         self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
@@ -284,8 +280,6 @@ class Panel(QtGui.QWidget):
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
         self.tab_config.setLayout(self.tab_config.layout)  
-
-
 
     def fill_table_config(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
@@ -650,20 +644,20 @@ class Panel(QtGui.QWidget):
 
     def update_infotable(self):
 
-        pH_lab = str(self.pH_log_row["pH_lab"])
+        pH_lab = str(self.pH_log_row["pH_lab"].values)
         self.fill_table_pH(0,1,pH_lab)
 
-        T_lab = str(self.pH_log_row["T_lab"])
+        T_lab = str(self.pH_log_row["T_lab"].values)
         self.fill_table_pH(1,1, T_lab)
 
-        pH_insitu = str(self.pH_log_row["pH_insitu"])
+        pH_insitu = str(self.pH_log_row["pH_insitu"].values)
         self.fill_table_pH(2,1,pH_insitu)
 
-        T_insitu = str(self.pH_log_row["fb_temp"])
-        self.fill_table_pH(3,0,'T insitu')
+        T_insitu = str(self.pH_log_row["fb_temp"].values)
+        self.fill_table_pH(3,1,T_insitu)
 
-        S_insitu = str(self.pH_log_row["fb_sal"])
-        self.fill_table_pH(4,0,'S insitu')
+        S_insitu = str(self.pH_log_row["fb_sal"].values)
+        self.fill_table_pH(4,1,S_insitu)
 
     def get_V(self, nAver, ch):
         V = 0.0000
@@ -987,7 +981,6 @@ class Panel(QtGui.QWidget):
 
         log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
-        print (log_df.head())
 
         log_df.to_csv(logfile, index = False, header=True) 
 
@@ -1010,8 +1003,6 @@ class Panel(QtGui.QWidget):
             if hdr:
                 logFile.write(hdr + '\n')
             logFile.write(s)'''
-
-
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
