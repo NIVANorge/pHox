@@ -213,6 +213,11 @@ class Panel(QtGui.QWidget):
  
         self.tab1.setLayout(self.tab1.layout)
 
+
+    def append_logbox(self,message):
+        t = datetime.now().strftime('%m-%d %H:%M:%S')
+        self.logTextBox.appendPlainText(t + '  Starting in debug mode')
+
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
 
@@ -443,6 +448,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)        
 
     def on_dark_clicked(self):
+        self.append_logbox('Measuring dark...')
         self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
