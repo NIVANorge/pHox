@@ -75,7 +75,7 @@ QPushButton:checked:disabled {
 
 QPushButton:hover {
   color: white;
-  font-size: 12pt;
+  font-size: 11pt;
 }
 
 QGroupBox {
