@@ -970,20 +970,20 @@ class Panel(QtGui.QWidget):
 
     def save_logfile_df(self):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
+
         if os.path.exists(logfile):
-            log_df = pd.read_csv(logfile,sep = ',')
+            self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=True) 
+            #log_df = pd.read_csv(logfile,sep = ',')
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
                          "fb_sal",'SHIP',"pH_lab", 
                           "T_lab", "perturbation",
                           "evalAnir", "pH_insitu"])
+            self.pH_log_row.to_csv(logfile, index = False, header=True) 
 
-        log_df =  log_df.append(self.pH_log_row)  
+        #log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
-
-        log_df.to_csv(logfile, index = False, header=True) 
-
 
     def send_to_ferrybox(self,pHeval):
         s = self.instrument.timeStamp[0:16]

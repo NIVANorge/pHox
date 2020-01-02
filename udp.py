@@ -61,5 +61,5 @@ def send_data(s):
     sock.close()
     return 
     
-#server = threading.Thread(target=udp_server)
-#server.start()
+server = threading.Thread(target=udp_server)
+server.start()
