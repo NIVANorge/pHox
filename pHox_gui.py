@@ -926,8 +926,6 @@ class Panel(QtGui.QWidget):
                         self.instrument.nlCoeff[1] * postinj_min_dark + 
                         self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
-                print ('blank_min_dark',blank_min_dark)
-                print ('postinj_min_dark',postinj_min_dark)
                 bmdCorr = blank_min_dark * cfb
                 pmdCorr = postinj_min_dark * cfp
                 spAbs = np.log10((bmdCorr/pmdCorr).astype(int))
@@ -939,7 +937,6 @@ class Panel(QtGui.QWidget):
                         v = spAbs[i-nPoints:i+nPoints+1]
                         spAbsMA[i]= np.mean(v)"""
 
-                
                 #self.instrument.calc_pH(spAbs,vNTC,dilution)
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
 
@@ -983,7 +980,8 @@ class Panel(QtGui.QWidget):
 
             #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
             time.sleep(2)
-            self.instrument.spectrometer.set_scans_average(1)        
+            self.instrument.spectrometer.set_scans_average(1)   
+            print ('Single measurement is done...')     
             self.logTextBox.appendPlainText('Single measurement is done...')
             self.sample_steps[8].setChecked(True)
 
