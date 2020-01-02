@@ -1015,6 +1015,17 @@ class boxUI(QtGui.QMainWindow):
         self.showMaximized()        
         self.main_widget.autorun()
 
+    def closeEvent(self,event):
+        result = QtGui.QMessageBox.question(self,
+                      "Confirm Exit...",
+                      "Are you sure you want to exit ?",
+                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        event.ignore()
+
+        if result == QtGui.QMessageBox.Yes:
+            event.accept()
+
+            
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
