@@ -449,7 +449,7 @@ class Panel(QtGui.QWidget):
 
     def on_dark_clicked(self):
         self.append_logbox('Measuring dark...')
-        self.logTextBox.appendPlainText('Measuring dark...')
+        #self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
         print ('self.instrument.specAvScans',self.instrument.specAvScans)
@@ -460,7 +460,8 @@ class Panel(QtGui.QWidget):
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
-        self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
+        self.append_logbox('Leds {}'.format(str(state)))
+        #self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -680,7 +681,8 @@ class Panel(QtGui.QWidget):
 
     def continuous_mode_timer_finished(self):
         print ('start continuous mode')
-        self.logTextBox.appendPlainText('Inside continuous_mode...')
+        self.append_logbox('Inside continuous_mode...')
+        #self.logTextBox.appendPlainText('Inside continuous_mode...')
 
         self.instrument.reset_lines()
 
@@ -695,11 +697,12 @@ class Panel(QtGui.QWidget):
         self.sliders[2].setValue(self.instrument.LED3)
 
     def _autostart(self):
-        self.logTextBox.appendPlainText('Inside _autostart...')
-        self.textBox.setText('Inside _autostart...')
+        self.append_logbox('Inside _autostart...')
+        #self.logTextBox.appendPlainText('Inside _autostart...')
+        #self.textBox.setText('Inside _autostart...')
         self.timerSpectra_plot.start()
         # Take dark for the first time 
-        self.textBox.setText('Taking dark...')
+        #self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
         self.update_LEDs()
         # turn on leds 
@@ -717,6 +720,7 @@ class Panel(QtGui.QWidget):
         return
 
     def _autostop(self):
+        self.append_logbox('Inside _autostop...')
         #self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         self.timerSpectra_plot.stop()
@@ -731,7 +735,8 @@ class Panel(QtGui.QWidget):
         return
 
     def autostop_time(self):
-        self.logTextBox.appendPlainText('Inside autostop_time...')
+        self.append_logbox('Inside autostop_time...')
+        #self.logTextBox.appendPlainText('Inside autostop_time...')
         self.timerAuto.stop()
         self._autostop()
         now  = datetime.now()
@@ -744,7 +749,8 @@ class Panel(QtGui.QWidget):
         return
         
     def autostart_time(self):
-        self.logTextBox.appendPlainText('Inside _autostart_time...')
+        self.append_logbox('Inside _autostart_time...')
+        #self.logTextBox.appendPlainText('Inside _autostart_time...')
         self.timerAuto.stop()
         now  = datetime.now()
         if now < self.instrument._autotime:
@@ -808,9 +814,11 @@ class Panel(QtGui.QWidget):
         return
 
     def sample(self):   
-        self.StatusBox.setText('Start new measurement')
+
+        self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
-        self.logTextBox.appendPlainText('Start new measurement')
+        self.append_logbox('Start new measurement')
+        #self.logTextBox.appendPlainText('Start new measurement')
 
         if not fbox['pumping']:
             return
