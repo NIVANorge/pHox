@@ -925,10 +925,14 @@ class Panel(QtGui.QWidget):
                         self.instrument.nlCoeff[1] * postinj_min_dark + 
                         self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
-                bmdCorr = blank_min_dark * cfb
-                pmdCorr = postinj_min_dark * cfp
-                spAbs = np.log10(int(bmdCorr/pmdCorr))
-                sp = np.log10(int(blank_min_dark/postinj_min_dark))            
+                print (cfb,'cfb')
+                print (cfp,'cfp')
+                print ('blank_min_dark',blank_min_dark)
+                print ('postinj_min_dark',postinj_min_dark)
+                bmdCorr = blank_min_dark * int(cfb)
+                pmdCorr = postinj_min_dark * int(cfp)
+                spAbs = np.log10(bmdCorr/pmdCorr)
+                sp = np.log10(blank_min_dark/postinj_min_dark)            
                 # moving average 
                 """  spAbsMA = spAbs
                     nPoints = 3
