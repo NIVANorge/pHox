@@ -762,8 +762,7 @@ class Panel(QtGui.QWidget):
         return
     
     def autostart_pump(self):
-        self.logTextBox.appendPlainText('Inside _autostart_pump...')
-        self.logTextBox.appendPlainText('Automatic start at pump enabled')
+        self.append_logbox('Automatic start at pump enabled')
 
         if fbox['pumping']:
             self.timerAuto.stop()
@@ -834,11 +833,11 @@ class Panel(QtGui.QWidget):
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
-            self.logTextBox.appendPlainText('Pumping, Standalone, Continous')
+            self.append_logbox('Pumping, Standalone, Continous')
 
         elif self.mode == 'Calibration':
             self.pumping(self.instrument.pumpTime) 
-            self.logTextBox.appendPlainText('Pumping, Calibration')     
+            self.append_logbox('Pumping, Calibration')    
 
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
@@ -846,7 +845,7 @@ class Panel(QtGui.QWidget):
         # Take the last measured dark
         dark = self.spCounts_df['dark']
 
-        self.logTextBox.appendPlainText('Measuring blank...')
+        self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
         blank = self.instrument.spectrometer.get_corrected_spectra()
         
@@ -869,7 +868,7 @@ class Panel(QtGui.QWidget):
                         vol_injected  + self.instrument.Cuvette_V)
 
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            self.logTextBox.appendPlainText('Injection %d:' %(n_inj+1))
+            self.append_logbox('Injection %d:' %(n_inj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -960,8 +959,9 @@ class Panel(QtGui.QWidget):
         self.logTextBox.appendPlainText('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
 
-        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
-        time.sleep(2)
+        #Segmentation error happens here 
+        # Trying to waint for avoiding it 
+        time.sleep(10)
         print ('After measurement set scans average to 1')
         self.instrument.spectrometer.set_scans_average(1)   
 
