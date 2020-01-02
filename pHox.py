@@ -81,10 +81,10 @@ class STSVIS(object):
         time.sleep(0.5)
 
     def set_scans_average(self,nscans):
-        print ('nscans',nscans)
+        print ('inside func set_scance_average nscans',nscans)
         msgType= b'\x10\x00\x12\x00'
         immDataLength = b'\x02'
-        print ('set_scans_average, struct pack')
+        print ('call struct pack')
         immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
         print ('send message to instr, set scan average')
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
@@ -140,6 +140,7 @@ class pH_instrument(object):
         self.load_config()       
 
         self.spectrometer.set_integration_time(self.specIntTime)
+        print ('initialize Ph inst class, scans av to 1')
         self.spectrometer.set_scans_average(1)
         
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
@@ -295,6 +296,7 @@ class pH_instrument(object):
         
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
+        print ('inside auto_adjust fucn, set scans av to 1')
         self.spectrometer.set_scans_average(1)
 
         for sptIt in sptItRange:

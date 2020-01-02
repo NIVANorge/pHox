@@ -451,9 +451,10 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
-        print ('self.instrument.specAvScans',self.instrument.specAvScans)
+        print ('Measuring dark...,put scans average from the config')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
-        self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()        
+        self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()  
+        print ('after dark set scans av to 1')      
         self.instrument.spectrometer.set_scans_average(1)
 
     def set_LEDs(self, state):
@@ -828,7 +829,7 @@ class Panel(QtGui.QWidget):
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
-
+        print ('set_scans_average from sample after autoadjust')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
