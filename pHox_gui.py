@@ -1009,7 +1009,8 @@ class Panel(QtGui.QWidget):
 
         log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
-
+        
+        #df.to_csv('my_csv.csv', mode='a', header=False)
         log_df.to_csv(logfile, index = False, header=True) 
 
 
