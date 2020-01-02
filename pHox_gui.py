@@ -505,8 +505,7 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     def on_autoAdjust_clicked(self):
-        #
-        self.logTextBox.appendPlainText('on_autoAdjust_clicked')
+
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
