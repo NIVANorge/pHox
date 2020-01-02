@@ -466,10 +466,13 @@ class pH_instrument(object):
                 else: 
                     pH_lab = pH_t_corr[0]
 
-        perturbation = slope1 
+
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
+
+        perturbation = round(slope1, prec['perturbation'])        
         pH_insitu = round(pH_insitu , prec['pH'])
         pH_lab = round(pH_lab , prec['pH'])
+        
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu)      
 
