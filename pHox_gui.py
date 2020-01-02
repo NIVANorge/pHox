@@ -1033,7 +1033,8 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timer_contin_mode.stop()
             self.main_widget.timerSensUpd.stop()
             self.main_widget.close()
-            print ('ended')           
+            print ('ended')  #app.quit()   
+            sys.exit()     
             event.accept()
 
 
@@ -1047,4 +1048,4 @@ if __name__ == '__main__':
 
 
 
-#app.quit()
+
