@@ -644,7 +644,7 @@ class Panel(QtGui.QWidget):
 
     def update_infotable(self):
 
-        pH_lab = str(self.pH_log_row["pH_lab"].values)
+        pH_lab = str(self.pH_log_row["pH_lab"].values[0])
         self.fill_table_pH(0,1,pH_lab)
 
         T_lab = str(self.pH_log_row["T_lab"].values)
