@@ -475,7 +475,7 @@ class pH_instrument(object):
             raise ValueError('wrong DYE: ' + self.dye)
             
         pH = round(pH, prec['pH'])
-        pK = round(pK, prec['pK'])        
+        pK = round(pK, prec['pK'])
         e1 = round(e1, prec['e1'])  
         e2 = round(e2, prec['e2'])  
         e3 = round(e3, prec['e3']) 

@@ -520,7 +520,7 @@ class Panel(QtGui.QWidget):
             self.instrument.specIntTime = sptIt
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
                 str(self.instrument.specIntTime)))  
-            if not aelf.args.seabreeze:    
+            if not self.args.seabreeze:    
                 self.instrument.specAvScans = 3000/sptIt
         else:
             pass
@@ -944,7 +944,7 @@ class Panel(QtGui.QWidget):
         time.sleep(2)
         self.logTextBox.appendPlainText('Save data to file')
         self.sample_steps[7].setChecked(True)
-
+        
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
@@ -968,7 +968,8 @@ class Panel(QtGui.QWidget):
                 "evalAnir"     : [evalAnir],
                 "pH_insitu"    : [pH_insitu]})
 
-            self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+            self.logTextBox.appendPlainText('data saved in %s' % (
+                self.instrument.folderPath +'pH.log'))
             
             self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
             self.save_logfile_df()
