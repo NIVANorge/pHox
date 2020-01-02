@@ -972,7 +972,7 @@ class Panel(QtGui.QWidget):
         logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
 
         if os.path.exists(logfile):
-            self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=True) 
+            self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
             #log_df = pd.read_csv(logfile,sep = ',')
         else: 
             log_df = pd.DataFrame(
