@@ -877,7 +877,7 @@ class Panel(QtGui.QWidget):
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            self.logTextBox.appendPlainText("Mixing")
+            self.append_logbox("Mixing")
             time.sleep(self.instrument.mixT)
 
             # turn off the stirrer
@@ -924,7 +924,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(False)
 
         time.sleep(2)
-        self.logTextBox.appendPlainText('Save data to file')
+        self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
 
         self.spCounts_df.T.to_csv(
@@ -949,7 +949,7 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
-        self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        self.append_logbox('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
         #self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
         self.send_to_ferrybox()
@@ -957,7 +957,7 @@ class Panel(QtGui.QWidget):
         print ('still inside sample')
      
         print ('Single measurement is done...')
-        self.logTextBox.appendPlainText('Single measurement is done...')
+        self.append_logbox('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
 
         #Segmentation error happens here 
@@ -965,7 +965,6 @@ class Panel(QtGui.QWidget):
         time.sleep(10)
         print ('After measurement set scans average to 1')
         self.instrument.spectrometer.set_scans_average(1)   
-
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
@@ -1023,9 +1022,21 @@ class boxUI(QtGui.QMainWindow):
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
+            
+            #udp.UDP_EXIT = True
+            #udp.server.join()
+            #if not udp.server.is_alive():
+            #    print ('UDP server closed')
+
+            self.main_widget.timerSpectra_plot.stop()
+            print ('timer is stopped')
+            self.main_widget.timer_contin_mode.stop()
+            self.main_widget.timerSensUpd.stop()
+            self.main_widget.close()
+            print ('ended')           
             event.accept()
 
-            
+
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
@@ -1034,15 +1045,6 @@ if __name__ == '__main__':
     ui  = boxUI()
     app.exec_()
 
-    #udp.UDP_EXIT = True
-    #udp.server.join()
-    #if not udp.server.is_alive():
-    #    print ('UDP server closed')
 
-    '''self.main_widget.timerSpectra_plot.stop()
-    print ('timer is stopped')
-    self.main_widget.timer_contin_mode.stop()
-    self.main_widget.timerSensUpd.stop()
-    self.main_widget.close()
-    print ('ended')'''
+
 #app.quit()
