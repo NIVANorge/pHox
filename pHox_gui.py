@@ -473,9 +473,11 @@ class Panel(QtGui.QWidget):
         self.instrument.folderPath = folder+'/'
 
     def update_spectra_plot(self):
-        pass 
-        #datay = self.instrument.spectrometer.get_corrected_spectra()
-        #self.plotSpc.setData(self.wvls,datay)                  
+        if not self.args.seabreeze:
+            datay = self.instrument.spectrometer.get_corrected_spectra()
+        else: 
+            datay = self.instrument.spectrometer.get_intensities_raw()          
+        self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
         d = self.CO2_instrument.franatech 
@@ -654,19 +656,19 @@ class Panel(QtGui.QWidget):
 
     def update_infotable(self):
 
-        pH_lab = str(self.pH_log_row["pH_lab"].values)
+        pH_lab = str(self.pH_log_row["pH_lab"].values[0])
         self.fill_table_pH(0,1,pH_lab)
 
-        T_lab = str(self.pH_log_row["T_lab"].values)
+        T_lab = str(self.pH_log_row["T_lab"].values[0])
         self.fill_table_pH(1,1, T_lab)
 
-        pH_insitu = str(self.pH_log_row["pH_insitu"].values)
+        pH_insitu = str(self.pH_log_row["pH_insitu"].values[0])
         self.fill_table_pH(2,1,pH_insitu)
 
-        T_insitu = str(self.pH_log_row["fb_temp"].values)
+        T_insitu = str(self.pH_log_row["fb_temp"].values[0])
         self.fill_table_pH(3,1,T_insitu)
 
-        S_insitu = str(self.pH_log_row["fb_sal"].values)
+        S_insitu = str(self.pH_log_row["fb_sal"].values[0])
         self.fill_table_pH(4,1,S_insitu)
 
     def get_V(self, nAver, ch):
@@ -908,8 +910,8 @@ class Panel(QtGui.QWidget):
             if self.args.seabreeze:
                 self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw()
                 time.sleep(10)
-                self.spCounts_df[str(n_inj)+'corr_nonlin'] = self.instrument.spectrometer.get_intensities_corr_nonlinear()
-
+                spAbs = self.instrument.spectrometer.get_intensities_corr_nonlinear()
+                self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             else:     
                 # postinjection minus dark     
                 postinj_min_dark = np.clip(postinj - dark,1,16000)
@@ -925,8 +927,8 @@ class Panel(QtGui.QWidget):
 
                 bmdCorr = blank_min_dark * cfb
                 pmdCorr = postinj_min_dark * cfp
-                spAbs = np.log10(bmdCorr/pmdCorr)
-                sp = np.log10(blank_min_dark/postinj_min_dark)            
+                spAbs = np.log10(int(bmdCorr/pmdCorr))
+                sp = np.log10(int(blank_min_dark/postinj_min_dark))            
                 # moving average 
                 """  spAbsMA = spAbs
                     nPoints = 3
@@ -934,9 +936,11 @@ class Panel(QtGui.QWidget):
                         v = spAbs[i-nPoints:i+nPoints+1]
                         spAbsMA[i]= np.mean(v)"""
 
-                self.plotAbs.setData(self.wvls,spAbs)
+                
                 #self.instrument.calc_pH(spAbs,vNTC,dilution)
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
+
+        self.plotAbs.setData(self.wvls,spAbs)
 
         # opening the valve
         self.instrument.set_Valve(False)
