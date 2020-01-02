@@ -626,6 +626,7 @@ class Panel(QtGui.QWidget):
             self.sample_thread.finished.connect(self.single_sample_finished)
 
     def single_sample_finished(self):
+        print ('single sample finished inside func')
         self.StatusBox.clear()  
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
