@@ -105,13 +105,14 @@ class Panel(QtGui.QWidget):
 
     def create_timers(self):
         self.timerSpectra_plot = QtCore.QTimer()
+        self.timerSpectra_plot.setInterval(500)
         self.timer_contin_mode = QtCore.QTimer()
-        self.timerSensUpd = QtCore.QTimer()
+        #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
-        self.timerSensUpd.timeout.connect(self.update_sensors_info)
+        #self.timerSensUpd.timeout.connect(self.update_sensors_info)
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
@@ -279,8 +280,6 @@ class Panel(QtGui.QWidget):
 
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
             
-
-
         #self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
@@ -554,7 +553,7 @@ class Panel(QtGui.QWidget):
                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
         self.textBox_LastpH.setText(text)
 
-    def update_sensors_info(self):
+    '''def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         #Tntc = 0
         Tntc = (self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1]
@@ -577,7 +576,7 @@ class Panel(QtGui.QWidget):
         self.textBox_LastpH.setText(text)
 
         if self.args.pco2:
-            self.add_pco2_info(text)
+            self.add_pco2_info(text)'''
 
     def get_next_sample(self):
         t = datetime.now()
@@ -698,15 +697,17 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
-        #self.textBox.setText('Inside _autostart...')
-        self.timerSpectra_plot.start()
+
+        self.update_spectra_plot()
+        #self.timerSpectra_plot.start()
         # Take dark for the first time 
         #self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
         self.update_LEDs()
         # turn on leds 
         self.btn_leds.setChecked(True)
-        self.timerSpectra_plot.start(500)
+        self.update_spectra_plot()
+        #self.timerSpectra_plot.start()
 
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
@@ -721,7 +722,7 @@ class Panel(QtGui.QWidget):
     def _autostop(self):
         self.append_logbox('Inside _autostop...')
         time.sleep(10)
-        self.timerSpectra_plot.stop()
+
         self.btn_leds.setChecked(False)
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
@@ -824,9 +825,12 @@ class Panel(QtGui.QWidget):
                 self.append_logbox('next dark at time..x') 
 
         self.on_dark_clicked() 
+        
+        self.timerSpectra_plot.start()
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
         self.on_autoAdjust_clicked()  
+        self.timerSpectra_plot.stop()
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
@@ -846,6 +850,7 @@ class Panel(QtGui.QWidget):
         # Take the last measured dark
         dark = self.spCounts_df['dark']
 
+        print ('measuring blank')
         self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
         blank = self.instrument.spectrometer.get_corrected_spectra()
@@ -1022,7 +1027,7 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timerSpectra_plot.stop()
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.timerSensUpd.stop()            
+            #self.main_widget.timerSensUpd.stop()            
             QtGui.QApplication.quit() 
             print ('ended')  #app.quit()               
             event.accept()            
