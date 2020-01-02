@@ -1022,19 +1022,21 @@ class boxUI(QtGui.QMainWindow):
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
+            self.main_widget.timerSpectra_plot.stop()
+            print ('timer is stopped')
+            self.main_widget.timer_contin_mode.stop()
+            self.main_widget.timerSensUpd.stop()            
             QtGui.QApplication.quit() 
+            print ('ended')  #app.quit()               
             event.accept()            
             #udp.UDP_EXIT = True
             #udp.server.join()
             #if not udp.server.is_alive():
             #    print ('UDP server closed')
 
-            self.main_widget.timerSpectra_plot.stop()
-            print ('timer is stopped')
-            self.main_widget.timer_contin_mode.stop()
-            self.main_widget.timerSensUpd.stop()
-            self.main_widget.close()
-            print ('ended')  #app.quit()   
+
+            #self.main_widget.close()
+
    
 if __name__ == '__main__':
 
