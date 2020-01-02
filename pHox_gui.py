@@ -216,7 +216,7 @@ class Panel(QtGui.QWidget):
 
     def append_logbox(self,message):
         t = datetime.now().strftime('%m-%d %H:%M:%S')
-        self.logTextBox.appendPlainText(t + '  Starting in debug mode')
+        self.logTextBox.appendPlainText(t + message)
 
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
