@@ -448,7 +448,7 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
 
-    '''def on_dark_clicked(self):
+    def on_dark_clicked(self):
         self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
@@ -456,7 +456,7 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
             self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
-            self.instrument.spectrometer.set_scans_average(1)'''
+            self.instrument.spectrometer.set_scans_average(1)
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -705,7 +705,8 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot.start()
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
-        #####self.on_dark_clicked()
+        if not self.args.seabreeze:
+            self.on_dark_clicked()
         self.update_LEDs()
         # turn on leds 
         self.btn_leds.setChecked(True)
