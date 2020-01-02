@@ -635,6 +635,7 @@ class Panel(QtGui.QWidget):
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
+        print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
@@ -820,8 +821,7 @@ class Panel(QtGui.QWidget):
                 self.on_dark_clicked()
             else:
                 self.append_logbox('next dark at time..x') 
-                #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
-  
+
         self.on_dark_clicked() 
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
@@ -829,7 +829,6 @@ class Panel(QtGui.QWidget):
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
-        print ('set_scans_average from sample after autoadjust')
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
@@ -895,7 +894,6 @@ class Panel(QtGui.QWidget):
 
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj - dark,1,16000)
-            #print ('postinj_min_dark')
 
             cfb =  (self.instrument.nlCoeff[0] + 
                     self.instrument.nlCoeff[1] * blank_min_dark + 
@@ -954,17 +952,16 @@ class Panel(QtGui.QWidget):
         #self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
         self.send_to_ferrybox()
         self.save_logfile_df()
-        print ('still inside sample')
      
         print ('Single measurement is done...')
         self.append_logbox('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
 
         #Segmentation error happens here 
-        # Trying to waint for avoiding it 
-        time.sleep(10)
-        print ('After measurement set scans average to 1')
-        self.instrument.spectrometer.set_scans_average(1)   
+        # Trying to wait for avoiding it 
+        #time.sleep(10)
+
+        #self.instrument.spectrometer.set_scans_average(1)   
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
@@ -1013,7 +1010,6 @@ class boxUI(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
-
     def closeEvent(self,event):
         result = QtGui.QMessageBox.question(self,
                       "Confirm Exit...",
