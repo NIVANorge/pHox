@@ -88,7 +88,7 @@ class STSVIS(object):
         immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
         print ('send message to instr, set scan average')
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
-        time.sleep(0.5)
+        time.sleep(5)
 
     def get_wvlCalCoeff(self):
         #get the coefficients
@@ -472,7 +472,7 @@ class pH_instrument(object):
         perturbation = round(slope1, prec['perturbation'])        
         pH_insitu = round(pH_insitu , prec['pH'])
         pH_lab = round(pH_lab , prec['pH'])
-        
+
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu)      
 

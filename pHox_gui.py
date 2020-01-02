@@ -215,8 +215,8 @@ class Panel(QtGui.QWidget):
 
 
     def append_logbox(self,message):
-        t = datetime.now().strftime('%m-%d %H:%M:%S')
-        self.logTextBox.appendPlainText(t + message)
+        t = datetime.now().strftime('%b-%d %H:%M:%S')
+        self.logTextBox.appendPlainText(t + '  ' + message)
 
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
@@ -449,7 +449,6 @@ class Panel(QtGui.QWidget):
 
     def on_dark_clicked(self):
         self.append_logbox('Measuring dark...')
-        #self.logTextBox.appendPlainText('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
         print ('self.instrument.specAvScans',self.instrument.specAvScans)
@@ -461,7 +460,6 @@ class Panel(QtGui.QWidget):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
         self.append_logbox('Leds {}'.format(str(state)))
-        #self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -682,7 +680,6 @@ class Panel(QtGui.QWidget):
     def continuous_mode_timer_finished(self):
         print ('start continuous mode')
         self.append_logbox('Inside continuous_mode...')
-        #self.logTextBox.appendPlainText('Inside continuous_mode...')
 
         self.instrument.reset_lines()
 
@@ -698,7 +695,6 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
-        #self.logTextBox.appendPlainText('Inside _autostart...')
         #self.textBox.setText('Inside _autostart...')
         self.timerSpectra_plot.start()
         # Take dark for the first time 
@@ -721,7 +717,6 @@ class Panel(QtGui.QWidget):
 
     def _autostop(self):
         self.append_logbox('Inside _autostop...')
-        #self.logTextBox.appendPlainText('Inside _autostop...')
         time.sleep(10)
         self.timerSpectra_plot.stop()
         self.btn_leds.setChecked(False)
@@ -736,7 +731,6 @@ class Panel(QtGui.QWidget):
 
     def autostop_time(self):
         self.append_logbox('Inside autostop_time...')
-        #self.logTextBox.appendPlainText('Inside autostop_time...')
         self.timerAuto.stop()
         self._autostop()
         now  = datetime.now()
@@ -750,7 +744,6 @@ class Panel(QtGui.QWidget):
         
     def autostart_time(self):
         self.append_logbox('Inside _autostart_time...')
-        #self.logTextBox.appendPlainText('Inside _autostart_time...')
         self.timerAuto.stop()
         now  = datetime.now()
         if now < self.instrument._autotime:
@@ -783,8 +776,6 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        #self.logTextBox.appendPlainText('Inside autostop_pump...')
-        #self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
         if not fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
@@ -796,7 +787,7 @@ class Panel(QtGui.QWidget):
         return
         
     def autorun(self):
-        self.logTextBox.appendPlainText('Inside continuous_mode...')
+        self.append_logbox('Inside continuous_mode...')
 
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
@@ -818,7 +809,6 @@ class Panel(QtGui.QWidget):
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
         self.append_logbox('Start new measurement')
-        #self.logTextBox.appendPlainText('Start new measurement')
 
         if not fbox['pumping']:
             return
@@ -826,22 +816,20 @@ class Panel(QtGui.QWidget):
             now = datetime.now()
             if (self.instrument.last_dark is None) or (
                 (now - self.instrument.last_dark) >= self.instrument._autodark):
-                self.logTextBox.appendPlainText('New dark required')
+                self.append_logbox('New dark required')
                 self.on_dark_clicked()
             else:
-                self.logTextBox.appendPlainText('next dark at time..x') 
+                self.append_logbox('next dark at time..x') 
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
         self.on_dark_clicked() 
-
-        self.logTextBox.appendPlainText('Autoadjust LEDS')
+        self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
         self.on_autoAdjust_clicked()  
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
-        self.instrument.evalPar = []
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
@@ -966,12 +954,17 @@ class Panel(QtGui.QWidget):
         #self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
         self.send_to_ferrybox()
         self.save_logfile_df()
+        print ('still inside sample')
+     
+        print ('Single measurement is done...')
+        self.logTextBox.appendPlainText('Single measurement is done...')
+        self.sample_steps[8].setChecked(True)
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
-        self.instrument.spectrometer.set_scans_average(1)        
-        self.logTextBox.appendPlainText('Single measurement is done...')
-        self.sample_steps[8].setChecked(True)
+        print ('After measurement set scans average to 1')
+        self.instrument.spectrometer.set_scans_average(1)   
+
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
