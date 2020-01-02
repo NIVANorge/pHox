@@ -631,7 +631,7 @@ class Panel(QtGui.QWidget):
 
     def continuous_sample_finished(self):
         self.continous_mode_is_on = False
-        self.StatusBox.setText('Waiting for new sample')
+        self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
 
@@ -640,7 +640,9 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(True) 
             # enable all btns in manual tab 
         else: 
-            self.StatusBox.setText('Waiting for new sample')
+            nextSamplename = self.get_next_sample()
+            self.StatusBox.setText("Next sample at {}".format(nextSamplename))
+            #self.StatusBox.setText('Waiting for new sample')
 
     def update_infotable(self):
 
