@@ -647,16 +647,16 @@ class Panel(QtGui.QWidget):
         pH_lab = str(self.pH_log_row["pH_lab"].values[0])
         self.fill_table_pH(0,1,pH_lab)
 
-        T_lab = str(self.pH_log_row["T_lab"].values)
+        T_lab = str(self.pH_log_row["T_lab"].values[0])
         self.fill_table_pH(1,1, T_lab)
 
-        pH_insitu = str(self.pH_log_row["pH_insitu"].values)
+        pH_insitu = str(self.pH_log_row["pH_insitu"].values[0])
         self.fill_table_pH(2,1,pH_insitu)
 
-        T_insitu = str(self.pH_log_row["fb_temp"].values)
+        T_insitu = str(self.pH_log_row["fb_temp"].values[0])
         self.fill_table_pH(3,1,T_insitu)
 
-        S_insitu = str(self.pH_log_row["fb_sal"].values)
+        S_insitu = str(self.pH_log_row["fb_sal"].values[0])
         self.fill_table_pH(4,1,S_insitu)
 
     def get_V(self, nAver, ch):
@@ -973,7 +973,6 @@ class Panel(QtGui.QWidget):
 
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
-            #log_df = pd.read_csv(logfile,sep = ',')
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
@@ -981,9 +980,7 @@ class Panel(QtGui.QWidget):
                           "T_lab", "perturbation",
                           "evalAnir", "pH_insitu"])
             self.pH_log_row.to_csv(logfile, index = False, header=True) 
-
-        #log_df =  log_df.append(self.pH_log_row)  
-        print ('log_df')
+        print ('saved log_df')
 
     def send_to_ferrybox(self):
         '''s = self.instrument.timeStamp[0:16]
