@@ -948,7 +948,8 @@ class Panel(QtGui.QWidget):
 
         self.logTextBox.appendPlainText('data saved in %s' % (self.instrument.folderPath +'pH.log'))
         
-        self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
+        #self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
+        self.send_to_ferrybox()
         self.save_logfile_df()
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
@@ -983,6 +984,9 @@ class Panel(QtGui.QWidget):
         print ('saved log_df')
 
     def send_to_ferrybox(self):
+        row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
+        udp.send_data('$PPHOX,' + row_to_string + ',*\n')   
+
         '''s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (
             fbox['longitude'], fbox['latitude'],
@@ -990,9 +994,6 @@ class Panel(QtGui.QWidget):
 
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
         s+= '\n'''
-
-        row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
-        udp.send_data('$PPHOX,' + row_to_string + ',*\n')
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
