@@ -985,24 +985,17 @@ class Panel(QtGui.QWidget):
         #log_df =  log_df.append(self.pH_log_row)  
         print ('log_df')
 
-    def send_to_ferrybox(self,pHeval):
-        s = self.instrument.timeStamp[0:16]
+    def send_to_ferrybox(self):
+        '''s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (
             fbox['longitude'], fbox['latitude'],
             fbox['temperature'], fbox['salinity'])
 
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
-        s+= '\n'
-        udp.send_data('PH,' + s)
+        s+= '\n'''
 
-        '''logfile = os.path.join(self.instrument.folderPath, 'pH.log')
-        hdr  = ''
-        if not os.path.exists(logfile):
-            hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
-        with open(logfile,'a') as logFile:
-            if hdr:
-                logFile.write(hdr + '\n')
-            logFile.write(s)'''
+        row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
+        udp.send_data('$PPHOX,' + row_to_string + ',*\n')
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
