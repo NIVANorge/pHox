@@ -969,7 +969,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
     def save_logfile_df(self):
-        logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
+        logfile = os.path.join(self.instrument.folderPath, 'pH.log')
 
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
