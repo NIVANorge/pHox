@@ -1022,7 +1022,7 @@ class boxUI(QtGui.QMainWindow):
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
-            
+            event.accept()            
             #udp.UDP_EXIT = True
             #udp.server.join()
             #if not udp.server.is_alive():
@@ -1035,7 +1035,7 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.close()
             print ('ended')  #app.quit()   
             sys.exit()     
-            event.accept()
+
 
 
 if __name__ == '__main__':
