@@ -929,10 +929,10 @@ class Panel(QtGui.QWidget):
                 print (cfp,'cfp')
                 print ('blank_min_dark',blank_min_dark)
                 print ('postinj_min_dark',postinj_min_dark)
-                bmdCorr = blank_min_dark * int(cfb)
-                pmdCorr = postinj_min_dark * int(cfp)
-                spAbs = np.log10(bmdCorr/pmdCorr)
-                sp = np.log10(blank_min_dark/postinj_min_dark)            
+                bmdCorr = blank_min_dark * cfb
+                pmdCorr = postinj_min_dark * cfp
+                spAbs = np.log10((bmdCorr/pmdCorr).astype(int))
+                sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))         
                 # moving average 
                 """  spAbsMA = spAbs
                     nPoints = 3
