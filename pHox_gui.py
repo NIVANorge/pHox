@@ -620,12 +620,15 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
+            self.timerSpectra_plot.start()
             self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
 
     def single_sample_finished(self):
         print ('single sample finished inside func')
+                
+        self.timerSpectra_plot.stop()
         self.StatusBox.clear()  
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
@@ -636,6 +639,7 @@ class Panel(QtGui.QWidget):
 
     def continuous_sample_finished(self):
         print ('inside continuous_sample_finished')
+        self.timerSpectra_plot.stop()
         self.continous_mode_is_on = False
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
@@ -684,7 +688,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside continuous_mode...')
 
         self.instrument.reset_lines()
-
+        self.timerSpectra_plot.start()
         self.sample_thread = Sample_thread(self)
         self.continous_mode_is_on = True
         self.sample_thread.start()
@@ -825,12 +829,12 @@ class Panel(QtGui.QWidget):
                 self.append_logbox('next dark at time..x') 
 
         self.on_dark_clicked() 
-        
-        self.timerSpectra_plot.start()
+
+
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
         self.on_autoAdjust_clicked()  
-        self.timerSpectra_plot.stop()
+
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
