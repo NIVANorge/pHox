@@ -925,8 +925,6 @@ class Panel(QtGui.QWidget):
                         self.instrument.nlCoeff[1] * postinj_min_dark + 
                         self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
-                print (cfb,'cfb')
-                print (cfp,'cfp')
                 print ('blank_min_dark',blank_min_dark)
                 print ('postinj_min_dark',postinj_min_dark)
                 bmdCorr = blank_min_dark * cfb
