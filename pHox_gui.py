@@ -620,7 +620,6 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.timerSpectra_plot.start()
             self.sample_thread = Sample_thread(self)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
@@ -628,7 +627,6 @@ class Panel(QtGui.QWidget):
     def single_sample_finished(self):
         print ('single sample finished inside func')
                 
-        self.timerSpectra_plot.stop()
         self.StatusBox.clear()  
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
@@ -639,7 +637,6 @@ class Panel(QtGui.QWidget):
 
     def continuous_sample_finished(self):
         print ('inside continuous_sample_finished')
-        self.timerSpectra_plot.stop()
         self.continous_mode_is_on = False
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
@@ -688,7 +685,6 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside continuous_mode...')
 
         self.instrument.reset_lines()
-        self.timerSpectra_plot.start()
         self.sample_thread = Sample_thread(self)
         self.continous_mode_is_on = True
         self.sample_thread.start()
@@ -703,7 +699,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside _autostart...')
 
         self.update_spectra_plot()
-        #self.timerSpectra_plot.start()
+        self.timerSpectra_plot.start()
         # Take dark for the first time 
         #self.textBox.setText('Taking dark...')
         self.on_dark_clicked()
@@ -835,7 +831,6 @@ class Panel(QtGui.QWidget):
         self.sample_steps[1].setChecked(True)
         self.on_autoAdjust_clicked()  
 
-
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
         self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
@@ -930,7 +925,6 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-
         time.sleep(2)
         self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
@@ -938,7 +932,7 @@ class Panel(QtGui.QWidget):
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
-
+        time.sleep(2)
         print ('evl file save')
         self.save_evl()
   
@@ -961,6 +955,7 @@ class Panel(QtGui.QWidget):
         
         #self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
         self.send_to_ferrybox()
+        time.sleep(2)
         self.save_logfile_df()
      
         print ('Single measurement is done...')
@@ -969,7 +964,7 @@ class Panel(QtGui.QWidget):
 
         #Segmentation error happens here 
         # Trying to wait for avoiding it 
-        #time.sleep(10)
+        time.sleep(15)
 
         #self.instrument.spectrometer.set_scans_average(1)   
 
