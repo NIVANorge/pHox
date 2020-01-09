@@ -838,10 +838,10 @@ class Panel(QtGui.QWidget):
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
         #####self.on_dark_clicked() 
-        if not self.args.seabreeze:
-            self.append_logbox('Autoadjust LEDS')
-            self.sample_steps[1].setChecked(True)
-            self.on_autoAdjust_clicked()  
+        #if not self.args.seabreeze:
+        self.append_logbox('Autoadjust LEDS')
+        self.sample_steps[1].setChecked(True)
+        self.on_autoAdjust_clicked()  
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
@@ -944,7 +944,8 @@ class Panel(QtGui.QWidget):
                         spAbsMA[i]= np.mean(v)"""
 
                 #self.instrument.calc_pH(spAbs,vNTC,dilution)
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
+
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
 
         self.plotAbs.setData(self.wvls,spAbs)
 
@@ -1064,8 +1065,6 @@ class boxUI(QtGui.QMainWindow):
             #udp.server.join()
             #if not udp.server.is_alive():
             #    print ('UDP server closed')
-
-
             #self.main_widget.close()
 
    
