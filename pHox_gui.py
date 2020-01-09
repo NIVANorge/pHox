@@ -1056,7 +1056,9 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timer_contin_mode.stop()
             #self.main_widget.timerSensUpd.stop()            
             QtGui.QApplication.quit() 
-            print ('ended')  #app.quit()               
+            print ('ended')  #app.quit()           
+            udp.UDP_EXIT = True
+            udp.server.join()       
             event.accept()            
             #udp.UDP_EXIT = True
             #udp.server.join()
