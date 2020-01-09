@@ -191,79 +191,77 @@ class pH_instrument(object):
 
         #setup PWM and SSR lines
         for pin in range (4):
-            self.rpi.set_mode(self.pwmLines[pin],pigpio.OUTPUT)
-            self.rpi.set_PWM_frequency(self.pwmLines[pin], 100)
-            self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
+            self.rpi.set_mode(self.led_slots[pin],pigpio.OUTPUT)
+            self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
+            self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
         self.reset_lines()
 
     def load_config(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
-        default =   j['default']
+        conf_operational = j['Operational']
+        conf_pH = j['pH']
         try: 
             self.textBox.append('Loading config.json')
         except: 
             pass
 
-        self.dye = default['DYE'] 
+        self.dye = conf_pH["Default_DYE"] 
 
         if self.dye == 'MCP':
-            self.HI =  int(default['MCP_wl_HI'])
-            self.I2 =  int(default['MCP_wl_I2'])         
+            self.HI =  int(conf_pH['MCP_wl_HI'])
+            self.I2 =  int(conf_pH['MCP_wl_I2'])         
         elif self.dye == "TB":   
-            self.HI =  int(default['TB_wl_HI'])
-            self.I2 =  int(default['TB_wl_I2'])
+            self.HI =  int(conf_pH['TB_wl_HI'])
+            self.I2 =  int(conf_pH['TB_wl_I2'])
 
-        self.THR = int(default["LED_THRESHOLD"])
-        self.NIR = int(default['NIR-'])
-        self._autostart = bool(default['AUTOSTART'])
-        self._automode  = default['AUTOSTART_MODE']
+        self.THR = int(conf_pH["LED_THRESHOLD"])
+        self.NIR = int(conf_pH['wl_NIR-'])
 
-        self.DURATION =  int(default['DURATION'])
+        #self.molAbsRats = default['MOL_ABS_RATIOS']
+        self.led_slots =  conf_pH['LED_SLOTS']
+        self.LED1 = conf_pH["LED0"]
+        self.LED2 = conf_pH["LED1"]
+        self.LED3 = conf_pH["LED2"]
 
-        self.AUTODARK =  int(default['AUTODARK'])        
+
+        self._autostart = bool(conf_operational['AUTOSTART'])
+        self._automode  = conf_operational['AUTOSTART_MODE']
+        self.DURATION =  int(conf_operational['DURATION'])
+     
         self._autodark  = None
         self._autotime  = None
         self._autolen   = None
-        #self._autostop  = None #Not used
-        #self._deployed  = False #Not used
         self.last_dark  = None #Not used
 
-        self.vNTCch =    int(default['T_PROBE_CH'])
+        self.vNTCch =    int(conf_operational['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
 
-        self.samplingInterval = int(default["PH_SAMPLING_INTERVAL_SEC"])
-        self.pumpTime = int(default["pumpTime"])
-        self.mixT = int(default["mixTime"])
-        self.waitT = int(default["waitTime"])
-        self.ncycles= int(default["ncycles"])
-        self.nshots = int(default["dye_nshots"])
-        self.molAbsRats = default['MOL_ABS_RATIOS']
-        self.pwmLines =  default['PWM_LINES']
-        self.ssrLines = default['GPIO_SSR']
+        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_SEC"])
+        self.pumpTime = int(conf_operational["pumpTime"])
+        self.mixT = int(conf_operational["mixTime"])
+        self.waitT = int(conf_operational["waitTime"])
+        self.ncycles= int(conf_operational["ncycles"])
+        self.nshots = int(conf_operational["dye_nshots"])
+
+        self.wpump_slot = conf_operational["WPUMP_SLOT"]
+        self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
+        self.stirrer_slot = conf_operational["STIRR_SLOT"]
+        self.extra_slot = conf_operational["SPARE_SLOT"] 
+
         #TODO: Replace ssrlines with new lines 
-        self.wpump_slot = default["WPUMP_SLOT"]
-        self.dyepump_slot = default["DYEPUMP_SLOT"]
-        self.stirrer_slot = default["STIRR_SLOT"]
+        # keep it for now since there is a loop dependent on self.ssrLines
+        self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
 
-        self.extra_slot = default["EXTRA_SLOT"] #empty for now
-        self.GPIO_TV = default['GPIO_TV']
-
-        # NTC Temperature calibration coefficients
-        self.TempCalCoef = default['NTC_CAL_COEF']
-
-        # self.dyeCal = default['DYE_CAL']
-        self.Cuvette_V = default["CUVETTE_V"] #ml
-        self.dye_vol_inj = default["DYE_V_INJ"]
-
-        self.LED1 = default["LED0"]
-        self.LED2 = default["LED1"]
-        self.LED3 = default["LED2"]
-        self.specIntTime = default['Spectro_Integration_time']
-        self.deployment = default['Deployment_mode']
-        self.ship_code = default['Ship_Code']
+        self.valve_slots = conf_operational['VALVE_SLOTS']
+        self.TempCalCoef = conf_operational['NTC_CAL_COEF']
+        self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
+        self.dye_vol_inj = conf_operational["DYE_V_INJ"]
+        self.specIntTime = conf_operational['Spectro_Integration_time']
+        self.deployment = conf_operational['Deployment_mode']
+        self.ship_code = conf_operational['Ship_Code']
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
@@ -295,7 +293,7 @@ class pH_instrument(object):
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, LED):
-        self.rpi.set_PWM_dutycycle(self.pwmLines[led],LED)
+        self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
     def find_LED(self,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
@@ -406,12 +404,12 @@ class pH_instrument(object):
         pass
      
     def set_Valve(self, status):
-        chEn = self.GPIO_TV[0]
-        ch1 =  self.GPIO_TV[1]
-        ch2 =  self.GPIO_TV[2]
+        chEn = self.valve_slots[0]
+        ch1 =  self.valve_slots[1]
+        ch2 =  self.valve_slots[2]
         if status:
-            ch1= self.GPIO_TV[2]
-            ch2= self.GPIO_TV[1]
+            ch1= self.valve_slots[2]
+            ch2= self.valve_slots[1]
         self.rpi.write(ch1, True)
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , True)
@@ -435,7 +433,7 @@ class pH_instrument(object):
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
-        vNTC = round(self.get_Vd(3, self.vNTCch), prec['vNTC'])
+        vNTC = round(self.vNTCch, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
 
         T = 273.15 + Tdeg
@@ -520,3 +518,25 @@ class pH_instrument(object):
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu)      
 
+    def calc_CO3(self,absSp, vNTC,dilution):
+
+        Tdeg = (self.ntcCalCoef[0]*vNTC) + self.ntcCalCoef[1]
+        T = 273.15 + Tdeg
+        
+        # volume in ml
+        fcS = self.fb_data['salinity'] * dilution
+        # or fcS = self.fb_data['salinity'] * (
+             # (self.Cuvette_V)/(self.dye_vol_inj*(pinj+1)*shot+self.Cuvette_V))
+
+        A1,A2 =   (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]])      
+        R = A2/A1
+ 
+        e1 = 0.311907-0.002396*fcS
+        e2e3 = 3.061-0.0873*fcS+0.0009363*fcS**2
+        log_beta1_e2 = 5.507074-0.041259*fcS+ 0.000180*fcS**2
+        arg = (R - e1)/(1 - R*e2e3) 
+
+        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", "fcS"])
+        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
