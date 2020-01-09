@@ -221,7 +221,7 @@ class pH_instrument(object):
 
         #self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots =  conf_pH['LED_SLOTS']
-        self.LED1 = conf_pH["LED1]
+        self.LED1 = conf_pH["LED1"]
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
 
