@@ -111,13 +111,14 @@ class Panel(QtGui.QWidget):
 
     def create_timers(self):
         self.timerSpectra_plot = QtCore.QTimer()
+        self.timerSpectra_plot.setInterval(500)
         self.timer_contin_mode = QtCore.QTimer()
-        self.timerSensUpd = QtCore.QTimer()
+        #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
-        self.timerSensUpd.timeout.connect(self.update_sensors_info)
+        #self.timerSensUpd.timeout.connect(self.update_sensors_info)
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
@@ -219,6 +220,11 @@ class Panel(QtGui.QWidget):
  
         self.tab1.setLayout(self.tab1.layout)
 
+
+    def append_logbox(self,message):
+        t = datetime.now().strftime('%b-%d %H:%M:%S')
+        self.logTextBox.appendPlainText(t + '  ' + message)
+
     def fill_table_pH(self,x,y,item):
         self.table_pH.setItem(x,y,QtGui.QTableWidgetItem(item))
 
@@ -280,8 +286,6 @@ class Panel(QtGui.QWidget):
 
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
             
-
-
         #self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
         self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
 
@@ -449,10 +453,10 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)        
 
     def on_dark_clicked(self):
-        self.logTextBox.appendPlainText('Measuring dark...')
+        self.append_logbox('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
-        print ('self.instrument.specAvScans',self.instrument.specAvScans)
+        print ('Measuring dark...,put scans average from the config')
         if not self.args.seabreeze:
             self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
             self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
@@ -461,7 +465,7 @@ class Panel(QtGui.QWidget):
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
-        self.logTextBox.appendPlainText('Leds {}'.format(str(state)))
+        self.append_logbox('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -509,8 +513,7 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     def on_autoAdjust_clicked(self):
-        #
-        self.logTextBox.appendPlainText('on_autoAdjust_clicked')
+
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
@@ -561,7 +564,7 @@ class Panel(QtGui.QWidget):
                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
         self.textBox_LastpH.setText(text)
 
-    def update_sensors_info(self):
+    '''def update_sensors_info(self):
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         #Tntc = 0
         Tntc = (self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1]
@@ -584,7 +587,7 @@ class Panel(QtGui.QWidget):
         self.textBox_LastpH.setText(text)
 
         if self.args.pco2:
-            self.add_pco2_info(text)
+            self.add_pco2_info(text)'''
 
     def get_next_sample(self):
         t = datetime.now()
@@ -633,6 +636,8 @@ class Panel(QtGui.QWidget):
             self.sample_thread.finished.connect(self.single_sample_finished)
 
     def single_sample_finished(self):
+        print ('single sample finished inside func')
+                
         self.StatusBox.clear()  
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
@@ -642,8 +647,9 @@ class Panel(QtGui.QWidget):
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
+        print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
-        self.StatusBox.setText('Waiting for new sample')
+        self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
 
@@ -652,7 +658,9 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(True) 
             # enable all btns in manual tab 
         else: 
-            self.StatusBox.setText('Waiting for new sample')
+            nextSamplename = self.get_next_sample()
+            self.StatusBox.setText("Next sample at {}".format(nextSamplename))
+            #self.StatusBox.setText('Waiting for new sample')
 
     def update_infotable(self):
 
@@ -685,10 +693,9 @@ class Panel(QtGui.QWidget):
 
     def continuous_mode_timer_finished(self):
         print ('start continuous mode')
-        self.logTextBox.appendPlainText('Inside continuous_mode...')
+        self.append_logbox('Inside continuous_mode...')
 
         self.instrument.reset_lines()
-
         self.sample_thread = Sample_thread(self)
         self.continous_mode_is_on = True
         self.sample_thread.start()
@@ -700,8 +707,9 @@ class Panel(QtGui.QWidget):
         self.sliders[2].setValue(self.instrument.LED3)
 
     def _autostart(self):
-        self.logTextBox.appendPlainText('Inside _autostart...')
-        self.textBox.setText('Inside _autostart...')
+        self.append_logbox('Inside _autostart...')
+
+        self.update_spectra_plot()
         self.timerSpectra_plot.start()
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
@@ -710,7 +718,8 @@ class Panel(QtGui.QWidget):
         self.update_LEDs()
         # turn on leds 
         self.btn_leds.setChecked(True)
-        self.timerSpectra_plot.start(500)
+        self.update_spectra_plot()
+        #self.timerSpectra_plot.start()
 
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
@@ -723,9 +732,9 @@ class Panel(QtGui.QWidget):
         return
 
     def _autostop(self):
-        #self.logTextBox.appendPlainText('Inside _autostop...')
+        self.append_logbox('Inside _autostop...')
         time.sleep(10)
-        self.timerSpectra_plot.stop()
+
         self.btn_leds.setChecked(False)
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
@@ -737,7 +746,7 @@ class Panel(QtGui.QWidget):
         return
 
     def autostop_time(self):
-        self.logTextBox.appendPlainText('Inside autostop_time...')
+        self.append_logbox('Inside autostop_time...')
         self.timerAuto.stop()
         self._autostop()
         now  = datetime.now()
@@ -750,7 +759,7 @@ class Panel(QtGui.QWidget):
         return
         
     def autostart_time(self):
-        self.logTextBox.appendPlainText('Inside _autostart_time...')
+        self.append_logbox('Inside _autostart_time...')
         self.timerAuto.stop()
         now  = datetime.now()
         if now < self.instrument._autotime:
@@ -769,8 +778,7 @@ class Panel(QtGui.QWidget):
         return
     
     def autostart_pump(self):
-        self.logTextBox.appendPlainText('Inside _autostart_pump...')
-        self.logTextBox.appendPlainText('Automatic start at pump enabled')
+        self.append_logbox('Automatic start at pump enabled')
 
         if fbox['pumping']:
             self.timerAuto.stop()
@@ -783,8 +791,6 @@ class Panel(QtGui.QWidget):
         return
         
     def autostop_pump(self):
-        #self.logTextBox.appendPlainText('Inside autostop_pump...')
-        #self.logTextBox.appendPlainText("Ferrybox pump is {}".format(str(fbox['pumping'])))
         if not fbox['pumping']:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
@@ -796,7 +802,7 @@ class Panel(QtGui.QWidget):
         return
         
     def autorun(self):
-        self.logTextBox.appendPlainText('Inside continuous_mode...')
+        self.append_logbox('Inside continuous_mode...')
 
         if (self.instrument._autostart) and (self.instrument._automode == 'time'):
             self.textBox.setText('Automatic scheduled start enabled')
@@ -814,9 +820,10 @@ class Panel(QtGui.QWidget):
         return
 
     def sample(self):   
-        self.StatusBox.setText('Start new measurement')
+
+        self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
-        self.logTextBox.appendPlainText('Start new measurement')
+        self.append_logbox('Start new measurement')
 
         if not fbox['pumping']:
             return
@@ -824,15 +831,15 @@ class Panel(QtGui.QWidget):
             now = datetime.now()
             if (self.instrument.last_dark is None) or (
                 (now - self.instrument.last_dark) >= self.instrument._autodark):
-                self.logTextBox.appendPlainText('New dark required')
-                ###self.on_dark_clicked()
+                self.append_logbox('New dark required')
+                self.on_dark_clicked()
             else:
-                self.logTextBox.appendPlainText('next dark at time..x') 
+                self.append_logbox('next dark at time..x')
                 #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
         #####self.on_dark_clicked() 
         if not self.args.seabreeze:
-            self.logTextBox.appendPlainText('Autoadjust LEDS')
+            self.append_logbox('Autoadjust LEDS')
             self.sample_steps[1].setChecked(True)
             self.on_autoAdjust_clicked()  
 
@@ -845,11 +852,11 @@ class Panel(QtGui.QWidget):
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
-            self.logTextBox.appendPlainText('Pumping, Standalone, Continous')
+            self.append_logbox('Pumping, Standalone, Continous')
 
         elif self.mode == 'Calibration':
             self.pumping(self.instrument.pumpTime) 
-            self.logTextBox.appendPlainText('Pumping, Calibration')     
+            self.append_logbox('Pumping, Calibration')    
 
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
@@ -858,10 +865,9 @@ class Panel(QtGui.QWidget):
             # Take the last measured dark
             dark = self.spCounts_df['dark']
 
-            self.logTextBox.appendPlainText('Measuring blank...')
+            self.append_logbox('Measuring blank...')
             self.sample_steps[2].setChecked(True)
 
-        if not self.args.seabreeze:
             blank = self.instrument.spectrometer.get_corrected_spectra()
             blank_min_dark= np.clip(blank - dark,1,16000)
         else: 
@@ -885,7 +891,7 @@ class Panel(QtGui.QWidget):
                         vol_injected  + self.instrument.Cuvette_V)
 
             # shots= number of dye injection for each cycle ( now 1 for all cycles)
-            self.logTextBox.appendPlainText('Injection %d:' %(n_inj+1))
+            self.append_logbox('Injection %d:' %(n_inj+1))
             # turn on the stirrer                 
             self.instrument.set_line(self.instrument.stirrer_slot, True)
 
@@ -893,7 +899,7 @@ class Panel(QtGui.QWidget):
                 # inject dye 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            self.logTextBox.appendPlainText("Mixing")
+            self.append_logbox("Mixing")
             time.sleep(self.instrument.mixT)
 
             # turn off the stirrer
@@ -944,15 +950,14 @@ class Panel(QtGui.QWidget):
 
         # opening the valve
         self.instrument.set_Valve(False)
-
         time.sleep(2)
-        self.logTextBox.appendPlainText('Save data to file')
+        self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
         
         self.spCounts_df.T.to_csv(
             self.instrument.folderPath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
-
+        time.sleep(2)
         print ('evl file save')
         self.save_evl()
 
@@ -972,18 +977,24 @@ class Panel(QtGui.QWidget):
                 "evalAnir"     : [evalAnir],
                 "pH_insitu"    : [pH_insitu]})
 
-            self.logTextBox.appendPlainText('data saved in %s' % (
-                self.instrument.folderPath +'pH.log'))
+            self.append_logbox('data saved in %s' % (self.instrument.folderPath +'pH.log'))
             
-            self.send_to_ferrybox((pH_lab, T_lab, perturbation, evalAnir))
+            self.send_to_ferrybox()
+            time.sleep(2)
             self.save_logfile_df()
 
             #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
             time.sleep(2)
             self.instrument.spectrometer.set_scans_average(1)   
             print ('Single measurement is done...')     
-            self.logTextBox.appendPlainText('Single measurement is done...')
+            self.append_logbox('Single measurement is done...')
             self.sample_steps[8].setChecked(True)
+
+        #Segmentation error happens here 
+        # Trying to wait for avoiding it 
+        time.sleep(15)
+
+        #self.instrument.spectrometer.set_scans_average(1)   
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
@@ -997,41 +1008,30 @@ class Panel(QtGui.QWidget):
         self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
 
     def save_logfile_df(self):
-        logfile = os.path.join(self.instrument.folderPath, 'pH_df.log')
+        logfile = os.path.join(self.instrument.folderPath, 'pH.log')
+
         if os.path.exists(logfile):
-            log_df = pd.read_csv(logfile,sep = ',')
+            self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
         else: 
             log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
                          "fb_sal",'SHIP',"pH_lab", 
                           "T_lab", "perturbation",
                           "evalAnir", "pH_insitu"])
+            self.pH_log_row.to_csv(logfile, index = False, header=True) 
+        print ('saved log_df')
 
-        log_df =  log_df.append(self.pH_log_row)  
-        print ('log_df')
-        
-        #df.to_csv('my_csv.csv', mode='a', header=False)
-        log_df.to_csv(logfile, index = False, header=True) 
+    def send_to_ferrybox(self):
+        row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
+        udp.send_data('$PPHOX,' + row_to_string + ',*\n')   
 
-
-    def send_to_ferrybox(self,pHeval):
-        s = self.instrument.timeStamp[0:16]
+        '''s = self.instrument.timeStamp[0:16]
         s+= ',%.6f,%.6f,%.3f,%.3f' % (
             fbox['longitude'], fbox['latitude'],
             fbox['temperature'], fbox['salinity'])
 
         s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
-        s+= '\n'
-        udp.send_data('PH,' + s)
-
-        '''logfile = os.path.join(self.instrument.folderPath, 'pH.log')
-        hdr  = ''
-        if not os.path.exists(logfile):
-            hdr = 'Time,Lon,Lat,fbT,fbS,pH_t,Tref,pert,Anir'
-        with open(logfile,'a') as logFile:
-            if hdr:
-                logFile.write(hdr + '\n')
-            logFile.write(s)'''
+        s+= '\n'''
 
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -1043,7 +1043,30 @@ class boxUI(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
+    def closeEvent(self,event):
+        result = QtGui.QMessageBox.question(self,
+                      "Confirm Exit...",
+                      "Are you sure you want to exit ?",
+                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        event.ignore()
 
+        if result == QtGui.QMessageBox.Yes:
+            self.main_widget.timerSpectra_plot.stop()
+            print ('timer is stopped')
+            self.main_widget.timer_contin_mode.stop()
+            #self.main_widget.timerSensUpd.stop()            
+            QtGui.QApplication.quit() 
+            print ('ended')  #app.quit()               
+            event.accept()            
+            #udp.UDP_EXIT = True
+            #udp.server.join()
+            #if not udp.server.is_alive():
+            #    print ('UDP server closed')
+
+
+            #self.main_widget.close()
+
+   
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
@@ -1052,15 +1075,6 @@ if __name__ == '__main__':
     ui  = boxUI()
     app.exec_()
 
-    #udp.UDP_EXIT = True
-    #udp.server.join()
-    #if not udp.server.is_alive():
-    #    print ('UDP server closed')
 
-    '''self.main_widget.timerSpectra_plot.stop()
-    print ('timer is stopped')
-    self.main_widget.timer_contin_mode.stop()
-    self.main_widget.timerSensUpd.stop()
-    self.main_widget.close()
-    print ('ended')'''
-#app.quit()
+
+

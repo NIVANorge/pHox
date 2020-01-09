@@ -118,14 +118,13 @@ class STSVIS(object):
         time.sleep(0.5)
 
     def set_scans_average(self,nscans):
-        print ('nscans',nscans)
+        print ('inside func set_scance_average nscans',nscans)
         msgType= b'\x10\x00\x12\x00'
         immDataLength = b'\x02'
-        print ('set_scans_average, struct pack')
         immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
         print ('send message to instr, set scan average')
         self._dev.write(self.EP1_out, self.build_packet(msgType, immDataLength, immData))
-        time.sleep(0.5)
+        time.sleep(5)
 
     def get_wvlCalCoeff(self):
         #get the coefficients
@@ -511,9 +510,12 @@ class pH_instrument(object):
                 else: 
                     pH_lab = pH_t_corr[0]
 
-        perturbation = slope1 
+
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
+
+        perturbation = round(slope1, prec['perturbation'])        
         pH_insitu = round(pH_insitu , prec['pH'])
+        pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu)      
