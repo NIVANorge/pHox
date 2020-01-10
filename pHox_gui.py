@@ -47,7 +47,7 @@ class Panel(QtGui.QWidget):
 
         self.wvls = self.instrument.calc_wavelengths()
 
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
+        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
 
         print ('instrument created')
@@ -303,7 +303,7 @@ class Panel(QtGui.QWidget):
         btn_grid = QtGui.QGridLayout()
 
         self.btn_adjust_leds = self.create_button('Adjust Leds',True) 
-        self.btn_t_dark = self.create_button('Take dark',False)
+        #self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button('LEDs',True)
         self.btn_valve = self.create_button('Inlet valve',True)   
         self.btn_stirr = self.create_button('Stirrer',True)
@@ -321,7 +321,7 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
-        btn_grid.addWidget(self.btn_t_dark , 4, 1)
+        #btn_grid.addWidget(self.btn_t_dark , 4, 1)
 
         # Define connections Button clicked - Result 
         self.btn_leds.clicked.connect(self.btn_leds_checked)
@@ -449,7 +449,7 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
 
-    def on_dark_clicked(self):
+    '''def on_dark_clicked(self):
         self.append_logbox('Measuring dark...')
         self.set_LEDs(False)
         self.btn_leds.setChecked(False)
@@ -457,7 +457,7 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
             self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
-            self.instrument.spectrometer.set_scans_average(1)
+            self.instrument.spectrometer.set_scans_average(1)'''
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -711,9 +711,9 @@ class Panel(QtGui.QWidget):
         self.update_spectra_plot()
         #self.timerSpectra_plot.start()
         # Take dark for the first time 
-        self.textBox.setText('Taking dark...')
-        if not self.args.seabreeze:
-            self.on_dark_clicked()
+        #self.textBox.setText('Taking dark...')
+        #if not self.args.seabreeze:
+        #    self.on_dark_clicked()
         self.update_LEDs()
         # turn on leds 
         self.btn_leds.setChecked(True)
@@ -826,15 +826,6 @@ class Panel(QtGui.QWidget):
 
         if not fbox['pumping']:
             return
-        if self.instrument._autodark:
-            now = datetime.now()
-            if (self.instrument.last_dark is None) or (
-                (now - self.instrument.last_dark) >= self.instrument._autodark):
-                self.append_logbox('New dark required')
-                self.on_dark_clicked()
-            else:
-                self.append_logbox('next dark at time..x')
-                #%s' % ((self.instrument.last_dark + dt).strftime('%Y-%m%d %H:%S'))
   
         #####self.on_dark_clicked() 
         #if not self.args.seabreeze:
@@ -860,15 +851,14 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
 
+
+        self.append_logbox('Measuring blank...')
+        self.sample_steps[2].setChecked(True)
         if not self.args.seabreeze:
             # Take the last measured dark
-            dark = self.spCounts_df['dark']
-
-            self.append_logbox('Measuring blank...')
-            self.sample_steps[2].setChecked(True)
-
+            #dark = self.spCounts_df['dark']
             blank = self.instrument.spectrometer.get_corrected_spectra()
-            blank_min_dark= np.clip(blank - dark,1,16000)
+            blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrometer.get_intensities_corr_nonlinear()    
 
@@ -920,7 +910,7 @@ class Panel(QtGui.QWidget):
                 self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             else:     
                 # postinjection minus dark     
-                postinj_min_dark = np.clip(postinj - dark,1,16000)
+                postinj_min_dark = np.clip(postinj,1,16000)
                 #print ('postinj_min_dark')
 
                 cfb =  (self.instrument.nlCoeff[0] + 
