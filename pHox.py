@@ -30,7 +30,8 @@ class Spectro_seabreeze(object):
     def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
-
+        time.sleep(5)
+        
     def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrometer
         return self.spec.wavelengths()
