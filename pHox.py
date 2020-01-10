@@ -56,7 +56,7 @@ class Spectro_seabreeze(object):
         return (wavelengths, intensities)
 
     def set_scans_average(self,num):
-        spec.scans_to_average(num)
+        self.spec.scans_to_average(num)
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##

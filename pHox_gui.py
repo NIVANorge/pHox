@@ -831,6 +831,8 @@ class Panel(QtGui.QWidget):
         #if not self.args.seabreeze:
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
+        self.instrument.spectrometer.set_scans_average(1)
+        print ('scans average')
         self.on_autoAdjust_clicked()  
 
         self.set_LEDs(True)
