@@ -267,7 +267,7 @@ class pH_instrument(object):
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
-    def calc_wavelengths(self,coeffs):   
+    def calc_wavelengths(self):   
         '''
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
