@@ -279,8 +279,8 @@ class pH_instrument(object):
             wvls = (coeffs[0] + coeffs[1]* pixels + 
             coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
         else: 
-            wvl = self.spectrometer.get_wavelengths()
-            print ('wvl got from seabreeze ',wvl)
+            wvls = self.spectrometer.get_wavelengths()
+            print ('wvl got from seabreeze ',wvls)
 
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
