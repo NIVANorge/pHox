@@ -961,34 +961,34 @@ class Panel(QtGui.QWidget):
         print ('evl file save')
         self.save_evl()
 
-        if not self.args.seabreeze:
-            pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
+        #if not self.args.seabreeze:
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
 
-            self.pH_log_row = pd.DataFrame({
-                "Time"         : [self.instrument.timeStamp[0:16]],
-                "Lon"          : [fbox['longitude']], 
-                "Lat"          : [fbox['latitude']] ,
-                "fb_temp"      : [fbox['temperature']], 
-                "fb_sal"       : [fbox['salinity']],         
-                "SHIP"         : [self.instrument.ship_code],
-                "pH_lab"       : [pH_lab], 
-                "T_lab"        : [T_lab],
-                "perturbation" : [perturbation],
-                "evalAnir"     : [evalAnir],
-                "pH_insitu"    : [pH_insitu]})
+        self.pH_log_row = pd.DataFrame({
+            "Time"         : [self.instrument.timeStamp[0:16]],
+            "Lon"          : [fbox['longitude']], 
+            "Lat"          : [fbox['latitude']] ,
+            "fb_temp"      : [fbox['temperature']], 
+            "fb_sal"       : [fbox['salinity']],         
+            "SHIP"         : [self.instrument.ship_code],
+            "pH_lab"       : [pH_lab], 
+            "T_lab"        : [T_lab],
+            "perturbation" : [perturbation],
+            "evalAnir"     : [evalAnir],
+            "pH_insitu"    : [pH_insitu]})
 
-            self.append_logbox('data saved in %s' % (self.instrument.folderPath +'pH.log'))
-            
-            self.send_to_ferrybox()
-            time.sleep(2)
-            self.save_logfile_df()
+        self.append_logbox('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        
+        self.send_to_ferrybox()
+        time.sleep(2)
+        self.save_logfile_df()
 
-            #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
-            time.sleep(2)
-            self.instrument.spectrometer.set_scans_average(1)   
-            print ('Single measurement is done...')     
-            self.append_logbox('Single measurement is done...')
-            self.sample_steps[8].setChecked(True)
+        #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
+        time.sleep(2)
+        self.instrument.spectrometer.set_scans_average(1)   
+        print ('Single measurement is done...')     
+        self.append_logbox('Single measurement is done...')
+        self.sample_steps[8].setChecked(True)
 
         #Segmentation error happens here 
         # Trying to wait for avoiding it 
