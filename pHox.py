@@ -272,17 +272,27 @@ class pH_instrument(object):
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
         '''
-
-        wvls = np.zeros(self.spectrometer.pixels, dtype=float)
-        pixels = np.arange(self.spectrometer.pixels)
-        wvls = (coeffs[0] + coeffs[1]* pixels + 
-                coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
-        
+        if not self.args.seabreeze: 
+            wvls = np.zeros(self.spectrometer.pixels, dtype=float)
+            pixels = np.arange(self.spectrometer.pixels)
+            wvls = (coeffs[0] + coeffs[1]* pixels + 
+            coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
+        else: 
+            wvl = self.instrument.spectrometer.get_wavelengths()
+            print ('wvl got from seabreeze ',wvl)
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
         return wvls
+
+    def calc_wavelength_seabreeze(self,wvls):
+        self.wvlPixels = []
+        for wl in (self.HI, self.I2, self.NIR):      
+            self.wvlPixels.append(
+                self.find_nearest(wvls,wl))
+        return wvls
+
 
     def find_nearest(self, items, value):
         idx = (abs(items-value)).argmin()
@@ -332,7 +342,7 @@ class pH_instrument(object):
 
         return LED,adj
 
-    def auto_adjust(self):
+    def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
