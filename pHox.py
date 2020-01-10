@@ -366,12 +366,14 @@ class pH_instrument(object):
             LED1,adj1 = self.find_LED(
                 led_ind = 0,adj = adj1,
                 curr_value = self.LED1)
+                
             if adj1:
+                print ('adj1 = True')
                 LED2,adj2 = self.find_LED(
                     led_ind = 1,adj = adj2,
                     curr_value = self.LED2)
-
                 if adj2:    
+                    print ('adj2 = True')
                     LED3,adj3 = self.find_LED(
                         led_ind = 2,adj = adj3, 
                         curr_value = self.LED3)    
