@@ -55,8 +55,8 @@ class Spectro_seabreeze(object):
         wavelengths, intensities = self.spec.spectrum()
         return (wavelengths, intensities)
 
-    def set_scans_average(self):
-        pass
+    def set_scans_average(self,num):
+        spec.scans_to_average(num)
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -121,7 +121,7 @@ class STSVIS(object):
         time.sleep(0.5)
 
     def set_scans_average(self,nscans):
-        print ('inside func set_scance_average nscans',nscans)
+        print ('inside func set_scans_average nscans',nscans)
         msgType= b'\x10\x00\x12\x00'
         immDataLength = b'\x02'
         immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
@@ -367,7 +367,7 @@ class pH_instrument(object):
             LED1,adj1 = self.find_LED(
                 led_ind = 0,adj = adj1,
                 curr_value = self.LED1)
-                      
+
             if adj1:
                 print ('adj1 = True')
                 LED2,adj2 = self.find_LED(

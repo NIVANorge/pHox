@@ -837,8 +837,8 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
 
         self.instrument.evalPar = []
-        if not self.args.seabreeze:
-            self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+
+        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
