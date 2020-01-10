@@ -273,6 +273,7 @@ class pH_instrument(object):
         and find pixel number of reference wavelengths
         '''
         if not self.args.seabreeze: 
+            coeffs =  self.spectrometer.wvlCalCoeff
             wvls = np.zeros(self.spectrometer.pixels, dtype=float)
             pixels = np.arange(self.spectrometer.pixels)
             wvls = (coeffs[0] + coeffs[1]* pixels + 
@@ -280,6 +281,7 @@ class pH_instrument(object):
         else: 
             wvl = self.instrument.spectrometer.get_wavelengths()
             print ('wvl got from seabreeze ',wvl)
+
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
             self.wvlPixels.append(

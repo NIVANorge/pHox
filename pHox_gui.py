@@ -47,8 +47,7 @@ class Panel(QtGui.QWidget):
         if self.args.seabreeze:
             self.wvls = self.instrument.spectrometer.get_wavelengths()
         else:
-            self.wvls = self.instrument.calc_wavelengths(
-            self.instrument.spectrometer.wvlCalCoeff)
+            self.wvls = self.instrument.calc_wavelengths()
 
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
