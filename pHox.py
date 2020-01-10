@@ -31,7 +31,7 @@ class Spectro_seabreeze(object):
         microsec = time_millisec * 1000
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
         time.sleep(5)
-        
+
     def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrometer
         return self.spec.wavelengths()
@@ -367,7 +367,7 @@ class pH_instrument(object):
             LED1,adj1 = self.find_LED(
                 led_ind = 0,adj = adj1,
                 curr_value = self.LED1)
-                
+                      
             if adj1:
                 print ('adj1 = True')
                 LED2,adj2 = self.find_LED(

@@ -512,6 +512,8 @@ class Panel(QtGui.QWidget):
     def on_autoAdjust_clicked(self):
 
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
+        self.update_spectra_plot()  
+        #self.timerSpectra_plot.start()
         print (self.LED1,self.LED2,self.LED3)
         if result:
             self.sliders[0].setValue(self.LED1)
@@ -707,7 +709,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside _autostart...')
 
         self.update_spectra_plot()
-        self.timerSpectra_plot.start()
+        #self.timerSpectra_plot.start()
         # Take dark for the first time 
         self.textBox.setText('Taking dark...')
         if not self.args.seabreeze:
