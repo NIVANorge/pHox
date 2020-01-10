@@ -108,7 +108,7 @@ class Panel(QtGui.QWidget):
 
     def create_timers(self):
         self.timerSpectra_plot = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(500)
+        self.timerSpectra_plot.setInterval(1500)
         self.timer_contin_mode = QtCore.QTimer()
         #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
