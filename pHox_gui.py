@@ -1046,7 +1046,7 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timerSpectra_plot.stop()
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.instrument.spectrometer.spec.stop()
+            self.main_widget.instrument.spectrometer.spec.close()
             #self.main_widget.timerSensUpd.stop()            
             QtGui.QApplication.quit() 
             print ('ended')  #app.quit()           
