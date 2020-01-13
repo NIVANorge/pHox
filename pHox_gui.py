@@ -453,9 +453,9 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(False)
         print ('Measuring dark...,put scans average from the config')
         if not self.args.seabreeze:
-            self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans) 
-            self.spCounts_df['dark'] = self.instrument.spectrometer.get_corrected_spectra()       
-            self.instrument.spectrometer.set_scans_average(1)'''
+            self.instrument.spectrom.set_scans_average(self.instrument.specAvScans) 
+            self.spCounts_df['dark'] = self.instrument.spectrom.get_corrected_spectra()       
+            self.instrument.spectrom.set_scans_average(1)'''
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -473,9 +473,9 @@ class Panel(QtGui.QWidget):
 
     def update_spectra_plot(self):
         if not self.args.seabreeze:
-            datay = self.instrument.spectrometer.get_corrected_spectra()
+            datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
-            datay = self.instrument.spectrometer.get_intensities_raw()          
+            datay = self.instrument.spectrom.get_intensities('raw')          
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
@@ -830,7 +830,7 @@ class Panel(QtGui.QWidget):
         #if not self.args.seabreeze:
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        #self.instrument.spectrometer.set_scans_average(1)
+        #self.instrument.spectrom.set_scans_average(1)
         print ('scans average')
         self.on_autoAdjust_clicked()  
 
@@ -839,7 +839,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.evalPar = []
 
-        #self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+        #self.instrument.spectrom.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
@@ -858,10 +858,11 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             # Take the last measured dark
             #dark = self.spCounts_df['dark']
-            blank = self.instrument.spectrometer.get_corrected_spectra()
+            blank = self.instrument.spectrom.get_corrected_spectra()
             blank_min_dark= np.clip(blank,1,16000)
         else: 
-            blank = self.instrument.spectrometer.get_intensities_corr_nonlinear_avg(self.instrument.specAvScans)    
+            blank = self.instrument.spectrom.get_intensities(
+                        'corect',self.instrument.specAvScans)    
 
         self.spCounts_df['blank'] = blank 
 
@@ -898,16 +899,19 @@ class Panel(QtGui.QWidget):
 
             # measure spectrum after injecting nshots of dye 
             if not self.args.seabreeze:
-                postinj = self.instrument.spectrometer.get_corrected_spectra()
+                postinj = self.instrument.spectrom.get_corrected_spectra()
 
             # measuring Voltage for temperature probe
             vNTC = self.get_Vd(3, self.instrument.vNTCch)
-
+                       
             # Write spectrum to the file 
             if self.args.seabreeze:
-                self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw_avg()
+                row = str(n_inj)+'raw'
+                self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
+                        'raw', self.instrument.specAvScans)
                 time.sleep(10)
-                spAbs = self.instrument.spectrometer.get_intensities_corr_nonlinear_avg()
+                spAbs = self.instrument.spectrom.get_intensities(
+                        'correct', self.instrument.specAvScans)
                 self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             else:     
                 # postinjection minus dark     
@@ -976,7 +980,7 @@ class Panel(QtGui.QWidget):
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
-        #self.instrument.spectrometer.spec.scans_to_average(1)   
+        #self.instrument.spectrom.spec.scans_to_average(1)   
 
         print ('Single measurement is done...')     
         self.append_logbox('Single measurement is done...')
@@ -986,7 +990,7 @@ class Panel(QtGui.QWidget):
         # Trying to wait for avoiding it 
         time.sleep(15)
 
-        #self.instrument.spectrometer.set_scans_average(1)   
+        #self.instrument.spectrom.set_scans_average(1)   
 
     def save_evl(self):
         flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
@@ -1046,7 +1050,7 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timerSpectra_plot.stop()
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.instrument.spectrometer.spec.close()
+            self.main_widget.instrument.spectrom.spec.close()
             #self.main_widget.timerSensUpd.stop()            
             QtGui.QApplication.quit() 
             print ('ended')  #app.quit()           

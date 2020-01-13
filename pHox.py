@@ -20,12 +20,12 @@ from precisions import precision as prec
 
 import seabreeze
 seabreeze.use('cseabreeze')
-from seabreeze.spectrometers import Spectrometer
+from seabreeze.spectroms import spectrom
 
 
 class Spectro_seabreeze(object):
     def __init__(self):
-       self.spec =  Spectrometer.from_first_available()
+       self.spec =  spectrom.from_first_available()
 
     def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
@@ -33,47 +33,50 @@ class Spectro_seabreeze(object):
         time.sleep(5)
 
     def get_wavelengths(self):
-        #wavelengths in (nm) corresponding to each pixel of the spectrometer
+        #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    def get_intensities_raw(self):
+    def get_intensities(self,type,num_avg = 1):
+        if type == 'raw':
+            self.get_intensities_raw(num_avg)
+        elif type == 'correct':
+            self.get_intensities_corr_nonlinear(num_avg)
+
+    '''def get_intensities_raw(self):
         # measured intensity array in (a.u.)
         int_raw = self.spec.intensities(correct_nonlinearity = False)
         return int_raw
-
-    def get_intensities_raw_avg(self,num_avg):
+    def get_intensities_corr_nonlinear(self):
+        return self.spec.intensities(correct_nonlinearity = True)         
+        '''
+    def get_intensities_raw(self,num_avg = 1):
         # Get intensities and average n times
         sp = self.spec.intensities(correct_nonlinearity = False)
         if num_avg > 1: 
             for _ in range(num_avg):
-                sp = np.vstack([sp,self.spec.intensities(correct_nonlinearity = False)])
+                sp = np.vstack([sp,self.spec.intensities(
+                            correct_nonlinearity = False)])
                 time.sleep(1)
             print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)
         return sp
 
-    def get_intensities_corr_nonlinear(self):
-        return self.spec.intensities(correct_nonlinearity = True)
-
-    def get_intensities_corr_nonlinear_avg(self,num_avg):
+    def get_intensities_corr_nonlinear(self,num_avg = 1):
         # Get intensities and average n times
         sp = self.spec.intensities(correct_nonlinearity=True)
         if num_avg > 1: 
             for _ in range(num_avg):
-                sp = np.vstack([sp,self.spec.intensities(correct_nonlinearity=True)])
+                sp = np.vstack([sp,self.spec.intensities(
+                            correct_nonlinearity=True)])
                 time.sleep(1)
             print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)
         return sp
 
     def set_scans_average(self,num):
-        # not supported for FLAME spectrometer
+        # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
         
-    def set_scans_average(self,num):
-        # not supported for FLAME spectrometer
-        self.spec.scans_to_average(num)
-
     '''def get_intensities_corr_dark(self):
         return self.spec.intensities(correct_dark_counts=True)
 
@@ -191,15 +194,15 @@ class pH_instrument(object):
         self.rpi = pigpio.pi()
 
         if self.args.seabreeze:
-            self.spectrometer = Spectro_seabreeze()    
+            self.spectrom = Spectro_seabreeze()    
         else:
-            self.spectrometer = STSVIS()
+            self.spectrom = STSVIS()
         print ('second connection')
         
         print ('done')
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
-         #spectrometer integration time (ms)
+         #spectrom integration time (ms)
         self.specAvScans = 6 # Spectrums to take, 
         # they will be averaged to make one measurement 
         self.fb_data = udp.Ferrybox
@@ -213,7 +216,7 @@ class pH_instrument(object):
         self.load_config()       
 
         if not self.args.seabreeze:
-            self.spectrometer.set_scans_average(1)
+            self.spectrom.set_scans_average(1)
         
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
@@ -303,13 +306,13 @@ class pH_instrument(object):
         and find pixel number of reference wavelengths
         '''
         if not self.args.seabreeze: 
-            coeffs =  self.spectrometer.wvlCalCoeff
-            wvls = np.zeros(self.spectrometer.pixels, dtype=float)
-            pixels = np.arange(self.spectrometer.pixels)
+            coeffs =  self.spectrom.wvlCalCoeff
+            wvls = np.zeros(self.spectrom.pixels, dtype=float)
+            pixels = np.arange(self.spectrom.pixels)
             wvls = (coeffs[0] + coeffs[1]* pixels + 
             coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
         else: 
-            wvls = self.spectrometer.get_wavelengths()
+            wvls = self.spectrom.get_wavelengths()
             print ('wvl got from seabreeze ',wvls)
 
         self.wvlPixels = []
@@ -332,9 +335,9 @@ class pH_instrument(object):
 
     def get_sp_levels(self,pixel):
         if not self.args.seabreeze:
-            spec = self.spectrometer.get_corrected_spectra()
+            spec = self.spectrom.get_corrected_spectra()
         else: 
-            spec = self.spectrometer.get_intensities_corr_nonlinear()
+            spec = self.spectrom.get_intensities_corr_nonlinear()
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, LED):
@@ -382,13 +385,13 @@ class pH_instrument(object):
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
         if not self.args.seabreeze:
-            self.spectrometer.set_scans_average(1)
+            self.spectrom.set_scans_average(1)
 
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             LED1,LED2,LED3 = None, None, None
 
-            self.spectrometer.set_integration_time(sptIt)
+            self.spectrom.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
             LED1,adj1 = self.find_LED(
