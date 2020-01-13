@@ -346,7 +346,7 @@ class pH_instrument(object):
         if not self.args.seabreeze:
             spec = self.spectrom.get_corrected_spectra()
         else: 
-            spec = self.spectrom.get_intensities_corr_nonlinear()
+            spec = self.spectrom.get_intensities()
         return spec[pixel],spec.max()
 
     def adjust_LED(self, led, LED):
