@@ -46,7 +46,7 @@ class Spectro_seabreeze(object):
         sp = self.spec.intensities(correct_nonlinearity = False)
         if num_avg > 1: 
             for _ in range(num_avg):
-                sp = np.vstack(sp,self.spec.intensities(correct_nonlinearity = False))
+                sp = np.vstack([sp,self.spec.intensities(correct_nonlinearity = False)])
                 time.sleep(1)
             print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)
@@ -60,7 +60,7 @@ class Spectro_seabreeze(object):
         sp = self.spec.intensities(correct_nonlinearity=True)
         if num_avg > 1: 
             for _ in range(num_avg):
-                sp = np.vstack(sp,self.spec.intensities(correct_nonlinearity=True))
+                sp = np.vstack([sp,self.spec.intensities(correct_nonlinearity=True)])
                 time.sleep(1)
             print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)
