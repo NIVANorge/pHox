@@ -36,23 +36,29 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    def get_intensities(self,type,num_avg = 1):
+    '''def get_intensities(self,type,num_avg = 1):
         if type == 'raw':
             sp = self.get_intensities_raw(num_avg)
         elif type == 'correct':
             sp = self.get_intensities_corr_nonlinear(num_avg)
         else: 
             print ('wrong type',type)
+        return sp'''
+
+    def get_intensities(self,num_avg = 1, correct = True):
+        sp = self.spec.intensities(correct_nonlinearity = correct)
+        if num_avg > 1: 
+            for _ in range(num_avg):
+                sp = np.vstack([sp,self.spec.intensities(
+                            correct_nonlinearity = correct)])
+                time.sleep(1)
+            print ('sp',sp)
+            sp = np.mean(np.array(sp),axis = 0)        
         return sp
 
-    '''def get_intensities_raw(self):
-        # measured intensity array in (a.u.)
-        int_raw = self.spec.intensities(correct_nonlinearity = False)
-        return int_raw
-    def get_intensities_corr_nonlinear(self):
-        return self.spec.intensities(correct_nonlinearity = True)         
-        '''
-    def get_intensities_raw(self,num_avg = 1):
+
+
+    '''def get_intensities_raw(self,num_avg = 1):
         # Get intensities and average n times
         sp = self.spec.intensities(correct_nonlinearity = False)
         if num_avg > 1: 
@@ -74,7 +80,7 @@ class Spectro_seabreeze(object):
                 time.sleep(1)
             print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)
-        return sp
+        return sp'''
 
     def set_scans_average(self,num):
         # not supported for FLAME spectrom

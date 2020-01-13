@@ -476,7 +476,7 @@ class Panel(QtGui.QWidget):
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
             print ('datay_before')
-            datay = self.instrument.spectrom.get_intensities('raw')
+            datay = self.instrument.spectrom.get_intensities()
             print ('datay',datay)                      
         self.plotSpc.setData(self.wvls,datay)
 
@@ -562,31 +562,6 @@ class Panel(QtGui.QWidget):
         text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
                     self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
         self.textBox_LastpH.setText(text)
-
-    '''def update_sensors_info(self):
-        vNTC = self.get_Vd(3, self.instrument.vNTCch)
-        #Tntc = 0
-        Tntc = (self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1]
-        for i in range(2):
-            Tntc += self.instrument.TempCalCoef[i] * pow(vNTC,i)
-            
-           #Tntc = vNTC*(23.1/0.4173)
-        text = 'Cuvette temperature \xB0C: %.4f  (%.4f V)\n' %(Tntc,vNTC)
-        fmt  = 'FBPumping={:-d}\nFBTemperature={:-.2f}\nFBSalinity={:-.2f}\n'
-        fmt += 'FBLongitude={:-.4f}\nFBLatitude={:-.4f}\n'
-        text += fmt.format(fbox['pumping'], 
-                           fbox['temperature'], 
-                           fbox['salinity'],
-                           fbox['longitude'], 
-                           fbox['latitude'])
-        if fbox['pumping']:
-            self.ferrypump_box.setChecked(True)
-        else: 
-            self.ferrypump_box.setChecked(False)                 
-        self.textBox_LastpH.setText(text)
-
-        if self.args.pco2:
-            self.add_pco2_info(text)'''
 
     def get_next_sample(self):
         t = datetime.now()
@@ -864,7 +839,7 @@ class Panel(QtGui.QWidget):
             blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrom.get_intensities(
-                        'correct',self.instrument.specAvScans)    
+                    self.instrument.specAvScans,correct=True)    
 
         self.spCounts_df['blank'] = blank 
 
@@ -910,10 +885,10 @@ class Panel(QtGui.QWidget):
             if self.args.seabreeze:
                 row = str(n_inj)+'raw'
                 self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
-                        'raw', self.instrument.specAvScans)
+                        self.instrument.specAvScans,correct=False)
                 time.sleep(10)
                 spAbs = self.instrument.spectrom.get_intensities(
-                        'correct', self.instrument.specAvScans)
+                        self.instrument.specAvScans,correct=True)
                 self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             else:     
                 # postinjection minus dark     
