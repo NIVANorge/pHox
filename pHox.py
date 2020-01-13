@@ -287,7 +287,6 @@ class pH_instrument(object):
                 self.find_nearest(wvls,wl))
         return wvls
 
-
     def find_nearest(self, items, value):
         idx = (abs(items-value)).argmin()
         return idx

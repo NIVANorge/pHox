@@ -246,6 +246,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setColumnCount(2)
         self.tableWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
         #self.tableWidget.horizontalHeader().setStretchLastSection(True)
+
         self.fill_table_config(0,0,'DYE type')
         self.tableWidget.setCellWidget(0,1,self.dye_combo)
 
@@ -262,7 +263,6 @@ class Panel(QtGui.QWidget):
         self.fill_table_config(4,1,' not used yet:')        
 
         self.fill_table_config(5,0,'pH sampling interval (min)')
-
 
         self.fill_table_config(6,0,'Spectroph intergration time')
         self.fill_table_config(6,1,str(self.instrument.specIntTime))
@@ -377,7 +377,17 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.isChecked())
 
     def btn_save_config_clicked(self):
-        print ('save config is not implemented yet')
+
+        with open('config.json','r+') as json_file:
+            j = json.load(json_file)
+
+            j['pH']['Default_DYE'] = self.dye_combo
+            j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
+            j['Operational']["SAMPLING_INTERVAL_SEC"] = int(self.samplingInt_combo)*60
+
+            json_file.seek(0)  # rewind
+            json.dump(j, json_file, indent=4)
+            json_file.truncate()
 
     def btn_wpump_clicked(self):
         self.instrument.set_line(self.instrument.wpump_slot,
@@ -392,7 +402,7 @@ class Panel(QtGui.QWidget):
     def load_config_file(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
-            default =   j['default']
+            default =   j['pH']
             return default
    
     def dye_combo_chngd(self,ind):
