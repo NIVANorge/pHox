@@ -864,7 +864,7 @@ class Panel(QtGui.QWidget):
             blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrom.get_intensities(
-                        'corect',self.instrument.specAvScans)    
+                        'correct',self.instrument.specAvScans)    
 
         self.spCounts_df['blank'] = blank 
 
