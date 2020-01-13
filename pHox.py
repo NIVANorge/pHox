@@ -17,11 +17,9 @@ import pandas as pd
 import random,udp
 from scipy import stats
 from precisions import precision as prec 
-
 import seabreeze
 seabreeze.use('cseabreeze')
 from seabreeze.spectrometers import Spectrometer
-
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -36,15 +34,6 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    '''def get_intensities(self,type,num_avg = 1):
-        if type == 'raw':
-            sp = self.get_intensities_raw(num_avg)
-        elif type == 'correct':
-            sp = self.get_intensities_corr_nonlinear(num_avg)
-        else: 
-            print ('wrong type',type)
-        return sp'''
-
     def get_intensities(self,num_avg = 1, correct = True):
         sp = self.spec.intensities(correct_nonlinearity = correct)
         if num_avg > 1: 
@@ -52,52 +41,13 @@ class Spectro_seabreeze(object):
                 sp = np.vstack([sp,self.spec.intensities(
                             correct_nonlinearity = correct)])
                 time.sleep(1)
-            print ('sp',sp)
             sp = np.mean(np.array(sp),axis = 0)        
         return sp
-
-
-
-    '''def get_intensities_raw(self,num_avg = 1):
-        # Get intensities and average n times
-        sp = self.spec.intensities(correct_nonlinearity = False)
-        if num_avg > 1: 
-            for _ in range(num_avg):
-                sp = np.vstack([sp,self.spec.intensities(
-                            correct_nonlinearity = False)])
-                time.sleep(1)
-            print ('sp',sp)
-            sp = np.mean(np.array(sp),axis = 0)
-        return sp
-
-    def get_intensities_corr_nonlinear(self,num_avg = 1):
-        # Get intensities and average n times
-        sp = self.spec.intensities(correct_nonlinearity=True)
-        if num_avg > 1: 
-            for _ in range(num_avg):
-                sp = np.vstack([sp,self.spec.intensities(
-                            correct_nonlinearity=True)])
-                time.sleep(1)
-            print ('sp',sp)
-            sp = np.mean(np.array(sp),axis = 0)
-        return sp'''
 
     def set_scans_average(self,num):
         # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
         
-    '''def get_intensities_corr_dark(self):
-        return self.spec.intensities(correct_dark_counts=True)
-
-    def get_intensities_corr_all(self):
-        return self.spec.intensities(correct_dark_counts=True,correct_nonlinearity=True)
-
-    def get_spectrum_raw(self):
-        wavelengths, intensities = self.spec.spectrum()
-        return (wavelengths, intensities)'''
-
-
-
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
     # DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #

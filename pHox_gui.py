@@ -19,7 +19,6 @@ import udp # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec 
 
-
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass):
         self.mainclass = mainclass
@@ -214,7 +213,6 @@ class Panel(QtGui.QWidget):
         #self.tab1.layout.addWidget(self.textBox_LastpH,  3, 0, 1, 2)
  
         self.tab1.setLayout(self.tab1.layout)
-
 
     def append_logbox(self,message):
         t = datetime.now().strftime('%b-%d %H:%M:%S')
@@ -446,16 +444,6 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-
-    '''def on_dark_clicked(self):
-        self.append_logbox('Measuring dark...')
-        self.set_LEDs(False)
-        self.btn_leds.setChecked(False)
-        print ('Measuring dark...,put scans average from the config')
-        if not self.args.seabreeze:
-            self.instrument.spectrom.set_scans_average(self.instrument.specAvScans) 
-            self.spCounts_df['dark'] = self.instrument.spectrom.get_corrected_spectra()       
-            self.instrument.spectrom.set_scans_average(1)'''
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -920,20 +908,16 @@ class Panel(QtGui.QWidget):
 
         self.plotAbs.setData(self.wvls,spAbs)
 
-        # opening the valve
+        # open the valve
         self.instrument.set_Valve(False)
         time.sleep(2)
         self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
-        
-        self.spCounts_df.T.to_csv(
-            self.instrument.folderPath + self.instrument.flnmStr + '.spt',
-            index = True, header=False)
+        self.save_spt()
         time.sleep(2)
         print ('evl file save')
         self.save_evl()
 
-        #if not self.args.seabreeze:
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
 
         self.pH_log_row = pd.DataFrame({
@@ -970,8 +954,19 @@ class Panel(QtGui.QWidget):
         #self.instrument.spectrom.set_scans_average(1)   
 
     def save_evl(self):
-        flnm = self.instrument.folderPath + self.instrument.flnmStr+'.evl'
+        evlpath = self.instrument.folderPath + 'evl/'
+        if not os.path.exists(evlpath):
+            os.makedirs(evlpath)
+        flnm = evlpath + self.instrument.flnmStr +'.evl'
         self.evalPar_df.to_csv(flnm, index = False, header=True) 
+
+    def save_spt(self):
+        sptpath = self.instrument.folderPath + 'spt/'
+        if not os.path.exists(sptpath):
+            os.makedirs(sptpath)
+        self.spCounts_df.T.to_csv(
+            sptpath + self.instrument.flnmStr + '.spt',
+            index = True, header=False)
 
     def pumping(self,pumpTime):    
         self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
@@ -982,7 +977,6 @@ class Panel(QtGui.QWidget):
 
     def save_logfile_df(self):
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
-
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
         else: 
@@ -1040,7 +1034,6 @@ class boxUI(QtGui.QMainWindow):
             #    print ('UDP server closed')
             #self.main_widget.close()
 
-   
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
