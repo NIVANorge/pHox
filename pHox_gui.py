@@ -819,9 +819,7 @@ class Panel(QtGui.QWidget):
     def sample(self):   
 
         self.StatusBox.setText('Ongoing measurement')
-        print ('scans')
-        self.instrument.spectrometer.spec.scans_to_average(1)
-        print ('scans2')
+
         self.sample_steps[0].setChecked(True)
         self.append_logbox('Start new measurement')
 
@@ -832,7 +830,7 @@ class Panel(QtGui.QWidget):
         #if not self.args.seabreeze:
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        self.instrument.spectrometer.set_scans_average(1)
+        #self.instrument.spectrometer.set_scans_average(1)
         print ('scans average')
         self.on_autoAdjust_clicked()  
 
@@ -841,7 +839,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.evalPar = []
 
-        self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
+        #self.instrument.spectrometer.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
@@ -863,7 +861,7 @@ class Panel(QtGui.QWidget):
             blank = self.instrument.spectrometer.get_corrected_spectra()
             blank_min_dark= np.clip(blank,1,16000)
         else: 
-            blank = self.instrument.spectrometer.get_intensities_corr_nonlinear()    
+            blank = self.instrument.spectrometer.get_intensities_corr_nonlinear_avg(self.instrument.specAvScans)    
 
         self.spCounts_df['blank'] = blank 
 
@@ -907,9 +905,9 @@ class Panel(QtGui.QWidget):
 
             # Write spectrum to the file 
             if self.args.seabreeze:
-                self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw()
+                self.spCounts_df[str(n_inj)+'raw'] = self.instrument.spectrometer.get_intensities_raw_avg()
                 time.sleep(10)
-                spAbs = self.instrument.spectrometer.get_intensities_corr_nonlinear()
+                spAbs = self.instrument.spectrometer.get_intensities_corr_nonlinear_avg()
                 self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             else:     
                 # postinjection minus dark     
@@ -978,7 +976,7 @@ class Panel(QtGui.QWidget):
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
-        self.instrument.spectrometer.spec.scans_to_average(1)   
+        #self.instrument.spectrometer.spec.scans_to_average(1)   
 
         print ('Single measurement is done...')     
         self.append_logbox('Single measurement is done...')

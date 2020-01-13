@@ -26,10 +26,6 @@ from seabreeze.spectrometers import Spectrometer
 class Spectro_seabreeze(object):
     def __init__(self):
        self.spec =  Spectrometer.from_first_available()
-       print (self.spec)
-       print ('set scans')
-       self.spec.scans_to_average(10)
-       print (self.spec)
 
     def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
@@ -45,10 +41,38 @@ class Spectro_seabreeze(object):
         int_raw = self.spec.intensities(correct_nonlinearity=False)
         return int_raw
 
+    def get_intensities_raw_avg(self,num_avg):
+        # Get intensities and average n times
+        l = []
+        print ('l',l)
+        for _ in range(num_avg):
+            l = l.append(self.spec.intensities(correct_nonlinearity=True))
+            time.wait(1)
+        print ('l',l)
+        return np.mean(np.array(l),axis = 0)
+
     def get_intensities_corr_nonlinear(self):
         return self.spec.intensities(correct_nonlinearity=True)
 
-    def get_intensities_corr_dark(self):
+    def get_intensities_corr_nonlinear_avg(self,num_avg):
+        # Get intensities and average n times
+        l = []
+        print ('l',l)
+        for _ in range(num_avg):
+            l = l.append(self.spec.intensities(correct_nonlinearity=True))
+            time.wait(1)
+        print ('l',l)
+        return np.mean(np.array(l),axis = 0)
+
+    def set_scans_average(self,num):
+        # not supported for FLAME spectrometer
+        self.spec.scans_to_average(num)
+        
+    def set_scans_average(self,num):
+        # not supported for FLAME spectrometer
+        self.spec.scans_to_average(num)
+
+    '''def get_intensities_corr_dark(self):
         return self.spec.intensities(correct_dark_counts=True)
 
     def get_intensities_corr_all(self):
@@ -56,10 +80,9 @@ class Spectro_seabreeze(object):
 
     def get_spectrum_raw(self):
         wavelengths, intensities = self.spec.spectrum()
-        return (wavelengths, intensities)
+        return (wavelengths, intensities)'''
 
-    def set_scans_average(self,num):
-        self.spec.scans_to_average(num)
+
 
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
@@ -187,7 +210,6 @@ class pH_instrument(object):
         
         self.load_config()       
 
-        self.spectrometer.set_integration_time(self.specIntTime)
         if not self.args.seabreeze:
             self.spectrometer.set_scans_average(1)
         
