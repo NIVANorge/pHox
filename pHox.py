@@ -38,9 +38,10 @@ class Spectro_seabreeze(object):
 
     def get_intensities(self,type,num_avg = 1):
         if type == 'raw':
-            self.get_intensities_raw(num_avg)
+            sp = self.get_intensities_raw(num_avg)
         elif type == 'correct':
-            self.get_intensities_corr_nonlinear(num_avg)
+            sp = self.get_intensities_corr_nonlinear(num_avg)
+        return sp
 
     '''def get_intensities_raw(self):
         # measured intensity array in (a.u.)
