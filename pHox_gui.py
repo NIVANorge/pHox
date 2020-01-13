@@ -224,8 +224,8 @@ class Panel(QtGui.QWidget):
     def make_tab_config(self):
         self.tab_config.layout =  QtGui.QGridLayout()
         # Define widgets for config tab 
-        #self.reload_config = self.create_button('Reload config',False)     
-        #self.reload_config.clicked.connect(self.btn_reload_config_clicked) 
+        self.btn_save_config= self.create_button('Save config',False)     
+        self.btn_save_config.clicked.connect(self.btn_save_config_clicked) 
 
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
@@ -279,8 +279,8 @@ class Panel(QtGui.QWidget):
 
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
             
-        #self.tab_config.layout.addWidget(self.reload_config,0,0,1,1)   
-        self.tab_config.layout.addWidget(self.tableWidget,1,0,1,1)
+        self.tab_config.layout.addWidget(self.btn_save_config,0,0,1,1)   
+        self.tab_config.layout.addWidget(self.tableWidget,1,0,2,2)
 
         self.tab_config.setLayout(self.tab_config.layout)  
 
@@ -375,6 +375,9 @@ class Panel(QtGui.QWidget):
     def btn_stirr_clicked(self):
         self.instrument.set_line(self.instrument.stirrer_slot,
         self.btn_stirr.isChecked())
+
+    def btn_save_config_clicked(self):
+        print ('save config is not implemented yet')
 
     def btn_wpump_clicked(self):
         self.instrument.set_line(self.instrument.wpump_slot,
