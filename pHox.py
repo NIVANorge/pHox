@@ -19,13 +19,14 @@ from scipy import stats
 from precisions import precision as prec 
 
 import seabreeze
-seabreeze.use('pyseabreeze')
+seabreeze.use('cseabreeze')
 from seabreeze.spectrometers import Spectrometer
 
 
 class Spectro_seabreeze(object):
     def __init__(self):
        self.spec =  Spectrometer.from_first_available()
+       print (self.spec)
        print ('set scans')
        self.spec.scans_to_average(10)
        print (self.spec)
