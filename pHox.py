@@ -39,7 +39,6 @@ class Spectro_seabreeze(object):
     def get_intensities_raw(self):
         # measured intensity array in (a.u.)
         int_raw = self.spec.intensities(correct_nonlinearity=False)
-        print ('int_raw', int_raw)
         return int_raw
 
     def get_intensities_corr_nonlinear(self):

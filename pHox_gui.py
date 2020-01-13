@@ -73,7 +73,6 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_log,    "Log")
         self.tabs.addTab(self.tab_config, "Config") 
 
-
         self.tab_log.layout =     QtGui.QGridLayout()
         
         self.logTextBox = QtGui.QPlainTextEdit()
@@ -83,7 +82,6 @@ class Panel(QtGui.QWidget):
 
         self.tab_log.layout.addWidget(self.logTextBox)
         self.tab_log.setLayout(self.tab_log.layout)
-
 
         self.tab_manual.layout  = QtGui.QGridLayout()
         self.make_btngroupbox()
@@ -821,6 +819,9 @@ class Panel(QtGui.QWidget):
     def sample(self):   
 
         self.StatusBox.setText('Ongoing measurement')
+        print ('scans')
+        self.instrument.spectrometer.spec.scans_to_average(1)
+        print ('scans2')
         self.sample_steps[0].setChecked(True)
         self.append_logbox('Start new measurement')
 
@@ -977,7 +978,8 @@ class Panel(QtGui.QWidget):
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
-        self.instrument.spectrometer.set_scans_average(1)   
+        self.instrument.spectrometer.spec.scans_to_average(1)   
+
         print ('Single measurement is done...')     
         self.append_logbox('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
