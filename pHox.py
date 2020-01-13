@@ -19,6 +19,7 @@ from scipy import stats
 from precisions import precision as prec 
 
 import seabreeze
+seabreeze.use('pyseabreeze')
 from seabreeze.spectrometers import Spectrometer
 
 
