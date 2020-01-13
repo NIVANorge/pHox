@@ -598,7 +598,7 @@ class Panel(QtGui.QWidget):
     def get_filename(self):
         t = datetime.now()
         self.instrument.timeStamp  = t.isoformat('_')
-        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d%H%M") 
+        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d_%H:%M:%S") 
         return
 
     def btn_cont_meas_clicked(self):
