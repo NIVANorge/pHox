@@ -38,31 +38,33 @@ class Spectro_seabreeze(object):
 
     def get_intensities_raw(self):
         # measured intensity array in (a.u.)
-        int_raw = self.spec.intensities(correct_nonlinearity=False)
+        int_raw = self.spec.intensities(correct_nonlinearity = False)
         return int_raw
 
     def get_intensities_raw_avg(self,num_avg):
         # Get intensities and average n times
-        l = []
-        print ('l',l)
-        for _ in range(num_avg):
-            l = l.append(self.spec.intensities(correct_nonlinearity=True))
-            time.sleep(1)
-        print ('l',l)
-        return np.mean(np.array(l),axis = 0)
+        sp = self.spec.intensities(correct_nonlinearity = False)
+        if num_avg > 1: 
+            for _ in range(num_avg):
+                sp = sp.append(self.spec.intensities(correct_nonlinearity = False))
+                time.sleep(1)
+            print ('sp',sp)
+            sp = np.mean(np.array(sp),axis = 0)
+        return sp
 
     def get_intensities_corr_nonlinear(self):
-        return self.spec.intensities(correct_nonlinearity=True)
+        return self.spec.intensities(correct_nonlinearity = True)
 
     def get_intensities_corr_nonlinear_avg(self,num_avg):
         # Get intensities and average n times
-        l = []
-        print ('l',l)
-        for _ in range(num_avg):
-            l = l.append(self.spec.intensities(correct_nonlinearity=True))
-            time.sleep(1)
-        print ('l',l)
-        return np.mean(np.array(l),axis = 0)
+        sp = self.spec.intensities(correct_nonlinearity=True)
+        if num_avg > 1: 
+            for _ in range(num_avg):
+                sp = sp.append(self.spec.intensities(correct_nonlinearity=True))
+                time.sleep(1)
+            print ('sp',sp)
+            sp = np.mean(np.array(sp),axis = 0)
+        return sp
 
     def set_scans_average(self,num):
         # not supported for FLAME spectrometer
