@@ -47,7 +47,7 @@ class Spectro_seabreeze(object):
         print ('l',l)
         for _ in range(num_avg):
             l = l.append(self.spec.intensities(correct_nonlinearity=True))
-            time.wait(1)
+            time.sleep(1)
         print ('l',l)
         return np.mean(np.array(l),axis = 0)
 
@@ -60,7 +60,7 @@ class Spectro_seabreeze(object):
         print ('l',l)
         for _ in range(num_avg):
             l = l.append(self.spec.intensities(correct_nonlinearity=True))
-            time.wait(1)
+            time.sleep(1)
         print ('l',l)
         return np.mean(np.array(l),axis = 0)
 
