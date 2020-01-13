@@ -382,9 +382,10 @@ class Panel(QtGui.QWidget):
             j = json.load(json_file)
 
             j['pH']['Default_DYE'] = self.dye_combo
-            j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
-            j['Operational']["SAMPLING_INTERVAL_SEC"] = int(self.samplingInt_combo)*60
 
+            j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
+            minutes = int(self.samplingInt_combo.currentText())
+            j['Operational']["SAMPLING_INTERVAL_SEC"] = minutes*60
             json_file.seek(0)  # rewind
             json.dump(j, json_file, indent=4)
             json_file.truncate()
