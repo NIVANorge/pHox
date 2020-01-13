@@ -20,12 +20,12 @@ from precisions import precision as prec
 
 import seabreeze
 seabreeze.use('cseabreeze')
-from seabreeze.spectroms import spectrom
+from seabreeze.spectrometers import Spectrometer
 
 
 class Spectro_seabreeze(object):
     def __init__(self):
-       self.spec =  spectrom.from_first_available()
+       self.spec =  Spectrometer.from_first_available()
 
     def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
