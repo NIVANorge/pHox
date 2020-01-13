@@ -475,6 +475,7 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
+            print ('datay')
             datay = self.instrument.spectrom.get_intensities('raw')          
         self.plotSpc.setData(self.wvls,datay)
 
