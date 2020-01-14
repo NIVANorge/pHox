@@ -1134,7 +1134,6 @@ class boxUI(QtGui.QMainWindow):
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
-            self.main_widget.timerSpectra_plot.stop()
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
             self.main_widget.instrument.spectrom.spec.close()          
