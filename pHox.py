@@ -141,6 +141,22 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
+
+class CO3_instrument(object):
+       def __init__(self):
+         self.load_config() 
+
+    def load_config(self):      
+      with open('config.json') as json_file:
+         j = json.load(json_file)  
+
+      conf = j['co3']
+      conf_operational = j['Operational']
+      
+      self.wvl1 = conf["WL_1"]
+      self.wvl2 = conf["WL_2"]
+      self.light_slot = conf["LIGHT_SLOT"]
+
 class pH_instrument(object):
     # Instrument constructor #
     def __init__(self,panelargs):
@@ -217,16 +233,10 @@ class pH_instrument(object):
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
 
-
         self._autostart = bool(conf_operational['AUTOSTART'])
         self._automode  = conf_operational['AUTOSTART_MODE']
         self.DURATION =  int(conf_operational['DURATION'])
      
-        self._autodark  = None
-        self._autotime  = None
-        self._autolen   = None
-        self.last_dark  = None #Not used
-
         self.vNTCch =    int(conf_operational['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
@@ -280,12 +290,12 @@ class pH_instrument(object):
                 self.find_nearest(wvls,wl))
         return wvls
 
-    def calc_wavelength_seabreeze(self,wvls):
+    '''def calc_wavelength_seabreeze(self,wvls):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
-        return wvls
+        return wvls'''
 
     def find_nearest(self, items, value):
         idx = (abs(items-value)).argmin()
@@ -401,6 +411,13 @@ class pH_instrument(object):
         # change status of the relay 
         self.rpi.write(line, status)
 
+    def turn_on_relay (self, line):
+        self.rpi.write(line, True)
+
+    def turn_off_relay (self, line, status):
+        self.rpi.write(line, False)
+
+
     def cycle_line (self, line, nCycles):
         ON = 0.3
         OFF = 0.3
@@ -490,6 +507,35 @@ class pH_instrument(object):
                 Anir,vol_injected,
                 self.TempCalCoef[0],
                 self.TempCalCoef[1]]
+ 
+    def calc_CO3(self,absSp, vNTC,dilution):
+        
+        vNTC = round(self.vNTCch, prec['vNTC'])
+        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
+        T = 273.15 + Tdeg
+        A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
+        A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
+        # volume in ml
+        S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
+
+
+        R = A2/A1
+ 
+        e1 = 0.311907-0.002396*S_corr
+        e2e3 = 3.061-0.0873*S_corr+0.0009363*S_corr**2
+        log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
+        arg = (R - e1)/(1 - R*e2e3) 
+
+        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
+                                     "log_beta1_e2", "vNTC", "S", 
+                                     "A1", "A2", "R", "Tdeg", 
+                                     "Vinj", "fcS"])
+
+        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
+
 
     def pH_eval(self,evalPar_df):
 
@@ -503,7 +549,7 @@ class pH_instrument(object):
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values
-            slope1, intercept, r_value,_, _ = stats.linregress(x,y) 
+            slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
             if r_value**2  > 0.9 :
                 pH_lab = intercept 
                 print ('r_value **2 > 0.9')
@@ -526,25 +572,3 @@ class pH_instrument(object):
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu)      
 
-    def calc_CO3(self,absSp, vNTC,dilution):
-
-        Tdeg = (self.ntcCalCoef[0]*vNTC) + self.ntcCalCoef[1]
-        T = 273.15 + Tdeg
-        
-        # volume in ml
-        fcS = self.fb_data['salinity'] * dilution
-        # or fcS = self.fb_data['salinity'] * (
-             # (self.Cuvette_V)/(self.dye_vol_inj*(pinj+1)*shot+self.Cuvette_V))
-
-        A1,A2 =   (absSp[self.wvlPixels[0]], absSp[self.wvlPixels[1]])      
-        R = A2/A1
- 
-        e1 = 0.311907-0.002396*fcS
-        e2e3 = 3.061-0.0873*fcS+0.0009363*fcS**2
-        log_beta1_e2 = 5.507074-0.041259*fcS+ 0.000180*fcS**2
-        arg = (R - e1)/(1 - R*e2e3) 
-
-        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
-        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
-        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", "fcS"])
-        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  

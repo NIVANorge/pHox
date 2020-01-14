@@ -38,16 +38,16 @@ class Panel(QtGui.QWidget):
         parser.add_argument("--pco2",
                             action="store_true")
         parser.add_argument("--seabreeze",
-                            action="store_true")                            
+                            action="store_true")       
+        parser.add_argument("--co3",
+                            action="store_true") 
+                                                                            
         self.continous_mode_is_on = False
         self.args = parser.parse_args()
         self.create_timers()
         self.instrument = pH_instrument(self.args)
 
         self.wvls = self.instrument.calc_wavelengths()
-
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
-        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls]  
 
         print ('instrument created')
         if self.args.pco2:
@@ -59,15 +59,13 @@ class Panel(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
 
-        self.tab1 =        QtGui.QWidget()
-        #self.tab_progress =    QtGui.QWidget()        
+        self.tab1 =        QtGui.QWidget()    
         self.tab_manual =  QtGui.QWidget()
         self.tab_log =     QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.tab1,       "Home")
-        #self.tabs.addTab(self.tab_progress, "Progress")          
+        self.tabs.addTab(self.tab1,       "Home")       
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_log,    "Log")
         self.tabs.addTab(self.tab_config, "Config") 
@@ -104,13 +102,13 @@ class Panel(QtGui.QWidget):
         #self.showMaximized()
 
     def create_timers(self):
-        self.timerSpectra_plot = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(1500)
+       # self.timerSpectra_plot = QtCore.QTimer()
+       # self.timerSpectra_plot.setInterval(1500)
         self.timer_contin_mode = QtCore.QTimer()
         #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
+        #self.timerSpectra_plot.timeout.connect(self.update_pHspectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         #self.timerSensUpd.timeout.connect(self.update_sensors_info)
         if self.args.pco2:
@@ -373,11 +371,28 @@ class Panel(QtGui.QWidget):
         return Btn
 
     def btn_stirr_clicked(self):
-        self.instrument.set_line(self.instrument.stirrer_slot,
-        self.btn_stirr.isChecked())
+        if self.btn_stirr.isChecked():
+            self.instrument.turn_on_relay(
+                self.instrument.stirrer_slot)
+        else: 
+            self.instrument.turn_off_relay
+                (self.instrument.stirrer_slot)
+
+    def btn_wpump_clicked(self):
+        if self.btn_wpump.isChecked():
+            self.instrument.turn_on_relay(
+                self.instrument.wpump_slot)
+        else: 
+            self.instrument.turn_off_relay(
+                self.instrument.wpump_slot)
+
+    def btn_dye_pmp_clicked(self):
+        self.instrument.cycle_line(self.instrument.dyepump_slot,3)
+
+    def btn_valve_clicked(self):
+        self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
-
         with open('config.json','r+') as json_file:
             j = json.load(json_file)
 
@@ -389,16 +404,6 @@ class Panel(QtGui.QWidget):
             json_file.seek(0)  # rewind
             json.dump(j, json_file, indent=4)
             json_file.truncate()
-
-    def btn_wpump_clicked(self):
-        self.instrument.set_line(self.instrument.wpump_slot,
-        self.btn_wpump.isChecked())
-
-    def btn_dye_pmp_clicked(self):
-        self.instrument.cycle_line(self.instrument.dyepump_slot,3)
-
-    def btn_valve_clicked(self):
-        self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def load_config_file(self):
         with open('config.json') as json_file:
@@ -473,13 +478,11 @@ class Panel(QtGui.QWidget):
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         self.instrument.folderPath = folder+'/'
 
-    def update_spectra_plot(self):
+    def update_pHspectra_plot(self):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
-            print ('datay_before')
-            datay = self.instrument.spectrom.get_intensities()
-            print ('datay',datay)                      
+            datay = self.instrument.spectrom.get_intensities()                
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
@@ -514,7 +517,7 @@ class Panel(QtGui.QWidget):
     def on_autoAdjust_clicked(self):
 
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
-        self.update_spectra_plot()  
+        self.update_pHspectra_plot()  
         #self.timerSpectra_plot.start()
         print (self.LED1,self.LED2,self.LED3)
         if result:
@@ -594,7 +597,6 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True) 
 
     def btn_single_meas_clicked(self):
-
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
         # disable all btns in manual tab 
@@ -685,16 +687,10 @@ class Panel(QtGui.QWidget):
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
 
-        self.update_spectra_plot()
-        #self.timerSpectra_plot.start()
-        # Take dark for the first time 
-        #self.textBox.setText('Taking dark...')
-        #if not self.args.seabreeze:
-        #    self.on_dark_clicked()
+        self.update_pHspectra_plot()
         self.update_LEDs()
-        # turn on leds 
         self.btn_leds.setChecked(True)
-        self.update_spectra_plot()
+        self.update_pHspectra_plot()
         #self.timerSpectra_plot.start()
 
         if not self.args.debug:
@@ -715,7 +711,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
         #self.on_deploy_clicked(False)
-        self.timerSpectra_plot.stop()
+        #self.timerSpectra_plot.stop()
         self.timer_contin_mode.stop()
         #self.timerSensUpd.stop()
         #self.timerSave.stop()
@@ -798,27 +794,24 @@ class Panel(QtGui.QWidget):
     def sample(self):   
 
         self.StatusBox.setText('Ongoing measurement')
-
         self.sample_steps[0].setChecked(True)
+
+        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
+        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
+
+
         self.append_logbox('Start new measurement')
 
         if not fbox['pumping']:
             return
   
-        #####self.on_dark_clicked() 
-        #if not self.args.seabreeze:
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        #self.instrument.spectrom.set_scans_average(1)
         print ('scans average')
         self.on_autoAdjust_clicked()  
 
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
-
-        self.instrument.evalPar = []
-
-        #self.instrument.spectrom.set_scans_average(self.instrument.specAvScans)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
@@ -831,12 +824,10 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
 
-
         self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
+
         if not self.args.seabreeze:
-            # Take the last measured dark
-            #dark = self.spCounts_df['dark']
             blank = self.instrument.spectrom.get_corrected_spectra()
             blank_min_dark= np.clip(blank,1,16000)
         else: 
@@ -860,10 +851,10 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                         vol_injected  + self.instrument.Cuvette_V)
 
-            # shots= number of dye injection for each cycle ( now 1 for all cycles)
+            # shots = number of dye injection for each cycle ( now 1 for all cycles)
             self.append_logbox('Injection %d:' %(n_inj+1))
             # turn on the stirrer                 
-            self.instrument.set_line(self.instrument.stirrer_slot, True)
+            self.instrument.turn_on_relay(self.instrument.stirrer_slot)
 
             if not self.args.debug:
                 # inject dye 
@@ -872,8 +863,7 @@ class Panel(QtGui.QWidget):
             self.append_logbox("Mixing")
             time.sleep(self.instrument.mixT)
 
-            # turn off the stirrer
-            self.instrument.set_line(self.instrument.stirrer_slot, False)
+            self.instrument.turn_off_relay(self.instrument.stirrer_slot)
             time.sleep(self.instrument.waitT)
 
             # measure spectrum after injecting nshots of dye 
@@ -965,8 +955,6 @@ class Panel(QtGui.QWidget):
         # Trying to wait for avoiding it 
         time.sleep(15)
 
-        #self.instrument.spectrom.set_scans_average(1)   
-
     def save_evl(self):
         evlpath = self.instrument.folderPath + 'evl/'
         if not os.path.exists(evlpath):
@@ -983,11 +971,11 @@ class Panel(QtGui.QWidget):
             index = True, header=False)
 
     def pumping(self,pumpTime):    
-        self.instrument.set_line(self.instrument.wpump_slot,True) # start the instrument pump
-        self.instrument.set_line(self.instrument.stirrer_slot,True) # start the stirrer
+        self.instrument.turn_on_relay(self.instrument.wpump_slot) # start the instrument pump
+        self.instrument.turn_on_relay(self.instrument.stirrer_slot) # start the stirrer
         time.sleep(pumpTime)
-        self.instrument.set_line(self.instrument.stirrer_slot,False) # turn off the pump
-        self.instrument.set_line(self.instrument.wpump_slot,False) # turn off the stirrer
+        self.instrument.turn_off_relay(self.instrument.stirrer_slot) # turn off the pump
+        self.instrument.turn_off_relay(self.instrument.wpump_slot) # turn off the stirrer
 
     def save_logfile_df(self):
         logfile = os.path.join(self.instrument.folderPath, 'pH.log')
@@ -1006,24 +994,17 @@ class Panel(QtGui.QWidget):
         row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
         udp.send_data('$PPHOX,' + row_to_string + ',*\n')   
 
-        '''s = self.instrument.timeStamp[0:16]
-        s+= ',%.6f,%.6f,%.3f,%.3f' % (
-            fbox['longitude'], fbox['latitude'],
-            fbox['temperature'], fbox['salinity'])
-
-        s+= ',%.4f,%.4f,%.3f,%.3f' %pHeval
-        s+= '\n'''
-
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #
+        
         self.setWindowTitle('NIVA - pH')
 
         self.main_widget = Panel(self)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
+        
     def closeEvent(self,event):
         result = QtGui.QMessageBox.question(self,
                       "Confirm Exit...",
@@ -1035,18 +1016,12 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timerSpectra_plot.stop()
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.instrument.spectrom.spec.close()
-            #self.main_widget.timerSensUpd.stop()            
+            self.main_widget.instrument.spectrom.spec.close()          
             QtGui.QApplication.quit() 
-            print ('ended')  #app.quit()           
             udp.UDP_EXIT = True
             udp.server.join()       
             event.accept()            
-            #udp.UDP_EXIT = True
-            #udp.server.join()
-            #if not udp.server.is_alive():
-            #    print ('UDP server closed')
-            #self.main_widget.close()
+
 
 if __name__ == '__main__':
 
