@@ -148,7 +148,7 @@ class CO3_instrument(object):
 
     def load_config(self):      
         with open('config.json') as json_file:
-        j = json.load(json_file)  
+            j = json.load(json_file)  
 
         conf = j['co3']
         conf_operational = j['Operational']
