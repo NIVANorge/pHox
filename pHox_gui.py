@@ -375,8 +375,8 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_on_relay(
                 self.instrument.stirrer_slot)
         else: 
-            self.instrument.turn_off_relay
-                (self.instrument.stirrer_slot)
+            self.instrument.turn_off_relay(
+                self.instrument.stirrer_slot)
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
