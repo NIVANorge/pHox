@@ -143,19 +143,19 @@ class STSVIS(object):
 
 
 class CO3_instrument(object):
-       def __init__(self):
-         self.load_config() 
+    def __init__(self):
+        self.load_config() 
 
     def load_config(self):      
-      with open('config.json') as json_file:
-         j = json.load(json_file)  
+        with open('config.json') as json_file:
+        j = json.load(json_file)  
 
-      conf = j['co3']
-      conf_operational = j['Operational']
+        conf = j['co3']
+        conf_operational = j['Operational']
       
-      self.wvl1 = conf["WL_1"]
-      self.wvl2 = conf["WL_2"]
-      self.light_slot = conf["LIGHT_SLOT"]
+        self.wvl1 = conf["WL_1"]
+        self.wvl2 = conf["WL_2"]
+        self.light_slot = conf["LIGHT_SLOT"]
 
 class pH_instrument(object):
     # Instrument constructor #
