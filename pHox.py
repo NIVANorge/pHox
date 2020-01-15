@@ -171,7 +171,7 @@ class Common_instrument(object):
     def print_Com(self, port, txtData):
         port.write(txtData)
 
-     def get_Vd(self, nAver, channel):
+    def get_Vd(self, nAver, channel):
             V = 0.0000
         for i in range (nAver):
             V += self.adc.read_voltage(channel)
