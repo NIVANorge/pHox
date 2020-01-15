@@ -172,7 +172,7 @@ class Common_instrument(object):
         port.write(txtData)
 
     def get_Vd(self, nAver, channel):
-            V = 0.0000
+        V = 0.0000
         for i in range (nAver):
             V += self.adc.read_voltage(channel)
         return V/nAver   
