@@ -32,27 +32,16 @@ class Sample_thread(QtCore.QThread):
             self.mainclass.sample()
 
 class Panel(QtGui.QWidget):
-    def __init__(self,parent):
+    def __init__(self,parent,panelargs):
         super(QtGui.QWidget, self).__init__(parent)
         #super(Panel, self).__init__()
 
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--pH",
-                            action="store_true")
-        parser.add_argument("--pco2",
-                            action="store_true")     
-        parser.add_argument("--co3",
-                            action="store_true")    
-
-        parser.add_argument("--debug",
-                            action="store_true")
-
-        parser.add_argument("--seabreeze",
-                            action="store_true")       
+      
  
                                                                             
         self.continous_mode_is_on = False
-        self.args = parser.parse_args()
+        self.args = panelargs
+        #self.args = parser.parse_args()
         self.create_timers()
 
         if self.args.co3:
@@ -80,16 +69,20 @@ class Panel(QtGui.QWidget):
 
         # Add tabs
         self.tabs.addTab(self.tab1,       "Home")  
-        self.tabs.addTab(self.tab_log,    "Log")    
+        self.tabs.addTab(self.tab_log,    "Log") 
+        self.make_tab1()
+        self.make_tab_log()      
+
         if not self.args.co3:
             self.tabs.addTab(self.tab_manual, "Manual")
             self.tabs.addTab(self.tab_config, "Config") 
+            self.make_tab_manual()
+            self.make_tab_config()   
 
-        self.make_tab1()
-        self.make_tab_log()
-        self.make_tab_config()
+
+
         self.make_plotwidgets()
-        self.make_tab_manual()
+
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwdigets_groupbox)    
@@ -148,15 +141,14 @@ class Panel(QtGui.QWidget):
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-        if self.args == ''
-        self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-        self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
-        self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
-        self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
+        if not self.args.co3:
+            self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
+            self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
+            self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
+            self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
 
         self.plotSpc= self.plotwidget1.plot()
         self.plotAbs= self.plotwidget2.plot()
-
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
     def make_steps_groupBox(self):
@@ -1133,7 +1125,20 @@ class boxUI(QtGui.QMainWindow):
         
         self.setWindowTitle('NIVA - pH')
 
-        self.main_widget = Panel(self)
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument("--pH",
+                            action="store_true")
+        parser.add_argument("--pco2",
+                            action="store_true")     
+        parser.add_argument("--co3",
+                            action="store_true")    
+        parser.add_argument("--debug",
+                            action="store_true")
+        parser.add_argument("--seabreeze",
+                            action="store_true") 
+        self.args = parser.parse_args()
+        self.main_widget = Panel(self,self.args)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
