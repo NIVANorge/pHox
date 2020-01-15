@@ -149,9 +149,56 @@ class Common_instrument(object):
             self.spectrom = Spectro_seabreeze()    
         else:
             self.spectrom = STSVIS()
-        # they will be averaged to make one measurement 
+
+        #initialize PWM lines
+        self.rpi = pigpio.pi()
         self.fb_data = udp.Ferrybox
 
+        self.load_config()
+
+        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+        self.adc.set_pga(1)
+        self.adcdac = ADCDACPi()
+
+
+
+
+    def load_config(self):
+
+        with open('config.json') as json_file:
+            j = json.load(json_file)  
+
+        conf_operational = j['Operational']
+        self._autostart = bool(conf_operational['AUTOSTART'])
+        self._automode  = conf_operational['AUTOSTART_MODE']
+        self.DURATION =  int(conf_operational['DURATION'])
+        self.vNTCch =    int(conf_operational['T_PROBE_CH'])
+        if not(self.vNTCch in range(9)):
+            self.vNTCch = 8
+        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_SEC"])
+        self.pumpTime = int(conf_operational["pumpTime"])
+        self.mixT = int(conf_operational["mixTime"])
+        self.waitT = int(conf_operational["waitTime"])
+        self.ncycles= int(conf_operational["ncycles"])
+        self.nshots = int(conf_operational["dye_nshots"])
+
+        self.wpump_slot = conf_operational["WPUMP_SLOT"]
+        self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
+        self.stirrer_slot = conf_operational["STIRR_SLOT"]
+        self.extra_slot = conf_operational["SPARE_SLOT"] 
+
+        #TODO: Replace ssrlines with new lines 
+        # keep it for now since there is a loop dependent on self.ssrLines
+        self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
+
+        self.valve_slots = conf_operational['VALVE_SLOTS']
+        self.TempCalCoef = conf_operational['NTC_CAL_COEF']
+        self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
+        self.dye_vol_inj = conf_operational["DYE_V_INJ"]
+        self.specIntTime = conf_operational['Spectro_Integration_time']
+        self.deployment = conf_operational['Deployment_mode']
+        self.ship_code = conf_operational['Ship_Code']
+        
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
 
@@ -202,22 +249,31 @@ class CO3_instrument(Common_instrument):
         super().__init__(panelargs)
         self.load_config() 
 
+
+
     def load_config(self):      
         with open('config.json') as json_file:
             j = json.load(json_file)  
 
         conf = j['CO3']
-        conf_operational = j['Operational']
-      
+
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
+
+        self.folderPath ='/home/pi/pHox/data_co3/' # relative path
+        if not os.path.exists(self.folderPath):
+            os.makedirs(self.folderPath)
 
     def get_wvlPixels(self,wvls):
         self.wvlPixels = []
         for wl in (self.wvl1, self.wvl1):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
+
+    def auto_adjust(self,*args):
+        print ('auto adjust for co3 is not implemented yet')
+        pass 
 
     def calc_CO3(self,absSp, vNTC,dilution):
         
@@ -254,9 +310,6 @@ class pH_instrument(Common_instrument):
         # For signaling to threads
         self._exit = False 
         
-        #initialize PWM lines
-        self.rpi = pigpio.pi()
-
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
         #spectrom integration time (ms)
@@ -273,10 +326,6 @@ class pH_instrument(Common_instrument):
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
         
-        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
-        self.adc.set_pga(1)
-        self.adcdac = ADCDACPi()
-
         #setup PWM and SSR lines
         for pin in range (4):
             self.rpi.set_mode(self.led_slots[pin],pigpio.OUTPUT)
@@ -313,39 +362,7 @@ class pH_instrument(Common_instrument):
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
 
-        self._autostart = bool(conf_operational['AUTOSTART'])
-        self._automode  = conf_operational['AUTOSTART_MODE']
-        self.DURATION =  int(conf_operational['DURATION'])
-     
-        self.vNTCch =    int(conf_operational['T_PROBE_CH'])
-        if not(self.vNTCch in range(9)):
-            self.vNTCch = 8
-
-        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_SEC"])
-        self.pumpTime = int(conf_operational["pumpTime"])
-        self.mixT = int(conf_operational["mixTime"])
-        self.waitT = int(conf_operational["waitTime"])
-        self.ncycles= int(conf_operational["ncycles"])
-        self.nshots = int(conf_operational["dye_nshots"])
-
-        self.wpump_slot = conf_operational["WPUMP_SLOT"]
-        self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
-        self.stirrer_slot = conf_operational["STIRR_SLOT"]
-        self.extra_slot = conf_operational["SPARE_SLOT"] 
-
-        #TODO: Replace ssrlines with new lines 
-        # keep it for now since there is a loop dependent on self.ssrLines
-        self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
-
-        self.valve_slots = conf_operational['VALVE_SLOTS']
-        self.TempCalCoef = conf_operational['NTC_CAL_COEF']
-        self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
-        self.dye_vol_inj = conf_operational["DYE_V_INJ"]
-        self.specIntTime = conf_operational['Spectro_Integration_time']
-        self.deployment = conf_operational['Deployment_mode']
-        self.ship_code = conf_operational['Ship_Code']
         self.folderPath ='/home/pi/pHox/data/' # relative path
-
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
@@ -408,7 +425,6 @@ class pH_instrument(Common_instrument):
         sptItRange = [500,750,1000,1500,3000]
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
-
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             LED1,LED2,LED3 = None, None, None
