@@ -247,11 +247,9 @@ class Common_instrument(object):
 class CO3_instrument(Common_instrument):
     def __init__(self,panelargs):
         super().__init__(panelargs)
-        self.load_config() 
+        self.load_config_co3() 
 
-
-
-    def load_config(self):      
+    def load_config_co3(self):      
         with open('config.json') as json_file:
             j = json.load(json_file)  
 
@@ -321,7 +319,7 @@ class pH_instrument(Common_instrument):
         self.flnmStr = ''
         self.timeStamp = ''
         
-        self.load_config()       
+        self.load_config_pH()       
 
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
@@ -334,7 +332,7 @@ class pH_instrument(Common_instrument):
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
         self.reset_lines()
 
-    def load_config(self):
+    def load_config_pH(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
         conf_operational = j['Operational']
