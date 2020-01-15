@@ -20,8 +20,9 @@ from udp import Ferrybox as fbox
 from precisions import precision as prec 
 
 class Sample_thread(QtCore.QThread):
-    def __init__(self,mainclass):
+    def __init__(self,mainclass,panelargs):
         self.mainclass = mainclass
+        self.args = panelargs
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
