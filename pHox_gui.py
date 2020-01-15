@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        #self.timerSpectra_plot.timeout.connect(self.update_pHspectra_plot)
+        #self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         #self.timerSensUpd.timeout.connect(self.update_sensors_info)
         if self.args.pco2:
@@ -486,7 +486,7 @@ class Panel(QtGui.QWidget):
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         self.instrument.folderPath = folder+'/'
 
-    def update_pHspectra_plot(self):
+    def update_spectra_plot(self):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
@@ -525,7 +525,7 @@ class Panel(QtGui.QWidget):
     def on_autoAdjust_clicked(self):
 
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
-        self.update_pHspectra_plot()  
+        self.update_spectra_plot()  
         #self.timerSpectra_plot.start()
         print (self.LED1,self.LED2,self.LED3)
         if result:
@@ -694,11 +694,11 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
+        if not self.args.co3:
+            self.update_LEDs()
+            self.btn_leds.setChecked(True)
 
-        self.update_pHspectra_plot()
-        self.update_LEDs()
-        self.btn_leds.setChecked(True)
-        self.update_pHspectra_plot()
+        self.update_spectra_plot()
         #self.timerSpectra_plot.start()
 
         if not self.args.debug:
