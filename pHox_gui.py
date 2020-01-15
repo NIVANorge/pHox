@@ -1136,7 +1136,7 @@ class boxUI(QtGui.QMainWindow):
         if result == QtGui.QMessageBox.Yes:
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.instrument.spectrom.spec.close()          
+            self.main_widget.pH_instrumentt.spectrom.spec.close()          
             QtGui.QApplication.quit() 
             udp.UDP_EXIT = True
             udp.server.join()       
