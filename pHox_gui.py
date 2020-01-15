@@ -613,7 +613,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.pH_instrument.flnmStr = text
             self.pH_instrument.reset_lines()
-            self.sample_thread = Sample_thread(self)
+            self.sample_thread = Sample_thread(self,self.args)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
 
