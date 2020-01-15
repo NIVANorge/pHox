@@ -142,7 +142,16 @@ class STSVIS(object):
         return spectralCounts
 
 
-class CO3_instrument(object):
+class Common_instrument(object):
+    def __init__(self,panelargs):
+        self.args = panelargs
+
+        if self.args.seabreeze:
+            self.spectrom = Spectro_seabreeze()    
+        else:
+            self.spectrom = STSVIS()
+
+class CO3_instrument(Common_instrument):
     def __init__(self):
         self.load_config() 
 
@@ -157,9 +166,37 @@ class CO3_instrument(object):
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
 
-class pH_instrument(object):
-    # Instrument constructor #
+    def calc_CO3(self,absSp, vNTC,dilution):
+        
+        vNTC = round(self.vNTCch, prec['vNTC'])
+        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
+        T = 273.15 + Tdeg
+        A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
+        A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
+        # volume in ml
+        S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
+
+
+        R = A2/A1
+ 
+        e1 = 0.311907-0.002396*S_corr
+        e2e3 = 3.061-0.0873*S_corr+0.0009363*S_corr**2
+        log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
+        arg = (R - e1)/(1 - R*e2e3) 
+
+        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
+                                     "log_beta1_e2", "vNTC", "S", 
+                                     "A1", "A2", "R", "Tdeg", 
+                                     "Vinj", "fcS"])
+
+        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
+
+class pH_instrument(Common_instrument):
     def __init__(self,panelargs):
+        super().__init__(panelargs)
         self.args = panelargs
 
         # For signaling to threads
@@ -168,16 +205,9 @@ class pH_instrument(object):
         #initialize PWM lines
         self.rpi = pigpio.pi()
 
-        if self.args.seabreeze:
-            self.spectrom = Spectro_seabreeze()    
-        else:
-            self.spectrom = STSVIS()
-        print ('second connection')
-        
-        print ('done')
         self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
-         #spectrom integration time (ms)
+        #spectrom integration time (ms)
         self.specAvScans = 6 # Spectrums to take, 
         # they will be averaged to make one measurement 
         self.fb_data = udp.Ferrybox
@@ -391,15 +421,6 @@ class pH_instrument(object):
     def print_Com(self, port, txtData):
         port.write(txtData)
 
-    '''def wait(self, secs):
-        t0 = time.time()
-        while (time.time()-t0)<secs:
-            try:
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                print('skipped')
-                break'''
-
     def reset_lines(self):
         # set values in outputs of pins 
         self.rpi.write(   self.wpump_slot, 0)
@@ -407,24 +428,19 @@ class pH_instrument(object):
         self.rpi.write( self.stirrer_slot, 0)
         self.rpi.write(   self.extra_slot, 0)
 
-    def set_line (self, line, status):
-        # change status of the relay 
-        self.rpi.write(line, status)
-
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
 
     def turn_off_relay (self, line):
         self.rpi.write(line, False)
 
-
     def cycle_line (self, line, nCycles):
         ON = 0.3
         OFF = 0.3
         for nCy in range(nCycles):
-            self.set_line(line, True)
+            self.turn_on_relay(line)
             time.sleep(ON)
-            self.set_line(line, False)
+            self.turn_off_relay(line)
             time.sleep(OFF)
         pass
      
@@ -508,35 +524,6 @@ class pH_instrument(object):
                 self.TempCalCoef[0],
                 self.TempCalCoef[1]]
  
-    def calc_CO3(self,absSp, vNTC,dilution):
-        
-        vNTC = round(self.vNTCch, prec['vNTC'])
-        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
-        T = 273.15 + Tdeg
-        A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
-        A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
-        # volume in ml
-        S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
-
-
-        R = A2/A1
- 
-        e1 = 0.311907-0.002396*S_corr
-        e2e3 = 3.061-0.0873*S_corr+0.0009363*S_corr**2
-        log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
-        arg = (R - e1)/(1 - R*e2e3) 
-
-        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
-        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
-
-        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
-                                     "log_beta1_e2", "vNTC", "S", 
-                                     "A1", "A2", "R", "Tdeg", 
-                                     "Vinj", "fcS"])
-
-        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
-
-
     def pH_eval(self,evalPar_df):
 
         dpH_dT = -0.0155
