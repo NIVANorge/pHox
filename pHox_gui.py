@@ -45,9 +45,9 @@ class Panel(QtGui.QWidget):
         self.create_timers()
 
         if self.args.co3:
-            instrument = co3_instrument(self.args)
+            self.instrument = co3_instrument(self.args)
         else:
-            instrument = pH_instrument(self.args)
+            self.instrument = pH_instrument(self.args)
 
         self.wvls = self.instrument.calc_wavelengths()
         self.get_wvlPixels(self.wvls)
