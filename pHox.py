@@ -160,8 +160,30 @@ class Common_instrument(object):
         self.adc.set_pga(1)
         self.adcdac = ADCDACPi()
 
+        # For signaling to threads
+        self._exit = False 
 
-
+    def reset_lines(self):
+        # set values in outputs of pins 
+        self.rpi.write(   self.wpump_slot, 0)
+        self.rpi.write( self.dyepump_slot, 0)
+        self.rpi.write( self.stirrer_slot, 0)
+        self.rpi.write(   self.extra_slot, 0)
+        
+    def set_Valve(self, status):
+        chEn = self.valve_slots[0]
+        ch1 =  self.valve_slots[1]
+        ch2 =  self.valve_slots[2]
+        if status:
+            ch1= self.valve_slots[2]
+            ch2= self.valve_slots[1]
+        self.rpi.write(ch1, True)
+        self.rpi.write(ch2 , False)
+        self.rpi.write(chEn , True)
+        time.sleep(0.3)
+        self.rpi.write(ch1, False)
+        self.rpi.write(ch2 , False)
+        self.rpi.write(chEn , False)
 
     def load_config(self):
 
@@ -244,6 +266,13 @@ class Common_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
+    def get_sp_levels(self,pixel):
+        if not self.args.seabreeze:
+            spec = self.spectrom.get_corrected_spectra()
+        else: 
+            spec = self.spectrom.get_intensities()
+        return spec[pixel],spec.max()
+
 class CO3_instrument(Common_instrument):
     def __init__(self,panelargs):
         super().__init__(panelargs)
@@ -305,19 +334,16 @@ class pH_instrument(Common_instrument):
         super().__init__(panelargs)
         #self.args = panelargs
 
-        # For signaling to threads
-        self._exit = False 
-        
-        self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
 
+        
         #spectrom integration time (ms)
         self.specAvScans = 6 # Spectrums to take, 
         
-        self.tsBegin = float
-        self.status = [False]*16
+        #self.tsBegin = float
+        #self.status = [False]*16
         
-        self.flnmStr = ''
-        self.timeStamp = ''
+        #self.flnmStr = ''
+        #self.timeStamp = ''
         
         self.load_config_pH()       
 
@@ -330,20 +356,20 @@ class pH_instrument(Common_instrument):
             self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
             self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
+            
         self.reset_lines()
 
     def load_config_pH(self):
         with open('config.json') as json_file:
             j = json.load(json_file)
-        conf_operational = j['Operational']
+
         conf_pH = j['pH']
         try: 
-            self.textBox.append('Loading config.json')
+            self.textBox.append('Loading pH related config')
         except: 
             pass
 
         self.dye = conf_pH["Default_DYE"] 
-
         if self.dye == 'MCP':
             self.HI =  int(conf_pH['MCP_wl_HI'])
             self.I2 =  int(conf_pH['MCP_wl_I2'])         
@@ -361,6 +387,7 @@ class pH_instrument(Common_instrument):
         self.LED3 = conf_pH["LED3"]
 
         self.folderPath ='/home/pi/pHox/data/' # relative path
+        
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
@@ -369,13 +396,6 @@ class pH_instrument(Common_instrument):
         for wl in (self.HI, self.I2, self.NIR):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
-
-    def get_sp_levels(self,pixel):
-        if not self.args.seabreeze:
-            spec = self.spectrom.get_corrected_spectra()
-        else: 
-            spec = self.spectrom.get_intensities()
-        return spec[pixel],spec.max()
 
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
@@ -455,28 +475,6 @@ class pH_instrument(Common_instrument):
             result = True 
 
         return LED1,LED2,LED3,sptIt,result
-
-    def reset_lines(self):
-        # set values in outputs of pins 
-        self.rpi.write(   self.wpump_slot, 0)
-        self.rpi.write( self.dyepump_slot, 0)
-        self.rpi.write( self.stirrer_slot, 0)
-        self.rpi.write(   self.extra_slot, 0)
-
-    def set_Valve(self, status):
-        chEn = self.valve_slots[0]
-        ch1 =  self.valve_slots[1]
-        ch2 =  self.valve_slots[2]
-        if status:
-            ch1= self.valve_slots[2]
-            ch2= self.valve_slots[1]
-        self.rpi.write(ch1, True)
-        self.rpi.write(ch2 , False)
-        self.rpi.write(chEn , True)
-        time.sleep(0.3)
-        self.rpi.write(ch1, False)
-        self.rpi.write(ch2 , False)
-        self.rpi.write(chEn , False)
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
