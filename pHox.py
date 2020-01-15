@@ -198,7 +198,8 @@ class Common_instrument(object):
         return idx
 
 class CO3_instrument(Common_instrument):
-    def __init__(self):
+    def __init__(self,panelargs):
+        super().__init__(panelargs)
         self.load_config() 
 
     def load_config(self):      
@@ -248,7 +249,7 @@ class CO3_instrument(Common_instrument):
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs):
         super().__init__(panelargs)
-        self.args = panelargs
+        #self.args = panelargs
 
         # For signaling to threads
         self._exit = False 
