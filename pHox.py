@@ -414,7 +414,7 @@ class pH_instrument(object):
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
 
-    def turn_off_relay (self, line, status):
+    def turn_off_relay (self, line):
         self.rpi.write(line, False)
 
 
