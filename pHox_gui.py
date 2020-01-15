@@ -649,21 +649,23 @@ class Panel(QtGui.QWidget):
             #self.StatusBox.setText('Waiting for new sample')
 
     def update_infotable(self):
+        if not self.args.co3:
+            pH_lab = str(self.pH_log_row["pH_lab"].values[0])
+            self.fill_table_pH(0,1,pH_lab)
 
-        pH_lab = str(self.pH_log_row["pH_lab"].values[0])
-        self.fill_table_pH(0,1,pH_lab)
+            T_lab = str(self.pH_log_row["T_lab"].values[0])
+            self.fill_table_pH(1,1, T_lab)
 
-        T_lab = str(self.pH_log_row["T_lab"].values[0])
-        self.fill_table_pH(1,1, T_lab)
+            pH_insitu = str(self.pH_log_row["pH_insitu"].values[0])
+            self.fill_table_pH(2,1,pH_insitu)
 
-        pH_insitu = str(self.pH_log_row["pH_insitu"].values[0])
-        self.fill_table_pH(2,1,pH_insitu)
+            T_insitu = str(self.pH_log_row["fb_temp"].values[0])
+            self.fill_table_pH(3,1,T_insitu)
 
-        T_insitu = str(self.pH_log_row["fb_temp"].values[0])
-        self.fill_table_pH(3,1,T_insitu)
-
-        S_insitu = str(self.pH_log_row["fb_sal"].values[0])
-        self.fill_table_pH(4,1,S_insitu)
+            S_insitu = str(self.pH_log_row["fb_sal"].values[0])
+            self.fill_table_pH(4,1,S_insitu)
+        else: 
+            print ('to be filled with data')
 
     def get_V(self, nAver, ch):
         V = 0.0000
