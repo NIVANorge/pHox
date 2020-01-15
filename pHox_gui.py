@@ -50,7 +50,7 @@ class Panel(QtGui.QWidget):
             self.instrument = pH_instrument(self.args)
 
         self.wvls = self.instrument.calc_wavelengths()
-        self.get_wvlPixels(self.wvls)
+        self.instrument.get_wvlPixels(self.wvls)
 
         print ('instrument created')
         if self.args.pco2:
