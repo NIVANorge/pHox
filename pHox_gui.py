@@ -918,7 +918,7 @@ class Panel(QtGui.QWidget):
         time.sleep(15)
 
     def co3_sample(self):   
-
+        print ('co3_sample')
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
 

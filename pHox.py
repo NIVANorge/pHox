@@ -203,7 +203,7 @@ class Common_instrument(object):
         self.waitT = int(conf_operational["waitTime"])
         self.ncycles= int(conf_operational["ncycles"])
         self.nshots = int(conf_operational["dye_nshots"])
-
+        self.specAvScans = int(conf_operational["specAvScans"])
         self.wpump_slot = conf_operational["WPUMP_SLOT"]
         self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
         self.stirrer_slot = conf_operational["STIRR_SLOT"]
@@ -337,7 +337,7 @@ class pH_instrument(Common_instrument):
 
         
         #spectrom integration time (ms)
-        self.specAvScans = 6 # Spectrums to take, 
+         # Spectrums to take, 
         
         #self.tsBegin = float
         #self.status = [False]*16
@@ -387,7 +387,7 @@ class pH_instrument(Common_instrument):
         self.LED3 = conf_pH["LED3"]
 
         self.folderPath ='/home/pi/pHox/data/' # relative path
-        
+
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
