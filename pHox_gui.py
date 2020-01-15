@@ -921,11 +921,18 @@ class Panel(QtGui.QWidget):
 
     def co3_sample(self):   
         print ('co3_sample')
+
+        time.wait(2)
+
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
+        print ('self.sample_steps[0].setChecked(True)')
+        time.wait(2)
 
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
+        print ('self.spCounts_df')
+        time.wait(2)
 
         self.append_logbox('Start new measurement')
 
