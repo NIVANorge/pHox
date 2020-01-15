@@ -141,7 +141,6 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
-
 class Common_instrument(object):
     def __init__(self,panelargs):
         self.args = panelargs
@@ -150,6 +149,53 @@ class Common_instrument(object):
             self.spectrom = Spectro_seabreeze()    
         else:
             self.spectrom = STSVIS()
+        # they will be averaged to make one measurement 
+        self.fb_data = udp.Ferrybox
+
+    def turn_on_relay (self, line):
+        self.rpi.write(line, True)
+
+    def turn_off_relay (self, line):
+        self.rpi.write(line, False)
+
+    def cycle_line (self, line, nCycles):
+        ON = 0.3
+        OFF = 0.3
+        for nCy in range(nCycles):
+            self.turn_on_relay(line)
+            time.sleep(ON)
+            self.turn_off_relay(line)
+            time.sleep(OFF)
+        pass
+
+    def print_Com(self, port, txtData):
+        port.write(txtData)
+
+     def get_Vd(self, nAver, channel):
+            V = 0.0000
+        for i in range (nAver):
+            V += self.adc.read_voltage(channel)
+        return V/nAver   
+
+    def calc_wavelengths(self):   
+        '''
+        assign wavelengths to pixels 
+        and find pixel number of reference wavelengths
+        '''
+        if not self.args.seabreeze: 
+            coeffs =  self.spectrom.wvlCalCoeff
+            wvls = np.zeros(self.spectrom.pixels, dtype=float)
+            pixels = np.arange(self.spectrom.pixels)
+            wvls = (coeffs[0] + coeffs[1]* pixels + 
+            coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
+        else: 
+            wvls = self.spectrom.get_wavelengths()
+            print ('wvl got from seabreeze ',wvls)   
+        return wvls
+
+    def find_nearest(self, items, value):
+        idx = (abs(items-value)).argmin()
+        return idx
 
 class CO3_instrument(Common_instrument):
     def __init__(self):
@@ -166,6 +212,12 @@ class CO3_instrument(Common_instrument):
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
 
+    def get_wvlPixels(self,wvls):
+        self.wvlPixels = []
+        for wl in (self.wvl1, self.wvl1):      
+            self.wvlPixels.append(
+                self.find_nearest(wvls,wl))
+
     def calc_CO3(self,absSp, vNTC,dilution):
         
         vNTC = round(self.vNTCch, prec['vNTC'])
@@ -175,7 +227,6 @@ class CO3_instrument(Common_instrument):
         A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
         # volume in ml
         S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
-
 
         R = A2/A1
  
@@ -209,8 +260,6 @@ class pH_instrument(Common_instrument):
 
         #spectrom integration time (ms)
         self.specAvScans = 6 # Spectrums to take, 
-        # they will be averaged to make one measurement 
-        self.fb_data = udp.Ferrybox
         
         self.tsBegin = float
         self.status = [False]*16
@@ -299,37 +348,11 @@ class pH_instrument(Common_instrument):
         if not os.path.exists(self.folderPath):
             os.makedirs(self.folderPath)
 
-    def calc_wavelengths(self):   
-        '''
-        assign wavelengths to pixels 
-        and find pixel number of reference wavelengths
-        '''
-        if not self.args.seabreeze: 
-            coeffs =  self.spectrom.wvlCalCoeff
-            wvls = np.zeros(self.spectrom.pixels, dtype=float)
-            pixels = np.arange(self.spectrom.pixels)
-            wvls = (coeffs[0] + coeffs[1]* pixels + 
-            coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
-        else: 
-            wvls = self.spectrom.get_wavelengths()
-            print ('wvl got from seabreeze ',wvls)
-
+    def get_wvlPixels(self,wvls):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
-        return wvls
-
-    '''def calc_wavelength_seabreeze(self,wvls):
-        self.wvlPixels = []
-        for wl in (self.HI, self.I2, self.NIR):      
-            self.wvlPixels.append(
-                self.find_nearest(wvls,wl))
-        return wvls'''
-
-    def find_nearest(self, items, value):
-        idx = (abs(items-value)).argmin()
-        return idx
 
     def get_sp_levels(self,pixel):
         if not self.args.seabreeze:
@@ -418,9 +441,6 @@ class pH_instrument(Common_instrument):
 
         return LED1,LED2,LED3,sptIt,result
 
-    def print_Com(self, port, txtData):
-        port.write(txtData)
-
     def reset_lines(self):
         # set values in outputs of pins 
         self.rpi.write(   self.wpump_slot, 0)
@@ -428,22 +448,6 @@ class pH_instrument(Common_instrument):
         self.rpi.write( self.stirrer_slot, 0)
         self.rpi.write(   self.extra_slot, 0)
 
-    def turn_on_relay (self, line):
-        self.rpi.write(line, True)
-
-    def turn_off_relay (self, line):
-        self.rpi.write(line, False)
-
-    def cycle_line (self, line, nCycles):
-        ON = 0.3
-        OFF = 0.3
-        for nCy in range(nCycles):
-            self.turn_on_relay(line)
-            time.sleep(ON)
-            self.turn_off_relay(line)
-            time.sleep(OFF)
-        pass
-     
     def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1 =  self.valve_slots[1]
@@ -458,19 +462,6 @@ class pH_instrument(Common_instrument):
         self.rpi.write(ch1, False)
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
-
-    '''def movAverage(self, dataSet, nPoints):
-        spAbsMA = dataSet
-        for i in range(3,len(dataSet)-3):
-            v = dataSet[i-nPoints:i+nPoints+1]
-            spAbsMA[i]= np.mean(v)
-        return spAbsMA'''
-
-    def get_Vd(self, nAver, channel):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.adc.read_voltage(channel)
-        return V/nAver
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
