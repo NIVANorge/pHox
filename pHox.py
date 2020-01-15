@@ -206,7 +206,7 @@ class CO3_instrument(Common_instrument):
         with open('config.json') as json_file:
             j = json.load(json_file)  
 
-        conf = j['co3']
+        conf = j['CO3']
         conf_operational = j['Operational']
       
         self.wvl1 = conf["WL_1"]
