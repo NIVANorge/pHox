@@ -521,7 +521,7 @@ class pH_instrument(Common_instrument):
         return  [pH, pK, e1, e2, e3, vNTC,
                 fb_sal, A1, A2, Tdeg, S_corr, 
                 Anir,vol_injected,self.TempProbe_id,
-                self.temp_iscalibrated
+                self.temp_iscalibrated,
                 self.TempCalCoef[0],
                 self.TempCalCoef[1],self.dye]
  
