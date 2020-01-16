@@ -942,7 +942,7 @@ class Panel(QtGui.QWidget):
         
         self.send_to_ferrybox()
         time.sleep(2)
-        self.save_logfile_df()
+        self.save_logfile_df(folderPath)
         time.sleep(2)
 
         self.append_logbox('Single measurement is done...')
