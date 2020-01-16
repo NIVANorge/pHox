@@ -611,6 +611,7 @@ class Panel(QtGui.QWidget):
         state = self.btn_cont_meas.isChecked()
         if state:
             self.btn_single_meas.setEnabled(False) 
+            self.btn_calibr.setEnabled(False) 
             # disable all btns in manual tab 
             nextSamplename = self.get_next_sample()
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
@@ -620,10 +621,12 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
                 self.btn_single_meas.setEnabled(True) 
+                self.btn_calibr.setEnabled(True) 
 
     def btn_single_meas_clicked(self):
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
+        self.btn_calibr.setEnabled(False) 
         # disable all btns in manual tab 
         self.get_filename()
         self.mode = 'Single'
@@ -644,6 +647,8 @@ class Panel(QtGui.QWidget):
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
+        self.btn_calibr.setChecked(False)        
+        self.btn_calibr.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True)
         # enable all btns in manual tab  
