@@ -1139,7 +1139,7 @@ class Panel(QtGui.QWidget):
         # Trying to wait for avoiding it 
         time.sleep(15)
 
-    def save_evl(self):
+    def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
