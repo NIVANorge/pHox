@@ -404,10 +404,10 @@ class Panel(QtGui.QWidget):
         self.get_filename()
         self.mode = 'Single'
 
-            self.instrument.reset_lines()
-            self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
-            self.sample_thread.start()
-            self.sample_thread.finished.connect(self.single_sample_finished)
+        self.instrument.reset_lines()
+        self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
+        self.sample_thread.start()
+        self.sample_thread.finished.connect(self.single_sample_finished)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
