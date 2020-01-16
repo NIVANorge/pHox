@@ -491,8 +491,7 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
-            datay = self.instrument.spectrom.get_intensities()   
-        print ('datay',datay)             
+            datay = self.instrument.spectrom.get_intensities()              
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
@@ -624,8 +623,7 @@ class Panel(QtGui.QWidget):
             self.sample_thread.finished.connect(self.single_sample_finished)
 
     def single_sample_finished(self):
-        print ('single sample finished inside func')
-                
+        print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
         self.btn_single_meas.setChecked(False)
@@ -1151,12 +1149,8 @@ class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.setWindowTitle('NIVA - pH')
-
         parser = argparse.ArgumentParser()
 
-        parser.add_argument("--pH",
-                            action="store_true")
         parser.add_argument("--pco2",
                             action="store_true")     
         parser.add_argument("--co3",
@@ -1165,7 +1159,16 @@ class boxUI(QtGui.QMainWindow):
                             action="store_true")
         parser.add_argument("--seabreeze",
                             action="store_true") 
+
         self.args = parser.parse_args()
+
+        if self.args.pco2:
+            self.setWindowTitle('pH Box Instrument, parameters pH and pCO2')
+        elif: 
+            self.setWindowTitle('Box Instrument, parameter CO3')
+        else: 
+            self.setWindowTitle('Box Instrument, NIVA - pH')
+
         self.main_widget = Panel(self,self.args)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
@@ -1181,7 +1184,8 @@ class boxUI(QtGui.QMainWindow):
         if result == QtGui.QMessageBox.Yes:
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
-            self.main_widget.instrument.spectrom.spec.close()          
+            if self.args.seabreeze:
+                self.main_widget.instrument.spectrom.spec.close()          
             
             udp.UDP_EXIT = True
             udp.server.join()
