@@ -331,6 +331,7 @@ class Panel(QtGui.QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
+        self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
         #self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
@@ -393,6 +394,11 @@ class Panel(QtGui.QWidget):
         else: 
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
+
+    def btn_calibr_clicked(self):
+        # pop up dialog, choose dye 
+        # get dye 
+        # change file path to save 
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -587,7 +593,7 @@ class Panel(QtGui.QWidget):
     def get_filename(self):
         t = datetime.now()
         self.instrument.timeStamp  = t.isoformat('_')
-        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d_%H:%M:%S") 
+        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
         return
 
     def btn_cont_meas_clicked(self):
