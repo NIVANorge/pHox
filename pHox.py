@@ -216,7 +216,7 @@ class Common_instrument(object):
         self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
 
         self.valve_slots = conf_operational['VALVE_SLOTS']
-        TempProbe_id = conf_operational["TEMP_PROBE_ID"]
+        self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
         temp = j["TempProbes"][TempProbe_id]
         self.temp_iscalibrated = bool(temp["is_calibrated"])
         if self.temp_iscalibrated:
@@ -520,9 +520,10 @@ class pH_instrument(Common_instrument):
 
         return  [pH, pK, e1, e2, e3, vNTC,
                 fb_sal, A1, A2, Tdeg, S_corr, 
-                Anir,vol_injected,
+                Anir,vol_injected,self.TempProbe_id,
+                self.temp_iscalibrated
                 self.TempCalCoef[0],
-                self.TempCalCoef[1]]
+                self.TempCalCoef[1],self.dye]
  
     def pH_eval(self,evalPar_df):
 

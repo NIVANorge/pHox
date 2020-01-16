@@ -846,7 +846,8 @@ class Panel(QtGui.QWidget):
                                                 "e2", "e3", "vNTC",
                                         'salinity', "A1", "A2","Tdeg",  
                                        "S_corr", "Anir",'Vol_injected',
-                                        'TempCalCoef1','TempCalCoef2'])
+                                       "TempProbe_id","Probe_iscalibr",
+                                        'TempCalCoef1','TempCalCoef2'],'DYE')
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
