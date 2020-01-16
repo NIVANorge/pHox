@@ -335,18 +335,6 @@ class pH_instrument(Common_instrument):
     def __init__(self,panelargs):
         super().__init__(panelargs)
         #self.args = panelargs
-
-
-        
-        #spectrom integration time (ms)
-         # Spectrums to take, 
-        
-        #self.tsBegin = float
-        #self.status = [False]*16
-        
-        #self.flnmStr = ''
-        #self.timeStamp = ''
-        
         self.load_config_pH()       
 
         if not self.args.seabreeze:
@@ -358,7 +346,6 @@ class pH_instrument(Common_instrument):
             self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
             self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
             self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
-            
         self.reset_lines()
 
     def load_config_pH(self):
