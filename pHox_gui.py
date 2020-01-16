@@ -1179,11 +1179,15 @@ class boxUI(QtGui.QMainWindow):
             print ('timer is stopped')
             self.main_widget.timer_contin_mode.stop()
             self.main_widget.instrument.spectrom.spec.close()          
-            QtGui.QApplication.quit() 
+            
             udp.UDP_EXIT = True
+            udp.server.join()
+            if not udp.server.is_alive():
+                print ('UDP server closed')
             udp.server.join()       
-            event.accept()            
-
+            self.main_widget.close()
+            QtGui.QApplication.quit()          
+            event.accept()
 
 if __name__ == '__main__':
 
