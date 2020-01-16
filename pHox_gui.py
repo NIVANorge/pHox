@@ -266,7 +266,7 @@ class Panel(QtGui.QWidget):
         self.fill_table_config(3,1, str(self.instrument.I2))
 
         self.fill_table_config(4,0,'Temp Sensor is calibrated:')
-        self.fill_table_config(4,1,str(self.temp_iscalibrated))        
+        self.fill_table_config(4,1,str(self.instrument.temp_iscalibrated))        
 
         self.fill_table_config(5,0,'pH sampling interval (min)')
 
