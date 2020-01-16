@@ -490,7 +490,8 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
-            datay = self.instrument.spectrom.get_intensities()                
+            datay = self.instrument.spectrom.get_intensities()   
+        print ('datay',datay)             
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
@@ -706,6 +707,7 @@ class Panel(QtGui.QWidget):
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
+            self.update_spectra_plot()
             self.textBox.setText('The instrument is ready for use')
             #self.on_deploy_clicked(True)
         if self.args.pco2:
