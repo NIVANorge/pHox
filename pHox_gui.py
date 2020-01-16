@@ -21,17 +21,18 @@ from precisions import precision as prec
 
 class Sample_thread(QtCore.QThread):
     def __init__(self,mainclass,panelargs,is_calibr = False):
+        self.is_calibr = is_calibr
         self.mainclass = mainclass
         self.args = panelargs
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
         if self.args.co3: 
-            self.mainclass.co3_sample(is_calibr)
+            self.mainclass.co3_sample(self.is_calibr)
         elif self.args.seabreeze:
-            self.mainclass.pH_sample_seabreeze(is_calibr)
+            self.mainclass.pH_sample_seabreeze(self.is_calibr)
         else:
-            self.mainclass.sample(is_calibr)
+            self.mainclass.sample(self.is_calibr)
 
 class Panel(QtGui.QWidget):
     def __init__(self,parent,panelargs):
