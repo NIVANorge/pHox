@@ -20,18 +20,18 @@ from udp import Ferrybox as fbox
 from precisions import precision as prec 
 
 class Sample_thread(QtCore.QThread):
-    def __init__(self,mainclass,panelargs):
+    def __init__(self,mainclass,panelargs,is_calibr = False):
         self.mainclass = mainclass
         self.args = panelargs
         super(Sample_thread, self).__init__(mainclass)
 
     def run(self):
         if self.args.co3: 
-            self.mainclass.co3_sample()
+            self.mainclass.co3_sample(is_calibr)
         elif self.args.seabreeze:
-            self.mainclass.pH_sample_seabreeze()
+            self.mainclass.pH_sample_seabreeze(is_calibr)
         else:
-            self.mainclass.sample()
+            self.mainclass.sample(is_calibr)
 
 class Panel(QtGui.QWidget):
     def __init__(self,parent,panelargs):
@@ -108,15 +108,12 @@ class Panel(QtGui.QWidget):
         self.tab_log.setLayout(self.tab_log.layout)
 
     def create_timers(self):
-       # self.timerSpectra_plot = QtCore.QTimer()
-       # self.timerSpectra_plot.setInterval(1500)
+
         self.timer_contin_mode = QtCore.QTimer()
-        #self.timerSensUpd = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        #self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
-        #self.timerSensUpd.timeout.connect(self.update_sensors_info)
+
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
@@ -396,9 +393,10 @@ class Panel(QtGui.QWidget):
                 self.instrument.wpump_slot)
 
     def btn_calibr_clicked(self):
-        # pop up dialog, choose dye 
-        # get dye 
-        # change file path to save 
+
+        self.folderPath ='/home/pi/pHox/data_calibration/' # relative path
+        if not os.path.exists(self.folderPath):
+            os.makedirs(self.folderPath)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -808,9 +806,16 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    def pH_sample_seabreeze(self):   
+    def pH_sample_seabreeze(self,is_calibr):   
 
-        self.StatusBox.setText('Ongoing measurement')
+        if is_calibr: 
+            folderPath = '/home/pi/pHox/data_calibr/'
+        else:
+            folderPath = self.instrument.folderPath
+        if is_calibr:
+            self.StatusBox.setText('Ongoing calibration measurement')  
+        else:          
+            self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
 
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
@@ -896,9 +901,9 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
-        self.save_spt()
+        self.save_spt(folderPath)
         time.sleep(2)
-        self.save_evl()
+        self.save_evl(folderPath)
 
         # get final pH
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
@@ -916,7 +921,7 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
-        self.append_logbox('data saved in %s' % (self.instrument.folderPath +'pH.log'))
+        self.append_logbox('data saved in %s' % (folderPath+'pH.log'))
         
         self.send_to_ferrybox()
         time.sleep(2)
@@ -927,7 +932,12 @@ class Panel(QtGui.QWidget):
         self.sample_steps[8].setChecked(True)
         time.sleep(15)
 
-    def co3_sample(self):   
+    def co3_sample(self,is_calibr):   
+
+        if is_calibr: 
+            folderPath = '/home/pi/pHox/data_co3_calibr/'
+        else:
+            folderPath = self.instrument.folderPath        
         print ('co3_sample')
 
         time.sleep(2)
@@ -949,8 +959,12 @@ class Panel(QtGui.QWidget):
   
         #self.append_logbox('Autoadjust LEDS')
 
-    def sample(self):   
+    def sample(self,is_calibr):   
 
+        if is_calibr: 
+            folderPath = '/home/pi/pHox/data_calibr/'
+        else:
+            folderPath = self.instrument.folderPath
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
 
@@ -1114,14 +1128,14 @@ class Panel(QtGui.QWidget):
         time.sleep(15)
 
     def save_evl(self):
-        evlpath = self.instrument.folderPath + 'evl/'
+        evlpath = folderPath + 'evl/'
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + self.instrument.flnmStr +'.evl'
         self.evalPar_df.to_csv(flnm, index = False, header=True) 
 
-    def save_spt(self):
-        sptpath = self.instrument.folderPath + 'spt/'
+    def save_spt(self,folderPath):
+        sptpath = folderPath + 'spt/'
         if not os.path.exists(sptpath):
             os.makedirs(sptpath)
         self.spCounts_df.T.to_csv(
@@ -1135,8 +1149,8 @@ class Panel(QtGui.QWidget):
         self.instrument.turn_off_relay(self.instrument.stirrer_slot) # turn off the pump
         self.instrument.turn_off_relay(self.instrument.wpump_slot) # turn off the stirrer
 
-    def save_logfile_df(self):
-        logfile = os.path.join(self.instrument.folderPath, 'pH.log')
+    def save_logfile_df(self,folderPath):
+        logfile = os.path.join(folderPath, 'pH.log')
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
         else: 
