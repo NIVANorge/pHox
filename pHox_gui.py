@@ -394,9 +394,20 @@ class Panel(QtGui.QWidget):
 
     def btn_calibr_clicked(self):
 
-        self.folderPath ='/home/pi/pHox/data_calibration/' # relative path
-        if not os.path.exists(self.folderPath):
-            os.makedirs(self.folderPath)
+        #folderPath ='/home/pi/pHox/data_calibration/' # relative path
+        #if not os.path.exists(folderPath):
+        #    os.makedirs(self.folderPath)
+
+        self.btn_cont_meas.setEnabled(False)
+        self.btn_single_meas.setEnabled(False) 
+        # disable all btns in manual tab 
+        self.get_filename()
+        self.mode = 'Single'
+
+            self.instrument.reset_lines()
+            self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
+            self.sample_thread.start()
+            self.sample_thread.finished.connect(self.single_sample_finished)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
