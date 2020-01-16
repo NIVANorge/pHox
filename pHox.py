@@ -217,7 +217,7 @@ class Common_instrument(object):
 
         self.valve_slots = conf_operational['VALVE_SLOTS']
         self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
-        temp = j["TempProbes"][TempProbe_id]
+        temp = j["TempProbes"][self.TempProbe_id]
         self.temp_iscalibrated = bool(temp["is_calibrated"])
         if self.temp_iscalibrated:
             self.TempCalCoef =  temp["Calibr_coef"]  
