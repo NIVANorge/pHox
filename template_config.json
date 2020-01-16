@@ -1,6 +1,7 @@
 {
     "Operational":{
-        "NTC_CAL_COEF" : [70.582,16.213],
+        "TEMP_PROBE_ID" : "Probe_1",
+        "DEF_TEMP_CAL_COEF" : [70.582,16.213],
         "T_PROBE_CH" : 8,
 
         "WPUMP_SLOT" : 17,
@@ -78,7 +79,19 @@
     "CO3":{
         "WL_1": 234,
         "WL_2": 250,
-
         "LIGHT_SLOT": 22
+    }, 
+
+    "TempProbes":{ 
+        "Probe_1":
+        {"comment": "installed on pHox3 at NIVA now",
+        "is_calibrated":  "True",
+        "calibr_date" :    "NaN",
+        "Calibr_coef":     [70.582,16.213]} ,
+
+        "Probe_2":
+        {"is_calibrated":  "False",
+        "calibr_date" :    "NaN",
+        "Calibr_coef":    ["NaN","NaN"]}
     }
 }

@@ -216,7 +216,13 @@ class Common_instrument(object):
         self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
 
         self.valve_slots = conf_operational['VALVE_SLOTS']
-        self.TempCalCoef = conf_operational['NTC_CAL_COEF']
+        TempProbe_id = conf_operational["TEMP_PROBE_ID"]
+        temp = j["TempProbes"][TempProbe_id]
+        if bool(temp["is_calibrated"]):
+            self.TempCalCoef =  temp["Calibr_coef"]  
+        else:
+            self.TempCalCoef = conf_operational['"DEF_TEMP_CAL_COEF"']
+
         self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
         self.dye_vol_inj = conf_operational["DYE_V_INJ"]
         self.specIntTime = conf_operational['Spectro_Integration_time']
