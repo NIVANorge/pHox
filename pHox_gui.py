@@ -1164,7 +1164,7 @@ class boxUI(QtGui.QMainWindow):
 
         if self.args.pco2:
             self.setWindowTitle('pH Box Instrument, parameters pH and pCO2')
-        elif: 
+        elif self.args.co3: 
             self.setWindowTitle('Box Instrument, parameter CO3')
         else: 
             self.setWindowTitle('Box Instrument, NIVA - pH')
