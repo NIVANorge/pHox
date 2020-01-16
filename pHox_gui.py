@@ -480,6 +480,7 @@ class Panel(QtGui.QWidget):
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
         self.set_LEDs(state)
+        self.update_spectra_plot()
 
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
@@ -700,6 +701,7 @@ class Panel(QtGui.QWidget):
         #if not self.args.co3:
         self.update_LEDs()
         self.btn_leds.setChecked(True)
+        self.btn_leds_checked()
         self.update_spectra_plot()
         #self.timerSpectra_plot.start()
 
