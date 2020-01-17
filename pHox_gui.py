@@ -653,7 +653,6 @@ class Panel(QtGui.QWidget):
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
-        print (self.x,self.y,self.intercept,self.slope)
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)    
 
@@ -966,7 +965,8 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Single measurement is done...')
         self.sample_steps[8].setChecked(True)
-        time.sleep(15)
+        print (self.x,self.y,self.intercept,self.slope)        
+        time.sleep(17)
 
     def co3_sample(self,is_calibr):   
 
