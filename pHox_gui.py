@@ -181,7 +181,7 @@ class Panel(QtGui.QWidget):
 
         self.StatusBox = QtGui.QLineEdit()
 
-        self.table_pH = QtGui.QTableWidget(5,2)
+        self.table_pH = QtGui.QTableWidget(7,2)
         self.table_pH.verticalHeader().hide()
         self.table_pH.horizontalHeader().hide()    
         self.table_pH.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
@@ -190,6 +190,8 @@ class Panel(QtGui.QWidget):
         self.fill_table_pH(2,0,'pH insitu')
         self.fill_table_pH(3,0,'T insitu')
         self.fill_table_pH(4,0,'S insitu')
+        self.fill_table_pH(5,0,'Voltage')           
+        self.fill_table_pH(6,0,'Ship')        
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -424,6 +426,7 @@ class Panel(QtGui.QWidget):
 
             j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
             minutes = int(self.samplingInt_combo.currentText())
+            print ('minute',minutes,type(minutes))
             j['Operational']["SAMPLING_INTERVAL_SEC"] = minutes*60
             json_file.seek(0)  # rewind
             json.dump(j, json_file, indent=4)
@@ -898,7 +901,7 @@ class Panel(QtGui.QWidget):
             time.sleep(self.instrument.waitT)
 
             # measuring Voltage for temperature probe
-            vNTC = self.get_Vd(3, self.instrument.vNTCch)
+            self.vNTC = self.get_Vd(3, self.instrument.vNTCch)
                        
             # Write spectrum to the file 
             row = str(n_inj)+'raw'
@@ -908,7 +911,7 @@ class Panel(QtGui.QWidget):
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,self.vNTC,dilution,vol_injected)
 
         self.plotAbs.setData(self.wvls,spAbs)
 

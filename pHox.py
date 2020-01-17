@@ -474,7 +474,7 @@ class pH_instrument(Common_instrument):
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
-        vNTC = round(self.vNTCch, prec['vNTC'])
+        vNTC = round(vNTC, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
 
         T = 273.15 + Tdeg
