@@ -126,6 +126,7 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.setYRange(1000,16200)
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
+        self.plotwidget1.settTtle="LEDs intensities"
 
         self.plotwidget2 = pg.PlotWidget()
         #self.plotwidget2.setYRange(0,1.3)
