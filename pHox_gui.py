@@ -651,8 +651,10 @@ class Panel(QtGui.QWidget):
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
-        #self.plotAbs.setData(self.wvls,spAbs)
-        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='+')  
+        print (self.x,self.y,self.intercept,self.slope)
+        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)    
+
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
         self.btn_calibr.setChecked(False)        
@@ -935,7 +937,8 @@ class Panel(QtGui.QWidget):
         self.save_evl(folderPath)
 
         # get final pH
-        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y  = self.instrument.pH_eval(self.evalPar_df) 
+        p = self.instrument.pH_eval(self.evalPar_df)
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
 
 
         #self.plotAbs.setData(x,y)

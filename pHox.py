@@ -537,14 +537,14 @@ class pH_instrument(Common_instrument):
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values
-            slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
+            slope, intercept, r_value, _, _ = stats.linregress(x,y) 
             if r_value**2  > 0.9 :
                 pH_lab = intercept 
                 print ('r_value **2 > 0.9')
             else: 
                 x = x[:-2]
                 y = y[:-2]
-                slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
+                slope, intercept, r_value,_, _ = stats.linregress(x,y) 
                 if r_value**2  > 0.9 :  
                     pH_lab = intercept
                 else: 
@@ -558,5 +558,5 @@ class pH_instrument(Common_instrument):
         pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
-                 pH_insitu,x,y)      
+                 pH_insitu,x,y,slope, intercept)      
 
