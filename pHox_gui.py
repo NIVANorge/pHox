@@ -248,7 +248,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.verticalHeader().hide()
         self.tableWidget.horizontalHeader().hide()    
 
-        self.tableWidget.setRowCount(7)
+        self.tableWidget.setRowCount(8)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
         #self.tableWidget.horizontalHeader().setStretchLastSection(True)
@@ -651,6 +651,8 @@ class Panel(QtGui.QWidget):
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
+        #self.plotAbs.setData(self.wvls,spAbs)
+        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='+')  
         self.btn_single_meas.setChecked(False)
         self.btn_single_meas.setEnabled(True) 
         self.btn_calibr.setChecked(False)        
@@ -693,7 +695,7 @@ class Panel(QtGui.QWidget):
             self.fill_table_pH(4,1,S_insitu)      
 
             Voltage = self.get_Vd(3, self.instrument.vNTCch)
-            print ('Voltage is ',voltage)
+            print ('Voltage is ',Voltage)
             self.fill_table_pH(5,1,Voltage)                  
         else: 
             print ('to be filled with data')
@@ -933,11 +935,8 @@ class Panel(QtGui.QWidget):
         self.save_evl(folderPath)
 
         # get final pH
-        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,x,y  = self.instrument.pH_eval(self.evalPar_df) 
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y  = self.instrument.pH_eval(self.evalPar_df) 
 
-        #self.plotAbs.setData(self.wvls,spAbs)
-        self.plotwidget2.plot(x,y, pen=None, symbol='+')   
-        print (x,y)    
 
         #self.plotAbs.setData(x,y)
 
