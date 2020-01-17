@@ -721,7 +721,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside continuous_mode...')
 
         self.instrument.reset_lines()
-        self.sample_thread = Sample_thread(self)
+        self.sample_thread = Sample_thread(self,self.args)
         self.continous_mode_is_on = True
         self.sample_thread.start()
         self.sample_thread.finished.connect(self.continuous_sample_finished)
