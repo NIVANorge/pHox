@@ -486,7 +486,7 @@ class pH_instrument(Common_instrument):
         S_corr = round(fb_sal * dilution , prec['salinity'])
 
         R = A2/A1
-        
+        print ('R value', R)
         if self.dye == 'TB':
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
