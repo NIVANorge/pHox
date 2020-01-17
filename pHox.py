@@ -532,6 +532,9 @@ class pH_instrument(Common_instrument):
         T_lab = evalPar_df["Tdeg"][0]
         pH_lab = evalPar_df["pH"][0]
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] - T_lab) 
+        print ('evalPar_df["pH"]', evalPar_df["pH"])
+        print ('evalPar_df["Tdeg"]',evalPar_df["Tdeg"])
+        print ('pH_t_corr',pH_t_corr)
         nrows = evalPar_df.shape[0]
         print (nrows)
         if nrows>1:
