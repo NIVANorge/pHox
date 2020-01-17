@@ -39,7 +39,7 @@ def udp_server():
                     os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith('$PFBOX,SAL,'):
                 v = float(w[2])
-                Ferrybo['salinity'] = v
+                Ferrybox['salinity'] = v
             elif data.startswith('$PFBOX,PUMP,'):
                 v = int(w[2])
                 Ferrybox['pumping'] = v

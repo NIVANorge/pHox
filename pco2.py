@@ -7,7 +7,6 @@ import numpy as np
 from PyQt5 import QtGui, QtCore
 import time
 
-
 class CO2_instrument(object):
    def __init__(self):
       self.load_config()

@@ -17,7 +17,39 @@ import pandas as pd
 import random,udp
 from scipy import stats
 from precisions import precision as prec 
+import seabreeze
+seabreeze.use('cseabreeze')
+from seabreeze.spectrometers import Spectrometer
 
+class Spectro_seabreeze(object):
+    def __init__(self):
+        self.spec =  Spectrometer.from_serial_number('S06356')
+        print (self.spec)
+        #self.spec =  Spectrometer.from_first_available()
+
+    def set_integration_time(self,time_millisec):
+        microsec = time_millisec * 1000
+        self.spec.integration_time_micros(microsec)  # 0.1 seconds
+        time.sleep(5)
+
+    def get_wavelengths(self):
+        #wavelengths in (nm) corresponding to each pixel of the spectrom
+        return self.spec.wavelengths()
+
+    def get_intensities(self,num_avg = 1, correct = True):
+        sp = self.spec.intensities(correct_nonlinearity = correct)
+        if num_avg > 1: 
+            for _ in range(num_avg):
+                sp = np.vstack([sp,self.spec.intensities(
+                            correct_nonlinearity = correct)])
+                time.sleep(1)
+            sp = np.mean(np.array(sp),axis = 0)        
+        return sp
+
+    def set_scans_average(self,num):
+        # not supported for FLAME spectrom
+        self.spec.scans_to_average(num)
+        
 class STSVIS(object): 
     ## Ocean Optics STS protocol manager ##
     # DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #
@@ -81,7 +113,7 @@ class STSVIS(object):
         time.sleep(0.5)
 
     def set_scans_average(self,nscans):
-        print ('inside func set_scance_average nscans',nscans)
+        print ('inside func set_scans_average nscans',nscans)
         msgType= b'\x10\x00\x12\x00'
         immDataLength = b'\x02'
         immData = struct.pack('<H',int(nscans)) + b'\x00\x00'
@@ -111,136 +143,132 @@ class STSVIS(object):
         spectralCounts = np.array(spectralCounts,dtype=float)
         return spectralCounts
 
-class pH_instrument(object):
-    # Instrument constructor #
-    def __init__(self):
-        # For signaling to threads
-        self._exit = False 
-        
+class Common_instrument(object):
+    def __init__(self,panelargs):
+        self.args = panelargs
+
+        if self.args.seabreeze:
+            self.spectrom = Spectro_seabreeze()    
+        else:
+            self.spectrom = STSVIS()
+
         #initialize PWM lines
         self.rpi = pigpio.pi()
-        self.spectrometer = STSVIS()
-
-        self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
-
-         #spectrometer integration time (ms)
-        self.specAvScans = 6 # Spectrums to take, 
-        # they will be averaged to make one measurement 
         self.fb_data = udp.Ferrybox
-        
-        self.tsBegin = float
-        self.status = [False]*16
-        #self.intvStatus = False
-        #self.CO2UpT = 5
-        
-        self.flnmStr = ''
-        self.timeStamp = ''
-        
-        self.load_config()       
 
-        self.spectrometer.set_integration_time(self.specIntTime)
-        print ('initialize Ph inst class, scans av to 1')
-        self.spectrometer.set_scans_average(1)
-        
+        self.load_config()
+
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
         self.adcdac = ADCDACPi()
 
-        #setup PWM and SSR lines
-        for pin in range (4):
-            self.rpi.set_mode(self.pwmLines[pin],pigpio.OUTPUT)
-            self.rpi.set_PWM_frequency(self.pwmLines[pin], 100)
-            self.rpi.set_PWM_dutycycle(self.pwmLines[pin],0)
-            self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
-        self.reset_lines()
+        # For signaling to threads
+        self._exit = False 
+
+    def reset_lines(self):
+        # set values in outputs of pins 
+        self.rpi.write(   self.wpump_slot, 0)
+        self.rpi.write( self.dyepump_slot, 0)
+        self.rpi.write( self.stirrer_slot, 0)
+        self.rpi.write(   self.extra_slot, 0)
+        
+    def set_Valve(self, status):
+        chEn = self.valve_slots[0]
+        ch1 =  self.valve_slots[1]
+        ch2 =  self.valve_slots[2]
+        if status:
+            ch1= self.valve_slots[2]
+            ch2= self.valve_slots[1]
+        self.rpi.write(ch1, True)
+        self.rpi.write(ch2 , False)
+        self.rpi.write(chEn , True)
+        time.sleep(0.3)
+        self.rpi.write(ch1, False)
+        self.rpi.write(ch2 , False)
+        self.rpi.write(chEn , False)
 
     def load_config(self):
+
         with open('config.json') as json_file:
-            j = json.load(json_file)
-        default =   j['default']
-        try: 
-            self.textBox.append('Loading config.json')
-        except: 
-            pass
+            j = json.load(json_file)  
 
-        self.dye = default['DYE'] 
-
-        if self.dye == 'MCP':
-            self.HI =  int(default['MCP_wl_HI'])
-            self.I2 =  int(default['MCP_wl_I2'])         
-        elif self.dye == "TB":   
-            self.HI =  int(default['TB_wl_HI'])
-            self.I2 =  int(default['TB_wl_I2'])
-
-        self.THR = int(default["LED_THRESHOLD"])
-        self.NIR = int(default['NIR-'])
-        self._autostart = bool(default['AUTOSTART'])
-        self._automode  = default['AUTOSTART_MODE']
-
-        self.DURATION =  int(default['DURATION'])
-
-        self.AUTODARK =  int(default['AUTODARK'])        
-        self._autodark  = None
-        self._autotime  = None
-        self._autolen   = None
-        #self._autostop  = None #Not used
-        #self._deployed  = False #Not used
-        self.last_dark  = None #Not used
-
-        self.vNTCch =    int(default['T_PROBE_CH'])
+        conf_operational = j['Operational']
+        self._autostart = bool(conf_operational['AUTOSTART'])
+        self._automode  = conf_operational['AUTOSTART_MODE']
+        self.DURATION =  int(conf_operational['DURATION'])
+        self.vNTCch =    int(conf_operational['T_PROBE_CH'])
         if not(self.vNTCch in range(9)):
             self.vNTCch = 8
+        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_SEC"])
+        self.pumpTime = int(conf_operational["pumpTime"])
+        self.mixT = int(conf_operational["mixTime"])
+        self.waitT = int(conf_operational["waitTime"])
+        self.ncycles= int(conf_operational["ncycles"])
+        self.nshots = int(conf_operational["dye_nshots"])
+        self.specAvScans = int(conf_operational["specAvScans"])
+        self.wpump_slot = conf_operational["WPUMP_SLOT"]
+        self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
+        self.stirrer_slot = conf_operational["STIRR_SLOT"]
+        self.extra_slot = conf_operational["SPARE_SLOT"] 
 
-        self.samplingInterval = int(default["PH_SAMPLING_INTERVAL_SEC"])
-        self.pumpTime = int(default["pumpTime"])
-        self.mixT = int(default["mixTime"])
-        self.waitT = int(default["waitTime"])
-        self.ncycles= int(default["ncycles"])
-        self.nshots = int(default["dye_nshots"])
-        self.molAbsRats = default['MOL_ABS_RATIOS']
-        self.pwmLines =  default['PWM_LINES']
-        self.ssrLines = default['GPIO_SSR']
         #TODO: Replace ssrlines with new lines 
-        self.wpump_slot = default["WPUMP_SLOT"]
-        self.dyepump_slot = default["DYEPUMP_SLOT"]
-        self.stirrer_slot = default["STIRR_SLOT"]
+        # keep it for now since there is a loop dependent on self.ssrLines
+        self.ssrLines = [self.wpump_slot,self.dyepump_slot,self.stirrer_slot,self.extra_slot]
 
-        self.extra_slot = default["EXTRA_SLOT"] #empty for now
-        self.GPIO_TV = default['GPIO_TV']
+        self.valve_slots = conf_operational['VALVE_SLOTS']
+        self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
+        temp = j["TempProbes"][self.TempProbe_id]
+        self.temp_iscalibrated = bool(temp["is_calibrated"])
+        if self.temp_iscalibrated:
+            self.TempCalCoef =  temp["Calibr_coef"]  
+        else:
+            self.TempCalCoef = conf_operational['"DEF_TEMP_CAL_COEF"']
 
-        # NTC Temperature calibration coefficients
-        self.TempCalCoef = default['NTC_CAL_COEF']
+        self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
+        self.dye_vol_inj = conf_operational["DYE_V_INJ"]
+        self.specIntTime = conf_operational['Spectro_Integration_time']
+        self.deployment = conf_operational['Deployment_mode']
+        self.ship_code = conf_operational['Ship_Code']
+        
+    def turn_on_relay (self, line):
+        self.rpi.write(line, True)
 
-        # self.dyeCal = default['DYE_CAL']
-        self.Cuvette_V = default["CUVETTE_V"] #ml
-        self.dye_vol_inj = default["DYE_V_INJ"]
+    def turn_off_relay (self, line):
+        self.rpi.write(line, False)
 
-        self.LED1 = default["LED0"]
-        self.LED2 = default["LED1"]
-        self.LED3 = default["LED2"]
-        self.specIntTime = default['Spectro_Integration_time']
-        self.deployment = default['Deployment_mode']
-        self.ship_code = default['Ship_Code']
-        self.folderPath ='/home/pi/pHox/data/' # relative path
+    def cycle_line (self, line, nCycles):
+        ON = 0.3
+        OFF = 0.3
+        for nCy in range(nCycles):
+            self.turn_on_relay(line)
+            time.sleep(ON)
+            self.turn_off_relay(line)
+            time.sleep(OFF)
+        pass
 
-        if not os.path.exists(self.folderPath):
-            os.makedirs(self.folderPath)
+    def print_Com(self, port, txtData):
+        port.write(txtData)
 
-    def calc_wavelengths(self,coeffs):   
+    def get_Vd(self, nAver, channel):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.adc.read_voltage(channel)
+        return V/nAver   
+
+    def calc_wavelengths(self):   
         '''
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
         '''
-
-        wvls = np.zeros(self.spectrometer.pixels, dtype=float)
-        pixels = np.arange(self.spectrometer.pixels)
-        wvls = (coeffs[0] + coeffs[1]* pixels + 
-                coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
-        
-        self.wvlPixels = []
-        for wl in (self.HI, self.I2, self.NIR):      
-            self.wvlPixels.append(
-                self.find_nearest(wvls,wl))
+        if not self.args.seabreeze: 
+            coeffs =  self.spectrom.wvlCalCoeff
+            wvls = np.zeros(self.spectrom.pixels, dtype=float)
+            pixels = np.arange(self.spectrom.pixels)
+            wvls = (coeffs[0] + coeffs[1]* pixels + 
+            coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
+        else: 
+            wvls = self.spectrom.get_wavelengths()
+            print ('wvl got from seabreeze ',wvls)   
         return wvls
 
     def find_nearest(self, items, value):
@@ -248,11 +276,125 @@ class pH_instrument(object):
         return idx
 
     def get_sp_levels(self,pixel):
-        spec = self.spectrometer.get_corrected_spectra()
+        if not self.args.seabreeze:
+            spec = self.spectrom.get_corrected_spectra()
+        else: 
+            spec = self.spectrom.get_intensities()
         return spec[pixel],spec.max()
 
+class CO3_instrument(Common_instrument):
+    def __init__(self,panelargs):
+        super().__init__(panelargs)
+        self.load_config_co3() 
+
+    def load_config_co3(self):      
+        with open('config.json') as json_file:
+            j = json.load(json_file)  
+
+        conf = j['CO3']
+
+        self.wvl1 = conf["WL_1"]
+        self.wvl2 = conf["WL_2"]
+        self.light_slot = conf["LIGHT_SLOT"]
+
+        self.folderPath ='/home/pi/pHox/data_co3/' # relative path
+        if not os.path.exists(self.folderPath):
+            os.makedirs(self.folderPath)
+
+    def get_wvlPixels(self,wvls):
+        self.wvlPixels = []
+        for wl in (self.wvl1, self.wvl1):      
+            self.wvlPixels.append(
+                self.find_nearest(wvls,wl))
+
+    def auto_adjust(self,*args):
+        print ('auto adjust for co3 is not implemented yet')
+        pass 
+
+    def calc_CO3(self,absSp, vNTC,dilution):
+        
+        vNTC = round(self.vNTCch, prec['vNTC'])
+        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
+        T = 273.15 + Tdeg
+        A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
+        A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
+        # volume in ml
+        S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
+
+        R = A2/A1
+ 
+        e1 = 0.311907-0.002396*S_corr
+        e2e3 = 3.061-0.0873*S_corr+0.0009363*S_corr**2
+        log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
+        arg = (R - e1)/(1 - R*e2e3) 
+
+        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
+                                     "log_beta1_e2", "vNTC", "S", 
+                                     "A1", "A2", "R", "Tdeg", 
+                                     "Vinj", "fcS"])
+
+        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
+
+class pH_instrument(Common_instrument):
+    def __init__(self,panelargs):
+        super().__init__(panelargs)
+        #self.args = panelargs
+        self.load_config_pH()       
+
+        if not self.args.seabreeze:
+            self.spectrom.set_scans_average(1)
+        
+        #setup PWM and SSR lines
+        for pin in range (4):
+            self.rpi.set_mode(self.led_slots[pin],pigpio.OUTPUT)
+            self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
+            self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
+            self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
+        self.reset_lines()
+
+    def load_config_pH(self):
+        with open('config.json') as json_file:
+            j = json.load(json_file)
+
+        conf_pH = j['pH']
+        try: 
+            self.textBox.append('Loading pH related config')
+        except: 
+            pass
+
+        self.dye = conf_pH["Default_DYE"] 
+        if self.dye == 'MCP':
+            self.HI =  int(conf_pH['MCP_wl_HI'])
+            self.I2 =  int(conf_pH['MCP_wl_I2'])         
+        elif self.dye == "TB":   
+            self.HI =  int(conf_pH['TB_wl_HI'])
+            self.I2 =  int(conf_pH['TB_wl_I2'])
+
+        self.THR = int(conf_pH["LED_THRESHOLD"])
+        self.NIR = int(conf_pH['wl_NIR-'])
+
+        #self.molAbsRats = default['MOL_ABS_RATIOS']
+        self.led_slots =  conf_pH['LED_SLOTS']
+        self.LED1 = conf_pH["LED1"]
+        self.LED2 = conf_pH["LED2"]
+        self.LED3 = conf_pH["LED3"]
+
+        self.folderPath ='/home/pi/pHox/data/' # relative path
+
+        if not os.path.exists(self.folderPath):
+            os.makedirs(self.folderPath)
+
+    def get_wvlPixels(self,wvls):
+        self.wvlPixels = []
+        for wl in (self.HI, self.I2, self.NIR):      
+            self.wvlPixels.append(
+                self.find_nearest(wvls,wl))
+
     def adjust_LED(self, led, LED):
-        self.rpi.set_PWM_dutycycle(self.pwmLines[led],LED)
+        self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
     def find_LED(self,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
@@ -291,65 +433,30 @@ class pH_instrument(object):
 
         return LED,adj
 
-    def find_DC(self,led_ind,adj,curr_value):
-        SAT = 16000
-        DC = curr_value 
-
-        while DC < 100: 
-            self.adjust_LED(led_ind, DC)
-            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-            dif_counts = self.THR - pixelLevel
-
-            if (dif_counts > 500 and DC < 99) : 
-                dif_dc = (dif_counts * 30 / maxLevel)            
-                DC += dif_dc  
-                DC = min(99,DC)
-
-            elif dif_counts > 500 and DC == 99: 
-                break
-
-            elif dif_counts < -500 and DC>1:
-                dif_dc = (dif_counts * 30 / maxLevel)              
-                DC += dif_dc  
-                DC = max(1,DC)
-
-            elif dif_counts < -500 and DC == 19: 
-                print ('too high values')
-                break   
-
-            elif dif_counts < 500 and dif_counts > -500: 
-                adj = True
-                break            
-
-            elif dif_counts < (self.THR - SAT): 
-                print ('saturation')
-                break
-
-        return DC,adj
-
-    def auto_adjust(self):
+    def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [500,750,1000,1500,3000]
-        print ('inside auto_adjust fucn, set scans av to 1')
-        self.spectrometer.set_scans_average(1)
-
+        if not self.args.seabreeze:
+            self.spectrom.set_scans_average(1)
         for sptIt in sptItRange:
             adj1,adj2,adj3 = False, False, False
             LED1,LED2,LED3 = None, None, None
 
-            self.spectrometer.set_integration_time(sptIt)
+            self.spectrom.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
             LED1,adj1 = self.find_LED(
                 led_ind = 0,adj = adj1,
                 curr_value = self.LED1)
+
             if adj1:
+                print ('adj1 = True')
                 LED2,adj2 = self.find_LED(
                     led_ind = 1,adj = adj2,
                     curr_value = self.LED2)
-
                 if adj2:    
+                    print ('adj2 = True')
                     LED3,adj3 = self.find_LED(
                         led_ind = 2,adj = adj3, 
                         curr_value = self.LED3)    
@@ -365,70 +472,9 @@ class pH_instrument(object):
 
         return LED1,LED2,LED3,sptIt,result
 
-    def print_Com(self, port, txtData):
-        port.write(txtData)
-
-    '''def wait(self, secs):
-        t0 = time.time()
-        while (time.time()-t0)<secs:
-            try:
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                print('skipped')
-                break'''
-
-    def reset_lines(self):
-        # set values in outputs of pins 
-        self.rpi.write(   self.wpump_slot, 0)
-        self.rpi.write( self.dyepump_slot, 0)
-        self.rpi.write( self.stirrer_slot, 0)
-        self.rpi.write(   self.extra_slot, 0)
-
-    def set_line (self, line, status):
-        # change status of the relay 
-        self.rpi.write(line, status)
-
-    def cycle_line (self, line, nCycles):
-        ON = 0.3
-        OFF = 0.3
-        for nCy in range(nCycles):
-            self.set_line(line, True)
-            time.sleep(ON)
-            self.set_line(line, False)
-            time.sleep(OFF)
-        pass
-     
-    def set_Valve(self, status):
-        chEn = self.GPIO_TV[0]
-        ch1 =  self.GPIO_TV[1]
-        ch2 =  self.GPIO_TV[2]
-        if status:
-            ch1= self.GPIO_TV[2]
-            ch2= self.GPIO_TV[1]
-        self.rpi.write(ch1, True)
-        self.rpi.write(ch2 , False)
-        self.rpi.write(chEn , True)
-        time.sleep(0.3)
-        self.rpi.write(ch1, False)
-        self.rpi.write(ch2 , False)
-        self.rpi.write(chEn , False)
-
-    '''def movAverage(self, dataSet, nPoints):
-        spAbsMA = dataSet
-        for i in range(3,len(dataSet)-3):
-            v = dataSet[i-nPoints:i+nPoints+1]
-            spAbsMA[i]= np.mean(v)
-        return spAbsMA'''
-
-    def get_Vd(self, nAver, channel):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.adc.read_voltage(channel)
-        return V/nAver
-
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
-    
-        vNTC = round(self.get_Vd(3, self.vNTCch), prec['vNTC'])
+
+        vNTC = round(self.vNTCch, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
 
         T = 273.15 + Tdeg
@@ -467,17 +513,18 @@ class pH_instrument(object):
             raise ValueError('wrong DYE: ' + self.dye)
             
         pH = round(pH, prec['pH'])
-        pK = round(pK, prec['pK'])        
+        pK = round(pK, prec['pK'])
         e1 = round(e1, prec['e1'])  
         e2 = round(e2, prec['e2'])  
         e3 = round(e3, prec['e3']) 
 
         return  [pH, pK, e1, e2, e3, vNTC,
                 fb_sal, A1, A2, Tdeg, S_corr, 
-                Anir,vol_injected,
+                Anir,vol_injected,self.TempProbe_id,
+                self.temp_iscalibrated,
                 self.TempCalCoef[0],
-                self.TempCalCoef[1]]
-
+                self.TempCalCoef[1],self.dye]
+ 
     def pH_eval(self,evalPar_df):
 
         dpH_dT = -0.0155
@@ -490,7 +537,7 @@ class pH_instrument(object):
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values
-            slope1, intercept, r_value,_, _ = stats.linregress(x,y) 
+            slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
             if r_value**2  > 0.9 :
                 pH_lab = intercept 
                 print ('r_value **2 > 0.9')
