@@ -913,7 +913,8 @@ class Panel(QtGui.QWidget):
             self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,self.vNTC,dilution,vol_injected)
 
-        self.plotAbs.setData(self.wvls,spAbs)
+        #self.plotAbs.setData(self.wvls,spAbs)
+        self.plotwidget2.plot(x,y, pen=None, symbol='+')
 
         # open the valve
         self.instrument.set_Valve(False)
@@ -926,7 +927,9 @@ class Panel(QtGui.QWidget):
         self.save_evl(folderPath)
 
         # get final pH
-        pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,x,y  = self.instrument.pH_eval(self.evalPar_df) 
+        
+        #self.plotAbs.setData(x,y)
 
         self.pH_log_row = pd.DataFrame({
             "Time"         : [self.instrument.timeStamp[0:16]],

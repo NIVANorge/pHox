@@ -558,5 +558,5 @@ class pH_instrument(Common_instrument):
         pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
-                 pH_insitu)      
+                 pH_insitu,x,y)      
 
