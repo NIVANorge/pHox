@@ -698,7 +698,7 @@ class Panel(QtGui.QWidget):
 
             Voltage = self.get_Vd(3, self.instrument.vNTCch)
             print ('Voltage is ',Voltage)
-            self.fill_table_pH(5,1,Voltage)                  
+            self.fill_table_pH(5,1,str(Voltage))                  
         else: 
             print ('to be filled with data')
 
