@@ -128,8 +128,8 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.showGrid(x=True, y=True)
 
         self.plotwidget2 = pg.PlotWidget()
-        self.plotwidget2.setYRange(0,1.3)
-        self.plotwidget2.setXRange(410,610)
+        #self.plotwidget2.setYRange(0,1.3)
+        #self.plotwidget2.setXRange(410,610)
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground('#19232D')     
 
@@ -191,7 +191,7 @@ class Panel(QtGui.QWidget):
         self.fill_table_pH(3,0,'T insitu')
         self.fill_table_pH(4,0,'S insitu')
         self.fill_table_pH(5,0,'Voltage')           
-        self.fill_table_pH(6,0,'Ship')        
+   
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -272,6 +272,9 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(6,0,'Spectroph intergration time')
         self.fill_table_config(6,1,str(self.instrument.specIntTime))
+
+        self.fill_table_config(7,0,'Ship')     
+        self.fill_table_config(7,1,self.instrument.ship_code)
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
@@ -687,10 +690,11 @@ class Panel(QtGui.QWidget):
             self.fill_table_pH(3,1,T_insitu)
 
             S_insitu = str(self.pH_log_row["fb_sal"].values[0])
-            self.fill_table_pH(4,1,S_insitu)
+            self.fill_table_pH(4,1,S_insitu)      
 
             Voltage = self.get_Vd(3, self.instrument.vNTCch)
-            self.fill_table_pH(5,1,Voltage)            
+            print ('Voltage is ',voltage)
+            self.fill_table_pH(5,1,Voltage)                  
         else: 
             print ('to be filled with data')
 
@@ -932,8 +936,9 @@ class Panel(QtGui.QWidget):
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu,x,y  = self.instrument.pH_eval(self.evalPar_df) 
 
         #self.plotAbs.setData(self.wvls,spAbs)
-        self.plotwidget2.plot(x,y, pen=None, symbol='+')       
-        
+        self.plotwidget2.plot(x,y, pen=None, symbol='+')   
+        print (x,y)    
+
         #self.plotAbs.setData(x,y)
 
         self.pH_log_row = pd.DataFrame({
