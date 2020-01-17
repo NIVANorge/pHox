@@ -688,6 +688,9 @@ class Panel(QtGui.QWidget):
 
             S_insitu = str(self.pH_log_row["fb_sal"].values[0])
             self.fill_table_pH(4,1,S_insitu)
+
+            Voltage = self.get_Vd(3, self.instrument.vNTCch)
+            self.fill_table_pH(5,1,Voltage)            
         else: 
             print ('to be filled with data')
 
