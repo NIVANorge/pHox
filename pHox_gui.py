@@ -422,7 +422,7 @@ class Panel(QtGui.QWidget):
         with open('config.json','r+') as json_file:
             j = json.load(json_file)
 
-            j['pH']['Default_DYE'] = self.dye_combo
+            j['pH']['Default_DYE'] = self.dye_combo.currentText()
 
             j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
             minutes = int(self.samplingInt_combo.currentText())
