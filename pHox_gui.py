@@ -182,7 +182,7 @@ class Panel(QtGui.QWidget):
 
         self.StatusBox = QtGui.QLineEdit()
 
-        self.table_pH = QtGui.QTableWidget(7,2)
+        self.table_pH = QtGui.QTableWidget(6,2)
         self.table_pH.verticalHeader().hide()
         self.table_pH.horizontalHeader().hide()    
         self.table_pH.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)

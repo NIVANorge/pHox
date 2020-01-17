@@ -560,5 +560,5 @@ class pH_instrument(Common_instrument):
         pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
-                 pH_insitu,x,y,slope2, intercept)      
+                 pH_insitu,x,y,final_slope, intercept)      
 
