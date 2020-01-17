@@ -549,6 +549,7 @@ class Panel(QtGui.QWidget):
 
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         self.update_spectra_plot()  
+
         #self.timerSpectra_plot.start()
         print (self.LED1,self.LED2,self.LED3)
         if result:
@@ -893,6 +894,7 @@ class Panel(QtGui.QWidget):
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
+            print ('n_inj',n_inj)
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
 
@@ -938,10 +940,8 @@ class Panel(QtGui.QWidget):
 
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
+
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
-
-
-        #self.plotAbs.setData(x,y)
 
         self.pH_log_row = pd.DataFrame({
             "Time"         : [self.instrument.timeStamp[0:16]],

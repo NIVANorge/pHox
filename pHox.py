@@ -533,7 +533,7 @@ class pH_instrument(Common_instrument):
         pH_lab = evalPar_df["pH"][0]
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] - T_lab) 
         nrows = evalPar_df.shape[0]
-
+        print (nrows)
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values
@@ -543,6 +543,7 @@ class pH_instrument(Common_instrument):
                 pH_lab = intercept 
                 print ('r_value **2 > 0.9')
             else: 
+                print ('r_value **2 < 0.9 take two last measurements')                
                 x = x[:-2]
                 y = y[:-2]
                 slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
