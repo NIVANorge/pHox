@@ -329,7 +329,7 @@ class CO3_instrument(Common_instrument):
         arg = (R - e1)/(1 - R*e2e3) 
 
         CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
-        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+        print (r'[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
 
         self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
                                      "log_beta1_e2", "vNTC", "S", 
