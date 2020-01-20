@@ -1100,7 +1100,7 @@ class Panel(QtGui.QWidget):
 
                 cfp =  (self.nlCoeff[0] +
                         self.nlCoeff[1] * postinj_min_dark + 
-                        self.instrument.nlCoeff[2] * postinj_min_dark**2)
+                        self.nlCoeff[2] * postinj_min_dark**2)
 
                 bmdCorr = blank_min_dark * cfb
                 pmdCorr = postinj_min_dark * cfp
