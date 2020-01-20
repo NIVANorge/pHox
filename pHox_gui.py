@@ -1047,7 +1047,7 @@ class Panel(QtGui.QWidget):
                                                 "e2", "e3", "vNTC",
                                         'salinity', "A1", "A2","Tdeg",  
                                        "S_corr", "Anir",'Vol_injected',
-                                        'TempCalCoef1','TempCalCoef2'])
+                                        'TempCalCoef1','TempCalCoef2','DYE'])
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
@@ -1100,7 +1100,7 @@ class Panel(QtGui.QWidget):
 
                 cfp =  (self.nlCoeff[0] +
                         self.nlCoeff[1] * postinj_min_dark + 
-                        self.nlCoeff[2] * postinj_min_dark**2)
+                        self.instrument.nlCoeff[2] * postinj_min_dark**2)
 
                 bmdCorr = blank_min_dark * cfb
                 pmdCorr = postinj_min_dark * cfp
