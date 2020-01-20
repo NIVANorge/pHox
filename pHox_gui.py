@@ -885,11 +885,10 @@ class Panel(QtGui.QWidget):
 
         self.spCounts_df['blank'] = blank 
 
-        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
-                                                "e2", "e3", "vNTC",
-                                        'salinity', "A1", "A2","Tdeg",  
-                                       "S_corr", "Anir",'Vol_injected',
-                                       "TempProbe_id","Probe_iscalibr",
+        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1", "e2", "e3", "vNTC",
+                                        'salinity', "A1", "A2","Tdeg", "S_corr", 
+                                       "Anir",'Vol_injected',"TempProbe_id",
+                                       "Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
         # create dataframe and store 
@@ -1095,13 +1094,13 @@ class Panel(QtGui.QWidget):
                 postinj_min_dark = np.clip(postinj,1,16000)
                 #print ('postinj_min_dark')
 
-                cfb =  (self.instrument.nlCoeff[0] + 
-                        self.instrument.nlCoeff[1] * blank_min_dark + 
-                        self.instrument.nlCoeff[2] * blank_min_dark**2)
+                cfb =  (self.nlCoeff[0] + 
+                        self.nlCoeff[1] * blank_min_dark + 
+                        self.nlCoeff[2] * blank_min_dark**2)
 
-                cfp =  (self.instrument.nlCoeff[0] +
-                        self.instrument.nlCoeff[1] * postinj_min_dark + 
-                        self.instrument.nlCoeff[2] * postinj_min_dark**2)
+                cfp =  (self.nlCoeff[0] +
+                        self.nlCoeff[1] * postinj_min_dark + 
+                        self.nlCoeff[2] * postinj_min_dark**2)
 
                 bmdCorr = blank_min_dark * cfb
                 pmdCorr = postinj_min_dark * cfp
