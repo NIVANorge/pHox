@@ -1047,6 +1047,7 @@ class Panel(QtGui.QWidget):
                                                 "e2", "e3", "vNTC",
                                         'salinity', "A1", "A2","Tdeg",  
                                        "S_corr", "Anir",'Vol_injected',
+                                       "TempProbe_id","Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
         # create dataframe and store 
