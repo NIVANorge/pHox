@@ -518,6 +518,7 @@ class Panel(QtGui.QWidget):
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
+        self.add_pco2_info()
         d = self.CO2_instrument.franatech 
         t = datetime.now() 
         label = t.isoformat('_')
@@ -569,7 +570,7 @@ class Panel(QtGui.QWidget):
             #self.textBox.setText('Could not adjust leds')
         self.btn_adjust_leds.setChecked(False)
 
-    def add_pco2_info(self,text):
+    def add_pco2_info(self):
         self.CO2_instrument.portSens.write(
             self.CO2_instrument.QUERY_CO2)
         resp = self.CO2_instrument.portSens.read(15)
@@ -593,13 +594,13 @@ class Panel(QtGui.QWidget):
             for i in range(2):
                 X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
             self.CO2_instrument.franatech[ch] = X
-            text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
+            #text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
 
-        WD = self.get_Vd(1,6)
-        text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
-        text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
-                    self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
-        self.textBox_LastpH.setText(text)
+        #WD = self.get_Vd(1,6)
+        #text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
+        #text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
+        #            self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
+        #self.textBox_LastpH.setText(text)
 
     def get_next_sample(self):
         t = datetime.now()
