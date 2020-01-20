@@ -328,8 +328,8 @@ class CO3_instrument(Common_instrument):
         log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
         arg = (R - e1)/(1 - R*e2e3) 
 
-        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
-        print (r'[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+        CO3 = dilution * 1.e6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
         self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
                                      "log_beta1_e2", "vNTC", "S", 
