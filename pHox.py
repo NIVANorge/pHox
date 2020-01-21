@@ -402,26 +402,18 @@ class pH_instrument(Common_instrument):
         LED = curr_value 
 
         while LED < 100: 
-            self.adjust_LED(led_ind, LED)
-            print ('LED',LED)            
-            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-            print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
             dif_counts = self.THR - pixelLevel
 
             if (dif_counts > 500 and LED < 99) : 
                 print ('case1')
                 print ('LED',LED)
-
                 dif_LED = (dif_counts * 30 / maxLevel)            
                 LED += dif_LED  
                 LED = min(99,LED)
-
-            elif dif_counts > 500 and LED == 99: 
-                print ('case2')                
-                print ('LED',LED)  
-                res = 'increase int time'              
-                print ("cannot reach desired value with this integration time")
-                break
+                self.adjust_LED(led_ind, LED)
+                print ('LED',LED)            
+                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+                print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
             elif dif_counts < -500 and LED>1:
                 print ('case3')                
@@ -431,6 +423,19 @@ class pH_instrument(Common_instrument):
                 print (dif_LED,'dif_LED')       
                 LED += dif_LED  
                 LED = max(1,LED)
+                self.adjust_LED(led_ind, LED)
+                print ('LED',LED)            
+                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+                print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
+
+            elif dif_counts > 500 and LED == 99: 
+                print ('case2')                
+                print ('LED',LED)  
+                res = 'increase int time'              
+                print ("cannot reach desired value with this integration time")
+                break
+
+
 
             elif dif_counts < -500 and LED == 1: 
                 print ('case4')   
