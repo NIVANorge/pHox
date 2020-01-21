@@ -406,11 +406,13 @@ class pH_instrument(Common_instrument):
         while LED < 100: 
             dif_counts = THR - pixelLevel
 
+
             if (dif_counts > 500 and LED < 99) : 
                 print ('case1')
                 print ('LED',LED)
-                dif_LED = (dif_counts * 50 / maxLevel)            
-                LED += dif_LED  
+                dif_LED = (dif_counts * 50 / maxLevel)    
+                dd = LED - (THR*LED)/pixelLevel                        
+                LED += dd  
                 LED = min(99,LED)
                 self.adjust_LED(led_ind, LED)
                 print ('LED',LED)            
@@ -421,9 +423,11 @@ class pH_instrument(Common_instrument):
                 print ('case3')                
                 print ('dif',dif_counts)
                 print ('LED',LED)
+                dd = LED - (THR*LED)/pixelLevel     
                 dif_LED = (dif_counts * 30 / maxLevel)       
                 print (dif_LED,'dif_LED')       
-                LED += dif_LED  
+                #LED += dif_LED
+                LED += dd  
                 LED = max(1,LED)
                 self.adjust_LED(led_ind, LED)
                 print ('LED',LED)            
