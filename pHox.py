@@ -483,16 +483,16 @@ class pH_instrument(Common_instrument):
             self.spectrom.set_scans_average(1)
         #for sptIt in sptItRange:
         n = 0
-        while n < 200:
+        while n < 100:
             n += 1
             f = self.call_adjust(sptIt)
             print ('**CALL adjust**',f)
             LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
             print (adj1,adj2,adj3,res1,res2,res3)            
-            if any([res1,res2,res3]) == 'decrease int time':
+            if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 print ('decreasing time') 
                 sptIt -= 100
-            elif any([res1,res2,res3]) == 'increase int time': 
+            elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
                 print ('increasing time')
                 sptIt += 100
             elif (adj1 and adj2 and adj3):
