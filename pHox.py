@@ -419,7 +419,7 @@ class pH_instrument(Common_instrument):
             elif dif_counts > 500 and LED == 99: 
                 print ('case2')                
                 print ('LED',LED)  
-                res = 'incsread int time'              
+                res = 'increase int time'              
                 print ("cannot reach desired value with this integration time")
                 break
 
@@ -461,7 +461,7 @@ class pH_instrument(Common_instrument):
         LED1,adj1,res1 = self.find_LED(
             led_ind = 0,adj = adj1,
             curr_value = self.LED1)
-        print (LED1,adj1,res1)
+        print ('LED1,adj1,res1', LED1,adj1,res1)
 
         if adj1:
             print ('adj1 = True')
@@ -474,7 +474,7 @@ class pH_instrument(Common_instrument):
                     led_ind = 2,adj = adj3, 
                     curr_value = self.LED3)    
 
-            return adj1,adj2,adj3,res1,res2,res3
+        return adj1,adj2,adj3,res1,res2,res3
 
     def auto_adjust(self,*args):
         
@@ -484,7 +484,7 @@ class pH_instrument(Common_instrument):
             self.spectrom.set_scans_average(1)
         for sptIt in sptItRange:
             f = self.call_adjust(sptIt)
-            print (f)
+            print ('CALL adjust',f)
             adj1,adj2,adj3,res1,res2,res3 = f
             print (adj1,adj2,adj3,res1,res2,res3)
             if (adj1 and adj2 and adj3):
