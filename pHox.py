@@ -405,7 +405,7 @@ class pH_instrument(Common_instrument):
             self.adjust_LED(led_ind, LED)
             print ('LED',LED)            
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-            print ('pixelLevel,maxlevel',pixelLevel,maxlevel)
+            print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
             dif_counts = self.THR - pixelLevel
 
             if (dif_counts > 500 and LED < 99) : 
