@@ -472,7 +472,7 @@ class pH_instrument(Common_instrument):
                     led_ind = 2,adj = adj3, 
                     curr_value = self.LED3)    
 
-            return adj1,adj2,adj3,res
+            return adj1,adj2,adj3,res1,res2,res3
 
     def auto_adjust(self,*args):
         
