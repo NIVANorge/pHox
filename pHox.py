@@ -489,10 +489,10 @@ class pH_instrument(Common_instrument):
             print ('**CALL adjust**',f)
             LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
             print (adj1,adj2,adj3,res1,res2,res3)            
-            if any([res1,res2,res3]) == 'decrease int time'
+            if any([res1,res2,res3]) == 'decrease int time':
                 print ('decreasing time') 
                 sptIt -= 100
-            elif any([res1,res2,res3]) == 'increase int time' 
+            elif any([res1,res2,res3]) == 'increase int time': 
                 print ('increasing time')
                 sptIt += 100
             elif (adj1 and adj2 and adj3):
