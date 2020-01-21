@@ -733,6 +733,8 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
+        self.on_autoAdjust_clicked()
+        print ('run autoadjust')
         #if not self.args.co3:
         self.update_LEDs()
         self.btn_leds.setChecked(True)
