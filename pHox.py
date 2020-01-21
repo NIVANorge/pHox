@@ -407,7 +407,7 @@ class pH_instrument(Common_instrument):
             if (dif_counts > 500 and LED < 99) : 
                 print ('case1')
                 print ('LED',LED)
-                dif_LED = (dif_counts * 30 / maxLevel)            
+                dif_LED = (dif_counts * 50 / maxLevel)            
                 LED += dif_LED  
                 LED = min(99,LED)
                 self.adjust_LED(led_ind, LED)
