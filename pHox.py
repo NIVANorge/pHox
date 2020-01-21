@@ -396,7 +396,7 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    def find_LED(self,led_ind,adj,curr_value):
+    def find_LED(self,THR,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         SAT = 16000
         LED = curr_value 
@@ -404,7 +404,7 @@ class pH_instrument(Common_instrument):
         pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
 
         while LED < 100: 
-            dif_counts = self.THR - pixelLevel
+            dif_counts = THR - pixelLevel
 
             if (dif_counts > 500 and LED < 99) : 
                 print ('case1')
@@ -464,19 +464,19 @@ class pH_instrument(Common_instrument):
         self.spectrom.set_integration_time(sptIt)
         print ('Trying %i ms integration time...' % sptIt)
 
-        LED1,adj1,res1 = self.find_LED(
+        LED1,adj1,res1 = self.find_LED(self.THR,
             led_ind = 0,adj = adj1,
             curr_value = self.LED1)
         print ('**LED1,adj1,res1**', LED1,adj1,res1)
 
         if adj1:
             print ('adj1 = True')
-            LED2,adj2,res2 = self.find_LED(
+            LED2,adj2,res2 = self.find_LED(self.THR,
                 led_ind = 1,adj = adj2,
                 curr_value = self.LED2)
             if adj2:    
                 print ('adj2 = True')
-                LED3,adj3,res3 = self.find_LED(
+                LED3,adj3,res3 = self.find_LED(self.THR-3000,
                     led_ind = 2,adj = adj3, 
                     curr_value = self.LED3)    
 
