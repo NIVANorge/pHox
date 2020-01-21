@@ -481,7 +481,9 @@ class pH_instrument(Common_instrument):
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
         for sptIt in sptItRange:
-            adj1,adj2,adj3,res1,res2,res3 = self.call_adjust(sptIt)
+            f = self.call_adjust(sptIt)
+            print (f)
+            adj1,adj2,adj3,res1,res2,res3 = f
             print (adj1,adj2,adj3,res1,res2,res3)
             if (adj1 and adj2 and adj3):
                print ('Levels adjusted')
