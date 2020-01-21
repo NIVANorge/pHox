@@ -472,20 +472,30 @@ class pH_instrument(Common_instrument):
                     led_ind = 2,adj = adj3, 
                     curr_value = self.LED3)    
 
-        return adj1,adj2,adj3,res1,res2,res3
+        return LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3
 
     def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
         sptItRange = [250,500,750,1000,1500,3000]
+        sptIt = 500
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
-        for sptIt in sptItRange:
+        #for sptIt in sptItRange:
+        n = 0
+        while n < 200:
+            n += 1
             f = self.call_adjust(sptIt)
             print ('**CALL adjust**',f)
-            adj1,adj2,adj3,res1,res2,res3 = f
-            print (adj1,adj2,adj3,res1,res2,res3)
-            if (adj1 and adj2 and adj3):
+            LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
+            print (adj1,adj2,adj3,res1,res2,res3)            
+            if any([res1,res2,res3]) == 'decrease int time'
+                print ('decreasing time') 
+                sptIt -= 100
+            elif any([res1,res2,res3]) == 'increase int time' 
+                print ('increasing time')
+                sptIt += 100
+            elif (adj1 and adj2 and adj3):
                print ('Levels adjusted')
                break 
 
