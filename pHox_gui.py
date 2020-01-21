@@ -742,7 +742,7 @@ class Panel(QtGui.QWidget):
         #self.timerSpectra_plot.start()
         print ('run autoadjust')        
         self.textBox.setText('Adjusting LEDs')
-        self.on_autoAdjust_clicked()
+        #self.on_autoAdjust_clicked()
         self.update_spectra_plot()  
 
         if not self.args.debug:
