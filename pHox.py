@@ -411,7 +411,8 @@ class pH_instrument(Common_instrument):
                 print ('case1')
                 print ('LED',LED)
                 dif_LED = (dif_counts * 50 / maxLevel)    
-                dd = LED - (THR*LED)/pixelLevel                        
+                dd = LED - (THR*LED)/pixelLevel      
+                print (dd)                 
                 LED += dd  
                 LED = min(99,LED)
                 self.adjust_LED(led_ind, LED)
@@ -423,7 +424,8 @@ class pH_instrument(Common_instrument):
                 print ('case3')                
                 print ('dif',dif_counts)
                 print ('LED',LED)
-                dd = LED - (THR*LED)/pixelLevel     
+                dd = LED - (THR*LED)/pixelLevel   
+                print (dd)                   
                 dif_LED = (dif_counts * 30 / maxLevel)       
                 print (dif_LED,'dif_LED')       
                 #LED += dif_LED
