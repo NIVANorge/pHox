@@ -403,32 +403,39 @@ class pH_instrument(Common_instrument):
 
         while LED < 100: 
             self.adjust_LED(led_ind, LED)
+            print ('LED',LED)            
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
             print ('pixelLevel',pixelLevel)
             dif_counts = self.THR - pixelLevel
 
             if (dif_counts > 500 and LED < 99) : 
+                print ('LED',LED)
+
                 dif_LED = (dif_counts * 30 / maxLevel)            
                 LED += dif_LED  
                 LED = min(99,LED)
 
             elif dif_counts > 500 and LED == 99: 
+                print ('LED',LED)                
                 print ("cannot reach desired value with this integration time")
                 break
 
             elif dif_counts < -500 and LED>1:
                 print ('dif',dif_counts)
+                print ('LED',LED)
                 dif_LED = (dif_counts * 30 / maxLevel)              
                 LED += dif_LED  
                 LED = max(1,LED)
 
             elif dif_counts < -500 and LED == 1: 
                 print ('too high values')
-                print ('dif',dif_counts)                
+                print ('dif',dif_counts)    
+                print ('LED',LED)                            
                 break   
 
             elif dif_counts < 500 and dif_counts > -500: 
                 adj = True
+                print ('LED',LED)                
                 break            
 
             elif dif_counts < (self.THR - SAT): 
