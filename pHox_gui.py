@@ -494,7 +494,7 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-
+        self.update_spectra_plot()
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
