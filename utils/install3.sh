@@ -144,9 +144,9 @@ read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
-    echo 'interface eth0'                     >> $f
-    echo 'static ip_address=192.168.0.90/24'  >> $f
-    echo 'static routers=192.168.0.1'         >> $f
+    echo 'interface eth0'                 >> $f
+    echo 'static ip_address=192.168.0.9'  >> $f
+    echo 'static routers=192.168.0.1'     >> $f
 fi
 
 
