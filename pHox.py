@@ -404,6 +404,7 @@ class pH_instrument(Common_instrument):
         while LED < 100: 
             self.adjust_LED(led_ind, LED)
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+            print ('pixelLevel',pixelLevel)
             dif_counts = self.THR - pixelLevel
 
             if (dif_counts > 500 and LED < 99) : 
@@ -412,15 +413,18 @@ class pH_instrument(Common_instrument):
                 LED = min(99,LED)
 
             elif dif_counts > 500 and LED == 99: 
+                print ("cannot reach desired value with this integration time")
                 break
 
             elif dif_counts < -500 and LED>1:
+                print ('dif',dif_counts)
                 dif_LED = (dif_counts * 30 / maxLevel)              
                 LED += dif_LED  
                 LED = max(1,LED)
 
             elif dif_counts < -500 and LED == 1: 
                 print ('too high values')
+                print ('dif',dif_counts)                
                 break   
 
             elif dif_counts < 500 and dif_counts > -500: 
@@ -436,7 +440,7 @@ class pH_instrument(Common_instrument):
     def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
-        sptItRange = [500,750,1000,1500,3000]
+        sptItRange = [250,500,750,1000,1500,3000]
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
         for sptIt in sptItRange:
