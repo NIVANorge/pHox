@@ -453,7 +453,7 @@ class pH_instrument(Common_instrument):
     def call_adjust(self,sptIt):
         adj1,adj2,adj3 = False, False, False
         LED1,LED2,LED3 = None, None, None
-
+        res1,res2,res = None, None, None
         self.spectrom.set_integration_time(sptIt)
         print ('Trying %i ms integration time...' % sptIt)
 
