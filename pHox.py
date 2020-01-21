@@ -451,6 +451,7 @@ class pH_instrument(Common_instrument):
         return LED,adj,res
 
     def call_adjust(self,sptIt):
+        print ('inside call adjust ')
         adj1,adj2,adj3 = False, False, False
         LED1,LED2,LED3 = None, None, None
         res1,res2,res = None, None, None
@@ -460,6 +461,7 @@ class pH_instrument(Common_instrument):
         LED1,adj1,res1 = self.find_LED(
             led_ind = 0,adj = adj1,
             curr_value = self.LED1)
+        print (LED1,adj1,res1)
 
         if adj1:
             print ('adj1 = True')
