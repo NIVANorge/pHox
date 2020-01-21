@@ -68,7 +68,7 @@ read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     sudo python3 -m pip install git+https://github.com/abelectronicsuk/ABElectronics_Python_Libraries.git
-    
+fi 
 #--------------------------------------------------------------------------
 # Install PIGPIO
 #--------------------------------------------------------------------------
