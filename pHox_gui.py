@@ -733,20 +733,22 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
-        self.on_autoAdjust_clicked()
-        print ('run autoadjust')
+
         #if not self.args.co3:
         self.update_LEDs()
         self.btn_leds.setChecked(True)
         self.btn_leds_checked()
         self.update_spectra_plot()
         #self.timerSpectra_plot.start()
-
+        self.textBox.setText('Adjusting LEDs')
+        self.on_autoAdjust_clicked()
+        print ('run autoadjust')
+        
         if not self.args.debug:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
             self.update_spectra_plot()
-            self.textBox.setText('The instrument is ready for use')
+            self.textBox.setText('The instrument is ready')
             #self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
