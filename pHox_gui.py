@@ -687,7 +687,7 @@ class Panel(QtGui.QWidget):
         self.btn_calibr.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True)
-        self.timerSpectra_plot.start()
+        #self.timerSpectra_plot.start()
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
@@ -761,6 +761,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside _autostart...')
         self.textBox.setText('Turn on LEDs')
         #if not self.args.co3:
+        self.set_LEDs(True)
         self.update_LEDs()
         self.btn_leds.setChecked(True)
         self.btn_leds_checked()
