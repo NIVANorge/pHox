@@ -1255,7 +1255,7 @@ class boxUI(QtGui.QMainWindow):
                             action="store_true")
         parser.add_argument("--seabreeze",
                             action="store_true") 
-         parser.add_argument("--stability",
+        parser.add_argument("--stability",
                             action="store_true")                            
 
         self.args = parser.parse_args()
