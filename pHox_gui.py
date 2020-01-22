@@ -525,9 +525,9 @@ class Panel(QtGui.QWidget):
         stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
 
         stabfile_df = pd.DataFrame({
-        'led0': [datay[self.instrument.wvlPixels[0]],
-        'led1': [datay[self.instrument.wvlPixels[1]],
-        'led2': [datay[self.instrument.wvlPixels[2]]})
+        "led0" : [datay[self.instrument.wvlPixels[0]]],
+        "led1" : [datay[self.instrument.wvlPixels[1]]],
+        "led2" : [datay[self.instrument.wvlPixels[2]]]})
 
         if os.path.exists(stabfile):
             stabfile_df.to_csv(stabfile_df, mode = 'a', index = False, header=False) 
