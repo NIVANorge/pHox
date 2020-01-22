@@ -11,7 +11,7 @@ echo "use raspi-config       "
 echo "then reboot            "
 echo "************************"
 read -p "Skip? Y/[N] " ans
-if [ "$ans" != "N" ]
+if [ "$ans" != "Y" ]
 then 
     exit 0
 fi
