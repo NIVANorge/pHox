@@ -8,7 +8,8 @@ from PyQt5 import QtGui, QtCore
 import time
 
 class CO2_instrument(object):
-   def __init__(self):
+   def __init__(self,config_name):
+      self.config_name = config 
       self.load_config()
 
       """def get_V(self, nAver, ch):
@@ -25,7 +26,7 @@ class CO2_instrument(object):
          return V/nAver"""
 
    def load_config(self):
-      with open('config.json') as json_file:
+      with open(self.config_name) as json_file:
          j = json.load(json_file)
       franatech =   j['franatech']
       intervals =   j['intervals']

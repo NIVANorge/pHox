@@ -144,9 +144,9 @@ class STSVIS(object):
         return spectralCounts
 
 class Common_instrument(object):
-    def __init__(self,panelargs):
+    def __init__(self,panelargs,config_name):
         self.args = panelargs
-
+        self.config_name = config_name
         if self.args.seabreeze:
             self.spectrom = Spectro_seabreeze()    
         else:
@@ -189,7 +189,7 @@ class Common_instrument(object):
 
     def load_config(self):
 
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)  
 
         conf_operational = j['Operational']
@@ -288,7 +288,7 @@ class CO3_instrument(Common_instrument):
         self.load_config_co3() 
 
     def load_config_co3(self):      
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)  
 
         conf = j['CO3']
@@ -356,7 +356,7 @@ class pH_instrument(Common_instrument):
         self.reset_lines()
 
     def load_config_pH(self):
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)
 
         conf_pH = j['pH']

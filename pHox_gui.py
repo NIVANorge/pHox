@@ -35,26 +35,27 @@ class Sample_thread(QtCore.QThread):
             self.mainclass.sample(self.is_calibr)
 
 class Panel(QtGui.QWidget):
-    def __init__(self,parent,panelargs):
+    def __init__(self,parent,panelargs,config_name):
         super(QtGui.QWidget, self).__init__(parent)
         #super(Panel, self).__init__()
                                                                                     
         self.continous_mode_is_on = False
         self.args = panelargs
+        self.config_name= config_name
         #self.args = parser.parse_args()
         self.create_timers()
 
         if self.args.co3:
-            self.instrument = CO3_instrument(self.args)
+            self.instrument = CO3_instrument(self.args,self.config_name)
         else:
-            self.instrument = pH_instrument(self.args)
+            self.instrument = pH_instrument(self.args,self.config_name)
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
 
         print ('instrument created')
         if self.args.pco2:
-            self.CO2_instrument = CO2_instrument()
+            self.CO2_instrument = CO2_instrument(self.config_name)
 
         self.init_ui()
 
@@ -1238,6 +1239,12 @@ class boxUI(QtGui.QMainWindow):
         
         parser = argparse.ArgumentParser()
 
+        try: 
+            box_id = open('/home/pi/box_id.txt', "r").read()
+        except:
+            box_id = 'template'
+        config_name = 'config_'+ box_id + '.json'
+        print (config_name)
         parser.add_argument("--pco2",
                             action="store_true")     
         parser.add_argument("--co3",
@@ -1256,7 +1263,7 @@ class boxUI(QtGui.QMainWindow):
         else: 
             self.setWindowTitle('Box Instrument, NIVA - pH')
 
-        self.main_widget = Panel(self,self.args)
+        self.main_widget = Panel(self,self.args,config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
