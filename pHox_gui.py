@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(10000000) # 10 sec
+        self.timerSpectra_plot.setInterval(100000000) # 10 sec
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -521,7 +521,20 @@ class Panel(QtGui.QWidget):
         else: 
             datay = self.instrument.spectrom.get_intensities()   
         #print ('update stectra plot',min(datay),max(datay))  
-        #print ([datay[self.instrument.wvlPixels[led_ind]] for led_ind in [0,1,2]])
+
+        stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
+
+        stabfile_df = pd.DataFrame({
+        'led0': [datay[self.instrument.wvlPixels[0]],
+        'led1': [datay[self.instrument.wvlPixels[1]],
+        'led2': [datay[self.instrument.wvlPixels[2]]})
+
+        if os.path.exists(stabfile):
+            stabfile_df.to_csv(stabfile_df, mode = 'a', index = False, header=False) 
+        else: columns= [
+            stabfile_df = pd.DataFrame(columns= ['led0','led1','led2'])
+            stabfile_df.to_csv(stabfile, index = False, header=True) 
+
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
@@ -1141,10 +1154,10 @@ class Panel(QtGui.QWidget):
         time.sleep(2)
         self.append_logbox('Save data to file')
         self.sample_steps[7].setChecked(True)
-        self.save_spt()
+        self.save_spt(folderPath)
         time.sleep(2)
         print ('evl file save')
-        self.save_evl()
+        self.save_evl(folderPath)
 
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu = self.instrument.pH_eval(self.evalPar_df) 
 
@@ -1165,7 +1178,7 @@ class Panel(QtGui.QWidget):
         
         self.send_to_ferrybox()
         time.sleep(2)
-        self.save_logfile_df()
+        self.save_logfile_df(folderPath)
 
         #self.textBox.setText('pH_t= %.4f, \nTref= %.4f, \npert= %.3f, \nAnir= %.1f' %pHeval)
         time.sleep(2)
