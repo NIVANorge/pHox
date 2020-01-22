@@ -114,6 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
+        self.timerSpectra_plot .setInterval(200)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -746,7 +747,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
         self.btn_leds_checked()
 
-        self.timerSpectra_plot.start()
+        self.timerSpectra_plot.start(1000)
         print ('run autoadjust')        
         self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
