@@ -521,7 +521,7 @@ class Panel(QtGui.QWidget):
         else: 
             datay = self.instrument.spectrom.get_intensities()   
         print ('update stectra plot',min(datay),max(datay))  
-        print ([self.instrument.get_sp_levels(self.instrument.wvlPixels[led_ind]) for led_ind in [0,1,2]])
+        print ([datay[self.instrument.wvlPixels[led_ind]] for led_ind in [0,1,2]])
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
