@@ -111,9 +111,11 @@ class Panel(QtGui.QWidget):
     def create_timers(self):
 
         self.timer_contin_mode = QtCore.QTimer()
+        self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
+        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
@@ -412,6 +414,7 @@ class Panel(QtGui.QWidget):
         self.mode = 'Single'
 
         self.instrument.reset_lines()
+        self.timerSpectra_plot.stop()
         self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
         self.sample_thread.start()
         self.sample_thread.finished.connect(self.single_sample_finished)
@@ -646,6 +649,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
+            self.timerSpectra_plot.stop()
             self.sample_thread = Sample_thread(self,self.args)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
@@ -663,6 +667,7 @@ class Panel(QtGui.QWidget):
         self.btn_calibr.setEnabled(True) 
         [step.setChecked(False) for step in self.sample_steps]
         self.btn_cont_meas.setEnabled(True)
+        self.timerSpectra_plot.start()
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
@@ -671,7 +676,7 @@ class Panel(QtGui.QWidget):
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
-
+        self.timerSpectra_plot.start()
         if not self.btn_cont_meas.isChecked():
             self.StatusBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
@@ -721,6 +726,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Inside continuous_mode...')
 
         self.instrument.reset_lines()
+        self.timerSpectra_plot.stop()
         self.sample_thread = Sample_thread(self,self.args)
         self.continous_mode_is_on = True
         self.sample_thread.start()
@@ -739,7 +745,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
         self.btn_leds_checked()
 
-        #self.timerSpectra_plot.start()
+        self.timerSpectra_plot.start()
         print ('run autoadjust')        
         self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
