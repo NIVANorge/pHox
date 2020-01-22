@@ -6,10 +6,11 @@ echo "********* SPI/I2C ******"
 echo "Make sure SPI is enabled"
 echo "Make sure I2C is enabled"
 echo "************************"
+echo "You can start the script to run raspi-config"
 echo "use raspi-config       "
 echo "then reboot            "
 echo "************************"
-read -p "Do you want to run raspi-config? [Y]/N " ans
+read -p "Skip? Y/[N] " ans
 if [ "$ans" != "N" ]
 then 
     exit 0
@@ -57,6 +58,19 @@ then
     sudo apt-get -y install python3-pigpio
     sudo apt-get -y install python3-pandas
 fi
+
+#---
+# Seabreeze 
+# 
+echo "Install Seabreeze package "
+echo "Raspbian includes configuration for pip to use piwheels by default.  "
+echo "If you're using an alternative distribution (or an older version of Raspbian)"
+echo "you can use piwheels by placing the following lines in /etc/pip.conf:"
+echo "[global]"
+echo " extra-index-url=https://www.piwheels.org/simple " 
+
+sudo pip3 install seabreeze
+
 #--------------------------------------------------------------------------
 # Install ABElectronics package
 #--------------------------------------------------------------------------
@@ -148,5 +162,7 @@ then
     echo 'static ip_address=192.168.0.9'  >> $f
     echo 'static routers=192.168.0.1'     >> $f
 fi
+
+
 
 
