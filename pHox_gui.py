@@ -522,20 +522,20 @@ class Panel(QtGui.QWidget):
         else: 
             datay = self.instrument.spectrom.get_intensities()   
         #print ('update stectra plot',min(datay),max(datay))  
+        if self.args.stability:
+            stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
 
-        stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
+            stabfile_df = pd.DataFrame({
+            "led0" : [datay[self.instrument.wvlPixels[0]]],
+            "led1" : [datay[self.instrument.wvlPixels[1]]],
+            "led2" : [datay[self.instrument.wvlPixels[2]]],
+            "specint": [self.instrument.specIntTime]})
 
-        stabfile_df = pd.DataFrame({
-        "led0" : [datay[self.instrument.wvlPixels[0]]],
-        "led1" : [datay[self.instrument.wvlPixels[1]]],
-        "led2" : [datay[self.instrument.wvlPixels[2]]],
-        "specint": [self.instrument.specIntTime]})
-
-        if os.path.exists(stabfile):
-            stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
-        else: 
-            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
-            stabfile_df.to_csv(stabfile, index = False, header=True) 
+            if os.path.exists(stabfile):
+                stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
+            else: 
+                stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
+                stabfile_df.to_csv(stabfile, index = False, header=True) 
 
         self.plotSpc.setData(self.wvls,datay)
 
@@ -1253,6 +1253,8 @@ class boxUI(QtGui.QMainWindow):
                             action="store_true")
         parser.add_argument("--seabreeze",
                             action="store_true") 
+         parser.add_argument("--stability",
+                            action="store_true")                            
 
         self.args = parser.parse_args()
 
