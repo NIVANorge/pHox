@@ -283,8 +283,8 @@ class Common_instrument(object):
         return spec[pixel],spec.max()
 
 class CO3_instrument(Common_instrument):
-    def __init__(self,panelargs):
-        super().__init__(panelargs)
+    def __init__(self,panelargs,config_name):
+        super().__init__(panelargs,config_name)
         self.load_config_co3() 
 
     def load_config_co3(self):      
@@ -339,8 +339,8 @@ class CO3_instrument(Common_instrument):
         #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
 
 class pH_instrument(Common_instrument):
-    def __init__(self,panelargs):
-        super().__init__(panelargs)
+    def __init__(self,panelargs,config_name):
+        super().__init__(panelargs,config_name)
         #self.args = panelargs
         self.load_config_pH()       
 
