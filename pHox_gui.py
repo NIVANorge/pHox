@@ -517,7 +517,8 @@ class Panel(QtGui.QWidget):
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
-            datay = self.instrument.spectrom.get_intensities()              
+            datay = self.instrument.spectrom.get_intensities()   
+        print ('update stectra plot',set(datay))  
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
