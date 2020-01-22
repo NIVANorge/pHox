@@ -491,7 +491,7 @@ class pH_instrument(Common_instrument):
     def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
-        sptItRange = [250,500,750,1000,1500,3000]
+        
         sptIt = 500
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)

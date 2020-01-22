@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot .setInterval(200)
+        self.timerSpectra_plot .setInterval(2000)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -499,6 +499,7 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
         self.update_spectra_plot()
+
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
