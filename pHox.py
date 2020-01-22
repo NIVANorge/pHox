@@ -488,7 +488,7 @@ class pH_instrument(Common_instrument):
         
         #self.textBox.setText('Autoadjusting leds')
         
-        sptIt = self.instrument.specIntTime
+        sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
         #for sptIt in sptItRange:
