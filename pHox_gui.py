@@ -41,7 +41,7 @@ class Panel(QtGui.QWidget):
                                                                                     
         self.continous_mode_is_on = False
         self.args = panelargs
-        self.config_name= config_name
+        self.config_name = config_name
         #self.args = parser.parse_args()
         self.create_timers()
 
@@ -1243,7 +1243,7 @@ class boxUI(QtGui.QMainWindow):
             box_id = open('/home/pi/box_id.txt', "r").read()
         except:
             box_id = 'template'
-        config_name = 'config_'+ box_id + '.json'
+        config_name = 'configs/config_'+ box_id + '.json'
         print (config_name)
         parser.add_argument("--pco2",
                             action="store_true")     
