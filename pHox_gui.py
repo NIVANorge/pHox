@@ -527,12 +527,13 @@ class Panel(QtGui.QWidget):
         stabfile_df = pd.DataFrame({
         "led0" : [datay[self.instrument.wvlPixels[0]]],
         "led1" : [datay[self.instrument.wvlPixels[1]]],
-        "led2" : [datay[self.instrument.wvlPixels[2]]]})
+        "led2" : [datay[self.instrument.wvlPixels[2]]],
+        "specint": [self.instrument.specIntTime]})
 
         if os.path.exists(stabfile):
             stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
         else: 
-            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2"])
+            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
         self.plotSpc.setData(self.wvls,datay)
