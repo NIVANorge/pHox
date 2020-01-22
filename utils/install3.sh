@@ -58,7 +58,7 @@ then
     sudo apt-get -y install python3-pigpio
     sudo apt-get -y install python3-pandas
     sudo apt-get -y install python3-usb
-
+    sudo apt-get -y install python3-pyqtgraph
 fi
 
 #---
