@@ -428,7 +428,8 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
-        with open('config.json','r+') as json_file:
+        
+        with open(self.config_name,'r+') as json_file:
             j = json.load(json_file)
 
             j['pH']['Default_DYE'] = self.dye_combo.currentText()
@@ -442,7 +443,7 @@ class Panel(QtGui.QWidget):
             json_file.truncate()
 
     def load_config_file(self):
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)
             default =   j['pH']
             return default
