@@ -531,8 +531,8 @@ class Panel(QtGui.QWidget):
 
         if os.path.exists(stabfile):
             stabfile_df.to_csv(stabfile_df, mode = 'a', index = False, header=False) 
-        else: columns= [
-            stabfile_df = pd.DataFrame(columns= ['led0','led1','led2'])
+        else: 
+            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2"])
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
         self.plotSpc.setData(self.wvls,datay)
