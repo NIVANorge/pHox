@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot .setInterval(10000)
+        self.timerSpectra_plot.setInterval(80000)
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -520,7 +520,7 @@ class Panel(QtGui.QWidget):
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
             datay = self.instrument.spectrom.get_intensities()   
-        print ('update stectra plot',set(datay))  
+        print ('update stectra plot',min(datay),max(datay))  
         self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
