@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(1000000)
+        self.timerSpectra_plot.setInterval(10000000) # 10 sec
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
