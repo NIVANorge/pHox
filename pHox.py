@@ -405,8 +405,6 @@ class pH_instrument(Common_instrument):
 
         while LED < 100: 
             dif_counts = THR - pixelLevel
-
-
             if (dif_counts > 500 and LED < 99) : 
                 print ('case1')
                 print ('LED',LED)
