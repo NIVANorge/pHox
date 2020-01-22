@@ -381,7 +381,7 @@ class pH_instrument(Common_instrument):
         self.LED1 = conf_pH["LED1"]
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
-
+        
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
@@ -441,8 +441,6 @@ class pH_instrument(Common_instrument):
                 print ("cannot reach desired value with this integration time")
                 break
 
-
-
             elif dif_counts < -500 and LED == 1: 
                 print ('case4')   
                 res = 'decrease int time'             
@@ -490,7 +488,7 @@ class pH_instrument(Common_instrument):
         
         #self.textBox.setText('Autoadjusting leds')
         
-        sptIt = 500
+        sptIt = self.instrument.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
         #for sptIt in sptItRange:
