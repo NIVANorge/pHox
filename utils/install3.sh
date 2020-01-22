@@ -130,7 +130,7 @@ then
     echo '[Desktop Entry]'                                     >  $f
     echo 'Type=Application'                                    >> $f
     echo 'NAME=pHox'                                           >> $f
-    echo 'Exec=sudo /usr/bin/python /home/pi/pHox/pHox_gui.py' >> $f
+    echo 'Exec=sudo /usr/bin/python3 /home/pi/pHox/pHox_gui.py' >> $f
     echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
