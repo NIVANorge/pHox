@@ -57,6 +57,8 @@ then
     sudo apt-get -y install python3-pyqt5 
     sudo apt-get -y install python3-pigpio
     sudo apt-get -y install python3-pandas
+    sudo apt-get -y install python3-usb
+
 fi
 
 #---
