@@ -530,7 +530,7 @@ class Panel(QtGui.QWidget):
         "led2" : [datay[self.instrument.wvlPixels[2]]]})
 
         if os.path.exists(stabfile):
-            stabfile_df.to_csv(stabfile_df, mode = 'a', index = False, header=False) 
+            stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
         else: 
             stabfile_df = pd.DataFrame(columns = ["led0","led1","led2"])
             stabfile_df.to_csv(stabfile, index = False, header=True) 
