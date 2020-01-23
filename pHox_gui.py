@@ -412,7 +412,7 @@ class Panel(QtGui.QWidget):
         self.btn_single_meas.setEnabled(False) 
         # disable all btns in manual tab 
         #self.get_filename()
-        self.mode = 'Single'
+        self.mode = 'Calibration'
 
         self.instrument.reset_lines()
         self.timerSpectra_plot.stop()
