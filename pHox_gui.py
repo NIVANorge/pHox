@@ -167,8 +167,7 @@ class Panel(QtGui.QWidget):
                         QtWidgets.QCheckBox('4. Measurement 2'),                        
                         QtWidgets.QCheckBox('5. Measurement 3'),
                         QtWidgets.QCheckBox("6. Measurement 4"),
-                        QtWidgets.QCheckBox("7. Save the Data"),
-                        QtWidgets.QCheckBox("8. Finished")]
+                        QtWidgets.QCheckBox("7. Save the Data")]
 
         layout = QtGui.QGridLayout() 
 
@@ -924,10 +923,12 @@ class Panel(QtGui.QWidget):
             folderPath = '/home/pi/pHox/data_calibr/'
         else:
             folderPath = self.instrument.folderPath
-        if is_calibr:
+
+        if self.mode == 'Calibration':
             self.StatusBox.setText('Ongoing calibration measurement')  
         else:          
             self.StatusBox.setText('Ongoing measurement')
+
         self.sample_steps[0].setChecked(True)
         if self.mode == 'Continuous': 
             if not fbox['pumping']:
@@ -952,9 +953,11 @@ class Panel(QtGui.QWidget):
             self.append_logbox('Pumping, Standalone, Continous')
 
         elif self.mode == 'Calibration':
+            self.append_logbox('Pumping, Calibration')              
             self.pumping(self.instrument.pumpTime) 
-            self.append_logbox('Pumping, Calibration')    
 
+
+        self.append_logbox('Closing valve ...')
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
 
@@ -963,7 +966,7 @@ class Panel(QtGui.QWidget):
 
         blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
-
+        time.sleep(1)
         self.spCounts_df['blank'] = blank 
 
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1", "e2", "e3", "vNTC",
@@ -983,20 +986,23 @@ class Panel(QtGui.QWidget):
                         vol_injected  + self.instrument.Cuvette_V)
 
             # Start mixing, inject dye, stop mixing 
-            self.append_logbox('Injection %d:' %(n_inj+1))            
+          
             self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+            self.append_logbox('Start stirrer')
             if not self.args.debug:
                 # inject dye 
+                self.append_logbox('Dye Injection %d:' %(n_inj+1))  
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             self.append_logbox("Mixing")
             time.sleep(self.instrument.mixT)
+            self.append_logbox('Stop stirrer')            
             self.instrument.turn_off_relay(self.instrument.stirrer_slot)
+            self.append_logbox('Wait')
             time.sleep(self.instrument.waitT)
 
             # measuring Voltage for temperature probe
             self.vNTC = self.get_Vd(3, self.instrument.vNTCch)
-                       
-            # Write spectrum to the file 
+            self.append_logbox('Get spectrum')
             row = str(n_inj)+'raw'
             self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=False)
@@ -1004,18 +1010,19 @@ class Panel(QtGui.QWidget):
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
+            self.append_logbox('Calculate init pH')            
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,self.vNTC,dilution,vol_injected)
 
-
-
-        # open the valve
+        self.append_logbox('Opening the valve ...')
         self.instrument.set_Valve(False)
         time.sleep(2)
 
-        self.append_logbox('Save data to file')
+        self.append_logbox('Save spectrum data to file')
         self.sample_steps[7].setChecked(True)
         self.save_spt(folderPath)
         time.sleep(2)
+
+        self.append_logbox('Save evl data to file')
         self.save_evl(folderPath)
 
         # get final pH
@@ -1036,15 +1043,17 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
-        self.append_logbox('data saved in %s' % (folderPath+'pH.log'))
-        
+
+        self.append_logbox('Send data to ferrybox')        
         self.send_to_ferrybox()
         time.sleep(2)
+
+        self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
         self.save_logfile_df(folderPath)
         time.sleep(2)
 
         self.append_logbox('Single measurement is done...')
-        self.sample_steps[8].setChecked(True)
+        #self.sample_steps[8].setChecked(True)
         print (self.x,self.y,self.intercept,self.slope)        
         time.sleep(17)
 
@@ -1101,14 +1110,6 @@ class Panel(QtGui.QWidget):
 
         if not fbox['pumping']:
             return
-  
-        self.append_logbox('Autoadjust LEDS')
-        self.sample_steps[1].setChecked(True)
-        print ('scans average')
-        self.on_autoAdjust_clicked()  
-
-        self.set_LEDs(True)
-        self.btn_leds.setChecked(True)
 
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
             self.pumping(self.instrument.pumpTime) 
@@ -1116,7 +1117,14 @@ class Panel(QtGui.QWidget):
 
         elif self.mode == 'Calibration':
             self.pumping(self.instrument.pumpTime) 
-            self.append_logbox('Pumping, Calibration')    
+            self.append_logbox('Pumping, Calibration') 
+
+        self.append_logbox('Autoadjust LEDS')
+        self.sample_steps[1].setChecked(True)  
+        self.on_autoAdjust_clicked()  
+
+        self.set_LEDs(True)
+        self.btn_leds.setChecked(True)
 
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
