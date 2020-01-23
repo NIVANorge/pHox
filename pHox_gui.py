@@ -701,15 +701,14 @@ class Panel(QtGui.QWidget):
                       "Crazy important message",
                       "Turn back the valve to Ferrybox mode",
                       QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        if res == QtGui.QMessageBox.Yes:
-            continue 
+        #if res == QtGui.QMessageBox.Yes:
 
         res = QtGui.QMessageBox.question(self,
                       "Crazy important message",
                       "Are you sure??????",
                       QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        if res == QtGui.QMessageBox.Yes:
-            continue         
+        #if res == QtGui.QMessageBox.Yes:
+        #    continue         
 
     def single_sample_finished(self):
         print ('single sample finished inside func')     
@@ -1090,8 +1089,6 @@ class Panel(QtGui.QWidget):
                         "Crazy important message!!!",
                         "Switch the valve to calibration mode",
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-            if message == QtGui.QMessageBox.Yes:
-                continue
             if message == QtGui.QMessageBox.No:
                 return
         if is_calibr: 
