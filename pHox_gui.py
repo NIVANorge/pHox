@@ -419,7 +419,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot.stop()
         self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
         self.sample_thread.start()
-        self.sample_thread.finished.connect(self.single_sample_finished)
+        self.sample_thread.finished.connect(self.calibration_sample_finished)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -584,6 +584,7 @@ class Panel(QtGui.QWidget):
 
             #self.plot_sp_levels()
             self.instrument.specIntTime = sptIt
+            self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
                 str(self.instrument.specIntTime)))  
             if not self.args.seabreeze:    
@@ -674,6 +675,43 @@ class Panel(QtGui.QWidget):
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
 
+    def calibration_sample_finished(self):
+        print ('calibration sample finished inside func')     
+        self.StatusBox.clear()  
+        self.update_infotable()
+
+        print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
+        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
+
+        print ('self.btn_single_meas.setChecked(False)')
+
+        self.btn_single_meas.setChecked(False)
+        self.btn_single_meas.setEnabled(True)
+        self.btn_calibr.setChecked(False)        
+        self.btn_calibr.setEnabled(True) 
+        print ('[step.setChecked(False) for step in self.sample_steps]')
+        [step.setChecked(False) for step in self.sample_steps]
+
+        self.btn_cont_meas.setEnabled(True)
+        print ('start spectra plot timers')
+        self.timerSpectra_plot.start()
+        # enable all btns in manual tab  
+
+        res = QtGui.QMessageBox.question(self,
+                      "Crazy important message",
+                      "Turn back the valve to Ferrybox mode",
+                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        if res == QtGui.QMessageBox.Yes:
+            continue 
+        
+        res = QtGui.QMessageBox.question(self,
+                      "Crazy important message",
+                      "Are you sure??????",
+                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        if res == QtGui.QMessageBox.Yes:
+            continue         
+
     def single_sample_finished(self):
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
@@ -693,7 +731,8 @@ class Panel(QtGui.QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
         self.btn_cont_meas.setEnabled(True)
-        #self.timerSpectra_plot.start()
+        print ('start spectra plot timers')
+        self.timerSpectra_plot.start()
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
@@ -889,21 +928,21 @@ class Panel(QtGui.QWidget):
         else:          
             self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
-        if self.mode == 'Continuous':    
+        if self.mode == 'Continuous': 
+            if not fbox['pumping']:
+                return               
             self.get_filename() 
+
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
 
         self.append_logbox('Start new measurement')
 
-        if not fbox['pumping']:
-            return
-  
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
         print ('scans average')
         self.on_autoAdjust_clicked()  
-
+        self.append_logbox('Finished Autoadjust LEDS')
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
@@ -1036,7 +1075,15 @@ class Panel(QtGui.QWidget):
         #self.append_logbox('Autoadjust LEDS')
 
     def sample(self,is_calibr):   
-
+        if self.mode == 'Calibration':
+            message = QtGui.QMessageBox.question(self,
+                        "Crazy important message!!!",
+                        "Switch the valve to calibration mode",
+                        QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+            if message == QtGui.QMessageBox.Yes:
+                continue
+            if message == QtGui.QMessageBox.No:
+                return
         if is_calibr: 
             folderPath = '/home/pi/pHox/data_calibr/'
         else:
