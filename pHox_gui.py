@@ -704,7 +704,7 @@ class Panel(QtGui.QWidget):
                       QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
         if res == QtGui.QMessageBox.Yes:
             continue 
-        
+
         res = QtGui.QMessageBox.question(self,
                       "Crazy important message",
                       "Are you sure??????",
@@ -813,12 +813,13 @@ class Panel(QtGui.QWidget):
         self.btn_leds_checked()
 
         self.timerSpectra_plot.start(1000)
-        print ('run autoadjust')        
+        #print ('run autoadjust')        
         self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
         self.update_spectra_plot()  
 
         if not self.args.debug:
+            self.textBox.setText('Starting continuous mode ')
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
             self.update_spectra_plot()
