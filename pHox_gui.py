@@ -670,7 +670,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            self.timerSpectra_plot.stop()
+            #self.timerSpectra_plot.stop()
             self.sample_thread = Sample_thread(self,self.args)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
@@ -697,9 +697,9 @@ class Panel(QtGui.QWidget):
         print ('start spectra plot timers')
 
 
-        self.timerSpectra_plot = QtCore.QTimer()
-        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
-        self.timerSpectra_plot.start(1.e6)
+        #self.timerSpectra_plot = QtCore.QTimer()
+        #self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
+        #self.timerSpectra_plot.start(1.e6)
         # enable all btns in manual tab  
 
         res = QtGui.QMessageBox.question(self,
@@ -732,12 +732,12 @@ class Panel(QtGui.QWidget):
         self.btn_calibr.setEnabled(True) 
         print ('[step.setChecked(False) for step in self.sample_steps]')
         [step.setChecked(False) for step in self.sample_steps]
-
+        print ("self.btn_cont_meas.setEnabled(True)")
         self.btn_cont_meas.setEnabled(True)
-        print ('start spectra plot timers')
-        self.timerSpectra_plot2 = QtCore.QTimer()
-        self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
-        self.timerSpectra_plot2.start(1.e6)
+        #print ('start spectra plot timers')
+        #self.timerSpectra_plot2 = QtCore.QTimer()
+        #self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
+        #self.timerSpectra_plot2.start(1.e6)
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):

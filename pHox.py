@@ -406,53 +406,53 @@ class pH_instrument(Common_instrument):
         while LED < 100: 
             dif_counts = THR - pixelLevel
             if (dif_counts > 500 and LED < 99) : 
-                print ('case1')
-                print ('LED before',LED)
+                #print ('case1')
+                #print ('LED before',LED)
                 dif_LED = (dif_counts * 50 / maxLevel)    
                 dd =  (THR*LED)/pixelLevel - LED      
-                print (dd)                 
+                #print (dd)                 
                 LED += dd  
                 LED = min(99,LED)
                 self.adjust_LED(led_ind, LED)
-                print ('LED after',LED)            
+                #print ('LED after',LED)            
                 pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-                print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
+                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
             elif dif_counts < -500 and LED>1:
-                print ('case3')                
-                print ('dif',dif_counts)
-                print ('LED before',LED)
+                #print ('case3')                
+                #print ('dif',dif_counts)
+                #print ('LED before',LED)
                 dd = LED - (THR*LED)/pixelLevel   
-                print (dd)                   
+                #print (dd)                   
                 dif_LED = (dif_counts * 30 / maxLevel)       
-                print (dif_LED,'dif_LED')       
+                #print (dif_LED,'dif_LED')       
                 #LED += dif_LED
                 LED += dd  
                 LED = max(1,LED)
                 self.adjust_LED(led_ind, LED)
-                print ('LED',LED)            
+                #print ('LED',LED)            
                 pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-                print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
+                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
             elif dif_counts > 500 and LED == 99: 
-                print ('case2')                
-                print ('LED before',LED)  
+                #print ('case2')                
+                #print ('LED before',LED)  
                 res = 'increase int time'              
-                print ("cannot reach desired value with this integration time")
+                #print ("cannot reach desired value with this integration time")
                 break
 
             elif dif_counts < -500 and LED == 1: 
-                print ('case4')   
+                #print ('case4')   
                 res = 'decrease int time'             
-                print ('too high values')
-                print ('dif',dif_counts)    
-                print ('LED',LED)                            
+                #print ('too high values')
+                #print ('dif',dif_counts)    
+                #print ('LED',LED)                            
                 break   
 
             elif dif_counts < 500 and dif_counts > -500: 
-                print ('case5')                
+                #print ('case5')                
                 adj = True
-                print ('LED',LED)  
+                #print ('LED',LED)  
                 res = 'adjusted'              
                 break        
 
