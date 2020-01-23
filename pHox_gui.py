@@ -412,7 +412,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
         # disable all btns in manual tab 
-        self.get_filename()
+        #self.get_filename()
         self.mode = 'Single'
 
         self.instrument.reset_lines()
@@ -660,7 +660,7 @@ class Panel(QtGui.QWidget):
         self.btn_single_meas.setEnabled(False) 
         self.btn_calibr.setEnabled(False) 
         # disable all btns in manual tab 
-        self.get_filename()
+        #self.get_filename()
         self.mode = 'Single'
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Sample name', 
@@ -882,7 +882,7 @@ class Panel(QtGui.QWidget):
         else:          
             self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
-
+        self.get_filename()
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
 
@@ -1007,7 +1007,7 @@ class Panel(QtGui.QWidget):
         else:
             folderPath = self.instrument.folderPath        
         print ('co3_sample')
-
+        self.get_filename()
         time.sleep(2)
 
         self.StatusBox.setText('Ongoing measurement')
@@ -1033,6 +1033,7 @@ class Panel(QtGui.QWidget):
             folderPath = '/home/pi/pHox/data_calibr/'
         else:
             folderPath = self.instrument.folderPath
+        self.get_filename()            
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
 
