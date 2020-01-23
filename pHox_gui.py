@@ -967,7 +967,7 @@ class Panel(QtGui.QWidget):
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
 
-        if self.mode == 'Continuous': 
+        if self.mode == 'Continuous' or self.mode == 'Calibration': 
             if not fbox['pumping']:
                 return               
             self.get_filename() 
@@ -994,7 +994,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Closing valve ...')
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
-
+        self.update_spectra_plot() 
 
         self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
@@ -1017,10 +1017,10 @@ class Panel(QtGui.QWidget):
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
+            self.update_spectra_plot() 
             print ('n_inj',n_inj)            
             self.sample_steps[n_inj+3].setChecked(True)
             shots = self.instrument.nshots
-
             vol_injected = round(self.instrument.dye_vol_inj*(n_inj+1)*shots, prec['vol_injected'])
             dilution = (self.instrument.Cuvette_V) / (
                         vol_injected  + self.instrument.Cuvette_V)
