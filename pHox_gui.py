@@ -678,14 +678,20 @@ class Panel(QtGui.QWidget):
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
+
+        print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
-        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)    
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
+
+        print ('self.btn_single_meas.setChecked(False)')
 
         self.btn_single_meas.setChecked(False)
-        self.btn_single_meas.setEnabled(True) 
+        self.btn_single_meas.setEnabled(True)
         self.btn_calibr.setChecked(False)        
         self.btn_calibr.setEnabled(True) 
+        print ('[step.setChecked(False) for step in self.sample_steps]')
         [step.setChecked(False) for step in self.sample_steps]
+
         self.btn_cont_meas.setEnabled(True)
         #self.timerSpectra_plot.start()
         # enable all btns in manual tab  
@@ -696,6 +702,7 @@ class Panel(QtGui.QWidget):
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
+        print ('start timer spectra plot')
         self.timerSpectra_plot.start()
         if not self.btn_cont_meas.isChecked():
             self.StatusBox.setText('Continuous mode is off')
