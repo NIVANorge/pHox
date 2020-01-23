@@ -694,7 +694,11 @@ class Panel(QtGui.QWidget):
 
         self.btn_cont_meas.setEnabled(True)
         print ('start spectra plot timers')
-        self.timerSpectra_plot.start()
+
+
+        self.timerSpectra_plot = QtCore.QTimer()
+        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
+        self.timerSpectra_plot.start(1.e6)
         # enable all btns in manual tab  
 
         res = QtGui.QMessageBox.question(self,
