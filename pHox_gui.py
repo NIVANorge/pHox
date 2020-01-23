@@ -517,6 +517,7 @@ class Panel(QtGui.QWidget):
         self.instrument.folderPath = folder+'/'
 
     def update_spectra_plot(self):
+        print ('inside function update spectra plot')
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
         else: 
@@ -734,7 +735,9 @@ class Panel(QtGui.QWidget):
 
         self.btn_cont_meas.setEnabled(True)
         print ('start spectra plot timers')
-        self.timerSpectra_plot.start()
+        self.timerSpectra_plot2 = QtCore.QTimer()
+        self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
+        self.timerSpectra_plot2.start(1.e6)
         # enable all btns in manual tab  
 
     def continuous_sample_finished(self):
