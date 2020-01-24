@@ -115,8 +115,7 @@ class Panel(QtGui.QWidget):
         self.timerTemp_info = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(10.e6) # 10 sec
-        self.timerTemp_info.setInterval(1.e6) # 10 sec        
+        self.timerSpectra_plot.setInterval(10.e6) # 10 sec     
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timerTemp_info.timeout.connect(self.update_T_lab)
@@ -824,7 +823,6 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
     def update_T_lab(self):
-        print ('update t')
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         vNTC = round(vNTC, prec['vNTC'])
         Tdeg = round((
@@ -883,7 +881,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds_checked()
 
         self.timerSpectra_plot.start()
-        self.timerTemp_info.start(100)   
+        self.timerTemp_info.start(100000)   
 
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
