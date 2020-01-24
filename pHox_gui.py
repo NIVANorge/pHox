@@ -20,8 +20,7 @@ from udp import Ferrybox as fbox
 from precisions import precision as prec 
 
 class Sample_thread(QtCore.QThread):
-    def __init__(self,mainclass,panelargs,is_calibr = False):
-        self.is_calibr = is_calibr
+    def __init__(self,mainclass,panelargs):
         self.mainclass = mainclass
         self.args = panelargs
         super(Sample_thread, self).__init__(mainclass)
@@ -30,9 +29,9 @@ class Sample_thread(QtCore.QThread):
         if self.args.co3: 
             self.mainclass.co3_sample(self.is_calibr)
         elif self.args.seabreeze:
-            self.mainclass.sample(self.is_calibr)
+            self.mainclass.sample()
         else:
-            self.mainclass.sample(self.is_calibr)
+            self.mainclass.sample()
 
 class Panel(QtGui.QWidget):
     def __init__(self,parent,panelargs,config_name):
@@ -416,7 +415,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.reset_lines()
         self.timerSpectra_plot.stop()
-        self.sample_thread = Sample_thread(self,self.args,is_calibr=True)
+        self.sample_thread = Sample_thread(self,self.args)
         self.sample_thread.start()
         self.sample_thread.finished.connect(self.calibration_sample_finished)
 
@@ -739,10 +738,21 @@ class Panel(QtGui.QWidget):
         #self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
         #self.timerSpectra_plot2.start(1.e6)
         # enable all btns in manual tab  
+    def save_results(self):
+
+        
+        self.append_logbox('Save evl data to file')
+        self.save_evl(folderPath)        
+        self.append_logbox('Send data to ferrybox')        
+        self.send_to_ferrybox()
+        self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
+        self.save_logfile_df(folderPath)
+
 
     def continuous_sample_finished(self):
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
+        self.save_results()
         self.StatusBox.setText('Measurement is finished')
         self.update_infotable()
         [step.setChecked(False) for step in self.sample_steps]
@@ -924,9 +934,9 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    def co3_sample(self,is_calibr):   
+    def co3_sample(self):   
 
-        if is_calibr: 
+        if self.mode == 'Calibration': 
             folderPath = '/home/pi/pHox/data_co3_calibr/'
         else:
             folderPath = self.instrument.folderPath        
@@ -951,24 +961,22 @@ class Panel(QtGui.QWidget):
   
         #self.append_logbox('Autoadjust LEDS')
 
-    def sample(self,is_calibr):  
+    def sample(self):  
         print ('pH_sample, mode is {}'.format(self.mode))
         if self.mode == 'Calibration':
             message = QtGui.QMessageBox.question(self,
                         "Crazy important message!!!",
                         "Switch the valve to calibration mode",
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+                        
             if message == QtGui.QMessageBox.No:
                 return
 
-        if is_calibr: 
-            folderPath = '/home/pi/pHox/data_calibr/'
-        else:
-            folderPath = self.instrument.folderPath
-
         if self.mode == 'Calibration':
+            folderPath = '/home/pi/pHox/data_calibr/'            
             self.StatusBox.setText('Ongoing calibration measurement')  
-        else:          
+        else: 
+            folderPath = self.instrument.folderPath         
             self.StatusBox.setText('Ongoing measurement')
 
         self.StatusBox.setText('Ongoing measurement')
@@ -1092,9 +1100,6 @@ class Panel(QtGui.QWidget):
         self.save_spt(folderPath)
         time.sleep(2)
 
-        self.append_logbox('Save evl data to file')
-        self.save_evl(folderPath)
-
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
@@ -1112,19 +1117,25 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
+        '''
+        self.append_logbox('Save evl data to file')
+        self.save_evl(folderPath)        
+        
         self.append_logbox('Send data to ferrybox')        
         self.send_to_ferrybox()
         time.sleep(2)
 
         self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
         self.save_logfile_df(folderPath)
-        time.sleep(2)
+        time.sleep(2)'''
+
 
         self.append_logbox('Single measurement is done...')
         #self.sample_steps[8].setChecked(True)
         print ('self.x,self.y,self.intercept,self.slope')          
         print (self.x,self.y,self.intercept,self.slope)        
         time.sleep(17)
+        return (folderpath)
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'
