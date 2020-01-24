@@ -671,18 +671,21 @@ class Panel(QtGui.QWidget):
         if message == QtGui.QMessageBox.No:
             return
 
-        self.btn_cont_meas.setEnabled(False)
-        self.btn_single_meas.setEnabled(False) 
-        self.btn_calibr.setEnabled(False) 
-        # disable all btns in manual tab 
-        self.get_filename()
-        self.mode = 'Single'
+
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
                                         self.instrument.flnmStr)
         if ok:
             if text != '':
                 self.instrument.flnmStr = text
+
+            self.btn_cont_meas.setEnabled(False)
+            self.btn_single_meas.setEnabled(False) 
+            self.btn_calibr.setEnabled(False) 
+            # disable all btns in manual tab 
+            self.get_filename()
+            self.mode = 'Single'
+
             self.instrument.reset_lines()
             self.timerSpectra_plot.stop()
             self.sample()
