@@ -542,7 +542,7 @@ class Panel(QtGui.QWidget):
                         stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
                         stabfile_df.to_csv(stabfile, index = False, header=True) 
 
-                time.sleep(self.instrument.specIntTime*1e.-6)
+                time.sleep(self.instrument.specIntTime*1.e-6)
                 print ('update stectra plot',min(datay),max(datay))  
                 self.plotSpc.setData(self.wvls,datay)
             except:
