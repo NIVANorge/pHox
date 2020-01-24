@@ -473,7 +473,6 @@ class pH_instrument(Common_instrument):
         LED1,adj1,res1 = self.find_LED(self.THR,
             led_ind = 0,adj = adj1,
             curr_value = self.LED1)
-        print ('**LED1,adj1,res1**', LED1,adj1,res1)
 
         if adj1:
             print ('adj1 = True')
@@ -534,7 +533,7 @@ class pH_instrument(Common_instrument):
         S_corr = round(fb_sal * dilution , prec['salinity'])
 
         R = A2/A1
-        print ('R value', R)
+
         if self.dye == 'TB':
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
@@ -580,11 +579,9 @@ class pH_instrument(Common_instrument):
         T_lab = evalPar_df["Tdeg"][0]
         pH_lab = evalPar_df["pH"][0]
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] - T_lab) 
-        print ('evalPar_df["pH"]', evalPar_df["pH"])
-        print ('evalPar_df["Tdeg"]',evalPar_df["Tdeg"])
-        print ('pH_t_corr',pH_t_corr)
+
         nrows = evalPar_df.shape[0]
-        print (nrows)
+
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values

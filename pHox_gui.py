@@ -747,9 +747,9 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Single measurement is done...')
         #self.sample_steps[8].setChecked(True)
-        print ('self.x,self.y,self.intercept,self.slope')          
-        print (self.x,self.y,self.intercept,self.slope)        
-        time.sleep(17)
+         
+        #print (self.x,self.y,self.intercept,self.slope)        
+
 
     def save_results(self):
     
@@ -853,7 +853,7 @@ class Panel(QtGui.QWidget):
             self.fill_table_pH(4,1,S_insitu)      
 
             Voltage = self.get_Vd(3, self.instrument.vNTCch)
-            print ('Voltage is ',Voltage)
+
             self.fill_table_pH(5,1,str(Voltage))                  
         else: 
             print ('to be filled with data')
