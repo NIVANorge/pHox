@@ -534,8 +534,7 @@ class Panel(QtGui.QWidget):
                 else: 
                     stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
                     stabfile_df.to_csv(stabfile, index = False, header=True) 
-            time.sleep(1.e-6*self.instrument.specIntTime)
-            self.plotSpc.setData(self.wvls,datay)
+
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
