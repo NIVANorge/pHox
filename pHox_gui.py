@@ -1019,11 +1019,11 @@ class Panel(QtGui.QWidget):
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
     def sample(self):
-        QApplication.processEvents()         
+        QtGui.QApplication.processEvents()         
         self.start_pump_adjustleds()
-        QApplication.processEvents() 
+        QtGui.QApplication.processEvents() 
         self.valve_and_blank()
-        QApplication.processEvents()         
+        QtGui.QApplication.processEvents()         
         self.inject_measure()
 
     def start_pump_adjustleds(self):
