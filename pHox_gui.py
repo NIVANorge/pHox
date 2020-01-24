@@ -881,7 +881,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds_checked()
 
         self.timerSpectra_plot.start()
-        self.timerTemp_info.start(100000)   
+        self.timerTemp_info.start(10000)   
 
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
