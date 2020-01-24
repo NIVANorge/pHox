@@ -584,7 +584,7 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     def on_autoAdjust_clicked(self):
-
+        print ('on_autoAdjust_clicked')
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         self.update_spectra_plot()  
 
@@ -653,6 +653,7 @@ class Panel(QtGui.QWidget):
         return
 
     def btn_cont_meas_clicked(self):
+        print ('btn_cont_meas_clicked')
         self.mode = 'Continuous'
         state = self.btn_cont_meas.isChecked()
         if state:
