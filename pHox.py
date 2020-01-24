@@ -500,9 +500,9 @@ class pH_instrument(Common_instrument):
         while n < 100:
             n += 1
             f = self.call_adjust(sptIt)
-            print ('**CALL adjust**',f)
+
             LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
-            print (adj1,adj2,adj3,res1,res2,res3)            
+   
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 print ('decreasing time') 
                 sptIt -= 100

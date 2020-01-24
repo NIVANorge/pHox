@@ -402,17 +402,12 @@ class Panel(QtGui.QWidget):
                 self.instrument.wpump_slot)
 
     def btn_calibr_clicked(self):
-
         message = QtGui.QMessageBox.question(self,
                     "Crazy important message!!!",
                     "Switch the valve to calibration mode",
                     QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-                    
         if message == QtGui.QMessageBox.No:
             return
-        #folderPath ='/home/pi/pHox/data_calibration/' # relative path
-        #if not os.path.exists(folderPath):
-        #    os.makedirs(self.folderPath)
 
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
@@ -522,35 +517,36 @@ class Panel(QtGui.QWidget):
         folder = self.folderDialog.getExistingDirectory(self,'Select directory')
         self.instrument.folderPath = folder+'/'
 
+    def save_stability_test(self,datay):
+
+        stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
+
+        stabfile_df = pd.DataFrame({
+        "led0" : [datay[self.instrument.wvlPixels[0]]],
+        "led1" : [datay[self.instrument.wvlPixels[1]]],
+        "led2" : [datay[self.instrument.wvlPixels[2]]],
+        "specint": [self.instrument.specIntTime]})
+
+        if os.path.exists(stabfile):
+            stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
+        else: 
+            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
+            stabfile_df.to_csv(stabfile, index = False, header=True) 
+
     def update_spectra_plot(self):
         print ('inside function update spectra plot')
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
             time.sleep(self.instrument.specIntTime*1.e-6)
-            print ('update stectra plot',min(datay),max(datay))  
+
             self.plotSpc.setData(self.wvls,datay)            
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
-
-
                 if self.args.stability:
-                    stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
-
-                    stabfile_df = pd.DataFrame({
-                    "led0" : [datay[self.instrument.wvlPixels[0]]],
-                    "led1" : [datay[self.instrument.wvlPixels[1]]],
-                    "led2" : [datay[self.instrument.wvlPixels[2]]],
-                    "specint": [self.instrument.specIntTime]})
-
-                    if os.path.exists(stabfile):
-                        stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
-                    else: 
-                        stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
-                        stabfile_df.to_csv(stabfile, index = False, header=True) 
+                    self.save_stability_test(datay)
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
-                print ('update stectra plot',min(datay),max(datay))  
                 self.plotSpc.setData(self.wvls,datay)
             except:
                 print ('Exception error') 
@@ -681,9 +677,17 @@ class Panel(QtGui.QWidget):
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
             self.timerSpectra_plot.stop()
-            self.sample_thread = Sample_thread(self,self.args)
-            self.sample_thread.start()
-            self.sample_thread.finished.connect(self.single_sample_finished)
+            self.sample()
+            self.single_sample_finished()
+            
+            #self.sample_thread = Sample_thread(self,self.args)
+            #self.sample_thread.start()
+            #self.sample_thread.finished.connect(self.single_sample_finished)
+
+    def unclick_enable(self,btns):
+        for btn in btns:
+            btn.setChecked(False)    
+            btn.setEnabled(True)            
 
     def calibration_sample_finished(self):
         print ('calibration sample finished inside func')     
@@ -696,21 +700,13 @@ class Panel(QtGui.QWidget):
 
         print ('self.btn_single_meas.setChecked(False)')
 
-        self.btn_single_meas.setChecked(False)
-        self.btn_single_meas.setEnabled(True)
-        self.btn_calibr.setChecked(False)        
-        self.btn_calibr.setEnabled(True) 
+        self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
+
         print ('[step.setChecked(False) for step in self.sample_steps]')
         [step.setChecked(False) for step in self.sample_steps]
 
-        self.btn_cont_meas.setEnabled(True)
+
         print ('start spectra plot timers')
-
-
-        #self.timerSpectra_plot = QtCore.QTimer()
-        #self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
-        #self.timerSpectra_plot.start(1.e6)
-        # enable all btns in manual tab  
 
         res = QtGui.QMessageBox.question(self,
                       "Crazy important message",
@@ -732,20 +728,18 @@ class Panel(QtGui.QWidget):
         self.update_infotable()
 
         self.save_results(f)
+
         print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
-        print ('self.btn_single_meas.setChecked(False)')
+        self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
 
-        self.btn_single_meas.setChecked(False)
-        self.btn_single_meas.setEnabled(True)
-        self.btn_calibr.setChecked(False)        
-        self.btn_calibr.setEnabled(True) 
         print ('[step.setChecked(False) for step in self.sample_steps]')
+
         [step.setChecked(False) for step in self.sample_steps]
         print ("self.btn_cont_meas.setEnabled(True)")
-        self.btn_cont_meas.setEnabled(True)
+
         #print ('start spectra plot timers')
         #self.timerSpectra_plot2 = QtCore.QTimer()
         #self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
@@ -984,8 +978,6 @@ class Panel(QtGui.QWidget):
 
     def sample(self):  
         print ('pH_sample, mode is {}'.format(self.mode))
-
-      
 
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
