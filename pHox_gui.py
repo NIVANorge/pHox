@@ -663,7 +663,7 @@ class Panel(QtGui.QWidget):
         self.mode = 'Calibration'
 
         self.instrument.reset_lines()
-        self.timerSpectra_plot.stop()
+
 
         self.sample()
         self.single_sample_finished()
@@ -722,7 +722,6 @@ class Panel(QtGui.QWidget):
         #self.sample_thread.start()
         #self.sample_thread.finished.connect(self.continuous_sample_finished)
 
-
     def unclick_enable(self,btns):
         for btn in btns:
             btn.setChecked(False)    
@@ -773,8 +772,8 @@ class Panel(QtGui.QWidget):
         self.save_logfile_df(folderPath)
   
     def update_pH_plot(self):
-        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
-        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
+        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x, clear=True)   
 
     def single_sample_finished(self):
 
@@ -871,8 +870,6 @@ class Panel(QtGui.QWidget):
             V += self.instrument.adc.read_voltage(ch)
         return V/nAver
 
-
-
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
         self.sliders[1].setValue(self.instrument.LED2)
@@ -889,7 +886,7 @@ class Panel(QtGui.QWidget):
 
         self.timerSpectra_plot.start()
         self.timerTemp_info.start()   
-            
+
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
@@ -1033,12 +1030,29 @@ class Panel(QtGui.QWidget):
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
     def sample(self):
+        self.timerSpectra_plot.stop()        
         QtGui.QApplication.processEvents()         
         self.start_pump_adjustleds()
         QtGui.QApplication.processEvents() 
         self.valve_and_blank()
-        QtGui.QApplication.processEvents()         
-        self.inject_measure()
+        QtGui.QApplication.processEvents()
+
+        for n_inj in range(self.instrument.ncycles):  
+            vol_injected = round(
+                self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
+                 prec['vol_injected'])
+            dilution = (self.instrument.Cuvette_V) / (
+                    vol_injected  + self.instrument.Cuvette_V)      
+
+            spAbs,vNTC = self.inject_measure(n_inj)
+
+            self.append_logbox('Calculate init pH')              
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
+                                spAbs,vNTC,dilution,vol_injected)
+
+        self.append_logbox('Opening the valve ...')
+        self.instrument.set_Valve(False)
+        self.timerSpectra_plot.start() 
 
     def start_pump_adjustleds(self):
         print ('pH_sample, mode is {}'.format(self.mode))
@@ -1087,73 +1101,63 @@ class Panel(QtGui.QWidget):
         time.sleep(1)
         self.spCounts_df['blank'] = blank 
 
-    def inject_measure(self): 
+    def inject_measure(self,n_inj): 
         # create dataframe and store 
-        for n_inj in range(self.instrument.ncycles):
-            QtGui.QApplication.processEvents()             
+        
+        QtGui.QApplication.processEvents()             
 
-            print ('n_inj',n_inj)            
-            self.sample_steps[n_inj+3].setChecked(True)
+        print ('n_inj',n_inj)            
+        self.sample_steps[n_inj+3].setChecked(True)
 
-            shots = self.instrument.nshots
-            vol_injected = round(self.instrument.dye_vol_inj*(n_inj+1)*shots, prec['vol_injected'])
-            dilution = (self.instrument.Cuvette_V) / (
-                        vol_injected  + self.instrument.Cuvette_V)
+        shots = self.instrument.nshots
 
-            self.append_logbox('Start stirrer')               
-            self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+        self.append_logbox('Start stirrer')               
+        self.instrument.turn_on_relay(self.instrument.stirrer_slot)
 
-            if not self.args.debug:
-                self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
-                self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
+        if not self.args.debug:
+            self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
+            self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
-            self.append_logbox("Mixing")
-            time.sleep(self.instrument.mixT)
-            self.append_logbox('Stop stirrer')    
-            self.instrument.turn_off_relay(self.instrument.stirrer_slot)
-            self.append_logbox('Wait')            
-            time.sleep(self.instrument.waitT)
+        self.append_logbox("Mixing")
+        time.sleep(self.instrument.mixT)
+        self.append_logbox('Stop stirrer')    
+        self.instrument.turn_off_relay(self.instrument.stirrer_slot)
+        self.append_logbox('Wait')            
+        time.sleep(self.instrument.waitT)
 
-            # measuring Voltage for temperature probe
-            vNTC = self.get_Vd(3, self.instrument.vNTCch)
-            self.append_logbox('Get spectrum')
-            # measure spectrum after injecting nshots of dye 
-            if not self.args.seabreeze:
-                postinj = self.instrument.spectrom.get_corrected_spectra()
-                # postinjection minus dark     
-                postinj_min_dark = np.clip(postinj,1,16000)
-                #print ('postinj_min_dark')
-                cfb =  (self.nlCoeff[0] + 
-                        self.nlCoeff[1] * blank_min_dark + 
-                        self.nlCoeff[2] * blank_min_dark**2)
+        # measuring Voltage for temperature probe
+        vNTC = self.get_Vd(3, self.instrument.vNTCch)
+        self.append_logbox('Get spectrum')
+        # measure spectrum after injecting nshots of dye 
+        if not self.args.seabreeze:
+            postinj = self.instrument.spectrom.get_corrected_spectra()
+            # postinjection minus dark     
+            postinj_min_dark = np.clip(postinj,1,16000)
+            #print ('postinj_min_dark')
+            cfb =  (self.nlCoeff[0] + 
+                    self.nlCoeff[1] * blank_min_dark + 
+                    self.nlCoeff[2] * blank_min_dark**2)
 
-                cfp =  (self.nlCoeff[0] +
-                        self.nlCoeff[1] * postinj_min_dark + 
-                        self.nlCoeff[2] * postinj_min_dark**2)
+            cfp =  (self.nlCoeff[0] +
+                    self.nlCoeff[1] * postinj_min_dark + 
+                    self.nlCoeff[2] * postinj_min_dark**2)
 
-                bmdCorr = blank_min_dark * cfb
-                pmdCorr = postinj_min_dark * cfp
-                spAbs = np.log10((bmdCorr/pmdCorr).astype(int))
-                sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))         
-                  
-            # Write spectrum to the file 
-            elif self.args.seabreeze:
-                row = str(n_inj)+'raw'
-                self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
-                        self.instrument.specAvScans,correct=False)
-                time.sleep(10)
-                spAbs = self.instrument.spectrom.get_intensities(
-                        self.instrument.specAvScans,correct=True)
+            bmdCorr = blank_min_dark * cfb
+            pmdCorr = postinj_min_dark * cfp
+            spAbs = np.log10((bmdCorr/pmdCorr).astype(int))
+            sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))         
+                
+        # Write spectrum to the file 
+        elif self.args.seabreeze:
+            row = str(n_inj)+'raw'
+            self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
+                    self.instrument.specAvScans,correct=False)
+            time.sleep(10)
+            spAbs = self.instrument.spectrom.get_intensities(
+                    self.instrument.specAvScans,correct=True)
 
-            self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
-            self.append_logbox('Calculate init pH')  
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
-
-        #self.plotAbs.setData(self.wvls,spAbs)
-
-        self.append_logbox('Opening the valve ...')
-        self.instrument.set_Valve(False)
-        time.sleep(2)
+        self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
+        return (spAbs,vNTC)
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'

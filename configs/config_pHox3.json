@@ -24,7 +24,7 @@
         "DURATION": -1,
         "SAMPLING_INTERVAL_SEC": 300,
         "Comment": "all intervals are in seconds",
-        "pumpTime": 10,
+        "pumpTime": 15,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
