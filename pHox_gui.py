@@ -773,7 +773,7 @@ class Panel(QtGui.QWidget):
   
     def update_pH_plot(self):
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
-        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x, clear=True)   
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
     def single_sample_finished(self):
 
