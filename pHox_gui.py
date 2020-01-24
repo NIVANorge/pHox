@@ -403,6 +403,13 @@ class Panel(QtGui.QWidget):
 
     def btn_calibr_clicked(self):
 
+        message = QtGui.QMessageBox.question(self,
+                    "Crazy important message!!!",
+                    "Switch the valve to calibration mode",
+                    QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+                    
+        if message == QtGui.QMessageBox.No:
+            return
         #folderPath ='/home/pi/pHox/data_calibration/' # relative path
         #if not os.path.exists(folderPath):
         #    os.makedirs(self.folderPath)
@@ -977,14 +984,7 @@ class Panel(QtGui.QWidget):
 
     def sample(self):  
         print ('pH_sample, mode is {}'.format(self.mode))
-        if self.mode == 'Calibration':
-            message = QtGui.QMessageBox.question(self,
-                        "Crazy important message!!!",
-                        "Switch the valve to calibration mode",
-                        QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-                        
-            if message == QtGui.QMessageBox.No:
-                return
+
       
 
         self.StatusBox.setText('Ongoing measurement')
