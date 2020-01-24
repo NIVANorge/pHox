@@ -112,11 +112,16 @@ class Panel(QtGui.QWidget):
 
         self.timer_contin_mode = QtCore.QTimer()
         self.timerSpectra_plot = QtCore.QTimer()
+        self.timerTemp_info = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
         self.timerSpectra_plot.setInterval(10.e6) # 10 sec
+        self.timerTemp_info.setInterval(10.e6) # 10 sec        
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
+        self.timerTemp_info.timeout.connect(self.update_T_lab)
+
+
 
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
@@ -401,8 +406,6 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
 
-
-
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
@@ -516,7 +519,7 @@ class Panel(QtGui.QWidget):
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
     def update_spectra_plot(self):
-        print ('inside function update spectra plot')
+
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
             time.sleep(self.instrument.specIntTime*1.e-6)
@@ -824,6 +827,15 @@ class Panel(QtGui.QWidget):
             nextSamplename = self.get_next_sample()
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
+    def update_T_lab(self):
+
+        vNTC = self.get_Vd(3, self.instrument.vNTCch)
+        vNTC = round(vNTC, prec['vNTC'])
+        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
+
+        T_lab = str(Tdeg)
+        self.fill_table_pH(1,1, T_lab)        
+
     def update_infotable(self):
         if not self.args.co3:
             pH_lab = str(self.pH_log_row["pH_lab"].values[0])
@@ -876,6 +888,8 @@ class Panel(QtGui.QWidget):
         self.btn_leds_checked()
 
         self.timerSpectra_plot.start()
+        self.timerTemp_info.start()   
+            
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
@@ -1076,15 +1090,15 @@ class Panel(QtGui.QWidget):
     def inject_measure(self): 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
-            self.update_spectra_plot() 
+            QtGui.QApplication.processEvents()             
+
             print ('n_inj',n_inj)            
             self.sample_steps[n_inj+3].setChecked(True)
+
             shots = self.instrument.nshots
             vol_injected = round(self.instrument.dye_vol_inj*(n_inj+1)*shots, prec['vol_injected'])
             dilution = (self.instrument.Cuvette_V) / (
                         vol_injected  + self.instrument.Cuvette_V)
-
-            # shots = number of dye injection for each cycle ( now 1 for all cycles)
 
             self.append_logbox('Start stirrer')               
             self.instrument.turn_on_relay(self.instrument.stirrer_slot)
@@ -1092,6 +1106,7 @@ class Panel(QtGui.QWidget):
             if not self.args.debug:
                 self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
                 self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
+
             self.append_logbox("Mixing")
             time.sleep(self.instrument.mixT)
             self.append_logbox('Stop stirrer')    
