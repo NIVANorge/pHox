@@ -823,14 +823,14 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
     def update_T_lab(self):
-        vNTC = self.get_Vd(3, self.instrument.vNTCch)
-        vNTC = round(vNTC, prec['vNTC'])
-        Tdeg = round((
-            self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1],
+        Voltage = self.get_Vd(3, self.instrument.vNTCch)
+        Voltage = round(vNTC, prec['vNTC'])
+        T_lab= round((
+            self.instrument.TempCalCoef[0]*Voltage) + self.instrument.TempCalCoef[1],
              prec['Tdeg'])
-        T_lab = str(Tdeg)
-        self.fill_table_pH(1,1, T_lab)        
-
+        self.fill_table_pH(1,1, str(T_lab))
+        self.fill_table_pH(5,1,str(Voltage)) 
+        
     def update_infotable(self):
         if not self.args.co3:
             pH_lab = str(self.pH_log_row["pH_lab"].values[0])
@@ -1087,7 +1087,7 @@ class Panel(QtGui.QWidget):
     def valve_and_blank(self):
         self.append_logbox('Closing valve ...')
         self.instrument.set_Valve(True)
-        time.sleep(self.instrument.waitT)
+        #time.sleep(self.instrument.waitT)
         self.update_spectra_plot() 
 
         self.append_logbox('Measuring blank...')
@@ -1099,7 +1099,7 @@ class Panel(QtGui.QWidget):
         else: 
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
-        time.sleep(1)
+
         self.spCounts_df['blank'] = blank 
 
     def inject_measure(self,n_inj): 
@@ -1153,7 +1153,7 @@ class Panel(QtGui.QWidget):
             row = str(n_inj)+'raw'
             self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=False)
-            time.sleep(10)
+            time.sleep(0.5)
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
 
