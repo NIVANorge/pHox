@@ -27,7 +27,7 @@ class Sample_thread(QtCore.QThread):
 
     def run(self):
         if self.args.co3: 
-            self.mainclass.co3_sample(self.is_calibr)
+            self.mainclass.co3_sample()
         elif self.args.seabreeze:
             self.mainclass.sample()
         else:
@@ -549,10 +549,6 @@ class Panel(QtGui.QWidget):
                 print ('Exception error') 
                 pass
 
-
-
-
-
     def save_pCO2_data(self, pH = None):
         self.add_pco2_info()
         d = self.CO2_instrument.franatech 
@@ -631,13 +627,6 @@ class Panel(QtGui.QWidget):
             for i in range(2):
                 X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
             self.CO2_instrument.franatech[ch] = X
-            #text += self.CO2_instrument.VAR_NAMES[ch]+': %.2f\n'%X
-
-        #WD = self.get_Vd(1,6)
-        #text += self.CO2_instrument.VAR_NAMES[5]+ str (WD<0.04) + '\n'
-        #text += (self.CO2_instrument.VAR_NAMES[6]+': %.1f\n'%self.CO2_instrument.franatech[6] +
-        #            self.CO2_instrument.VAR_NAMES[7]+': %.1f\n'%self.CO2_instrument.franatech[7])
-        #self.textBox_LastpH.setText(text)
 
     def get_next_sample(self):
         t = datetime.now()
@@ -693,7 +682,7 @@ class Panel(QtGui.QWidget):
         print ('calibration sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
-
+        self.save_results()
         print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
@@ -729,11 +718,13 @@ class Panel(QtGui.QWidget):
         #if res == QtGui.QMessageBox.Yes:
         #    continue         
 
-    def single_sample_finished(self):
+    def single_sample_finished(self,f):
+        print ('got from thread value', f)
         print ('single sample finished inside func')     
         self.StatusBox.clear()  
         self.update_infotable()
 
+        self.save_results(f)
         print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
@@ -753,16 +744,26 @@ class Panel(QtGui.QWidget):
         #self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
         #self.timerSpectra_plot2.start(1.e6)
         # enable all btns in manual tab  
+
     def save_results(self):
 
-        
+        if self.mode == 'Calibration':
+            folderPath = '/home/pi/pHox/data_calibr/'            
+        else: 
+            folderPath = self.instrument.folderPath   
+
+        self.append_logbox('Save spectrum data to file')
+        #self.sample_steps[7].setChecked(True)
+        self.save_spt(folderPath)
+
         self.append_logbox('Save evl data to file')
-        self.save_evl(folderPath)        
+        self.save_evl(folderPath)   
+
         self.append_logbox('Send data to ferrybox')        
         self.send_to_ferrybox()
+
         self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
         self.save_logfile_df(folderPath)
-
 
     def continuous_sample_finished(self):
         print ('inside continuous_sample_finished')
@@ -984,13 +985,7 @@ class Panel(QtGui.QWidget):
                         
             if message == QtGui.QMessageBox.No:
                 return
-
-        if self.mode == 'Calibration':
-            folderPath = '/home/pi/pHox/data_calibr/'            
-            self.StatusBox.setText('Ongoing calibration measurement')  
-        else: 
-            folderPath = self.instrument.folderPath         
-            self.StatusBox.setText('Ongoing measurement')
+      
 
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
@@ -1108,10 +1103,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(False)
         time.sleep(2)
 
-        '''self.append_logbox('Save spectrum data to file')
-        self.sample_steps[7].setChecked(True)
-        self.save_spt(folderPath)
-        time.sleep(2)'''
+
 
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
@@ -1130,7 +1122,11 @@ class Panel(QtGui.QWidget):
             "evalAnir"     : [evalAnir],
             "pH_insitu"    : [pH_insitu]})
 
-        '''
+        '''        
+        self.append_logbox('Save spectrum data to file')
+        self.sample_steps[7].setChecked(True)
+        self.save_spt(folderPath)
+        time.sleep(2)
         self.append_logbox('Save evl data to file')
         self.save_evl(folderPath)        
         
@@ -1148,7 +1144,7 @@ class Panel(QtGui.QWidget):
         print ('self.x,self.y,self.intercept,self.slope')          
         print (self.x,self.y,self.intercept,self.slope)        
         time.sleep(17)
-        return (folderpath)
+
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'
