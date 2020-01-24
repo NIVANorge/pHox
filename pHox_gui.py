@@ -824,7 +824,7 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
     def update_T_lab(self):
-        print (update t)
+        print ('update t')
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         vNTC = round(vNTC, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
