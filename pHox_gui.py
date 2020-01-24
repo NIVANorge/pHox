@@ -115,7 +115,7 @@ class Panel(QtGui.QWidget):
         self.timerTemp_info = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(10.e6) # 10 sec     
+        self.timerSpectra_plot.setInterval(5.e3) # 10 sec     
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timerTemp_info.timeout.connect(self.update_T_lab)
@@ -881,8 +881,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds_checked()
 
         self.timerSpectra_plot.start()
-        self.timerTemp_info.start(10000)   
-
+        self.timerTemp_info.start(5.e3)
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
@@ -896,7 +895,7 @@ class Panel(QtGui.QWidget):
             #self.on_deploy_clicked(True)
         if self.args.pco2:
             # change to config file 
-            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.e6) #milliseconds
+            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.e3) #milliseconds
         return
 
     def _autostop(self):
