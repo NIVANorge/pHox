@@ -824,7 +824,7 @@ class Panel(QtGui.QWidget):
 
     def update_T_lab(self):
         Voltage = self.get_Vd(3, self.instrument.vNTCch)
-        Voltage = round(vNTC, prec['vNTC'])
+        Voltage = round(Voltage, prec['vNTC'])
         T_lab= round((
             self.instrument.TempCalCoef[0]*Voltage) + self.instrument.TempCalCoef[1],
              prec['Tdeg'])
