@@ -114,7 +114,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(100000000) # 10 sec
+        self.timerSpectra_plot.setInterval(10.e6) # 10 sec
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -519,25 +519,32 @@ class Panel(QtGui.QWidget):
         print ('inside function update spectra plot')
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
-        else: 
-            datay = self.instrument.spectrom.get_intensities()   
+
+            if self.args.stability:
+                stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
+
+                stabfile_df = pd.DataFrame({
+                "led0" : [datay[self.instrument.wvlPixels[0]]],
+                "led1" : [datay[self.instrument.wvlPixels[1]]],
+                "led2" : [datay[self.instrument.wvlPixels[2]]],
+                "specint": [self.instrument.specIntTime]})
+
+                if os.path.exists(stabfile):
+                    stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
+                else: 
+                    stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
+                    stabfile_df.to_csv(stabfile, index = False, header=True) 
+            time.sleep(1.e-6*self.instrument.specIntTime)
+            self.plotSpc.setData(self.wvls,datay)
+        else:
+            try: 
+                datay = self.instrument.spectrom.get_intensities()   
+            except: 
+                pass
         #print ('update stectra plot',min(datay),max(datay))  
-        if self.args.stability:
-            stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
 
-            stabfile_df = pd.DataFrame({
-            "led0" : [datay[self.instrument.wvlPixels[0]]],
-            "led1" : [datay[self.instrument.wvlPixels[1]]],
-            "led2" : [datay[self.instrument.wvlPixels[2]]],
-            "specint": [self.instrument.specIntTime]})
 
-            if os.path.exists(stabfile):
-                stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
-            else: 
-                stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
-                stabfile_df.to_csv(stabfile, index = False, header=True) 
-
-        self.plotSpc.setData(self.wvls,datay)
+                self.plotSpc.setData(self.wvls,datay)
 
     def save_pCO2_data(self, pH = None):
         self.add_pco2_info()
@@ -669,7 +676,7 @@ class Panel(QtGui.QWidget):
             if text != '':
                 self.instrument.flnmStr = text
             self.instrument.reset_lines()
-            #self.timerSpectra_plot.stop()
+            self.timerSpectra_plot.stop()
             self.sample_thread = Sample_thread(self,self.args)
             self.sample_thread.start()
             self.sample_thread.finished.connect(self.single_sample_finished)
@@ -827,12 +834,10 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
         self.btn_leds_checked()
 
-        self.timerSpectra_plot.start(1000)
+        self.timerSpectra_plot.start()
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
-        self.update_spectra_plot()  
-
         if not self.args.debug:
             print ('Starting continuous mode ')
             self.textBox.setText('Starting continuous mode ')
@@ -1095,10 +1100,10 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(False)
         time.sleep(2)
 
-        self.append_logbox('Save spectrum data to file')
+        '''self.append_logbox('Save spectrum data to file')
         self.sample_steps[7].setChecked(True)
         self.save_spt(folderPath)
-        time.sleep(2)
+        time.sleep(2)'''
 
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
