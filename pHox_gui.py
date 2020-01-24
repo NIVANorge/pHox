@@ -401,25 +401,7 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
 
-    def btn_calibr_clicked(self):
-        message = QtGui.QMessageBox.question(self,
-                    "Crazy important message!!!",
-                    "Switch the valve to calibration mode",
-                    QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        if message == QtGui.QMessageBox.No:
-            return
 
-        self.btn_cont_meas.setEnabled(False)
-        self.btn_single_meas.setEnabled(False) 
-        # disable all btns in manual tab 
-
-        self.mode = 'Calibration'
-
-        self.instrument.reset_lines()
-        self.timerSpectra_plot.stop()
-        self.sample_thread = Sample_thread(self,self.args)
-        self.sample_thread.start()
-        self.sample_thread.finished.connect(self.single_sample_finished)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -662,6 +644,31 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True) 
                 self.btn_calibr.setEnabled(True) 
 
+
+    def btn_calibr_clicked(self):
+        message = QtGui.QMessageBox.question(self,
+                    "Crazy important message!!!",
+                    "Switch the valve to calibration mode",
+                    QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        if message == QtGui.QMessageBox.No:
+            return
+
+        self.btn_cont_meas.setEnabled(False)
+        self.btn_single_meas.setEnabled(False) 
+        # disable all btns in manual tab 
+
+        self.mode = 'Calibration'
+
+        self.instrument.reset_lines()
+        self.timerSpectra_plot.stop()
+
+        self.sample()
+        self.single_sample_finished()
+
+        #self.sample_thread = Sample_thread(self,self.args)
+        #self.sample_thread.start()
+        #self.sample_thread.finished.connect(self.single_sample_finished)
+
     def btn_single_meas_clicked(self):
 
         message = QtGui.QMessageBox.question(self,
@@ -672,7 +679,6 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setChecked(False)             
             return
 
-  
         self.get_filename()        
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
                                         self.instrument.flnmStr)
@@ -697,6 +703,22 @@ class Panel(QtGui.QWidget):
             #self.sample_thread.finished.connect(self.single_sample_finished)
         else: 
             self.btn_single_meas.setChecked(False) 
+
+    def continuous_mode_timer_finished(self):
+        print ('start continuous mode')
+        self.append_logbox('Inside continuous_mode...')
+
+        self.instrument.reset_lines()
+        self.timerSpectra_plot.stop()
+        self.sample_thread = Sample_thread(self,self.args)
+        self.continous_mode_is_on = True
+
+        self.sample()
+        self.continuous_sample_finished() 
+
+        #self.sample_thread.start()
+        #self.sample_thread.finished.connect(self.continuous_sample_finished)
+
 
     def unclick_enable(self,btns):
         for btn in btns:
@@ -777,7 +799,6 @@ class Panel(QtGui.QWidget):
                         "Are you sure??????",
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
 
-
     def continuous_sample_finished(self):
 
         print ('inside continuous_sample_finished')
@@ -802,7 +823,6 @@ class Panel(QtGui.QWidget):
         else: 
             nextSamplename = self.get_next_sample()
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
-
 
     def update_infotable(self):
         if not self.args.co3:
@@ -839,16 +859,7 @@ class Panel(QtGui.QWidget):
             V += self.instrument.adc.read_voltage(ch)
         return V/nAver
 
-    def continuous_mode_timer_finished(self):
-        print ('start continuous mode')
-        self.append_logbox('Inside continuous_mode...')
 
-        self.instrument.reset_lines()
-        self.timerSpectra_plot.stop()
-        self.sample_thread = Sample_thread(self,self.args)
-        self.continous_mode_is_on = True
-        self.sample_thread.start()
-        self.sample_thread.finished.connect(self.continuous_sample_finished)
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
@@ -1007,8 +1018,15 @@ class Panel(QtGui.QWidget):
                                        "TempProbe_id","Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
+    def sample(self):
+        QApplication.processEvents()         
+        self.start_pump_adjustleds()
+        QApplication.processEvents() 
+        self.valve_and_blank()
+        QApplication.processEvents()         
+        self.inject_measure()
 
-    def sample(self):  
+    def start_pump_adjustleds(self):
         print ('pH_sample, mode is {}'.format(self.mode))
 
         self.StatusBox.setText('Ongoing measurement')
@@ -1037,6 +1055,7 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
+    def valve_and_blank(self):
         self.append_logbox('Closing valve ...')
         self.instrument.set_Valve(True)
         time.sleep(self.instrument.waitT)
@@ -1054,6 +1073,7 @@ class Panel(QtGui.QWidget):
         time.sleep(1)
         self.spCounts_df['blank'] = blank 
 
+    def inject_measure(self): 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
             self.update_spectra_plot() 
