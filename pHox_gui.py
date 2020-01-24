@@ -827,7 +827,9 @@ class Panel(QtGui.QWidget):
         print ('update t')
         vNTC = self.get_Vd(3, self.instrument.vNTCch)
         vNTC = round(vNTC, prec['vNTC'])
-        Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
+        Tdeg = round((
+            self.instrument.TempCalCoef[0]*vNTC) + self.instrument.TempCalCoef[1],
+             prec['Tdeg'])
         T_lab = str(Tdeg)
         self.fill_table_pH(1,1, T_lab)        
 
