@@ -519,7 +519,7 @@ class Panel(QtGui.QWidget):
         print ('inside function update spectra plot')
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
-            time.sleep(self.instrument.specIntTime*1e.-6)
+            time.sleep(self.instrument.specIntTime*1.e-6)
             print ('update stectra plot',min(datay),max(datay))  
             self.plotSpc.setData(self.wvls,datay)            
         else:
