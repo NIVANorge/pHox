@@ -107,7 +107,7 @@ QGroupBox::title {
 QLabel {font-size: 10pt;}
 
 QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
-  color: #32414B;
+  color: #11161a;
 }
 
 QCheckBox::indicator::unchecked  {
