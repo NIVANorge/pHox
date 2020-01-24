@@ -669,8 +669,8 @@ class Panel(QtGui.QWidget):
                     "Did you pump to clean?",
                     QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
         if message == QtGui.QMessageBox.No:
+            self.btn_single_meas.setChecked(False)             
             return
-
 
         # dialog sample name  
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
@@ -694,6 +694,8 @@ class Panel(QtGui.QWidget):
             #self.sample_thread = Sample_thread(self,self.args)
             #self.sample_thread.start()
             #self.sample_thread.finished.connect(self.single_sample_finished)
+        else: 
+            self.btn_single_meas.setChecked(False) 
 
     def unclick_enable(self,btns):
         for btn in btns:
