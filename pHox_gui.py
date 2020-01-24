@@ -647,7 +647,6 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True) 
                 self.btn_calibr.setEnabled(True) 
 
-
     def btn_calibr_clicked(self):
         message = QtGui.QMessageBox.question(self,
                     "Crazy important message!!!",
@@ -663,7 +662,6 @@ class Panel(QtGui.QWidget):
         self.mode = 'Calibration'
 
         self.instrument.reset_lines()
-
 
         self.sample()
         self.single_sample_finished()
@@ -785,7 +783,6 @@ class Panel(QtGui.QWidget):
         self.save_results()
         self.update_pH_plot()        
         self.update_infotable()
-
 
         self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
         [step.setChecked(False) for step in self.sample_steps]
@@ -1031,9 +1028,11 @@ class Panel(QtGui.QWidget):
 
     def sample(self):
         self.timerSpectra_plot.stop()        
-        QtGui.QApplication.processEvents()         
+        QtGui.QApplication.processEvents() 
+
         self.start_pump_adjustleds()
         QtGui.QApplication.processEvents() 
+        
         self.valve_and_blank()
         QtGui.QApplication.processEvents()
 
@@ -1046,11 +1045,15 @@ class Panel(QtGui.QWidget):
 
             spAbs,vNTC = self.inject_measure(n_inj)
 
-            self.append_logbox('Calculate init pH')              
+            self.append_logbox('Calculate init pH') 
+            QtGui.QApplication.processEvents()  
+
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
                                 spAbs,vNTC,dilution,vol_injected)
 
         self.append_logbox('Opening the valve ...')
+        QtGui.QApplication.processEvents()
+
         self.instrument.set_Valve(False)
         self.timerSpectra_plot.start() 
 
