@@ -412,14 +412,14 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
         # disable all btns in manual tab 
-        #self.get_filename()
+
         self.mode = 'Calibration'
 
         self.instrument.reset_lines()
         self.timerSpectra_plot.stop()
         self.sample_thread = Sample_thread(self,self.args)
         self.sample_thread.start()
-        self.sample_thread.finished.connect(self.calibration_sample_finished)
+        self.sample_thread.finished.connect(self.single_sample_finished)
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
@@ -679,7 +679,7 @@ class Panel(QtGui.QWidget):
             self.timerSpectra_plot.stop()
             self.sample()
             self.single_sample_finished()
-            
+
             #self.sample_thread = Sample_thread(self,self.args)
             #self.sample_thread.start()
             #self.sample_thread.finished.connect(self.single_sample_finished)
@@ -689,65 +689,32 @@ class Panel(QtGui.QWidget):
             btn.setChecked(False)    
             btn.setEnabled(True)            
 
-    def calibration_sample_finished(self):
-        print ('calibration sample finished inside func')     
-        self.StatusBox.clear()  
-        self.update_infotable()
-        self.save_results()
-        print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
-        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
-        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
+    def get_final_pH(self):
+        # get final pH
+        p = self.instrument.pH_eval(self.evalPar_df)
+        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
 
-        print ('self.btn_single_meas.setChecked(False)')
+        self.pH_log_row = pd.DataFrame({
+            "Time"         : [self.instrument.timeStamp[0:16]],
+            "Lon"          : [fbox['longitude']], 
+            "Lat"          : [fbox['latitude']] ,
+            "fb_temp"      : [fbox['temperature']], 
+            "fb_sal"       : [fbox['salinity']],         
+            "SHIP"         : [self.instrument.ship_code],
+            "pH_lab"       : [pH_lab], 
+            "T_lab"        : [T_lab],
+            "perturbation" : [perturbation],
+            "evalAnir"     : [evalAnir],
+            "pH_insitu"    : [pH_insitu]})
 
-        self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
-
-        print ('[step.setChecked(False) for step in self.sample_steps]')
-        [step.setChecked(False) for step in self.sample_steps]
-
-
-        print ('start spectra plot timers')
-
-        res = QtGui.QMessageBox.question(self,
-                      "Crazy important message",
-                      "Turn back the valve to Ferrybox mode",
-                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        #if res == QtGui.QMessageBox.Yes:
-
-        res = QtGui.QMessageBox.question(self,
-                      "Crazy important message",
-                      "Are you sure??????",
-                      QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        #if res == QtGui.QMessageBox.Yes:
-        #    continue         
-
-    def single_sample_finished(self,f):
-        print ('got from thread value', f)
-        print ('single sample finished inside func')     
-        self.StatusBox.clear()  
-        self.update_infotable()
-
-        self.save_results(f)
-
-        print ('self.plotwidget2.plot(self.x,self.y, pen=None, symbol=')          
-        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
-        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
-
-        self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
-
-        print ('[step.setChecked(False) for step in self.sample_steps]')
-
-        [step.setChecked(False) for step in self.sample_steps]
-        print ("self.btn_cont_meas.setEnabled(True)")
-
-        #print ('start spectra plot timers')
-        #self.timerSpectra_plot2 = QtCore.QTimer()
-        #self.timerSpectra_plot2.timeout.connect(self.update_spectra_plot)
-        #self.timerSpectra_plot2.start(1.e6)
-        # enable all btns in manual tab  
+        self.append_logbox('Single measurement is done...')
+        #self.sample_steps[8].setChecked(True)
+        print ('self.x,self.y,self.intercept,self.slope')          
+        print (self.x,self.y,self.intercept,self.slope)        
+        time.sleep(17)
 
     def save_results(self):
-
+    
         if self.mode == 'Calibration':
             folderPath = '/home/pi/pHox/data_calibr/'            
         else: 
@@ -765,24 +732,63 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
         self.save_logfile_df(folderPath)
+  
+    def update_pH_plot(self):
+        self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o')  
+        self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
+
+    def single_sample_finished(self):
+
+        print ('single sample finished inside func')    
+
+        self.get_final_pH()
+        self.StatusBox.setText('Measurement is finished')       
+
+        self.save_results()
+        self.update_pH_plot()        
+        self.update_infotable()
+
+
+        self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
+        [step.setChecked(False) for step in self.sample_steps]
+
+        if self.mode == 'Calibration':
+            res = QtGui.QMessageBox.question(self,
+                        "Crazy important message",
+                        "Turn back the valve to Ferrybox mode",
+                        QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+
+            res = QtGui.QMessageBox.question(self,
+                        "Crazy important message",
+                        "Are you sure??????",
+                        QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+
 
     def continuous_sample_finished(self):
+
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
+
+        self.get_final_pH() 
+        self.StatusBox.setText('Measurement is finished') 
+
         self.save_results()
-        self.StatusBox.setText('Measurement is finished')
-        self.update_infotable()
+        self.update_pH_plot()
+        self.update_infotable()   
+
         [step.setChecked(False) for step in self.sample_steps]
+
         print ('start timer spectra plot')
         self.timerSpectra_plot.start()
         if not self.btn_cont_meas.isChecked():
             self.StatusBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
+            self.btn_calibr.setEnabled(True)
             # enable all btns in manual tab 
         else: 
             nextSamplename = self.get_next_sample()
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
-            #self.StatusBox.setText('Waiting for new sample')
+
 
     def update_infotable(self):
         if not self.args.co3:
@@ -976,6 +982,18 @@ class Panel(QtGui.QWidget):
   
         #self.append_logbox('Autoadjust LEDS')
 
+    def create_new_df(self):
+        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
+        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
+
+        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
+                                                "e2", "e3", "vNTC",
+                                        'salinity', "A1", "A2","Tdeg",  
+                                       "S_corr", "Anir",'Vol_injected',
+                                       "TempProbe_id","Probe_iscalibr",
+                                        'TempCalCoef1','TempCalCoef2','DYE'])
+
+
     def sample(self):  
         print ('pH_sample, mode is {}'.format(self.mode))
 
@@ -987,8 +1005,7 @@ class Panel(QtGui.QWidget):
                 return               
             self.get_filename() 
 
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
-        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
+        self.create_new_df()
 
         self.append_logbox('Start new measurement')
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
@@ -1022,13 +1039,6 @@ class Panel(QtGui.QWidget):
                     self.instrument.specAvScans,correct=True)    
         time.sleep(1)
         self.spCounts_df['blank'] = blank 
-
-        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
-                                                "e2", "e3", "vNTC",
-                                        'salinity', "A1", "A2","Tdeg",  
-                                       "S_corr", "Anir",'Vol_injected',
-                                       "TempProbe_id","Probe_iscalibr",
-                                        'TempCalCoef1','TempCalCoef2','DYE'])
 
         # create dataframe and store 
         for n_inj in range(self.instrument.ncycles):
@@ -1085,58 +1095,16 @@ class Panel(QtGui.QWidget):
                 time.sleep(10)
                 spAbs = self.instrument.spectrom.get_intensities(
                         self.instrument.specAvScans,correct=True)
-                self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
-                self.append_logbox('Calculate init pH')     
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
+
+            self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
+            self.append_logbox('Calculate init pH')  
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs,vNTC,dilution,vol_injected)
 
         #self.plotAbs.setData(self.wvls,spAbs)
 
         self.append_logbox('Opening the valve ...')
         self.instrument.set_Valve(False)
         time.sleep(2)
-
-
-
-        # get final pH
-        p = self.instrument.pH_eval(self.evalPar_df)
-        pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
-
-        self.pH_log_row = pd.DataFrame({
-            "Time"         : [self.instrument.timeStamp[0:16]],
-            "Lon"          : [fbox['longitude']], 
-            "Lat"          : [fbox['latitude']] ,
-            "fb_temp"      : [fbox['temperature']], 
-            "fb_sal"       : [fbox['salinity']],         
-            "SHIP"         : [self.instrument.ship_code],
-            "pH_lab"       : [pH_lab], 
-            "T_lab"        : [T_lab],
-            "perturbation" : [perturbation],
-            "evalAnir"     : [evalAnir],
-            "pH_insitu"    : [pH_insitu]})
-
-        '''        
-        self.append_logbox('Save spectrum data to file')
-        self.sample_steps[7].setChecked(True)
-        self.save_spt(folderPath)
-        time.sleep(2)
-        self.append_logbox('Save evl data to file')
-        self.save_evl(folderPath)        
-        
-        self.append_logbox('Send data to ferrybox')        
-        self.send_to_ferrybox()
-        time.sleep(2)
-
-        self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
-        self.save_logfile_df(folderPath)
-        time.sleep(2)'''
-
-
-        self.append_logbox('Single measurement is done...')
-        #self.sample_steps[8].setChecked(True)
-        print ('self.x,self.y,self.intercept,self.slope')          
-        print (self.x,self.y,self.intercept,self.slope)        
-        time.sleep(17)
-
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'
