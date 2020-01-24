@@ -672,7 +672,8 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setChecked(False)             
             return
 
-        # dialog sample name  
+  
+        self.get_filename()        
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
                                         self.instrument.flnmStr)
         if ok:
@@ -683,7 +684,7 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(False) 
             self.btn_calibr.setEnabled(False) 
             # disable all btns in manual tab 
-            self.get_filename()
+
             self.mode = 'Single'
 
             self.instrument.reset_lines()
