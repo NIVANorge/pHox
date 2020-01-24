@@ -663,6 +663,14 @@ class Panel(QtGui.QWidget):
                 self.btn_calibr.setEnabled(True) 
 
     def btn_single_meas_clicked(self):
+
+        message = QtGui.QMessageBox.question(self,
+                    "important message!!!",
+                    "Did you pump to clean?",
+                    QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
+        if message == QtGui.QMessageBox.No:
+            return
+
         self.btn_cont_meas.setEnabled(False)
         self.btn_single_meas.setEnabled(False) 
         self.btn_calibr.setEnabled(False) 
