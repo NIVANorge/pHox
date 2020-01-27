@@ -338,7 +338,7 @@ class CO3_instrument(Common_instrument):
                 adjusted = True 
 
         print (adjusted)
-        return adjusted 
+        return adjusted,pixelLevel 
 
     def calc_CO3(self,absSp, vNTC,dilution,vol_injected):
         

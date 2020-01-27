@@ -1077,9 +1077,12 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        adj = self.instrument.auto_adjust()  
+        adj,pixelLevel = self.instrument.auto_adjust()  
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
+            self.plotwidget1.plot(self.instrument.wvl2,pixelLevel, pen=None, symbol='+') 
+
+
 
         QtGui.QApplication.processEvents() 
 
