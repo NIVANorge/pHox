@@ -324,6 +324,7 @@ class Panel(QtGui.QWidget):
         self.btn_wpump = self.create_button('Water pump',True)
         self.btn_calibr = self.create_button('Make calibration',True)
 
+
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_calibr, 0, 1)
 
@@ -334,13 +335,19 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
-        #btn_grid.addWidget(self.btn_t_dark , 4, 1)
+
 
         # Define connections Button clicked - Result 
         self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
+        
+        if self.args.co3 :
+            self.btn_lightsource = self.create_button('light source',True)
+            btn_grid.addWidget(self.btn_lightsource , 4, 1)
+            self.btn_lightsource.connect(self.btn_lightsource_clicked)
+
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
         self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
         #self.btn_t_dark.clicked.connect(self.on_dark_clicked)
@@ -405,6 +412,14 @@ class Panel(QtGui.QWidget):
         else: 
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
+
+    def btn_lightsource_clicked(self):
+        if self.btn_lightsource.isChecked():
+            self.instrument.turn_on_relay(
+                self.instrument.light_slot)
+        else: 
+            self.instrument.turn_off_relay(
+                self.instrument.light_slot)        
 
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
