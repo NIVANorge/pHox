@@ -1351,7 +1351,7 @@ class boxUI(QtGui.QMainWindow):
 
         if result == QtGui.QMessageBox.Yes:
             if self.args.co3:
-                self.main_widget.instrument.turn_off_relay(self.instrument.light_slot)
+                self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
             if self.args.seabreeze:
                 self.main_widget.instrument.spectrom.spec.close()          
 
