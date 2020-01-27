@@ -1032,6 +1032,12 @@ class Panel(QtGui.QWidget):
         return
 
     def co3_sample(self):   
+
+        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
+                                     "log_beta1_e2", "vNTC", "S", 
+                                     "A1", "A2", "R", "Tdeg", 
+                                     "Vinj", " S_corr"])   
+                                          
         QtGui.QApplication.processEvents()   
         if self.mode == 'Calibration': 
             folderPath = '/home/pi/pHox/data_co3_calibr/'
@@ -1067,16 +1073,16 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        self.instrument.auto_adjust()  
-        self.append_logbox('Finished Autoadjust LEDS')
+        adj = self.instrument.auto_adjust()  
+        if adj: 
+            self.append_logbox('Finished Autoadjust LEDS')
 
+        QtGui.QApplication.processEvents() 
 
-        #QtGui.QApplication.processEvents() 
+        self.valve_and_blank()
+        QtGui.QApplication.processEvents()   
 
-        #self.valve_and_blank()
-        #QtGui.QApplication.processEvents()   
-
-        '''for n_inj in range(self.instrument.ncycles):  
+        for n_inj in range(self.instrument.ncycles):  
             vol_injected = round(
                 self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
                  prec['vol_injected'])
@@ -1085,17 +1091,23 @@ class Panel(QtGui.QWidget):
 
             spAbs,vNTC = self.inject_measure(n_inj)
 
-            self.append_logbox('Calculate init pH') 
+            self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
 
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(
                                 spAbs,vNTC,dilution,vol_injected)
 
         self.append_logbox('Opening the valve ...')
         QtGui.QApplication.processEvents()
-
         self.instrument.set_Valve(False)
         self.timerSpectra_plot.start()   
+
+        self.append_logbox('Save spectrum data to file')
+        #self.sample_steps[7].setChecked(True)
+        self.save_spt(folderPath)
+
+        self.append_logbox('Save evl data to file')
+        self.save_evl(folderPath)          
         #self.append_logbox('Autoadjust LEDS')'''
 
     def create_new_df(self):

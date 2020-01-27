@@ -327,6 +327,7 @@ class CO3_instrument(Common_instrument):
             print ('max - 10%',maxLevel - (maxLevel * 0.1))
             print ('integration time')
             print (sptIt)
+            #dd =  (THR*LED)/pixelLevel - LED     
             if pixelLevel < maxLevel/2:
                 sptIt = sptIt + 100                
                 self.spectrom.set_integration_time(sptIt)
@@ -335,10 +336,11 @@ class CO3_instrument(Common_instrument):
                 self.spectrom.set_integration_time(sptIt)            
             else: 
                 adjusted = True 
+
         print (adjusted)
+        return adjusted 
 
-
-    def calc_CO3(self,absSp, vNTC,dilution):
+    def calc_CO3(self,absSp, vNTC,dilution,vol_injected):
         
         vNTC = round(self.vNTCch, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
@@ -358,12 +360,10 @@ class CO3_instrument(Common_instrument):
         CO3 = dilution * 1.e6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
         print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
-        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
-                                     "log_beta1_e2", "vNTC", "S", 
-                                     "A1", "A2", "R", "Tdeg", 
-                                     "Vinj", "fcS"])
-
-        #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
+        return  [CO3, e1, e2e3, 
+                log_beta1_e2, vNTC, self.fb_data['salinity'],
+                A1,A2,R,Tdeg,
+                vol_injected, S_corr]
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
