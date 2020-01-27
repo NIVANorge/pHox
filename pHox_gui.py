@@ -1090,6 +1090,7 @@ class Panel(QtGui.QWidget):
         QtGui.QApplication.processEvents()   
 
         for n_inj in range(self.instrument.ncycles):  
+            print ('n_inj in co3 sample')
             vol_injected = round(
                 self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
                  prec['vol_injected'])
