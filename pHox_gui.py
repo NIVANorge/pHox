@@ -130,13 +130,16 @@ class Panel(QtGui.QWidget):
         self.plotwdigets_groupbox = QtGui.QGroupBox()
 
         self.plotwidget1 = pg.PlotWidget()
-        self.plotwidget1.setYRange(1000,16200)
+        if not self.args.co3:
+            self.plotwidget1.setYRange(1000,16200)
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
         self.plotwidget1.settTtle="LEDs intensities"
 
         self.plotwidget2 = pg.PlotWidget()
         #self.plotwidget2.setYRange(0,1.3)
+        if self.args.co3: 
+            self.plotwidget2.setXRange(200,300)    
         #self.plotwidget2.setXRange(410,610)
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground('#19232D')     
