@@ -324,11 +324,12 @@ class CO3_instrument(Common_instrument):
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[1])
             print ('new level')
             print (pixelLevel)
+            print ('max - 10%',maxLevel - (maxLevel * 0.1))
             print ('integration time')
             print (sptIt)
             if pixelLevel < maxLevel/2:
                 self.spectrom.set_integration_time(sptIt)
-            elif pixelLevel < maxLevel - (maxLevel * 0.1):
+            elif pixelLevel > maxLevel - (maxLevel * 0.1):
                 ptIt = sptIt - 100
                 self.spectrom.set_integration_time(sptIt)            
             else: 
