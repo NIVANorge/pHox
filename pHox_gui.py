@@ -1290,7 +1290,7 @@ class boxUI(QtGui.QMainWindow):
             if self.args.seabreeze:
                 self.main_widget.instrument.spectrom.spec.close()          
             if self.args.co3:
-                self.instrument.turn_off_relay(self.instrument.light_slot)
+                self.main_widget.instrument.turn_off_relay(self.instrument.light_slot)
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():
