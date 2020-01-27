@@ -1285,12 +1285,13 @@ class boxUI(QtGui.QMainWindow):
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
-            print ('timer is stopped')
-            self.main_widget.timer_contin_mode.stop()
+
             if self.args.seabreeze:
                 self.main_widget.instrument.spectrom.spec.close()          
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(self.instrument.light_slot)
+            print ('timer is stopped')
+            self.main_widget.timer_contin_mode.stop()                
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():
