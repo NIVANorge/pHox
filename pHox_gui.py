@@ -292,7 +292,7 @@ class Panel(QtGui.QWidget):
         self.specIntTime_combo = QtGui.QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100,5000,100)]
    
-        index = self.dye_combo.findText(str(self.instrument.specIntTime), 
+        index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), 
                                 QtCore.Qt.MatchFixedString)
         print (str(self.instrument.specIntTime))
         print (index)
