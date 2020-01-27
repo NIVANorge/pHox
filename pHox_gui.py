@@ -1081,7 +1081,7 @@ class Panel(QtGui.QWidget):
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
-
+            self.update_spectra_plot()
         QtGui.QApplication.processEvents() 
 
         self.valve_and_blank()
