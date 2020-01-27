@@ -1094,7 +1094,7 @@ class Panel(QtGui.QWidget):
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
 
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(
+            self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(
                                 spAbs,vNTC,dilution,vol_injected)
 
         self.append_logbox('Opening the valve ...')
