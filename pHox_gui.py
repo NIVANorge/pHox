@@ -1258,6 +1258,7 @@ class boxUI(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.showMaximized()        
         self.main_widget.autorun()
+
         
     def closeEvent(self,event):
         result = QtGui.QMessageBox.question(self,
@@ -1271,7 +1272,8 @@ class boxUI(QtGui.QMainWindow):
             self.main_widget.timer_contin_mode.stop()
             if self.args.seabreeze:
                 self.main_widget.instrument.spectrom.spec.close()          
-            
+            if self.args.co3:
+                self.instrument.turn_off_relay(self.instrument.light_slot)
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():

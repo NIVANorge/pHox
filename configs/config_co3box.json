@@ -28,7 +28,7 @@
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 500,
+        "Spectro_Integration_time": 1000,
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
         "comment Deployment_mode": "#modes can be Ferry or Standalone "
