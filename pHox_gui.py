@@ -875,11 +875,11 @@ class Panel(QtGui.QWidget):
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
         self.textBox.setText('Turn on LEDs')
-        #if not self.args.co3:
-        self.set_LEDs(True)
-        self.update_LEDs()
-        self.btn_leds.setChecked(True)
-        self.btn_leds_checked()
+        if not self.args.co3:
+            self.set_LEDs(True)
+            self.update_LEDs()
+            self.btn_leds.setChecked(True)
+            self.btn_leds_checked()
 
         self.timerSpectra_plot.start()
         self.timerTemp_info.start(1.e3)
