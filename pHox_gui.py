@@ -290,6 +290,7 @@ class Panel(QtGui.QWidget):
    
         index = self.dye_combo.findText(str(self.instrument.specIntTime), 
                                 QtCore.Qt.MatchFixedString)
+        print (index)
         if index >= 0: 
             self.specIntTime_combo.setCurrentIndex(index)
             
@@ -430,10 +431,10 @@ class Panel(QtGui.QWidget):
                 self.instrument.wpump_slot)
 
     def btn_lightsource_clicked(self):
-        if self.btn_lightsource.isChecked():
-            print (self.instrument.light_slot)
-            print ('self.btn_lightsource.isChecked()')
-            print (self.btn_lightsource.isChecked())
+        print ('btn_lightsource_clicked')
+        print (self.btn_lightsource.isChecked())
+
+        if self.btn_lightsource.isChecked():  
             self.instrument.turn_on_relay(
                 self.instrument.light_slot)
         else: 
