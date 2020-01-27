@@ -875,7 +875,10 @@ class Panel(QtGui.QWidget):
     def _autostart(self):
         self.append_logbox('Inside _autostart...')
         self.textBox.setText('Turn on LEDs')
-        if not self.args.co3:
+        if self.args.co3:
+            print ('turn on light source')
+            self.instrument.turn_on_relay(self.instrument['LIGHT_SLOT'])       
+        elif not self.args.co3:
             self.set_LEDs(True)
             self.update_LEDs()
             self.btn_leds.setChecked(True)
@@ -1254,7 +1257,7 @@ class boxUI(QtGui.QMainWindow):
             udp.server.join()
             if not udp.server.is_alive():
                 print ('UDP server closed')
-            udp.server.join()       
+                udp.server.join()       
             self.main_widget.close()
             QtGui.QApplication.quit()          
             event.accept()
