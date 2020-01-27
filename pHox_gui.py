@@ -76,7 +76,6 @@ class Panel(QtGui.QWidget):
         self.make_tab1()
         self.make_tab_log()      
 
-
         self.make_tab_manual()
         self.make_tab_config()   
 
@@ -243,7 +242,8 @@ class Panel(QtGui.QWidget):
 
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem('TB')
-        self.dye_combo.addItem('MCP')        
+        self.dye_combo.addItem('MCP')       
+         
         index = self.dye_combo.findText(self.instrument.dye, 
                                 QtCore.Qt.MatchFixedString)
         if index >= 0: 
@@ -263,15 +263,15 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(0,0,'DYE type')
         self.tableWidget.setCellWidget(0,1,self.dye_combo)
+        if not self.args.co3: 
+            self.fill_table_config(1,0,'NIR:')
+            self.fill_table_config(1,1,str(self.instrument.NIR))
 
-        self.fill_table_config(1,0,'NIR:')
-        self.fill_table_config(1,1,str(self.instrument.NIR))
+            self.fill_table_config(2,0,'HI-')
+            self.fill_table_config(2,1,str(self.instrument.HI))
 
-        self.fill_table_config(2,0,'HI-')
-        self.fill_table_config(2,1,str(self.instrument.HI))
-
-        self.fill_table_config(3,0,'I2-')
-        self.fill_table_config(3,1, str(self.instrument.I2))
+            self.fill_table_config(3,0,'I2-')
+            self.fill_table_config(3,1, str(self.instrument.I2))
 
         self.fill_table_config(4,0,'Temp Sensor is calibrated:')
         self.fill_table_config(4,1,str(self.instrument.temp_iscalibrated))        

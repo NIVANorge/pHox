@@ -296,6 +296,7 @@ class CO3_instrument(Common_instrument):
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
+        self.dye = conf["Default_DYE"] 
 
         self.folderPath ='/home/pi/pHox/data_co3/' # relative path
         if not os.path.exists(self.folderPath):

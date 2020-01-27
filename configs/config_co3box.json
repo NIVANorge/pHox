@@ -96,7 +96,7 @@
         "WL_1": 234,
         "WL_2": 250,
         "LIGHT_SLOT": 22,
-        "Default_DYE": "MCP"    
+        "Default_DYE": "co3dye"    
     },
     "TempProbes": {
         "Probe_1": {
