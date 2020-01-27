@@ -279,10 +279,22 @@ class Panel(QtGui.QWidget):
         self.fill_table_config(5,0,'pH sampling interval (min)')
 
         self.fill_table_config(6,0,'Spectroph intergration time')
-        self.fill_table_config(6,1,str(self.instrument.specIntTime))
 
         self.fill_table_config(7,0,'Ship')     
         self.fill_table_config(7,1,self.instrument.ship_code)
+
+
+
+        self.specIntTime_combo = QtGui.QComboBox()
+        [self.specIntTime_combo.addItem(str(n)) for n in range(100,5000,100)]
+   
+        index = self.dye_combo.findText(str(self.instrument.specIntTime), 
+                                QtCore.Qt.MatchFixedString)
+        if index >= 0: 
+            self.specIntTime_combo.setCurrentIndex(index)
+            
+        self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
+
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
@@ -308,6 +320,10 @@ class Panel(QtGui.QWidget):
         print ('value chaged',ind)
         minutes = int(self.samplingInt_combo.currentText())
         self.instrument.samplingInterval = int(minutes)*60
+
+    def specIntTime_combo_chngd(self,ind):
+        new_int_time = int(self.specIntTime_combo.currentText())
+        self.instrument.spectrom.set_integration_time(new_int_time)
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -504,6 +520,7 @@ class Panel(QtGui.QWidget):
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
         self.update_spectra_plot()
+
 
     def set_LEDs(self, state):
         for i in range(0,3):
