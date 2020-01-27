@@ -1274,7 +1274,10 @@ class Panel(QtGui.QWidget):
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + self.instrument.flnmStr +'.evl'
-        self.evalPar_df.to_csv(flnm, index = False, header=True) 
+        if self.args.co3:
+            self.CO3_eval.to_csv(flnm, index = False, header=True) 
+        else:
+            self.evalPar_df.to_csv(flnm, index = False, header=True) 
 
     def save_spt(self,folderPath):
         sptpath = folderPath + 'spt/'
