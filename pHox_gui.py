@@ -1101,6 +1101,9 @@ class Panel(QtGui.QWidget):
         QtGui.QApplication.processEvents()
         self.instrument.set_Valve(False)
         self.timerSpectra_plot.start()   
+        self.unclick_enable([self.btn_single_meas,
+        self.btn_calibr,self.btn_cont_meas])
+        [step.setChecked(False) for step in self.sample_steps]
 
         self.append_logbox('Save spectrum data to file')
         #self.sample_steps[7].setChecked(True)
@@ -1109,6 +1112,8 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Save evl data to file')
         self.save_evl(folderPath)          
         #self.append_logbox('Autoadjust LEDS')'''
+
+
 
     def create_new_df(self):
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
