@@ -320,8 +320,12 @@ class CO3_instrument(Common_instrument):
         adjusted = False 
 
         while adjusted == False: 
-
+            QtGui.QApplication.processEvents()  
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[1])
+            print ('new level')
+            print (pixelLevel)
+            print ('integration time')
+            print (sptIt)
             if pixelLevel < maxLevel/2:
                 self.spectrom.set_integration_time(sptIt)
             elif pixelLevel < maxLevel - (maxLevel * 0.1):
