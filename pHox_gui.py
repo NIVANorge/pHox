@@ -290,6 +290,7 @@ class Panel(QtGui.QWidget):
    
         index = self.dye_combo.findText(str(self.instrument.specIntTime), 
                                 QtCore.Qt.MatchFixedString)
+        print (str(self.instrument.specIntTime))
         print (index)
         if index >= 0: 
             self.specIntTime_combo.setCurrentIndex(index)

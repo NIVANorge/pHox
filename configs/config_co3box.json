@@ -96,7 +96,8 @@
         "WL_1": 234,
         "WL_2": 250,
         "LIGHT_SLOT": 5,
-        "Default_DYE": "co3dye"    
+        "comment_co3": "# Pb_perchlor or Pb_chlor",
+        "Default_DYE": "Pb_perchlor"    
     },
     "TempProbes": {
         "Probe_1": {
