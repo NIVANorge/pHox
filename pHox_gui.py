@@ -70,14 +70,15 @@ class Panel(QtGui.QWidget):
         # Add tabs
         self.tabs.addTab(self.tab1,       "Home")  
         self.tabs.addTab(self.tab_log,    "Log") 
+        self.tabs.addTab(self.tab_manual, "Manual")
+        self.tabs.addTab(self.tab_config, "Config")         
+
         self.make_tab1()
         self.make_tab_log()      
 
-        if not self.args.co3:
-            self.tabs.addTab(self.tab_manual, "Manual")
-            self.tabs.addTab(self.tab_config, "Config") 
-            self.make_tab_manual()
-            self.make_tab_config()   
+
+        self.make_tab_manual()
+        self.make_tab_config()   
 
         self.make_plotwidgets()
 
