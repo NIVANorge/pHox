@@ -877,7 +877,7 @@ class Panel(QtGui.QWidget):
         self.textBox.setText('Turn on LEDs')
         if self.args.co3:
             print ('turn on light source')
-            self.instrument.turn_on_relay(self.instrument['LIGHT_SLOT'])       
+            self.instrument.turn_on_relay(self.instrument.light_slot)       
         elif not self.args.co3:
             self.set_LEDs(True)
             self.update_LEDs()
