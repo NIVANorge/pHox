@@ -342,11 +342,11 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        
+
         if self.args.co3 :
             self.btn_lightsource = self.create_button('light source',True)
             btn_grid.addWidget(self.btn_lightsource , 4, 1)
-            self.btn_lightsource.connect(self.btn_lightsource_clicked)
+            self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
 
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
         self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
