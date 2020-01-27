@@ -95,7 +95,7 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
-        "LIGHT_SLOT": 22,
+        "LIGHT_SLOT": 5,
         "Default_DYE": "co3dye"    
     },
     "TempProbes": {
