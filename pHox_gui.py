@@ -1032,7 +1032,7 @@ class Panel(QtGui.QWidget):
         return
 
     def co3_sample(self):   
-
+        QtGui.QApplication.processEvents()   
         if self.mode == 'Calibration': 
             folderPath = '/home/pi/pHox/data_co3_calibr/'
         else:

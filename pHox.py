@@ -319,7 +319,7 @@ class CO3_instrument(Common_instrument):
         '''
         adjusted = False 
 
-        while ajusted == False: 
+        while adjusted == False: 
 
             pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[1])
             if pixelLevel < maxLevel/2:
@@ -331,7 +331,7 @@ class CO3_instrument(Common_instrument):
                 adjusted = True 
         print (adjusted)
 
-        
+
     def calc_CO3(self,absSp, vNTC,dilution):
         
         vNTC = round(self.vNTCch, prec['vNTC'])
