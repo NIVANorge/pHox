@@ -364,6 +364,7 @@ class CO3_instrument(Common_instrument):
                 log_beta1_e2, vNTC, self.fb_data['salinity'],
                 A1,A2,R,Tdeg,
                 vol_injected, S_corr]
+    def eval_co3(self,co3_eval)
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):

@@ -544,19 +544,28 @@ class Panel(QtGui.QWidget):
         self.instrument.folderPath = folder+'/'
 
     def save_stability_test(self,datay):
-
-        stabfile = os.path.join('/home/pi/pHox/sp_stability.log')
-
-        stabfile_df = pd.DataFrame({
-        "led0" : [datay[self.instrument.wvlPixels[0]]],
-        "led1" : [datay[self.instrument.wvlPixels[1]]],
-        "led2" : [datay[self.instrument.wvlPixels[2]]],
-        "specint": [self.instrument.specIntTime]})
+        stabfile = os.path.join('/home/pi/pHox/sp_stability.log')        
+        if not self.args.co3:
+            stabfile_df = pd.DataFrame({
+            'datetime' : [datetime.now().strftime("%Y%m%d_%H%M%S") ],
+            "led0" : [datay[self.instrument.wvlPixels[0]]],
+            "led1" : [datay[self.instrument.wvlPixels[1]]],
+            "led2" : [datay[self.instrument.wvlPixels[2]]],
+            "specint": [self.instrument.specIntTime]})
+        elif self.args.co3: 
+            stabfile_df = pd.DataFrame({
+            "wvl1" : [datay[self.instrument.wvlPixels[0]]],
+            "wvl2" : [datay[self.instrument.wvlPixels[1]]],,
+            "specint": [self.instrument.specIntTime]})    
 
         if os.path.exists(stabfile):
             stabfile_df.to_csv(stabfile, mode = 'a', index = False, header=False) 
         else: 
-            stabfile_df = pd.DataFrame(columns = ["led0","led1","led2","specint"])
+            if not self.args.co3:
+                stabfile_df = pd.DataFrame(columns = ['datetime',"led0","led1","led2","specint"])
+            else: 
+                stabfile_df = pd.DataFrame(columns = ['datetime',"wvl1","wvl2","specint"])    
+                           
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
     def update_spectra_plot(self):
