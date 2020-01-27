@@ -555,7 +555,7 @@ class Panel(QtGui.QWidget):
         elif self.args.co3: 
             stabfile_df = pd.DataFrame({
             "wvl1" : [datay[self.instrument.wvlPixels[0]]],
-            "wvl2" : [datay[self.instrument.wvlPixels[1]]],,
+            "wvl2" : [datay[self.instrument.wvlPixels[1]]],
             "specint": [self.instrument.specIntTime]})    
 
         if os.path.exists(stabfile):
