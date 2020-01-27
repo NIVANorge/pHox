@@ -733,8 +733,11 @@ class Panel(QtGui.QWidget):
 
             self.instrument.reset_lines()
             self.timerSpectra_plot.stop()
-            self.sample()
-            self.single_sample_finished()
+            if self.args.co3 :
+                self.co3_sample()
+            else: 
+                self.sample()
+                self.single_sample_finished()
 
             #self.sample_thread = Sample_thread(self,self.args)
             #self.sample_thread.start()
@@ -1035,25 +1038,65 @@ class Panel(QtGui.QWidget):
         else:
             folderPath = self.instrument.folderPath        
         print ('co3_sample')
-        self.get_filename()
-        time.sleep(2)
+        #self.get_filename()
+        #time.sleep(2)
 
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
         print ('self.sample_steps[0].setChecked(True)')
-        time.sleep(2)
+        #time.sleep(2)
 
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
         print ('self.spCounts_df')
-        time.sleep(2)
-
-        self.append_logbox('Start new measurement')
+        #time.sleep(2)
 
         if not fbox['pumping']:
             return
-  
-        #self.append_logbox('Autoadjust LEDS')
+
+        self.append_logbox('Start new measurement')
+
+
+        '''if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
+            self.pumping(self.instrument.pumpTime) 
+            self.append_logbox('Pumping, Standalone, Continous')
+
+        elif self.mode == 'Calibration':
+            self.pumping(self.instrument.pumpTime) 
+            self.append_logbox('Pumping, Calibration') '''   
+
+        self.append_logbox('Autoadjust LEDS')
+        self.sample_steps[1].setChecked(True)
+        self.instrument.auto_adjust()  
+        self.append_logbox('Finished Autoadjust LEDS')
+
+
+        #QtGui.QApplication.processEvents() 
+
+        #self.valve_and_blank()
+        #QtGui.QApplication.processEvents()   
+
+        '''for n_inj in range(self.instrument.ncycles):  
+            vol_injected = round(
+                self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
+                 prec['vol_injected'])
+            dilution = (self.instrument.Cuvette_V) / (
+                    vol_injected  + self.instrument.Cuvette_V)      
+
+            spAbs,vNTC = self.inject_measure(n_inj)
+
+            self.append_logbox('Calculate init pH') 
+            QtGui.QApplication.processEvents()  
+
+            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
+                                spAbs,vNTC,dilution,vol_injected)
+
+        self.append_logbox('Opening the valve ...')
+        QtGui.QApplication.processEvents()
+
+        self.instrument.set_Valve(False)
+        self.timerSpectra_plot.start()   
+        #self.append_logbox('Autoadjust LEDS')'''
 
     def create_new_df(self):
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])

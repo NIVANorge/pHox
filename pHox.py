@@ -309,9 +309,29 @@ class CO3_instrument(Common_instrument):
                 self.find_nearest(wvls,wl))
 
     def auto_adjust(self,*args):
-        print ('auto adjust for co3 is not implemented yet')
-        pass 
+        sptIt = self.specIntTime
 
+        '''
+        Set int time 
+        Check value at wl 250 
+        adjust 
+        change again
+        '''
+        adjusted = False 
+
+        while ajusted == False: 
+
+            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[1])
+            if pixelLevel < maxLevel/2:
+                self.spectrom.set_integration_time(sptIt)
+            elif pixelLevel < maxLevel - (maxLevel * 0.1):
+                ptIt = sptIt - 100
+                self.spectrom.set_integration_time(sptIt)            
+            else: 
+                adjusted = True 
+        print (adjusted)
+
+        
     def calc_CO3(self,absSp, vNTC,dilution):
         
         vNTC = round(self.vNTCch, prec['vNTC'])
