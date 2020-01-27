@@ -304,7 +304,7 @@ class CO3_instrument(Common_instrument):
 
     def get_wvlPixels(self,wvls):
         self.wvlPixels = []
-        for wl in (self.wvl1, self.wvl1):      
+        for wl in (self.wvl1, self.wvl2):      
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
