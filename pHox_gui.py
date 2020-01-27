@@ -1118,7 +1118,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Save evl data to file')
         self.save_evl(folderPath)          
         #self.append_logbox('Autoadjust LEDS')'''
-
+        print ('finished sample')
 
 
     def create_new_df(self):
