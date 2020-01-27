@@ -415,6 +415,9 @@ class Panel(QtGui.QWidget):
 
     def btn_lightsource_clicked(self):
         if self.btn_lightsource.isChecked():
+            print (self.instrument.light_slot)
+            print ('self.btn_lightsource.isChecked()')
+            print (self.btn_lightsource.isChecked())
             self.instrument.turn_on_relay(
                 self.instrument.light_slot)
         else: 
@@ -892,7 +895,8 @@ class Panel(QtGui.QWidget):
         self.textBox.setText('Turn on LEDs')
         if self.args.co3:
             print ('turn on light source')
-            self.instrument.turn_on_relay(self.instrument.light_slot)       
+            self.instrument.turn_on_relay(self.instrument.light_slot)  
+            self.btn_lightsource.setChecked(True)     
         elif not self.args.co3:
             self.set_LEDs(True)
             self.update_LEDs()
