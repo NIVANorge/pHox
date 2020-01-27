@@ -294,7 +294,7 @@ class Panel(QtGui.QWidget):
             self.specIntTime_combo.setCurrentIndex(index)
             
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
-
+        self.tableWidget.setCellWidget(6,1,self.specIntTime_combo)
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem('5')
