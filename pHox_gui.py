@@ -134,6 +134,8 @@ class Panel(QtGui.QWidget):
             self.plotwidget1.setYRange(1000,16200)
         if self.args.co3: 
             self.plotwidget1.setXRange(200,300)   
+            self.plotwidget2.setXRange(200,300)   
+
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
         self.plotwidget1.settTtle="LEDs intensities"
@@ -149,6 +151,8 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
         if self.args.co3:
+            self.plotwidget2.addLine(x=self.instrument.wvl1, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))  
+            self.plotwidget2.addLine(x=self.instrument.wvl2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))                            
             #self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
             self.plotwidget1.addLine(x=self.instrument.wvl1, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
             self.plotwidget1.addLine(x=self.instrument.wvl2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))    
@@ -571,6 +575,11 @@ class Panel(QtGui.QWidget):
                 stabfile_df = pd.DataFrame(columns = ['datetime',"wvl1","wvl2","specint"])    
                            
             stabfile_df.to_csv(stabfile, index = False, header=True) 
+
+
+
+    def update_absorption_plot(self,spAbs):
+        self.plotAbs.setData(self.wvls,spAbs) 
 
     def update_spectra_plot(self):
 
@@ -1137,6 +1146,7 @@ class Panel(QtGui.QWidget):
 
             spAbs,vNTC = self.inject_measure(n_inj,blank)
             self.update_spectra_plot()  
+            self.update_absorption_plot(spAbs)
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
 
