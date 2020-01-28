@@ -1306,10 +1306,11 @@ class Panel(QtGui.QWidget):
             # time.sleep(0.5)
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
-            spAbs = spAbs - blank
+
+            spAbs_min_blank = spAbs - blank
             #blank
         self.spCounts_df[str(n_inj)] = spAbs
-        return (spAbs,vNTC)
+        return (spAbs_min_blank,vNTC)
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'
