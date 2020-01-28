@@ -1319,7 +1319,7 @@ class Panel(QtGui.QWidget):
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
 
-            spAbs_min_blank = spAbs - blank
+            spAbs_min_blank = - np.log10 (spAbs / blank)
             #blank
         self.spCounts_df[str(n_inj)] = spAbs
         return (spAbs_min_blank,vNTC)
