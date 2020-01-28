@@ -319,8 +319,8 @@ class CO3_instrument(Common_instrument):
                 self.find_nearest(wvls,wl))
 
     def auto_adjust(self,*args):
-        sptIt = self.specIntTime
-        self.spectrom.set_integration_time(sptIt)
+
+        self.spectrom.set_integration_time(self.specIntTime)
         print ('init self.specIntTime', self.specIntTime)
         '''
         Set int time 
@@ -355,11 +355,13 @@ class CO3_instrument(Common_instrument):
             print (sptIt)
             #dd =  (THR*LED)/pixelLevel - LED     
             if pixelLevel < maxLevel * 0.9:
-                sptIt = sptIt + 100                
-                self.spectrom.set_integration_time(sptIt)
+                self.specIntTime = self.specIntTime + 100                
+                self.spectrom.set_integration_time(self.specIntTime)
+                time.sleep(self.instrument.specIntTime*1.e-6)
             elif pixelLevel > 67000:
-                sptIt = sptIt - 100
-                self.spectrom.set_integration_time(sptIt)            
+                self.specIntTime = self.specIntTime - 100
+                self.spectrom.set_integration_time(self.specIntTime)     
+                time.sleep(self.instrument.specIntTime*1.e-6)                      
             else: 
                 adjusted = True 
 
