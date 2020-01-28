@@ -590,8 +590,8 @@ class Panel(QtGui.QWidget):
                     self.save_stability_test(datay)
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
-                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-                                         pen=None, symbol='+', clear=True)                 
+                #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+                #                         pen=None, symbol='+', clear=True)                 
                 self.plotSpc.setData(self.wvls,datay)
                  
             except:
