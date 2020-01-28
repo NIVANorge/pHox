@@ -369,7 +369,8 @@ class CO3_instrument(Common_instrument):
 
     def calc_CO3(self,absSp, vNTC,dilution,vol_injected):
         
-        vNTC = round(self.vNTCch, prec['vNTC'])
+        vNTC = round(vNTC, prec['vNTC'])
+        print (vNTC)
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
         T = 273.15 + Tdeg
         A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
@@ -382,9 +383,10 @@ class CO3_instrument(Common_instrument):
         e1 = 0.311907-0.002396*S_corr
         e2e3 = 3.061-0.0873*S_corr+0.0009363*S_corr**2
         log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
+        print ('R',R,'e1',e1,'e2e3',e2e3)
         arg = (R - e1)/(1 - R*e2e3) 
 
-        CO3 = dilution * 1.e6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
         print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
         return  [CO3, e1, e2e3, 
