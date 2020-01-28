@@ -32,7 +32,9 @@
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
         "comment Deployment_mode": "#modes can be Ferry or Standalone ",
-        "LIGHT_THRESHOLD": 15500    
+        "Spectro_connected": "Seabreeze",
+        "LIGHT_THRESHOLD_STS ": 15500,            
+        "LIGHT_THRESHOLD_Seabreeze": 50000    
     },
     "pH": {
         "LED_SLOTS": [

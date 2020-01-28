@@ -229,7 +229,9 @@ class Common_instrument(object):
         self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
-        self.THR = int(conf_operational["LIGHT_THRESHOLD"])     
+        self.spectro = conf_operational["Spectro_connected"]
+        if self.spectro == "Seabreeze":
+            self.THR = int(conf_operational["LIGHT_THRESHOLD_Seabreeze"])     
 
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
@@ -317,6 +319,7 @@ class CO3_instrument(Common_instrument):
         Check value at wl 250 
         adjust 
         change again
+        67 200 Saturation for Seabreeze
         '''
         adjusted = False 
 
@@ -337,7 +340,7 @@ class CO3_instrument(Common_instrument):
             if pixelLevel < maxLevel * 0.9:
                 sptIt = sptIt + 100                
                 self.spectrom.set_integration_time(sptIt)
-            elif pixelLevel > maxLevel * 1.1:
+            elif pixelLevel > 67000:
                 sptIt = sptIt - 100
                 self.spectrom.set_integration_time(sptIt)            
             else: 
