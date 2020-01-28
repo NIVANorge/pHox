@@ -1095,7 +1095,9 @@ class Panel(QtGui.QWidget):
             self.pumping(self.instrument.pumpTime) 
             self.append_logbox('Pumping, Calibration') '''   
 
-        self.append_logbox('Autoadjust LEDS')
+
+
+        '''self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
 
         adj,pixelLevel = self.instrument.auto_adjust()  
@@ -1104,7 +1106,9 @@ class Panel(QtGui.QWidget):
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
             self.update_spectra_plot()
-        QtGui.QApplication.processEvents() 
+        QtGui.QApplication.processEvents() '''
+
+
 
         self.valve_and_blank()
         self.update_spectra_plot()        
