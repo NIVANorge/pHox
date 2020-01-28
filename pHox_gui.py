@@ -115,7 +115,7 @@ class Panel(QtGui.QWidget):
         self.timerTemp_info = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(1.e3) # 10 sec     
+        self.timerSpectra_plot.setInterval(2.e3) # 10 sec     
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timerTemp_info.timeout.connect(self.update_T_lab)
@@ -590,9 +590,10 @@ class Panel(QtGui.QWidget):
                     self.save_stability_test(datay)
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
+                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+                                         pen=None, symbol='+', clear=True)                 
                 self.plotSpc.setData(self.wvls,datay)
-                #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-                #                         pen=None, symbol='+', clear=True)                  
+                 
             except:
                 print ('Exception error') 
                 pass
@@ -949,7 +950,7 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.timerSpectra_plot.start()
+        self.timerSpectra_plot.start(3.e3)
         self.timerTemp_info.start(1.e3)
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
