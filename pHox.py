@@ -333,7 +333,7 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False: 
             QtGui.QApplication.processEvents()  
-            datay = self.instrument.spectrom.get_corrected_spectra()
+            datay = self.spectrom.get_corrected_spectra()
             pixelLevel = datay[self.wvlPixels[1]]
             #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
 
