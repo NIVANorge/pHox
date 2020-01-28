@@ -1109,6 +1109,14 @@ class Panel(QtGui.QWidget):
             self.update_spectra_plot()
         QtGui.QApplication.processEvents() '''
 
+        #reset light source 
+        self.instrument.turn_off_relay(self.instrument.light_slot)    
+        self.btn_lightsource.setChecked(False)        
+        time.sleep(0.1)     
+        self.instrument.turn_on_relay(self.instrument.light_slot)  
+        self.btn_lightsource.setChecked(True) 
+
+
         self.update_spectra_plot()   
         QtGui.QApplication.processEvents() 
         print ('before blank', self.instrument.specIntTime)
