@@ -151,7 +151,7 @@ class Panel(QtGui.QWidget):
         if self.args.co3:
             #self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
             self.plotwidget1.addLine(x=self.instrument.wvl1, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
-            self.plotwidget1.addLine(x=self.instrument.wvl1, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))    
+            self.plotwidget1.addLine(x=self.instrument.wvl2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))    
         else:
             self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
             self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
@@ -579,8 +579,8 @@ class Panel(QtGui.QWidget):
             time.sleep(self.instrument.specIntTime*1.e-6)
 
             self.plotSpc.setData(self.wvls,datay)         
-            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-                                     pen=None, symbol='+', clear=True)    
+            #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+            #                         pen=None, symbol='+', clear=True)    
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
@@ -589,8 +589,8 @@ class Panel(QtGui.QWidget):
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
                 self.plotSpc.setData(self.wvls,datay)
-                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-                                         pen=None, symbol='+', clear=True)                  
+                #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+                #                         pen=None, symbol='+', clear=True)                  
             except:
                 print ('Exception error') 
                 pass
