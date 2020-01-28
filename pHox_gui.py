@@ -1120,7 +1120,7 @@ class Panel(QtGui.QWidget):
         self.update_spectra_plot()   
         QtGui.QApplication.processEvents() 
         print ('before blank', self.instrument.specIntTime)
-        self.valve_and_blank()
+        blank = self.valve_and_blank()
         print ('after blank', self.instrument.specIntTime)       
         QtGui.QApplication.processEvents()  
         self.update_spectra_plot()        
@@ -1135,7 +1135,7 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            spAbs,vNTC = self.inject_measure(n_inj)
+            spAbs,vNTC = self.inject_measure(n_inj,blank)
             self.update_spectra_plot()  
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
@@ -1179,7 +1179,7 @@ class Panel(QtGui.QWidget):
         self.start_pump_adjustleds()
         QtGui.QApplication.processEvents() 
 
-        self.valve_and_blank()
+        blank = self.valve_and_blank()
         QtGui.QApplication.processEvents()
 
         for n_inj in range(self.instrument.ncycles):  
@@ -1249,9 +1249,10 @@ class Panel(QtGui.QWidget):
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
             print ('max blank',np.max(blank))
-        self.spCounts_df['blank'] = blank 
+        self.spCounts_df['blank'] = blank
+        return blank 
 
-    def inject_measure(self,n_inj): 
+    def inject_measure(self,n_inj,blank): 
         # create dataframe and store 
         
         QtGui.QApplication.processEvents()             
@@ -1299,14 +1300,15 @@ class Panel(QtGui.QWidget):
                 
         # Write spectrum to the file 
         elif self.args.seabreeze:
-            row = str(n_inj)+'raw'
-            self.spCounts_df[row] = self.instrument.spectrom.get_intensities(
-                    self.instrument.specAvScans,correct=False)
-            time.sleep(0.5)
+            #raw = str(n_inj)+'raw'
+            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
+            #        self.instrument.specAvScans,correct=False)
+            # time.sleep(0.5)
             spAbs = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
-
-        self.spCounts_df[str(n_inj)+'corr_nonlin'] = spAbs
+            spAbs = spAbs - blank
+            #blank
+        self.spCounts_df[str(n_inj)] = spAbs
         return (spAbs,vNTC)
 
     def save_evl(self,folderPath):
