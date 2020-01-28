@@ -1215,10 +1215,11 @@ class Panel(QtGui.QWidget):
 
     def valve_and_blank(self):
         self.append_logbox('Closing valve ...')
+        print (Closing valve ...)
         self.instrument.set_Valve(True)
         #time.sleep(self.instrument.waitT)
         self.update_spectra_plot() 
-
+        print ('Measuring blank...')
         self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
         if not self.args.seabreeze:
@@ -1228,7 +1229,7 @@ class Panel(QtGui.QWidget):
         else: 
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
-
+            print ('max blank',np.max(blank))
         self.spCounts_df['blank'] = blank 
 
     def inject_measure(self,n_inj): 
