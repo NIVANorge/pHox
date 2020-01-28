@@ -331,8 +331,8 @@ class CO3_instrument(Common_instrument):
             QtGui.QApplication.processEvents()  
             pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
 
-            print ('new level')
-            print (pixelLevel)
+            print ('new level,max from spectro')
+            print (pixelLevel,_)
 
             print ('integration time')
             print (sptIt)
