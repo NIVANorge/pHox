@@ -1215,7 +1215,7 @@ class Panel(QtGui.QWidget):
 
     def valve_and_blank(self):
         self.append_logbox('Closing valve ...')
-        print (Closing valve ...)
+        print ("Closing valve ...")
         self.instrument.set_Valve(True)
         #time.sleep(self.instrument.waitT)
         self.update_spectra_plot() 
