@@ -579,7 +579,8 @@ class Panel(QtGui.QWidget):
             time.sleep(self.instrument.specIntTime*1.e-6)
 
             self.plotSpc.setData(self.wvls,datay)         
-            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]], pen=None, symbol='+')    
+            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+                                     pen=None, symbol='+', clear=True)    
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
@@ -588,7 +589,8 @@ class Panel(QtGui.QWidget):
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
                 self.plotSpc.setData(self.wvls,datay)
-                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]], pen=None, symbol='+')                  
+                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
+                                         pen=None, symbol='+', clear=True)                  
             except:
                 print ('Exception error') 
                 pass
@@ -1096,7 +1098,7 @@ class Panel(QtGui.QWidget):
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.update_spec_int_time_table()
-            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
+            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
             self.update_spectra_plot()
         QtGui.QApplication.processEvents() 
 
