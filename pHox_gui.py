@@ -1390,7 +1390,8 @@ class boxUI(QtGui.QMainWindow):
                 print ('UDP server closed')
                 udp.server.join()       
             self.main_widget.close()
-            QtGui.QApplication.quit()          
+            QtGui.QApplication.quit()  
+            sys.exit()
             event.accept()
 
 if __name__ == '__main__':
