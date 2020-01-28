@@ -357,11 +357,11 @@ class CO3_instrument(Common_instrument):
             if pixelLevel < maxLevel * 0.9:
                 self.specIntTime = self.specIntTime + 100                
                 self.spectrom.set_integration_time(self.specIntTime)
-                time.sleep(self.instrument.specIntTime*1.e-6)
+                time.sleep(self.specIntTime*1.e-6)
             elif pixelLevel > 67000:
                 self.specIntTime = self.specIntTime - 100
                 self.spectrom.set_integration_time(self.specIntTime)     
-                time.sleep(self.instrument.specIntTime*1.e-6)                      
+                time.sleep(self.specIntTime*1.e-6)                      
             else: 
                 adjusted = True 
 
