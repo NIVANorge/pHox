@@ -584,6 +584,8 @@ class Panel(QtGui.QWidget):
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
+                print ('max datay in update spectro',np.max(datay))
+                print ('specinttime',self.intstrument.specIntTime)
                 if self.args.stability:
                     self.save_stability_test(datay)
 

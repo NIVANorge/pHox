@@ -20,11 +20,14 @@ from precisions import precision as prec
 import seabreeze
 seabreeze.use('cseabreeze')
 from seabreeze.spectrometers import Spectrometer
+from seabreeze.spectrometers import list_devices, initialize
 
 class Spectro_seabreeze(object):
     def __init__(self):
         #self.spec =  Spectrometer.from_serial_number('S06356')
         #print (self.spec)
+        # try to reset devices
+        initialize()
         self.spec =  Spectrometer.from_first_available()
 
     def set_integration_time(self,time_millisec):
