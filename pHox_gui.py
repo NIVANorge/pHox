@@ -291,13 +291,8 @@ class Panel(QtGui.QWidget):
 
         self.specIntTime_combo = QtGui.QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100,5000,100)]
-   
-        index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), 
-                                QtCore.Qt.MatchFixedString)
-        print (str(self.instrument.specIntTime))
-        print (index)
-        if index >= 0: 
-            self.specIntTime_combo.setCurrentIndex(index)
+        self.update_spec_int_time_table()
+
             
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
         self.tableWidget.setCellWidget(6,1,self.specIntTime_combo)
@@ -318,7 +313,15 @@ class Panel(QtGui.QWidget):
         self.tab_config.layout.addWidget(self.tableWidget,1,0,2,2)
 
         self.tab_config.setLayout(self.tab_config.layout)  
-     
+
+    def update_spec_int_time_table(self):
+        index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), 
+                                QtCore.Qt.MatchFixedString)
+        print (str(self.instrument.specIntTime))
+        print (index)
+        if index >= 0: 
+            self.specIntTime_combo.setCurrentIndex(index)
+
     def fill_table_config(self,x,y,item):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
@@ -329,6 +332,7 @@ class Panel(QtGui.QWidget):
 
     def specIntTime_combo_chngd(self,ind):
         new_int_time = int(self.specIntTime_combo.currentText())
+        self.instrument.specIntTime = new_int_time
         self.instrument.spectrom.set_integration_time(new_int_time)
 
     def make_btngroupbox(self):
@@ -574,7 +578,8 @@ class Panel(QtGui.QWidget):
             datay = self.instrument.spectrom.get_corrected_spectra()
             time.sleep(self.instrument.specIntTime*1.e-6)
 
-            self.plotSpc.setData(self.wvls,datay)            
+            self.plotSpc.setData(self.wvls,datay)         
+            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.wvlPixels[1]]], pen=None, symbol='+')    
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
@@ -583,6 +588,7 @@ class Panel(QtGui.QWidget):
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
                 self.plotSpc.setData(self.wvls,datay)
+            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.wvlPixels[1]]], pen=None, symbol='+')                  
             except:
                 print ('Exception error') 
                 pass
@@ -1089,6 +1095,7 @@ class Panel(QtGui.QWidget):
         adj,pixelLevel = self.instrument.auto_adjust()  
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
+            self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
             self.update_spectra_plot()
         QtGui.QApplication.processEvents() 
