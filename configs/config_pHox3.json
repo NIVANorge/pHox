@@ -31,7 +31,8 @@
         "Spectro_Integration_time": 500,
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
-        "comment Deployment_mode": "#modes can be Ferry or Standalone "
+        "comment Deployment_mode": "#modes can be Ferry or Standalone ",
+        "LIGHT_THRESHOLD": 15500    
     },
     "pH": {
         "LED_SLOTS": [
@@ -96,7 +97,9 @@
         "WL_1": 234,
         "WL_2": 250,
         "LIGHT_SLOT": 22,
-        "Default_DYE": "MCP"    
+        "comment_co3": "# Pb_perchlor or Pb_chlor",
+        "Default_DYE": "Pb_perchlor"
+           
     },
     "TempProbes": {
         "Probe_1": {
