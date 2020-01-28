@@ -579,7 +579,7 @@ class Panel(QtGui.QWidget):
             time.sleep(self.instrument.specIntTime*1.e-6)
 
             self.plotSpc.setData(self.wvls,datay)         
-            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.wvlPixels[1]]], pen=None, symbol='+')    
+            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]], pen=None, symbol='+')    
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
@@ -588,7 +588,7 @@ class Panel(QtGui.QWidget):
 
                 time.sleep(self.instrument.specIntTime*1.e-6)
                 self.plotSpc.setData(self.wvls,datay)
-            self.plotwidget1.plot([self.instrument.wvl2],[datay[self.wvlPixels[1]]], pen=None, symbol='+')                  
+                self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]], pen=None, symbol='+')                  
             except:
                 print ('Exception error') 
                 pass
