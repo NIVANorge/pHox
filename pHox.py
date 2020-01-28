@@ -320,7 +320,7 @@ class CO3_instrument(Common_instrument):
         '''
         adjusted = False 
 
-        maxlevel  = self.THR
+        maxLevel  = self.THR
         print ('max - 10%',(maxLevel * 0.9))
         print ('max + 10%',(maxLevel * 1.1))
 
