@@ -387,7 +387,8 @@ class CO3_instrument(Common_instrument):
         print ('R',R,'e1',e1,'e2e3',e2e3)
         arg = (R - e1)/(1 - R*e2e3) 
         print (arg)
-        CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
+        #CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
+        CO3 = 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
         print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
         return  [CO3, e1, e2e3, 
