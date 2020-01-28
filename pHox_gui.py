@@ -1107,12 +1107,12 @@ class Panel(QtGui.QWidget):
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
             self.update_spectra_plot()
         QtGui.QApplication.processEvents() '''
-        
+
         self.update_spectra_plot()   
         QtGui.QApplication.processEvents() 
-        print ('before blank', self.specIntTime)
+        print ('before blank', self.instrument.specIntTime)
         self.valve_and_blank()
-        print ('after blank', self.specIntTime)       
+        print ('after blank', self.instrument.specIntTime)       
         QtGui.QApplication.processEvents()  
         self.update_spectra_plot()        
         QtGui.QApplication.processEvents()   
