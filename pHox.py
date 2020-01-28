@@ -337,7 +337,14 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False: 
             QtGui.QApplication.processEvents()  
-            datay = self.spectrom.get_corrected_spectra()
+
+            if not self.args.seabreeze:
+                datay  = self.spectrom.get_corrected_spectra()
+            else: 
+                datay  = self.spectrom.get_intensities()
+
+
+            #datay = self.spectrom.get_corrected_spectra()
             pixelLevel = datay[self.wvlPixels[1]]
             #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
 
