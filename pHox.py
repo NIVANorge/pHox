@@ -28,7 +28,6 @@ class Spectro_seabreeze(object):
         #self.spec =  Spectrometer.from_serial_number('S06356')
         #print (self.spec)
         # try to reset devices
-        sbb.initialize()
         self.spec =  Spectrometer.from_first_available()
 
     def set_integration_time(self,time_millisec):
@@ -317,7 +316,8 @@ class CO3_instrument(Common_instrument):
 
     def auto_adjust(self,*args):
         sptIt = self.specIntTime
-
+        self.spectrom.set_integration_time(sptIt)
+        print ('init self.specIntTime', self.specIntTime)
         '''
         Set int time 
         Check value at wl 250 
@@ -333,10 +333,12 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False: 
             QtGui.QApplication.processEvents()  
-            pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
+            datay = self.instrument.spectrom.get_corrected_spectra()
+            pixelLevel = datay[self.wvlPixels[1]]
+            #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')
-            print (pixelLevel,_)
+            print (pixelLevel)
 
             print ('integration time')
             print (sptIt)
