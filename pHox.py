@@ -377,7 +377,7 @@ class CO3_instrument(Common_instrument):
         A2   = round(absSp[self.wvlPixels[1]], prec['A2'])       
         # volume in ml
         S_corr = round(self.fb_data['salinity'] * dilution , prec['salinity'])
-
+        print (S_corr)
         R = A2/A1
         # coefficients from Patsavas et al. 2015
         e1 = 0.311907-0.002396*S_corr+0.000080*S_corr**2
