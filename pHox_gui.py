@@ -1094,10 +1094,12 @@ class Panel(QtGui.QWidget):
         QtGui.QApplication.processEvents() 
 
         self.valve_and_blank()
+        self.update_spectra_plot()        
         QtGui.QApplication.processEvents()   
 
         for n_inj in range(self.instrument.ncycles):  
             print ('n_inj in co3 sample')
+          
             vol_injected = round(
                 self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
                  prec['vol_injected'])
@@ -1105,7 +1107,7 @@ class Panel(QtGui.QWidget):
                     vol_injected  + self.instrument.Cuvette_V)      
 
             spAbs,vNTC = self.inject_measure(n_inj)
-
+            self.update_spectra_plot()  
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
 
