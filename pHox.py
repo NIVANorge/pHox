@@ -343,7 +343,6 @@ class CO3_instrument(Common_instrument):
             else: 
                 datay  = self.spectrom.get_intensities()
 
-
             #datay = self.spectrom.get_corrected_spectra()
             pixelLevel = datay[self.wvlPixels[1]]
             #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
@@ -357,11 +356,11 @@ class CO3_instrument(Common_instrument):
             if pixelLevel < maxLevel * 0.9:
                 self.specIntTime = self.specIntTime + 100                
                 self.spectrom.set_integration_time(self.specIntTime)
-                time.sleep(self.specIntTime*1.e-6)
+                time.sleep(self.specIntTime*1.e-3)
             elif pixelLevel > 67000:
                 self.specIntTime = self.specIntTime - 100
                 self.spectrom.set_integration_time(self.specIntTime)     
-                time.sleep(self.specIntTime*1.e-6)                      
+                time.sleep(self.specIntTime*1.e-3)                      
             else: 
                 adjusted = True 
 
