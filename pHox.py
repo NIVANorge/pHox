@@ -318,20 +318,25 @@ class CO3_instrument(Common_instrument):
         change again
         '''
         adjusted = False 
+        
+        maxlevel  = self.THR
+        print ('max - 10%',(maxLevel * 0.9))
+        print ('max + 10%',(maxLevel * 1.1))
 
         while adjusted == False: 
             QtGui.QApplication.processEvents()  
-            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[1])
+            pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
+
             print ('new level')
             print (pixelLevel)
-            print ('max - 10%',maxLevel - (maxLevel * 0.1))
+
             print ('integration time')
             print (sptIt)
             #dd =  (THR*LED)/pixelLevel - LED     
-            if pixelLevel < maxLevel/2:
+            if pixelLevel < maxLevel * 0.9:
                 sptIt = sptIt + 100                
                 self.spectrom.set_integration_time(sptIt)
-            elif pixelLevel > maxLevel - (maxLevel * 0.1):
+            elif pixelLevel > maxLevel * 1.1:
                 sptIt = sptIt - 100
                 self.spectrom.set_integration_time(sptIt)            
             else: 
@@ -367,8 +372,6 @@ class CO3_instrument(Common_instrument):
 
     def eval_co3(self,co3_eval):
         pass
-
-
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
@@ -641,4 +644,3 @@ class pH_instrument(Common_instrument):
 
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu,x,y,final_slope, intercept)      
-
