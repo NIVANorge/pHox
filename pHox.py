@@ -160,6 +160,7 @@ class Common_instrument(object):
         self.fb_data = udp.Ferrybox
 
         self.load_config()
+        self.spectrom.set_integration_time(self.specIntTime)
 
         self.adc = ADCDifferentialPi(0x68, 0x69, 14)
         self.adc.set_pga(1)
@@ -292,6 +293,9 @@ class CO3_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
         super().__init__(panelargs,config_name)
         self.load_config_co3() 
+
+
+
 
     def load_config_co3(self):      
         with open(self.config_name) as json_file:

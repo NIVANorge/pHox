@@ -942,6 +942,7 @@ class Panel(QtGui.QWidget):
             print ('turn on light source')
             self.instrument.turn_on_relay(self.instrument.light_slot)  
             self.btn_lightsource.setChecked(True)     
+
         elif not self.args.co3:
             self.set_LEDs(True)
             self.update_LEDs()
