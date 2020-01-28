@@ -755,7 +755,7 @@ class Panel(QtGui.QWidget):
 
             self.mode = 'Single'
 
-            self.instrument.reset_lines()
+            #self.instrument.reset_lines()
             self.timerSpectra_plot.stop()
             if self.args.co3 :
                 self.co3_sample()
@@ -1098,7 +1098,7 @@ class Panel(QtGui.QWidget):
 
 
 
-        '''self.append_logbox('Autoadjust LEDS')
+        self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
 
         adj,pixelLevel = self.instrument.auto_adjust()  
@@ -1107,7 +1107,7 @@ class Panel(QtGui.QWidget):
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
             self.update_spectra_plot()
-        QtGui.QApplication.processEvents() '''
+        QtGui.QApplication.processEvents()
 
         #reset light source 
         self.instrument.turn_off_relay(self.instrument.light_slot)    
