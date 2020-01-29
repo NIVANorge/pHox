@@ -1131,7 +1131,7 @@ class Panel(QtGui.QWidget):
         self.update_spectra_plot()   
         QtGui.QApplication.processEvents() 
         print ('before blank', self.instrument.specIntTime)
-        blank = self.valve_and_blank()
+        blank_min_dark, dark = self.valve_and_blank()
         print ('after blank', self.instrument.specIntTime)       
         QtGui.QApplication.processEvents()  
         self.update_spectra_plot()        
@@ -1146,7 +1146,7 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            spAbs,vNTC = self.inject_measure(n_inj,blank)
+            spAbs,vNTC = self.inject_measure(n_inj,blank_min_dark,dark)
             self.update_spectra_plot()  
             self.update_absorption_plot(spAbs)
             self.append_logbox('Calculate init CO3') 
@@ -1174,7 +1174,7 @@ class Panel(QtGui.QWidget):
 
 
     def create_new_df(self):
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
+        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
 
         self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
@@ -1191,7 +1191,7 @@ class Panel(QtGui.QWidget):
         self.start_pump_adjustleds()
         QtGui.QApplication.processEvents() 
 
-        blank = self.valve_and_blank()
+        blank_min_dark,dark = self.valve_and_blank()
         QtGui.QApplication.processEvents()
 
         for n_inj in range(self.instrument.ncycles):  
@@ -1201,7 +1201,7 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            spAbs,vNTC = self.inject_measure(n_inj)
+            spAbs,vNTC = self.inject_measure(n_inj,blank_min_dark,dark)
 
             self.append_logbox('Calculate init pH') 
             QtGui.QApplication.processEvents()  
@@ -1249,6 +1249,31 @@ class Panel(QtGui.QWidget):
         print ("Closing valve ...")
         self.instrument.set_Valve(True)
         #time.sleep(self.instrument.waitT)
+        ### take the dark
+        if self.args.co3:
+            self.instrument.turn_off_relay(self.instrument.light_slot)
+        else: 
+            self.set_LEDs(False)
+            # turn off light and LED
+            # grab spectrum
+            
+        if not self.args.seabreeze:
+            dark = self.instrument.spectrom.get_corrected_spectra()
+
+        elif self.args.seabreeze:
+            #raw = str(n_inj)+'raw'
+            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
+            #        self.instrument.specAvScans,correct=False)
+            # time.sleep(0.5)
+            dark = self.instrument.spectrom.get_intensities(
+                    self.instrument.specAvScans,correct=True)
+        
+        #turn on the light and LED
+        if self.args.co3:
+            self.instrument.turn_on_relay(self.instrument.light_slot)
+        else: 
+            self.set_LEDs(True)
+
         self.update_spectra_plot() 
         print ('Measuring blank...')
         self.append_logbox('Measuring blank...')
@@ -1260,11 +1285,15 @@ class Panel(QtGui.QWidget):
         else: 
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
+            blank_min_dark =   blank - dark    
             print ('max blank',np.max(blank))
-        self.spCounts_df['blank'] = blank
-        return blank 
 
-    def inject_measure(self,n_inj,blank): 
+        self.spCounts_df['blank'] = blank
+        self.spCounts_df['dark'] = dark
+        
+        return blank_min_dark , dark 
+
+    def inject_measure(self,n_inj,blank_min_dark,dark): 
         # create dataframe and store 
         
         QtGui.QApplication.processEvents()             
@@ -1316,12 +1345,13 @@ class Panel(QtGui.QWidget):
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-            spAbs = self.instrument.spectrom.get_intensities(
+            postinj_spec = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
-
-            spAbs_min_blank = - np.log10 (spAbs / blank)
+            postinj_spec_min_dark = postinj_spec - dark
+            # Absorbance 
+            spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
             #blank
-        self.spCounts_df[str(n_inj)] = spAbs
+        self.spCounts_df[str(n_inj)] = postinj_spec
         return (spAbs_min_blank,vNTC)
 
     def save_evl(self,folderPath):

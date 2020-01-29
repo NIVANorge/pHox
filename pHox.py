@@ -397,7 +397,12 @@ class CO3_instrument(Common_instrument):
                 vol_injected, S_corr]
 
     def eval_co3(self,co3_eval):
-        pass
+        x = co3_eval['Vol_injected'].values
+        y = co3_eval['CO3'].values
+        slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
+        print ('slope = ', slope1, "  intercept = ",intercept, " r2=", r_value)
+        return  [slope1, intercept, r_value]
+
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
