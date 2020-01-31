@@ -387,7 +387,8 @@ class CO3_instrument(Common_instrument):
         print ('R',R,'e1',e1,'e2e3',e2e3)
         arg = (R - e1)/(1 - R*e2e3) 
         print (arg)
-        CO3 = dilution * 1.e6*(-10**(log_beta1_e2 + np.log10(arg)))  # umol/kg
+        #CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
+        CO3 = 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
         print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
         return  [CO3, e1, e2e3, 
@@ -396,7 +397,12 @@ class CO3_instrument(Common_instrument):
                 vol_injected, S_corr]
 
     def eval_co3(self,co3_eval):
-        pass
+        x = co3_eval['Vol_injected'].values
+        y = co3_eval['CO3'].values
+        slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
+        print ('slope = ', slope1, "  intercept = ",intercept, " r2=", r_value)
+        return  [slope1, intercept, r_value]
+
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
