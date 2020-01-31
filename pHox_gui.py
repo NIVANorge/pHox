@@ -227,8 +227,9 @@ class Panel(QtGui.QWidget):
 
         self.btn_cont_meas = self.create_button('Continuous measurements',True)
         self.btn_single_meas = self.create_button('Single measurement', True)   
-        self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)        
-        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
+        self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)    
+        if not self.args.co3:    
+            self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
         self.ferrypump_box = QtWidgets.QCheckBox('Ferrybox pump is on')
         self.ferrypump_box.setEnabled(False)
@@ -1441,8 +1442,9 @@ class boxUI(QtGui.QMainWindow):
 
         self.main_widget = Panel(self,self.args,config_name)
         self.setCentralWidget(self.main_widget)
-        self.showMaximized()        
-        self.main_widget.autorun()
+        self.showMaximized()  
+        if not self.args.co3:      
+            self.main_widget.autorun()
 
         
     def closeEvent(self,event):
