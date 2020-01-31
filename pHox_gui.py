@@ -1082,7 +1082,7 @@ class Panel(QtGui.QWidget):
         return
 
     def co3_sample(self):   
-        z = np.zeros(self.wvls)
+        z = np.zeros(len(self.wvls))
         [self.update_absorption_plot(n_inj,z) for n_inj in range(self.instrument.ncycles)]
         self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
                                      "log_beta1_e2", "vNTC", "S", 
