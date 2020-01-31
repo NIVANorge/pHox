@@ -169,6 +169,7 @@ class Panel(QtGui.QWidget):
         self.plotAbs = self.plotwidget2.plot()
 
         color = ['r','g','b','m']
+        self.abs_lines = []
         for n_inj in range(self.instrument.ncycles):
             self.abs_lines[n_inj] = self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
 
