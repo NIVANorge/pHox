@@ -353,11 +353,11 @@ class CO3_instrument(Common_instrument):
             print ('integration time')
             print (self.specIntTime)
             #dd =  (THR*LED)/pixelLevel - LED     
-            if pixelLevel < maxLevel * 0.9:
+            if pixelLevel < maxLevel * 0.95:
                 self.specIntTime = self.specIntTime + 100                
                 self.spectrom.set_integration_time(self.specIntTime)
                 time.sleep(self.specIntTime*1.e-3)
-            elif pixelLevel > 67000:
+            elif pixelLevel > maxLevel * 1.95:
                 self.specIntTime = self.specIntTime - 100
                 self.spectrom.set_integration_time(self.specIntTime)     
                 time.sleep(self.specIntTime*1.e-3)                      

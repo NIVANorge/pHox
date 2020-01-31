@@ -171,7 +171,6 @@ class Panel(QtGui.QWidget):
         color = ['r','g','b','m','y']
         self.abs_lines = []
         for n_inj in range(self.instrument.ncycles):
-            print (n_inj,'ninj')
             self.abs_lines.append(self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj])))
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
@@ -1079,7 +1078,8 @@ class Panel(QtGui.QWidget):
         return
 
     def co3_sample(self):   
-
+        z = np.zeros(self.wvls)
+        [self.update_absorption_plot(n_inj,z) for n_inj in range(self.instrument.ncycles)]
         self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
                                      "log_beta1_e2", "vNTC", "S", 
                                      "A1", "A2", "R", "Tdeg", 
