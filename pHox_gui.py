@@ -135,8 +135,8 @@ class Panel(QtGui.QWidget):
         if not self.args.co3:
             self.plotwidget1.setYRange(1000,16200)
         if self.args.co3: 
-            self.plotwidget1.setXRange(200,300)   
-            self.plotwidget2.setXRange(200,300)   
+            self.plotwidget1.setXRange(220,260)   
+            self.plotwidget2.setXRange(220,260)   
 
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
@@ -1131,7 +1131,7 @@ class Panel(QtGui.QWidget):
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.update_spec_int_time_table()
-            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
+            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
             self.update_spectra_plot()
         QtGui.QApplication.processEvents()
 
