@@ -172,7 +172,7 @@ class Panel(QtGui.QWidget):
         self.abs_lines = []
         for n_inj in range(self.instrument.ncycles):
             print (n_inj,'ninj')
-            self.abs_lines[n_inj] = self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
+            self.abs_lines.append(self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj])))
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
