@@ -168,8 +168,9 @@ class Panel(QtGui.QWidget):
         self.plotSpc = self.plotwidget1.plot()
         self.plotAbs = self.plotwidget2.plot()
 
-        for n_inj in self.instrument.ncycles:
-            self.abs_lines[n_inj] = self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pen,)
+        color = ['r','g','b','m']
+        for n_inj in range(self.instrument.ncycles):
+            self.abs_lines[n_inj] = self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
