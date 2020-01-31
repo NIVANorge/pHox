@@ -159,13 +159,18 @@ class Panel(QtGui.QWidget):
             self.plotwidget1.addLine(x=self.instrument.wvl1, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
             self.plotwidget1.addLine(x=self.instrument.wvl2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))    
         else:
+            
             self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
             self.plotwidget1.addLine(x=self.instrument.HI, y=None, pen=pg.mkPen('b', width=1, style=QtCore.Qt.DotLine))        
             self.plotwidget1.addLine(x=self.instrument.I2, y=None, pen=pg.mkPen('#eb8934', width=1, style=QtCore.Qt.DotLine))   
             self.plotwidget1.addLine(x=self.instrument.NIR, y=None, pen=pg.mkPen('r', width=1, style=QtCore.Qt.DotLine))
 
-        self.plotSpc= self.plotwidget1.plot()
-        self.plotAbs= self.plotwidget2.plot()
+        self.plotSpc = self.plotwidget1.plot()
+        self.plotAbs = self.plotwidget2.plot()
+
+        for n_inj in self.instrument.ncycles:
+            self.abs_lines[n_inj] = self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pen,)
+
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
     def make_steps_groupBox(self):
@@ -580,8 +585,11 @@ class Panel(QtGui.QWidget):
 
 
 
-    def update_absorption_plot(self,spAbs):
-        self.plotAbs.setData(self.wvls,spAbs) 
+    def update_absorption_plot(self,n_inj,spAbs):
+
+        self.abs_lines[n_inj].setData(self.wvls,spAbs) 
+        # =  self.plotwidget2.plot(self.wvls,spAbs)
+        #self.plotAbs.setData(self.wvls,spAbs) 
 
     def update_spectra_plot(self):
 
@@ -1148,7 +1156,7 @@ class Panel(QtGui.QWidget):
 
             spAbs,vNTC = self.inject_measure(n_inj,blank)
             self.update_spectra_plot()  
-            self.update_absorption_plot(spAbs)
+            self.update_absorption_plot(n_inj,spAbs)
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
 

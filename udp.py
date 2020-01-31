@@ -27,6 +27,7 @@ def udp_server():
         try:
             (data,addr) = sock.recvfrom(500)
         except:
+            # add time
             pass
         else:
             print ('received: %s' % (data.strip()))
