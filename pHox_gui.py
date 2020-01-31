@@ -977,11 +977,14 @@ class Panel(QtGui.QWidget):
         #print ('run autoadjust')        
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
-        if not self.args.debug:
+
+        if not self.args.co3 or self.args.debug: 
             print ('Starting continuous mode ')
             self.textBox.setText('Starting continuous mode ')
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
+
+        if not self.args.debug:
             self.update_spectra_plot()
             self.textBox.setText('The instrument is ready')
             #self.on_deploy_clicked(True)
@@ -1443,8 +1446,7 @@ class boxUI(QtGui.QMainWindow):
         self.main_widget = Panel(self,self.args,config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()  
-        if not self.args.co3:      
-            self.main_widget.autorun()
+        self.main_widget.autorun()
 
         
     def closeEvent(self,event):
