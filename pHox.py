@@ -243,6 +243,13 @@ class Common_instrument(object):
     def turn_off_relay (self, line):
         self.rpi.write(line, False)
 
+    def pumping(self,pumpTime):    
+        self.turn_on_relay(self.wpump_slot) # start the instrument pump
+        self.turn_on_relay(self.stirrer_slot) # start the stirrer
+        time.sleep(pumpTime)
+        self.turn_off_relay(self.stirrer_slot) # turn off the pump
+        self.turn_off_relay(self.wpump_slot) # turn off the stirrer
+
     def cycle_line (self, line, nCycles):
         ON = 0.3
         OFF = 0.3
@@ -260,7 +267,13 @@ class Common_instrument(object):
         V = 0.0000
         for i in range (nAver):
             V += self.adc.read_voltage(channel)
-        return V/nAver   
+        return V/nAver  
+
+    '''def get_V(self, nAver, ch):
+        V = 0.0000
+        for i in range (nAver):
+            V += self.instrument.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
+        return V/nAver'''
 
     def calc_wavelengths(self):   
         '''
@@ -293,9 +306,6 @@ class CO3_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
         super().__init__(panelargs,config_name)
         self.load_config_co3() 
-
-
-
 
     def load_config_co3(self):      
         with open(self.config_name) as json_file:

@@ -910,7 +910,7 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
     def update_T_lab(self):
-        Voltage = self.get_Vd(3, self.instrument.vNTCch)
+        Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
         Voltage = round(Voltage, prec['vNTC'])
         T_lab= round((
             self.instrument.TempCalCoef[0]*Voltage) + self.instrument.TempCalCoef[1],
@@ -935,23 +935,13 @@ class Panel(QtGui.QWidget):
             S_insitu = str(self.pH_log_row["fb_sal"].values[0])
             self.fill_table_pH(4,1,S_insitu)      
 
-            Voltage = self.get_Vd(3, self.instrument.vNTCch)
+            Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
 
             self.fill_table_pH(5,1,str(Voltage))                  
         else: 
             print ('to be filled with data')
 
-    def get_V(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.instrument.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
-        return V/nAver
 
-    def get_Vd(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.instrument.adc.read_voltage(ch)
-        return V/nAver
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
@@ -1245,11 +1235,11 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Start new measurement')
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
-            self.pumping(self.instrument.pumpTime) 
+            self.instrument.pumping(self.instrument.pumpTime) 
             self.append_logbox('Pumping, Standalone, Continous')
 
         elif self.mode == 'Calibration':
-            self.pumping(self.instrument.pumpTime) 
+            self.instrument.pumping(self.instrument.pumpTime) 
             self.append_logbox('Pumping, Calibration') 
 
         self.append_logbox('Autoadjust LEDS')
@@ -1264,6 +1254,7 @@ class Panel(QtGui.QWidget):
         print ("Closing valve ...")
         self.instrument.set_Valve(True)
         #time.sleep(self.instrument.waitT)
+        
         ### take the dark
         if self.args.co3:
             self.instrument.turn_off_relay(self.instrument.light_slot)
@@ -1387,12 +1378,7 @@ class Panel(QtGui.QWidget):
             sptpath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
 
-    def pumping(self,pumpTime):    
-        self.instrument.turn_on_relay(self.instrument.wpump_slot) # start the instrument pump
-        self.instrument.turn_on_relay(self.instrument.stirrer_slot) # start the stirrer
-        time.sleep(pumpTime)
-        self.instrument.turn_off_relay(self.instrument.stirrer_slot) # turn off the pump
-        self.instrument.turn_off_relay(self.instrument.wpump_slot) # turn off the stirrer
+
 
     def save_logfile_df(self,folderPath):
         logfile = os.path.join(folderPath, 'pH.log')
