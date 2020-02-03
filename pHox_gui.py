@@ -692,7 +692,7 @@ class Panel(QtGui.QWidget):
                 self.CO2_instrument.franatech[7] = 0
 
         for ch in range(5):
-            V = self.get_Vd(2,ch+1)
+            V = self.instrument.get_Vd(2,ch+1)
             X = 0
             for i in range(2):
                 X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V,i)
@@ -1321,7 +1321,7 @@ class Panel(QtGui.QWidget):
         time.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
-        vNTC = self.get_Vd(3, self.instrument.vNTCch)
+        vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
         if not self.args.seabreeze:
