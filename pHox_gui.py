@@ -545,7 +545,6 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)        
         self.update_spectra_plot()
 
-
     def set_LEDs(self, state):
         for i in range(0,3):
            self.instrument.adjust_LED(i, state*self.sliders[i].value())
@@ -585,8 +584,6 @@ class Panel(QtGui.QWidget):
                 stabfile_df = pd.DataFrame(columns = ['datetime',"wvl1","wvl2","specint"])    
                            
             stabfile_df.to_csv(stabfile, index = False, header=True) 
-
-
 
     def update_absorption_plot(self,n_inj,spAbs):
 
@@ -834,7 +831,6 @@ class Panel(QtGui.QWidget):
          
         #print (self.x,self.y,self.intercept,self.slope)        
 
-
     def save_results(self):
     
         if self.mode == 'Calibration':
@@ -940,8 +936,6 @@ class Panel(QtGui.QWidget):
             self.fill_table_pH(5,1,str(Voltage))                  
         else: 
             print ('to be filled with data')
-
-
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
