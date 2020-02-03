@@ -62,7 +62,7 @@ class Panel(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
 
-        self.tab1 =        QtGui.QWidget()    
+        self.tab1 =        QtGui.QWidget()
         self.tab_manual =  QtGui.QWidget()
         self.tab_log =     QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
@@ -135,6 +135,8 @@ class Panel(QtGui.QWidget):
         if not self.args.co3:
             self.plotwidget1.setYRange(1000,16200)
         if self.args.co3: 
+            #self.plotwidget1.setYRange(1000,67000)
+            self.plotwidget2.setYRange(0,1)
             self.plotwidget1.setXRange(220,260)   
             self.plotwidget2.setXRange(220,260)   
 
@@ -1115,7 +1117,7 @@ class Panel(QtGui.QWidget):
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.update_spec_int_time_table()
-            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+', clear=True) 
+            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
             self.update_spectra_plot()
         QtGui.QApplication.processEvents()
 
@@ -1213,6 +1215,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.set_Valve(False)
         self.timerSpectra_plot.start() 
+
 
     def start_pump_adjustleds(self):
         print ('pH_sample, mode is {}'.format(self.mode))
