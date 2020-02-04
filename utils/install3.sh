@@ -59,6 +59,8 @@ then
     sudo apt-get -y install python3-pandas
     sudo apt-get -y install python3-usb
     sudo apt-get -y install python3-pyqtgraph
+    sudo pip3 install asyncqt
+    sudo pip3 install asyncio
 fi
 
 #---

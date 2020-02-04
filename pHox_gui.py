@@ -61,10 +61,11 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab1,       "Home")  
         self.tabs.addTab(self.tab_log,    "Log") 
         self.tabs.addTab(self.tab_manual, "Manual")
-        self.tabs.addTab(self.tab_config, "Config")         
-
+        self.tabs.addTab(self.tab_config, "Config") 
+                
+        self.make_tab_log()    
         self.make_tab1()
-        self.make_tab_log()      
+  
 
         self.make_tab_manual()
         self.make_tab_config()   
@@ -90,7 +91,6 @@ class Panel(QtGui.QWidget):
 
     def make_tab_log(self):
         self.tab_log.layout =     QtGui.QGridLayout()
-        
         self.logTextBox = QtGui.QPlainTextEdit()
         self.logTextBox.setReadOnly(True)
         if self.args.debug:
@@ -109,8 +109,6 @@ class Panel(QtGui.QWidget):
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timerTemp_info.timeout.connect(self.update_T_lab)
-
-
 
         if self.args.pco2:
             self.timerSave.timeout.connect(self.save_pCO2_data)
@@ -577,15 +575,13 @@ class Panel(QtGui.QWidget):
                            
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
-    def update_absorption_plot(self,n_inj,spAbs):
-
+    @asyncSlot()
+    async def update_absorption_plot(self,n_inj,spAbs):
         self.abs_lines[n_inj].setData(self.wvls,spAbs) 
-        # =  self.plotwidget2.plot(self.wvls,spAbs)
-        #self.plotAbs.setData(self.wvls,spAbs) 
+
 
     @asyncSlot()
     async def update_spectra_plot(self):
-
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
@@ -1459,6 +1455,7 @@ if __name__ == '__main__':
     asyncio.set_event_loop(loop)  
 
     ui  = boxUI()
+    
     app.exec_()
 
 

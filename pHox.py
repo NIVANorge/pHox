@@ -234,9 +234,10 @@ class Common_instrument(object):
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
         self.spectro = conf_operational["Spectro_connected"]
-        if self.spectro == "Seabreeze":
-            self.THR = int(conf_operational["LIGHT_THRESHOLD_Seabreeze"])     
-
+        if self.spectro == "FLAME":
+            self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])     
+        elif self.spectro == "STS":
+            self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
 
