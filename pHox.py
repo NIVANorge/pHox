@@ -42,14 +42,12 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    @asyncSlot()
-    async def get_intensities(self,num_avg = 1, correct = True):
+    def get_intensities(self,num_avg = 1, correct = True):
         sp = self.spec.intensities(correct_nonlinearity = correct)
         if num_avg > 1: 
             for _ in range(num_avg):
                 sp = np.vstack([sp,self.spec.intensities(
                             correct_nonlinearity = correct)])
-                await asyncio.sleep(1)
             sp = np.mean(np.array(sp),axis = 0)        
         return sp
 

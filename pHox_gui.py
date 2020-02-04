@@ -587,6 +587,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
+        print ("self.adjusting",self.adjusting)
         if self.adjusting == False:  
             if not self.args.seabreeze:
                 datay = self.instrument.spectrom.get_corrected_spectra()      
@@ -603,6 +604,7 @@ class Panel(QtGui.QWidget):
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
         elif self.adjusting == True: 
             datay = self.datay
+        print ('datay',datay)
         self.plotSpc.setData(self.wvls,datay)   
 
     def save_pCO2_data(self, pH = None):
