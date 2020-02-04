@@ -233,7 +233,8 @@ class Common_instrument(object):
             self.TempCalCoef = conf_operational['"DEF_TEMP_CAL_COEF"']
 
         self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
-        self.dye_vol_inj = conf_operational["DYE_V_INJ"]        self.specIntTime = conf_operational['Spectro_Integration_time']
+        self.dye_vol_inj = conf_operational["DYE_V_INJ"]        
+        self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
         self.spectro = conf_operational["Spectro_connected"]
