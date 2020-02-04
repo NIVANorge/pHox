@@ -10,6 +10,7 @@ import warnings, time, RPi.GPIO
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
+from 
 import numpy as np
 import pyqtgraph as pg 
 import argparse, socket
@@ -19,19 +20,9 @@ import udp # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec 
 
-class Sample_thread(QtCore.QThread):
-    def __init__(self,mainclass,panelargs):
-        self.mainclass = mainclass
-        self.args = panelargs
-        super(Sample_thread, self).__init__(mainclass)
+from asyncqt import QEventLoop, asyncSlot, asyncClose
+import asyncio
 
-    def run(self):
-        if self.args.co3: 
-            self.mainclass.co3_sample()
-        elif self.args.seabreeze:
-            self.mainclass.sample()
-        else:
-            self.mainclass.sample()
 
 class Panel(QtGui.QWidget):
     def __init__(self,parent,panelargs,config_name):
@@ -41,7 +32,7 @@ class Panel(QtGui.QWidget):
         self.continous_mode_is_on = False
         self.args = panelargs
         self.config_name = config_name
-        #self.args = parser.parse_args()
+
         self.create_timers()
 
         if self.args.co3:
@@ -593,15 +584,14 @@ class Panel(QtGui.QWidget):
         # =  self.plotwidget2.plot(self.wvls,spAbs)
         #self.plotAbs.setData(self.wvls,spAbs) 
 
-    def update_spectra_plot(self):
+    @asyncSlot()
+    async def update_spectra_plot(self):
 
         if not self.args.seabreeze:
             datay = self.instrument.spectrom.get_corrected_spectra()
-            time.sleep(self.instrument.specIntTime*1.e-6)
-
+            await asyncio.sleep(self.instrument.specIntTime*1.e-6)
             self.plotSpc.setData(self.wvls,datay)         
-            #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-            #                         pen=None, symbol='+', clear=True)    
+
         else:
             try: 
                 datay = self.instrument.spectrom.get_intensities()   
@@ -610,9 +600,7 @@ class Panel(QtGui.QWidget):
                 if self.args.stability:
                     self.save_stability_test(datay)
 
-                time.sleep(self.instrument.specIntTime*1.e-6)
-                #self.plotwidget1.plot([self.instrument.wvl2],[datay[self.instrument.wvlPixels[1]]],
-                #                         pen=None, symbol='+', clear=True)                 
+                await asyncio.sleep(self.instrument.specIntTime*1.e-6)               
                 self.plotSpc.setData(self.wvls,datay)
                  
             except:
@@ -648,7 +636,8 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.plot(
         [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
-
+        
+    @asyncSlot()
     def on_autoAdjust_clicked(self):
         print ('on_autoAdjust_clicked')
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
@@ -1379,8 +1368,6 @@ class Panel(QtGui.QWidget):
             sptpath + self.instrument.flnmStr + '.spt',
             index = True, header=False)
 
-
-
     def save_logfile_df(self,folderPath):
         logfile = os.path.join(folderPath, 'pH.log')
         if os.path.exists(logfile):
@@ -1435,6 +1422,8 @@ class boxUI(QtGui.QMainWindow):
         self.showMaximized()  
         self.main_widget.autorun()
 
+        with loop:
+            sys.exit(loop.run_forever())
         
     def closeEvent(self,event):
         result = QtGui.QMessageBox.question(self,
@@ -1466,6 +1455,10 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     qss_file = open('styles.qss').read()
     app.setStyleSheet(qss_file)
+
+    loop = QEventLoop(app)
+    asyncio.set_event_loop(loop)  
+
     ui  = boxUI()
     app.exec_()
 

@@ -5,3 +5,4 @@ data/
 *.evl
 *.spt
 config.json
+test_qt_async.py
