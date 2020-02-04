@@ -1266,7 +1266,7 @@ class Panel(QtGui.QWidget):
         if self.args.co3:
             self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
-            asyncio await.sleep(5)
+            await asyncio.sleep(5)
         else: 
             self.set_LEDs(True)
 
@@ -1304,11 +1304,11 @@ class Panel(QtGui.QWidget):
             self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
         self.append_logbox("Mixing")
-        asyncio await.sleep(self.instrument.mixT)
+        await asyncio.sleep(self.instrument.mixT)
         self.append_logbox('Stop stirrer')    
         self.instrument.turn_off_relay(self.instrument.stirrer_slot)
         self.append_logbox('Wait')            
-        asyncio await.sleep(self.instrument.waitT)
+        await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
