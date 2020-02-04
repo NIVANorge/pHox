@@ -388,9 +388,11 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def test_btn_clicked(self):
         print ('Start waiting 15 seconds to test async')
+        self.StatusBox.setText('Start waiting 15 seconds to test async')
         #self.logTextBox.appendPlainText('Start waiting 15 seconds to test async')
         await asyncio.sleep(15)
         print ('stop')
+        self.StatusBox.setText('stop waiting 15 seconds to test async')
         #self.logTextBox.appendPlainText('Stop waiting to test async')
 
     def make_slidergroupbox(self):    
