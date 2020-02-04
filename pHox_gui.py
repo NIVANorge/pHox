@@ -592,15 +592,12 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
-        print ("self.adjusting",self.adjusting)
         if self.adjusting == False:  
             if not self.args.seabreeze:
                 datay = self.instrument.spectrom.get_corrected_spectra()      
             else:
                 try: 
                     datay = self.instrument.spectrom.get_intensities()   
-                    print ('max datay in update spectro',np.max(datay))
-                    print ('specinttime',self.instrument.specIntTime)
                     if self.args.stability:
                         self.save_stability_test(datay)
                 except:
