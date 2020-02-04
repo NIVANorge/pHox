@@ -1122,11 +1122,11 @@ class Panel(QtGui.QWidget):
         QtGui.QApplication.processEvents()
 
         #reset light source 
-        self.instrument.turn_off_relay(self.instrument.light_slot)    
+        '''self.instrument.turn_off_relay(self.instrument.light_slot)    
         self.btn_lightsource.setChecked(False)        
         time.sleep(0.1)     
         self.instrument.turn_on_relay(self.instrument.light_slot)  
-        self.btn_lightsource.setChecked(True) 
+        self.btn_lightsource.setChecked(True) '''
 
 
         self.update_spectra_plot()   
@@ -1255,6 +1255,8 @@ class Panel(QtGui.QWidget):
         ### take the dark
         if self.args.co3:
             self.instrument.turn_off_relay(self.instrument.light_slot)
+            print ('turn of the light source')
+            time.sleep(5)
         else: 
             self.set_LEDs(False)
             # turn off light and LED
@@ -1274,6 +1276,8 @@ class Panel(QtGui.QWidget):
         #turn on the light and LED
         if self.args.co3:
             self.instrument.turn_on_relay(self.instrument.light_slot)
+            print ('turn on the light source')
+            time.sleep(5)
         else: 
             self.set_LEDs(True)
 
