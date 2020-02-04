@@ -22,6 +22,8 @@ seabreeze.use('cseabreeze')
 from seabreeze.spectrometers import Spectrometer
 from seabreeze.spectrometers import list_devices
 import seabreeze.cseabreeze as sbb 
+from asyncqt import QEventLoop, asyncSlot, asyncClose
+import asyncio
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -30,7 +32,8 @@ class Spectro_seabreeze(object):
         # try to reset devices
         self.spec =  Spectrometer.from_first_available()
 
-    def set_integration_time(self,time_millisec):
+    @asyncSlot
+    async def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
         #time.sleep(time_millisec/1.e3)
@@ -39,13 +42,14 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    def get_intensities(self,num_avg = 1, correct = True):
+    @asyncSlot
+    async def get_intensities(self,num_avg = 1, correct = True):
         sp = self.spec.intensities(correct_nonlinearity = correct)
         if num_avg > 1: 
             for _ in range(num_avg):
                 sp = np.vstack([sp,self.spec.intensities(
                             correct_nonlinearity = correct)])
-                time.sleep(1)
+                asyncio await.sleep(1)
             sp = np.mean(np.array(sp),axis = 0)        
         return sp
 
@@ -176,7 +180,7 @@ class Common_instrument(object):
         self.rpi.write( self.stirrer_slot, 0)
         self.rpi.write(   self.extra_slot, 0)
         
-    def set_Valve(self, status):
+    async def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1 =  self.valve_slots[1]
         ch2 =  self.valve_slots[2]
@@ -186,7 +190,7 @@ class Common_instrument(object):
         self.rpi.write(ch1, True)
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , True)
-        time.sleep(0.3)
+        await asyncio.sleep(0.3)
         self.rpi.write(ch1, False)
         self.rpi.write(ch2 , False)
         self.rpi.write(chEn , False)
@@ -229,8 +233,7 @@ class Common_instrument(object):
             self.TempCalCoef = conf_operational['"DEF_TEMP_CAL_COEF"']
 
         self.Cuvette_V = conf_operational["CUVETTE_V"] #ml
-        self.dye_vol_inj = conf_operational["DYE_V_INJ"]
-        self.specIntTime = conf_operational['Spectro_Integration_time']
+        self.dye_vol_inj = conf_operational["DYE_V_INJ"]        self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
         self.spectro = conf_operational["Spectro_connected"]
@@ -244,10 +247,10 @@ class Common_instrument(object):
     def turn_off_relay (self, line):
         self.rpi.write(line, False)
 
-    def pumping(self,pumpTime):    
+    async def pumping(self,pumpTime):    
         self.turn_on_relay(self.wpump_slot) # start the instrument pump
         self.turn_on_relay(self.stirrer_slot) # start the stirrer
-        time.sleep(pumpTime)
+        await asyncio.sleep(pumpTime)
         self.turn_off_relay(self.stirrer_slot) # turn off the pump
         self.turn_off_relay(self.wpump_slot) # turn off the stirrer
 
@@ -329,17 +332,11 @@ class CO3_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    def auto_adjust(self,*args):
+    @asyncSlot
+    async def auto_adjust(self,*args):
 
         self.spectrom.set_integration_time(self.specIntTime)
         print ('init self.specIntTime', self.specIntTime)
-        '''
-        Set int time 
-        Check value at wl 250 
-        adjust 
-        change again
-        67 200 Saturation for Seabreeze
-        '''
         adjusted = False 
 
         maxLevel  = self.THR
@@ -347,15 +344,13 @@ class CO3_instrument(Common_instrument):
         print ('max + 10%',(maxLevel * 1.1))
 
         while adjusted == False: 
-            QtGui.QApplication.processEvents()  
-
             if not self.args.seabreeze:
-                datay  = self.spectrom.get_corrected_spectra()
+                self.datay  = self.spectrom.get_corrected_spectra()
             else: 
-                datay  = self.spectrom.get_intensities()
+                self.datay  = self.spectrom.get_intensities()
 
             #datay = self.spectrom.get_corrected_spectra()
-            pixelLevel = datay[self.wvlPixels[1]]
+            pixelLevel = self.datay[self.wvlPixels[1]]
             #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')
@@ -367,11 +362,11 @@ class CO3_instrument(Common_instrument):
             if pixelLevel < maxLevel * 0.95:
                 self.specIntTime = self.specIntTime + 100                
                 self.spectrom.set_integration_time(self.specIntTime)
-                time.sleep(self.specIntTime*1.e-3)
+                await asyncio.sleep(self.specIntTime*1.e-3)
             elif pixelLevel > maxLevel * 1.05:
                 self.specIntTime = self.specIntTime - 100
                 self.spectrom.set_integration_time(self.specIntTime)     
-                time.sleep(self.specIntTime*1.e-3)                      
+                await asyncio.sleep(self.specIntTime*1.e-3)                      
             else: 
                 adjusted = True 
 
@@ -475,13 +470,20 @@ class pH_instrument(Common_instrument):
 
     def find_LED(self,THR,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
-        SAT = 16000
         LED = curr_value 
         self.adjust_LED(led_ind, LED)
-        pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
+        #pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
+
+        if not self.args.seabreeze:
+            self.datay  = self.spectrom.get_corrected_spectra()
+        else: 
+            self.datay  = self.spectrom.get_intensities()
+
+        pixelLevel = self.datay[self.wvlPixels[1]]
 
         while LED < 100: 
             dif_counts = THR - pixelLevel
+
             if (dif_counts > 500 and LED < 99) : 
                 #print ('case1')
                 #print ('LED before',LED)
@@ -539,6 +541,7 @@ class pH_instrument(Common_instrument):
             res = 'decrease int time'
         return LED,adj,res
 
+    @asyncSlot()
     def call_adjust(self,sptIt):
         print ('inside call adjust ')
         adj1,adj2,adj3 = False, False, False

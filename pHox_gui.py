@@ -31,7 +31,7 @@ class Panel(QtGui.QWidget):
         self.continous_mode_is_on = False
         self.args = panelargs
         self.config_name = config_name
-
+        self.adjusting = False 
         self.create_timers()
 
         if self.args.co3:
@@ -353,7 +353,7 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
         self.btn_calibr = self.create_button('Make calibration',True)
-
+        self.test_button = self.create_button('Test async',False)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_calibr, 0, 1)
@@ -365,14 +365,14 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
-
+        btn_grid.addWidget(self.test_button,4,1)
 
         # Define connections Button clicked - Result 
         self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-
+        self.test_button.clicked.connect(self.test_btn_clicked)
         if self.args.co3 :
             self.btn_lightsource = self.create_button('light source',True)
             btn_grid.addWidget(self.btn_lightsource , 4, 1)
@@ -385,6 +385,11 @@ class Panel(QtGui.QWidget):
 
         self.buttons_groupBox.setLayout(btn_grid)
 
+    @asyncSlot
+    async def test_btn_clicked(self):
+        self.logTextBox..appendPlainText('Start waiting 15 seconds to test async')
+        await asyncio.sleep(15)
+        self.logTextBox..appendPlainText('Stop waiting to test async')
     def make_slidergroupbox(self):    
         self.sliders_groupBox = QtGui.QGroupBox("LED values")
 
@@ -582,25 +587,23 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
-        if not self.args.seabreeze:
-            datay = self.instrument.spectrom.get_corrected_spectra()
+        if self.adjusting == False:  
+            if not self.args.seabreeze:
+                datay = self.instrument.spectrom.get_corrected_spectra()      
+            else:
+                try: 
+                    datay = self.instrument.spectrom.get_intensities()   
+                    print ('max datay in update spectro',np.max(datay))
+                    print ('specinttime',self.instrument.specIntTime)
+                    if self.args.stability:
+                        self.save_stability_test(datay)
+                except:
+                    print ('Exception error') 
+                    pass
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
-            self.plotSpc.setData(self.wvls,datay)         
-
-        else:
-            try: 
-                datay = self.instrument.spectrom.get_intensities()   
-                print ('max datay in update spectro',np.max(datay))
-                print ('specinttime',self.instrument.specIntTime)
-                if self.args.stability:
-                    self.save_stability_test(datay)
-
-                await asyncio.sleep(self.instrument.specIntTime*1.e-6)               
-                self.plotSpc.setData(self.wvls,datay)
-                 
-            except:
-                print ('Exception error') 
-                pass
+        elif self.adjusting == True: 
+            datay = self.datay
+        self.plotSpc.setData(self.wvls,datay)   
 
     def save_pCO2_data(self, pH = None):
         self.add_pco2_info()
@@ -633,10 +636,11 @@ class Panel(QtGui.QWidget):
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
 
     @asyncSlot()
-    def on_autoAdjust_clicked(self):
+    async def on_autoAdjust_clicked(self):
         print ('on_autoAdjust_clicked')
+        self.adjusting = True
         self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
-        self.update_spectra_plot()  
+        
 
         #self.timerSpectra_plot.start()
         print (self.LED1,self.LED2,self.LED3)
@@ -655,6 +659,7 @@ class Panel(QtGui.QWidget):
         else:
             pass
             #self.textBox.setText('Could not adjust leds')
+        self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
 
     def add_pco2_info(self):
@@ -1201,7 +1206,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot.start() 
 
 
-    def start_pump_adjustleds(self):
+    async def start_pump_adjustleds(self):
         print ('pH_sample, mode is {}'.format(self.mode))
 
         self.StatusBox.setText('Ongoing measurement')
@@ -1230,7 +1235,7 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(True)
         self.btn_leds.setChecked(True)
 
-    def valve_and_blank(self):
+    async def valve_and_blank(self):
         self.append_logbox('Closing valve ...')
         print ("Closing valve ...")
         self.instrument.set_Valve(True)
@@ -1261,7 +1266,7 @@ class Panel(QtGui.QWidget):
         if self.args.co3:
             self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
-            time.sleep(5)
+            asyncio await.sleep(5)
         else: 
             self.set_LEDs(True)
 
@@ -1284,11 +1289,8 @@ class Panel(QtGui.QWidget):
         
         return blank_min_dark , dark 
 
-    def inject_measure(self,n_inj,blank_min_dark,dark): 
+    async def inject_measure(self,n_inj,blank_min_dark,dark): 
         # create dataframe and store 
-        
-        QtGui.QApplication.processEvents()             
-
         print ('n_inj',n_inj)            
         self.sample_steps[n_inj+3].setChecked(True)
 
@@ -1302,11 +1304,11 @@ class Panel(QtGui.QWidget):
             self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
 
         self.append_logbox("Mixing")
-        time.sleep(self.instrument.mixT)
+        asyncio await.sleep(self.instrument.mixT)
         self.append_logbox('Stop stirrer')    
         self.instrument.turn_off_relay(self.instrument.stirrer_slot)
         self.append_logbox('Wait')            
-        time.sleep(self.instrument.waitT)
+        asyncio await.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
