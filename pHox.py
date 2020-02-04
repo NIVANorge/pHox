@@ -300,10 +300,10 @@ class Common_instrument(object):
 
     def get_sp_levels(self,pixel):
         if not self.args.seabreeze:
-            spec = self.spectrom.get_corrected_spectra()
+            self.spectrum = self.spectrom.get_corrected_spectra()
         else: 
-            spec = self.spectrom.get_intensities()
-        return spec[pixel],spec.max()
+            self.spectrum = self.spectrom.get_intensities()
+        return self.spectrum[pixel]
 
 class CO3_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
@@ -331,16 +331,15 @@ class CO3_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    @asyncSlot()
     async def auto_adjust(self,*args):
 
         self.spectrom.set_integration_time(self.specIntTime)
         print ('init self.specIntTime', self.specIntTime)
         adjusted = False 
 
-        maxLevel  = self.THR
-        print ('max - 10%',(maxLevel * 0.9))
-        print ('max + 10%',(maxLevel * 1.1))
+        thrLevel  = self.THR
+        print ('max - 10%',(thrLevel * 0.9))
+        print ('max + 10%',(thrLevel * 1.1))
 
         while adjusted == False: 
             if not self.args.seabreeze:
@@ -349,8 +348,7 @@ class CO3_instrument(Common_instrument):
                 self.datay  = self.spectrom.get_intensities()
 
             #datay = self.spectrom.get_corrected_spectra()
-            pixelLevel = self.datay[self.wvlPixels[1]]
-            #pixelLevel,_ =  self.get_sp_levels(self.wvlPixels[1])
+            pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')
             print (pixelLevel)
@@ -358,11 +356,11 @@ class CO3_instrument(Common_instrument):
             print ('integration time')
             print (self.specIntTime)
             #dd =  (THR*LED)/pixelLevel - LED     
-            if pixelLevel < maxLevel * 0.95:
+            if pixelLevel < thrLevel * 0.95:
                 self.specIntTime = self.specIntTime + 100                
                 self.spectrom.set_integration_time(self.specIntTime)
                 await asyncio.sleep(self.specIntTime*1.e-3)
-            elif pixelLevel > maxLevel * 1.05:
+            elif pixelLevel > thrLevel * 1.05:
                 self.specIntTime = self.specIntTime - 100
                 self.spectrom.set_integration_time(self.specIntTime)     
                 await asyncio.sleep(self.specIntTime*1.e-3)                      
@@ -467,64 +465,50 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    def find_LED(self,THR,led_ind,adj,curr_value):
+    def find_LED(self,thrLevel,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         LED = curr_value 
         self.adjust_LED(led_ind, LED)
-        #pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
-
-        if not self.args.seabreeze:
-            self.datay  = self.spectrom.get_corrected_spectra()
-        else: 
-            self.datay  = self.spectrom.get_intensities()
-
-        pixelLevel = self.datay[self.wvlPixels[1]]
+        pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
 
         while LED < 100: 
-            dif_counts = THR - pixelLevel
+
+            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
 
             if (dif_counts > 500 and LED < 99) : 
                 #print ('case1')
                 #print ('LED before',LED)
-                dif_LED = (dif_counts * 50 / maxLevel)    
                 dd =  (THR*LED)/pixelLevel - LED      
                 #print (dd)                 
                 LED += dd  
                 LED = min(99,LED)
                 self.adjust_LED(led_ind, LED)
                 #print ('LED after',LED)            
-                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+ 
                 #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
-            elif dif_counts < -500 and LED>1:
+            elif pixelLevel < thrLevel * 0.95 and LED>1:
                 #print ('case3')                
                 #print ('dif',dif_counts)
                 #print ('LED before',LED)
                 dd = LED - (THR*LED)/pixelLevel   
                 #print (dd)                   
-                dif_LED = (dif_counts * 30 / maxLevel)       
                 #print (dif_LED,'dif_LED')       
                 #LED += dif_LED
                 LED += dd  
                 LED = max(1,LED)
                 self.adjust_LED(led_ind, LED)
                 #print ('LED',LED)            
-                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
                 #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
-            elif dif_counts > 500 and LED == 99: 
+            elif pixelLevel > thrLevel * 1.05 and LED == 99: 
                 #print ('case2')                
-                #print ('LED before',LED)  
                 res = 'increase int time'              
-                #print ("cannot reach desired value with this integration time")
                 break
 
-            elif dif_counts < -500 and LED == 1: 
+            elif pixelLevel < thrLevel * 0.95 and LED == 1: 
                 #print ('case4')   
-                res = 'decrease int time'             
-                #print ('too high values')
-                #print ('dif',dif_counts)    
-                #print ('LED',LED)                            
+                res = 'decrease int time'                                       
                 break   
 
             elif dif_counts < 500 and dif_counts > -500: 
