@@ -49,7 +49,7 @@ class Spectro_seabreeze(object):
             for _ in range(num_avg):
                 sp = np.vstack([sp,self.spec.intensities(
                             correct_nonlinearity = correct)])
-                asyncio await.sleep(1)
+                await asyncio.sleep(1)
             sp = np.mean(np.array(sp),axis = 0)        
         return sp
 
