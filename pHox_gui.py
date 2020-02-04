@@ -385,11 +385,12 @@ class Panel(QtGui.QWidget):
 
         self.buttons_groupBox.setLayout(btn_grid)
 
-    @asyncSlot
+    @asyncSlot()
     async def test_btn_clicked(self):
         self.logTextBox.appendPlainText('Start waiting 15 seconds to test async')
         await asyncio.sleep(15)
         self.logTextBox.appendPlainText('Stop waiting to test async')
+        
     def make_slidergroupbox(self):    
         self.sliders_groupBox = QtGui.QGroupBox("LED values")
 
