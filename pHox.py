@@ -32,7 +32,7 @@ class Spectro_seabreeze(object):
         # try to reset devices
         self.spec =  Spectrometer.from_first_available()
 
-    @asyncSlot
+    @asyncSlot()
     async def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
@@ -42,7 +42,7 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    @asyncSlot
+    @asyncSlot()
     async def get_intensities(self,num_avg = 1, correct = True):
         sp = self.spec.intensities(correct_nonlinearity = correct)
         if num_avg > 1: 
@@ -333,7 +333,7 @@ class CO3_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    @asyncSlot
+    @asyncSlot()
     async def auto_adjust(self,*args):
 
         self.spectrom.set_integration_time(self.specIntTime)
