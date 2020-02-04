@@ -604,7 +604,6 @@ class Panel(QtGui.QWidget):
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
         elif self.adjusting == True: 
             datay = self.instrument.datay
-        print ('datay',datay)
         self.plotSpc.setData(self.wvls,datay)   
 
     def save_pCO2_data(self, pH = None):
