@@ -10,7 +10,6 @@ import warnings, time, RPi.GPIO
 import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
-from 
 import numpy as np
 import pyqtgraph as pg 
 import argparse, socket
@@ -636,7 +635,7 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.plot(
         [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
         [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
-        
+
     @asyncSlot()
     def on_autoAdjust_clicked(self):
         print ('on_autoAdjust_clicked')
