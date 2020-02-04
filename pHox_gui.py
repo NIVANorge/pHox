@@ -603,7 +603,7 @@ class Panel(QtGui.QWidget):
                     pass
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
         elif self.adjusting == True: 
-            datay = self.datay
+            datay = self.instrument.datay
         print ('datay',datay)
         self.plotSpc.setData(self.wvls,datay)   
 
