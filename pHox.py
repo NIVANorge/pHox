@@ -344,8 +344,7 @@ class CO3_instrument(Common_instrument):
         print ('finished')
         adjusted = False 
 
-        print ('max - 10%',(self.THR * 0.9))
-        print ('max + 10%',(self.THR * 1.1))
+
 
 
 
@@ -474,12 +473,19 @@ class pH_instrument(Common_instrument):
     async def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    async def find_LED(self,thrLevel,led_ind,adj,LED):
+    async def find_LED(self,led_ind,adj,LED):
+        maxval = self.THR * 1.05
+        if led_ind = 2:      
+            minval = self.THR * 0.90
+        else:
+            minval = self.THR * 0.95
+
+
         print ('led_ind',led_ind)
         print ('Threshold',thrLevel)
         pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])          
         while adj == False: 
-
+        
             maxlevel = np.max(self.spectrum)
             print (maxlevel)
             print (pixelLevel,LED)
@@ -497,7 +503,7 @@ class pH_instrument(Common_instrument):
                 print ('case1')                
                 res = 'decrease int time' 
                 break
-            elif (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
+            elif (pixelLevel < minval or pixelLevel > maxval): 
                 print ('case2')
                 new_LED = thrLevel*LED/pixelLevel
 
@@ -539,17 +545,17 @@ class pH_instrument(Common_instrument):
             self.spectrom.set_integration_time(sptIt)
             print ('Trying %i ms integration time...' % sptIt)
 
-            LED1,adj1,res1 = await self.find_LED(self.THR,
+            LED1,adj1,res1 = await self.find_LED(
                 led_ind = 0,adj = adj1,
                 LED = self.LED1)
             if adj1:
                 print ('adj1 = True')
-                LED2,adj2,res2 = await self.find_LED(self.THR,
+                LED2,adj2,res2 = await self.find_LED(
                     led_ind = 1,adj = adj2,
                     LED = self.LED2)
                 if adj2:    
                     print ('adj2 = True')
-                    LED3,adj3,res3 = await self.find_LED(self.THR-3000,
+                    LED3,adj3,res3 = await self.find_LED(
                         led_ind = 2,adj = adj3, 
                         LED = self.LED3)    
 
