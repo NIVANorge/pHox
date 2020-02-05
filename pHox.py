@@ -471,7 +471,7 @@ class pH_instrument(Common_instrument):
     def find_LED(self,thrLevel,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         LED = curr_value 
-        while adj = False: 
+        while adj == False: 
             self.adjust_LED(led_ind, LED)            
             pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])  
 
