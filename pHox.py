@@ -309,6 +309,7 @@ class Common_instrument(object):
             self.spectrum = self.spectrom.get_corrected_spectra()
         else: 
             self.spectrum = self.spectrom.get_intensities()
+            print ('inside sp levels',self.spectrum[led_ind])
         return self.spectrum[pixel]
 
 class CO3_instrument(Common_instrument):
@@ -473,12 +474,10 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    async def find_LED(self,thrLevel,led_ind,adj,curr_value):
+    async def find_LED(self,thrLevel,led_ind,adj,LED):
         print ('led_ind',led_ind)
         print ('Threshold',thrLevel)
-        LED = curr_value 
         while adj == False: 
-
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])  
             maxlevel = np.max(self.spectrum)
             print (maxlevel)
@@ -491,9 +490,7 @@ class pH_instrument(Common_instrument):
                 break
             elif (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
                 new_LED = thrLevel*LED/pixelLevel
-                self.adjust_LED(led_ind, new_LED)  
-                await asyncio.sleep(2)
-                print ("new_LED", new_LED)
+
                 LED = new_LED  
                 if new_LED >= 95: 
                     res = 'increase int time'              
@@ -503,7 +500,10 @@ class pH_instrument(Common_instrument):
                     break     
                 else: 
                     print ('ch led')
-                    LED = new_LED            
+                    LED = new_LED     
+                    self.adjust_LED(led_ind, new_LED)  
+                    await asyncio.sleep(2)
+                    print ("new_LED", new_LED)       
             else: 
                 adj = True  
                 res = 'adjusted'      
