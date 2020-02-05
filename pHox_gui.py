@@ -671,6 +671,8 @@ class Panel(QtGui.QWidget):
                 #self.textBox.setText('Could not adjust leds')
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
+        
+        return 'Finished'
 
     def add_pco2_info(self):
         self.CO2_instrument.portSens.write(
@@ -1184,7 +1186,8 @@ class Panel(QtGui.QWidget):
 
     async def sample(self):
    
-        p1 = await self.start_pump_adjustleds()
+        _= await self.start_pump_adjustleds()
+
         blank_min_dark,dark =  await self.valve_and_blank()
 
 
