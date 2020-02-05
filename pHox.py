@@ -478,7 +478,7 @@ class pH_instrument(Common_instrument):
         print ('Threshold',thrLevel)
         LED = curr_value 
         while adj == False: 
-            self.adjust_LED(led_ind, LED)  
+            await self.adjust_LED(led_ind, LED)  
             await asyncio.sleep(2)
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])  
 
