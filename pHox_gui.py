@@ -651,6 +651,7 @@ class Panel(QtGui.QWidget):
 
         else: 
             loop = asyncio.get_event_loop()
+            print (loop,'loop')
             self.LED1,self.LED2,self.LED3,sptIt,result  = loop.run_until_complete(self.instrument.auto_adjust())
             print (self.LED1,self.LED2,self.LED3)
             if result:
