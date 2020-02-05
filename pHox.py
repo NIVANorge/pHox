@@ -540,30 +540,29 @@ class pH_instrument(Common_instrument):
             adj1,adj2,adj3 = False, False, False
             LED1,LED2,LED3 = None, None, None
             res1,res2,res3 = None, None, None
-            self.spectrom.set_integration_time(sptIt)
-            print ('Trying %i ms integration time...' % sptIt)
+            self.spectrom.set_integration_time(self.specIntTime)
+            print ('Trying %i ms integration time...' % self.specIntTime)
 
             LED1,adj1,res1 = await self.find_LED(
-                led_ind = 0,adj = adj1,
-                LED = self.LED1)
+                led_ind = 0,adj = adj1,LED = self.LED1)
+
             if adj1:
                 print ('adj1 = True')
                 LED2,adj2,res2 = await self.find_LED(
-                    led_ind = 1,adj = adj2,
-                    LED = self.LED2)
+                    led_ind = 1,adj = adj2, LED = self.LED2)
+
                 if adj2:    
                     print ('adj2 = True')
                     LED3,adj3,res3 = await self.find_LED(
-                        led_ind = 2,adj = adj3, 
-                        LED = self.LED3)    
+                        led_ind = 2,adj = adj3, LED = self.LED3)    
 
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 print ('decreasing time') 
-                sptIt -= 100
+                self.specIntTime -= 100
             elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
                 print ('increasing time')
                 if sptIt < 5000:
-                    sptIt += 100
+                    self.specIntTime += 100
                 else: 
                     print ('too high spt')
                     break 
