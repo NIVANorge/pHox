@@ -505,7 +505,7 @@ class pH_instrument(Common_instrument):
             elif (pixelLevel < minval or pixelLevel > maxval): 
                 print ('case2')
                 new_LED = self.THR*LED/pixelLevel
-
+                print ("new_LED", new_LED)   
                 LED = new_LED  
                 if new_LED >= 95: 
                     res = 'increase int time'              
@@ -518,7 +518,7 @@ class pH_instrument(Common_instrument):
                     LED = new_LED     
                     r = await self.adjust_LED(led_ind, new_LED)  
                     #await asyncio.sleep(10)
-                    print ("new_LED", new_LED)    
+   
                     pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
                     print('new pixel level',pixelLevel)  
             else: 
@@ -563,7 +563,11 @@ class pH_instrument(Common_instrument):
                 sptIt -= 100
             elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
                 print ('increasing time')
-                sptIt += 100
+                if sptIt < 5000:
+                    sptIt += 100
+                else: 
+                    print ('too high spt')
+                    break 
             elif (adj1 and adj2 and adj3):
                print ('Levels adjusted')
                break 
