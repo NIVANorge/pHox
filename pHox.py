@@ -488,7 +488,7 @@ class pH_instrument(Common_instrument):
                 print ('saturated,reduce LED to half')
                 LED = LED/2 
                 r = await self.adjust_LED(led_ind, LED )  
-                await asyncio.sleep(10)
+                #await asyncio.sleep(10)
                 print ("new_LED", LED)    
                 pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
                 print('new pixel level',pixelLevel)                  
@@ -512,7 +512,7 @@ class pH_instrument(Common_instrument):
                     print ('ch led')
                     LED = new_LED     
                     r = await self.adjust_LED(led_ind, new_LED)  
-                    await asyncio.sleep(10)
+                    #await asyncio.sleep(10)
                     print ("new_LED", new_LED)    
                     pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
                     print('new pixel level',pixelLevel)  
