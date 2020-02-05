@@ -344,15 +344,12 @@ class CO3_instrument(Common_instrument):
         print ('max - 10%',(self.THR * 0.9))
         print ('max + 10%',(self.THR * 1.1))
 
+
+
         while adjusted == False: 
             self.spectrom.set_integration_time(self.specIntTime)
+
             print ('init self.specIntTime', self.specIntTime)
-
-            if not self.args.seabreeze:
-                self.datay  = self.spectrom.get_corrected_spectra()
-            else: 
-                self.datay  = self.spectrom.get_intensities()
-
             pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')

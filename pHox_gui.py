@@ -605,8 +605,16 @@ class Panel(QtGui.QWidget):
                     pass
             await asyncio.sleep(self.instrument.specIntTime*1.e-6)
         elif self.adjusting == True: 
-            datay = self.instrument.spectrum
+            try: 
+                datay = self.instrument.spectrum
+            except: 
+                pass
+        try:    
+            self.plotSpc.setData(self.wvls,datay)   
         self.plotSpc.setData(self.wvls,datay)   
+            self.plotSpc.setData(self.wvls,datay)   
+        except: 
+            pass 
 
     def save_pCO2_data(self, pH = None):
         self.add_pco2_info()
