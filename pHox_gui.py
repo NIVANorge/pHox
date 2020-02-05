@@ -650,9 +650,9 @@ class Panel(QtGui.QWidget):
                 self.update_spectra_plot()
 
         else: 
-            self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
+            loop = asyncio.get_event_loop()
+            self.LED1,self.LED2,self.LED3,sptIt,result  = loop.run_until_complete(self.instrument.auto_adjust())
             print (self.LED1,self.LED2,self.LED3)
-            
             if result:
                 self.sliders[0].setValue(self.LED1)
                 self.sliders[1].setValue(self.LED2)

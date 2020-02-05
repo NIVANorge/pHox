@@ -337,7 +337,7 @@ class CO3_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    def auto_adjust(self,*args):
+    async def auto_adjust(self,*args):
         print ('try slee async in subfunc')
         asyncio await.sleep(10)
         print ('finished')
