@@ -31,6 +31,11 @@ class Spectro_seabreeze(object):
         #print (self.spec)
         # try to reset devices
         self.spec =  Spectrometer.from_first_available()
+        print (self.spec,'spec')
+        f = re.search('STS',spec)
+        if f == None :
+            re.search('Flame',spec)    
+        self.spectro_type = f.group()
 
     @asyncSlot()
     async def set_integration_time(self,time_millisec):
@@ -235,10 +240,10 @@ class Common_instrument(object):
         self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
-        self.spectro = conf_operational["Spectro_connected"]
-        if self.spectro == "FLAME":
+
+        if self.spectrom.spectro_type == "FLAME":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])     
-        elif self.spectro == "STS":
+        elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
