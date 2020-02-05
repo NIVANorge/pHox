@@ -962,7 +962,7 @@ class Panel(QtGui.QWidget):
         #self.textBox.setText('Adjusting LEDs')
         #self.on_autoAdjust_clicked()
 
-        if not self.args.co3 or self.args.debug: 
+        if not self.args.co3 or not self.args.debug: 
             print ('Starting continuous mode ')
             self.textBox.setText('Starting continuous mode ')
             self.btn_cont_meas.setChecked(True)
