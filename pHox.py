@@ -478,13 +478,14 @@ class pH_instrument(Common_instrument):
         print ('Threshold',thrLevel)
         LED = curr_value 
         while adj == False: 
-            self.adjust_LED(led_ind, LED)  
+
             await asyncio.sleep(2)
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])  
 
             print (pixelLevel,LED)
             if (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
                 new_LED = thrLevel*LED/pixelLevel
+                self.adjust_LED(led_ind, new_LED)  
                 print ("new_LED", new_LED)
                 LED = new_LED  
                 if new_LED >= 95: 
@@ -495,7 +496,7 @@ class pH_instrument(Common_instrument):
                     break     
                 else: 
                     print ('ch led')
-                    LED = new_LED              
+                    LED = new_LED            
             else: 
                 adj = True  
                 res = 'adjusted'      
