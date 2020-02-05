@@ -333,21 +333,20 @@ class CO3_instrument(Common_instrument):
 
     async def auto_adjust(self,*args):
 
-        self.spectrom.set_integration_time(self.specIntTime)
-        print ('init self.specIntTime', self.specIntTime)
         adjusted = False 
 
-        thrLevel  = self.THR
-        print ('max - 10%',(thrLevel * 0.9))
-        print ('max + 10%',(thrLevel * 1.1))
+        print ('max - 10%',(self.THR * 0.9))
+        print ('max + 10%',(self.THR * 1.1))
 
         while adjusted == False: 
+            self.spectrom.set_integration_time(self.specIntTime)
+            print ('init self.specIntTime', self.specIntTime)
+
             if not self.args.seabreeze:
                 self.datay  = self.spectrom.get_corrected_spectra()
             else: 
                 self.datay  = self.spectrom.get_intensities()
 
-            #datay = self.spectrom.get_corrected_spectra()
             pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')
@@ -355,19 +354,24 @@ class CO3_instrument(Common_instrument):
 
             print ('integration time')
             print (self.specIntTime)
-            #dd =  (THR*LED)/pixelLevel - LED     
-            if pixelLevel < thrLevel * 0.95:
-                self.specIntTime = self.specIntTime + 100                
-                self.spectrom.set_integration_time(self.specIntTime)
+   
+            if (pixelLevel < self.THR * 0.95 or pixelLevel > self.THR * 1.05):
+
+                new_specintTime = self.specIntTime * self.THR / pixelLevel
+
+                if new_specintTime < 50: 
+                    print ('Something is wrong, specint time is too low ')
+                elif new_specintTime > 5000:
+                    print ('Too high specint time value') 
+                    break 
+
+                self.specIntTime = new_specintTime
+
                 await asyncio.sleep(self.specIntTime*1.e-3)
-            elif pixelLevel > thrLevel * 1.05:
-                self.specIntTime = self.specIntTime - 100
-                self.spectrom.set_integration_time(self.specIntTime)     
-                await asyncio.sleep(self.specIntTime*1.e-3)                      
+               
             else: 
                 adjusted = True 
 
-        print (adjusted)
         return adjusted,pixelLevel 
 
     def calc_CO3(self,absSp, vNTC,dilution,vol_injected):
@@ -405,7 +409,6 @@ class CO3_instrument(Common_instrument):
         slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
         print ('slope = ', slope1, "  intercept = ",intercept, " r2=", r_value)
         return  [slope1, intercept, r_value]
-
 
 class pH_instrument(Common_instrument):
     def __init__(self,panelargs,config_name):
@@ -468,60 +471,25 @@ class pH_instrument(Common_instrument):
     def find_LED(self,thrLevel,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         LED = curr_value 
-        self.adjust_LED(led_ind, LED)
-        pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
+        while adj = False: 
+            self.adjust_LED(led_ind, LED)            
+            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])  
 
-        while LED < 100: 
+            print (pixelLevel,LED)
+            if (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
+                new_LED = THR*LED/pixellevel 
+                if new_LED >= 95: 
+                    res = 'increase int time'              
+                    break
+                elif new_LED <= 5:
+                    res = 'decrease int time'                                       
+                    break     
+                else: 
+                    LED = new_LED              
+            else: 
+                adj = True  
+                res = 'adjusted'      
 
-            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-
-            if (dif_counts > 500 and LED < 99) : 
-                #print ('case1')
-                #print ('LED before',LED)
-                dd =  (THR*LED)/pixelLevel - LED      
-                #print (dd)                 
-                LED += dd  
-                LED = min(99,LED)
-                self.adjust_LED(led_ind, LED)
-                #print ('LED after',LED)            
- 
-                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
-
-            elif pixelLevel < thrLevel * 0.95 and LED>1:
-                #print ('case3')                
-                #print ('dif',dif_counts)
-                #print ('LED before',LED)
-                dd = LED - (THR*LED)/pixelLevel   
-                #print (dd)                   
-                #print (dif_LED,'dif_LED')       
-                #LED += dif_LED
-                LED += dd  
-                LED = max(1,LED)
-                self.adjust_LED(led_ind, LED)
-                #print ('LED',LED)            
-                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
-
-            elif pixelLevel > thrLevel * 1.05 and LED == 99: 
-                #print ('case2')                
-                res = 'increase int time'              
-                break
-
-            elif pixelLevel < thrLevel * 0.95 and LED == 1: 
-                #print ('case4')   
-                res = 'decrease int time'                                       
-                break   
-
-            elif dif_counts < 500 and dif_counts > -500: 
-                #print ('case5')                
-                adj = True
-                #print ('LED',LED)  
-                res = 'adjusted'              
-                break        
-
-        if LED > 100: 
-            res = 'increase int time'
-        if LED == 1: 
-            res = 'decrease int time'
         return LED,adj,res
 
     @asyncSlot()
@@ -551,9 +519,7 @@ class pH_instrument(Common_instrument):
         return LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3
 
     def auto_adjust(self,*args):
-        
-        #self.textBox.setText('Autoadjusting leds')
-        
+          
         sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)

@@ -392,7 +392,7 @@ class Panel(QtGui.QWidget):
         #self.logTextBox.appendPlainText('Start waiting 15 seconds to test async')
         await asyncio.sleep(15)
         print ('stop')
-        self.StatusBox.setText('stop waiting 15 seconds to test async')
+        self.StatusBox.setText('stop')
         #self.logTextBox.appendPlainText('Stop waiting to test async')
 
     def make_slidergroupbox(self):    
@@ -630,38 +630,38 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
 
-    def plot_sp_levels(self):
-        pixelLevel_0, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[0])
-        pixelLevel_1, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[1])
-        pixelLevel_2, _ = self.instrument.get_sp_levels(self.instrument.wvlPixels[2])   
-        self.plotwidget1.plot(
-        [self.instrument.HI,self.instrument.I2,self.instrument.NIR],
-        [pixelLevel_0,pixelLevel_1,pixelLevel_2], pen=None, symbol='+') 
-
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
         print ('on_autoAdjust_clicked')
         self.adjusting = True
-        self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
-        
+        if self.args.co3:
+            adj,pixelLevel = self.instrument.auto_adjust()  
+            if adj: 
+                self.append_logbox('Finished Autoadjust LEDS')
+                self.update_spec_int_time_table()
+                self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
+                                                    pen=None, symbol='+') 
+                self.update_spectra_plot()
 
-        #self.timerSpectra_plot.start()
-        print (self.LED1,self.LED2,self.LED3)
-        if result:
-            self.sliders[0].setValue(self.LED1)
-            self.sliders[1].setValue(self.LED2)
-            self.sliders[2].setValue(self.LED3)
+        else: 
+            self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
+            print (self.LED1,self.LED2,self.LED3)
+            
+            if result:
+                self.sliders[0].setValue(self.LED1)
+                self.sliders[1].setValue(self.LED2)
+                self.sliders[2].setValue(self.LED3)
 
-            #self.plot_sp_levels()
-            self.instrument.specIntTime = sptIt
-            self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
-            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
-                str(self.instrument.specIntTime)))  
-            if not self.args.seabreeze:    
-                self.instrument.specAvScans = 3000/sptIt
-        else:
-            pass
-            #self.textBox.setText('Could not adjust leds')
+                #self.plot_sp_levels()
+                self.instrument.specIntTime = sptIt
+                self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
+                self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
+                    str(self.instrument.specIntTime)))  
+                if not self.args.seabreeze:    
+                    self.instrument.specAvScans = 3000/sptIt
+            else:
+                pass
+                #self.textBox.setText('Could not adjust leds')
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
 
@@ -1105,13 +1105,10 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
 
-        adj,pixelLevel = self.instrument.auto_adjust()  
-        if adj: 
-            self.append_logbox('Finished Autoadjust LEDS')
-            self.update_spec_int_time_table()
-            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], pen=None, symbol='+') 
-            self.update_spectra_plot()
-        QtGui.QApplication.processEvents()
+        self.on_autoAdjust_clicked()
+
+
+
 
         #reset light source 
         '''self.instrument.turn_off_relay(self.instrument.light_slot)    
