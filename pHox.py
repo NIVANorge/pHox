@@ -33,9 +33,9 @@ class Spectro_seabreeze(object):
         # try to reset devices
         self.spec =  Spectrometer.from_first_available()
         print (self.spec,'spec')
-        f = re.search('STS',self.spec)
+        f = re.search('STS',str(self.spec))
         if f == None :
-            re.search('Flame',self.spec)    
+            re.search('Flame',str(self.spec))    
         self.spectro_type = f.group()
 
     @asyncSlot()
