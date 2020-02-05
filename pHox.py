@@ -500,8 +500,7 @@ class pH_instrument(Common_instrument):
 
         return LED,adj,res
 
-    @asyncSlot()
-    def call_adjust(self,sptIt):
+    async def call_adjust(self,sptIt):
         print ('inside call adjust ')
         adj1,adj2,adj3 = False, False, False
         LED1,LED2,LED3 = None, None, None
@@ -526,8 +525,11 @@ class pH_instrument(Common_instrument):
 
         return LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3
 
-    def auto_adjust(self,*args):
-          
+    async def auto_adjust(self,*args):
+        print ('try slee async in subfunc')
+        await asyncio.sleep(10)
+        print ('finished')  
+
         sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
