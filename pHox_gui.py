@@ -105,7 +105,7 @@ class Panel(QtGui.QWidget):
         self.timerTemp_info = QtCore.QTimer()
         self.timerSave = QtCore.QTimer()
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(2.e3) # 10 sec     
+        self.timerSpectra_plot.setInterval(1.e3) # 10 sec     
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
         self.timerTemp_info.timeout.connect(self.update_T_lab)
@@ -786,9 +786,6 @@ class Panel(QtGui.QWidget):
                 await self.sample()
                 self.single_sample_finished()
 
-            #self.sample_thread = Sample_thread(self,self.args)
-            #self.sample_thread.start()
-            #self.sample_thread.finished.connect(self.single_sample_finished)
         else: 
             self.btn_single_meas.setChecked(False) 
 
@@ -804,8 +801,7 @@ class Panel(QtGui.QWidget):
         self.sample()
         self.continuous_sample_finished() 
 
-        #self.sample_thread.start()
-        #self.sample_thread.finished.connect(self.continuous_sample_finished)
+
 
     def unclick_enable(self,btns):
         for btn in btns:
@@ -899,7 +895,7 @@ class Panel(QtGui.QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
         print ('start timer spectra plot')
-        self.timerSpectra_plot.start()
+        self.timerSpectra_plot.start(1000)
         if not self.btn_cont_meas.isChecked():
             self.StatusBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
