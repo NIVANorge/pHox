@@ -473,7 +473,7 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    async def find_LED(self,thrLevel,led_ind,adj,curr_value):
+    def find_LED(self,thrLevel,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         print ('Threshold',thrLevel)
         LED = curr_value 
@@ -500,31 +500,6 @@ class pH_instrument(Common_instrument):
 
         return LED,adj,res
 
-    async def call_adjust(self,sptIt):
-        print ('inside call adjust ')
-        adj1,adj2,adj3 = False, False, False
-        LED1,LED2,LED3 = None, None, None
-        res1,res2,res3 = None, None, None
-        self.spectrom.set_integration_time(sptIt)
-        print ('Trying %i ms integration time...' % sptIt)
-
-        LED1,adj1,res1 = self.find_LED(self.THR,
-            led_ind = 0,adj = adj1,
-            curr_value = self.LED1)
-
-        if adj1:
-            print ('adj1 = True')
-            LED2,adj2,res2 = self.find_LED(self.THR,
-                led_ind = 1,adj = adj2,
-                curr_value = self.LED2)
-            if adj2:    
-                print ('adj2 = True')
-                LED3,adj3,res3 = self.find_LED(self.THR-3000,
-                    led_ind = 2,adj = adj3, 
-                    curr_value = self.LED3)    
-
-        return LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3
-
     async def auto_adjust(self,*args):
         print ('try slee async in subfunc')
         await asyncio.sleep(10)
@@ -533,14 +508,32 @@ class pH_instrument(Common_instrument):
         sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
-        #for sptIt in sptItRange:
+
         n = 0
         while n < 100:
             n += 1
-            f = self.call_adjust(sptIt)
 
-            LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
-   
+            print ('inside call adjust ')
+            adj1,adj2,adj3 = False, False, False
+            LED1,LED2,LED3 = None, None, None
+            res1,res2,res3 = None, None, None
+            self.spectrom.set_integration_time(sptIt)
+            print ('Trying %i ms integration time...' % sptIt)
+
+            LED1,adj1,res1 = await self.find_LED(self.THR,
+                led_ind = 0,adj = adj1,
+                curr_value = self.LED1)
+            if adj1:
+                print ('adj1 = True')
+                LED2,adj2,res2 = await self.find_LED(self.THR,
+                    led_ind = 1,adj = adj2,
+                    curr_value = self.LED2)
+                if adj2:    
+                    print ('adj2 = True')
+                    LED3,adj3,res3 = await self.find_LED(self.THR-3000,
+                        led_ind = 2,adj = adj3, 
+                        curr_value = self.LED3)    
+
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 print ('decreasing time') 
                 sptIt -= 100
