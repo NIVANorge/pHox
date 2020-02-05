@@ -28,11 +28,9 @@ import re
 
 class Spectro_seabreeze(object):
     def __init__(self):
-        #self.spec =  Spectrometer.from_serial_number('S06356')
-        #print (self.spec)
-        # try to reset devices
+
         self.spec =  Spectrometer.from_first_available()
-        print (self.spec,'spec')
+
         f = re.search('STS',str(self.spec))
         if f == None :
             re.search('Flame',str(self.spec))    
@@ -297,7 +295,7 @@ class Common_instrument(object):
             coeffs[2]*(pixels**2) + coeffs[3]*(pixels**3))
         else: 
             wvls = self.spectrom.get_wavelengths()
-            print ('wvl got from seabreeze ',wvls)   
+
         return wvls
 
     def find_nearest(self, items, value):
