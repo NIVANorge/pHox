@@ -24,6 +24,7 @@ from seabreeze.spectrometers import list_devices
 import seabreeze.cseabreeze as sbb 
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
+import re
 
 class Spectro_seabreeze(object):
     def __init__(self):
