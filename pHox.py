@@ -309,7 +309,7 @@ class Common_instrument(object):
             self.spectrum = self.spectrom.get_corrected_spectra()
         else: 
             self.spectrum = self.spectrom.get_intensities()
-            print ('inside sp levels',self.spectrum[pixel)
+            print ('inside sp levels',self.spectrum[pixel])
         return self.spectrum[pixel]
 
 class CO3_instrument(Common_instrument):
