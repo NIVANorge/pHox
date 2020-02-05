@@ -480,9 +480,8 @@ class pH_instrument(Common_instrument):
         else:
             minval = self.THR * 0.95
 
-
         print ('led_ind',led_ind)
-        print ('Threshold',thrLevel)
+
         pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])          
         while adj == False: 
         
