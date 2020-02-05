@@ -339,7 +339,7 @@ class CO3_instrument(Common_instrument):
 
     async def auto_adjust(self,*args):
         print ('try slee async in subfunc')
-        asyncio await.sleep(10)
+        await asyncio.sleep(10)
         print ('finished')
         adjusted = False 
 
