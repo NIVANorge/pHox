@@ -487,6 +487,7 @@ class pH_instrument(Common_instrument):
                 print ('case0')
                 LED = LED/2
                 print ('saturated,reduce LED to half')
+                break
             elif pixelLevel ==  maxlevel and LED <= 20:
                 print ('case1')                
                 res = 'decrease int time' 
