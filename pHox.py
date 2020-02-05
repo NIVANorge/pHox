@@ -471,7 +471,7 @@ class pH_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    def adjust_LED(self, led, LED):
+    async def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
     async def find_LED(self,thrLevel,led_ind,adj,LED):
@@ -484,12 +484,15 @@ class pH_instrument(Common_instrument):
             print (maxlevel)
             print (pixelLevel,LED)
             if pixelLevel ==  maxlevel and LED >20:
+                print ('case0')
                 LED = LED/2
                 print ('saturated,reduce LED to half')
             elif pixelLevel ==  maxlevel and LED <= 20:
+                print ('case1')                
                 res = 'decrease int time' 
                 break
             elif (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
+                print ('case2')
                 new_LED = thrLevel*LED/pixelLevel
 
                 LED = new_LED  
