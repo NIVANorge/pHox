@@ -610,9 +610,7 @@ class Panel(QtGui.QWidget):
             except: 
                 pass
         try:    
-            self.plotSpc.setData(self.wvls,datay)   
-        self.plotSpc.setData(self.wvls,datay)   
-            self.plotSpc.setData(self.wvls,datay)   
+            self.plotSpc.setData(self.wvls,datay) 
         except: 
             pass 
 
