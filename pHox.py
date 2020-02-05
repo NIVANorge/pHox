@@ -473,7 +473,7 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    def find_LED(self,thrLevel,led_ind,adj,curr_value):
+    async def find_LED(self,thrLevel,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         print ('Threshold',thrLevel)
         LED = curr_value 
