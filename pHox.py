@@ -486,6 +486,7 @@ class pH_instrument(Common_instrument):
             if (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
                 new_LED = thrLevel*LED/pixelLevel
                 print ("new_LED", new_LED)
+                LED = new_LED  
                 if new_LED >= 95: 
                     res = 'increase int time'              
                     break
@@ -493,6 +494,7 @@ class pH_instrument(Common_instrument):
                     res = 'decrease int time'                                       
                     break     
                 else: 
+                    print ('ch led')
                     LED = new_LED              
             else: 
                 adj = True  
