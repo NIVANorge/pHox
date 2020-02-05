@@ -751,7 +751,8 @@ class Panel(QtGui.QWidget):
         #self.sample_thread.start()
         #self.sample_thread.finished.connect(self.single_sample_finished)
 
-    def btn_single_meas_clicked(self):
+    @asyncSlot()
+    async def btn_single_meas_clicked(self):
 
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
@@ -778,9 +779,9 @@ class Panel(QtGui.QWidget):
             #self.instrument.reset_lines()
             self.timerSpectra_plot.stop()
             if self.args.co3 :
-                self.co3_sample()
+                await self.co3_sample()
             else: 
-                self.sample()
+                await self.sample()
                 self.single_sample_finished()
 
             #self.sample_thread = Sample_thread(self,self.args)
@@ -1181,15 +1182,11 @@ class Panel(QtGui.QWidget):
                                        "TempProbe_id","Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
-    def sample(self):
-        self.timerSpectra_plot.stop()        
-        QtGui.QApplication.processEvents() 
+    async def sample(self):
+   
+        p1 = await self.start_pump_adjustleds()
+        blank_min_dark,dark =  await self.valve_and_blank()
 
-        self.start_pump_adjustleds()
-        QtGui.QApplication.processEvents() 
-
-        blank_min_dark,dark = self.valve_and_blank()
-        QtGui.QApplication.processEvents()
 
         for n_inj in range(self.instrument.ncycles):  
             vol_injected = round(
@@ -1198,20 +1195,16 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            spAbs,vNTC = self.inject_measure(n_inj,blank_min_dark,dark)
+            spAbs,vNTC = await self.inject_measure(n_inj,blank_min_dark,dark)
 
-            self.append_logbox('Calculate init pH') 
-            QtGui.QApplication.processEvents()  
-
+            #self.append_logbox('Calculate init pH') 
+            print ('Calculate init pH') 
             self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
                                 spAbs,vNTC,dilution,vol_injected)
-
-        self.append_logbox('Opening the valve ...')
-        QtGui.QApplication.processEvents()
+        print ('Opening the valve ...')
+        #self.append_logbox('Opening the valve ...')
 
         self.instrument.set_Valve(False)
-        self.timerSpectra_plot.start() 
-
 
     async def start_pump_adjustleds(self):
         print ('pH_sample, mode is {}'.format(self.mode))
