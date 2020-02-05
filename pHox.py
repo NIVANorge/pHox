@@ -504,7 +504,7 @@ class pH_instrument(Common_instrument):
                 break
             elif (pixelLevel < minval or pixelLevel > maxval): 
                 print ('case2')
-                new_LED = thrLevel*LED/pixelLevel
+                new_LED = self.THR*LED/pixelLevel
 
                 LED = new_LED  
                 if new_LED >= 95: 
