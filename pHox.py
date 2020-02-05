@@ -477,8 +477,9 @@ class pH_instrument(Common_instrument):
     async def find_LED(self,thrLevel,led_ind,adj,LED):
         print ('led_ind',led_ind)
         print ('Threshold',thrLevel)
+        pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])          
         while adj == False: 
-            pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])  
+
             maxlevel = np.max(self.spectrum)
             print (maxlevel)
             print (pixelLevel,LED)
@@ -502,8 +503,10 @@ class pH_instrument(Common_instrument):
                     print ('ch led')
                     LED = new_LED     
                     self.adjust_LED(led_ind, new_LED)  
-                    await asyncio.sleep(2)
-                    print ("new_LED", new_LED)       
+                    await asyncio.sleep(10)
+                    print ("new_LED", new_LED)    
+                    pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
+                    print('new pixel level',pixelLevel)  
             else: 
                 adj = True  
                 res = 'adjusted'      
