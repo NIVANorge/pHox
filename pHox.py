@@ -475,7 +475,7 @@ class pH_instrument(Common_instrument):
 
     async def find_LED(self,led_ind,adj,LED):
         maxval = self.THR * 1.05
-        if led_ind = 2:      
+        if led_ind == 2:      
             minval = self.THR * 0.90
         else:
             minval = self.THR * 0.95
