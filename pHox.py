@@ -485,9 +485,16 @@ class pH_instrument(Common_instrument):
             print (pixelLevel,LED)
             if pixelLevel ==  maxlevel and LED >20:
                 print ('case0')
-                LED = LED/2
                 print ('saturated,reduce LED to half')
-                break
+                LED = LED/2 
+                r = await self.adjust_LED(led_ind, LED )  
+                await asyncio.sleep(10)
+                print ("new_LED", new_LED)    
+                pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
+                print('new pixel level',pixelLevel)                  
+
+
+
             elif pixelLevel ==  maxlevel and LED <= 20:
                 print ('case1')                
                 res = 'decrease int time' 
