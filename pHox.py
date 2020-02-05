@@ -483,9 +483,12 @@ class pH_instrument(Common_instrument):
             maxlevel = np.max(self.spectrum)
             print (maxlevel)
             print (pixelLevel,LED)
-            if pixelLevel ==  maxlevel:
+            if pixelLevel ==  maxlevel and LED >20:
                 LED = LED/2
                 print ('saturated,reduce LED to half')
+            elif pixelLevel ==  maxlevel and LED <= 20:
+                res = 'decrease int time' 
+                break
             elif (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
                 new_LED = thrLevel*LED/pixelLevel
                 self.adjust_LED(led_ind, new_LED)  
