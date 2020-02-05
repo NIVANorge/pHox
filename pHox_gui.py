@@ -641,7 +641,7 @@ class Panel(QtGui.QWidget):
         print ('on_autoAdjust_clicked')
         self.adjusting = True
         if self.args.co3:
-            adj,pixelLevel = self.instrument.auto_adjust()  
+            adj,pixelLevel = await self.instrument.auto_adjust()  
             if adj: 
                 self.append_logbox('Finished Autoadjust LEDS')
                 self.update_spec_int_time_table()
@@ -650,9 +650,8 @@ class Panel(QtGui.QWidget):
                 self.update_spectra_plot()
 
         else: 
-            loop = asyncio.get_event_loop()
-            print (loop,'loop')
-            self.LED1,self.LED2,self.LED3,sptIt,result  = loop.run_until_complete(self.instrument.auto_adjust())
+
+            self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
             print (self.LED1,self.LED2,self.LED3)
             if result:
                 self.sliders[0].setValue(self.LED1)

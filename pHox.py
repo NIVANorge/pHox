@@ -304,7 +304,7 @@ class Common_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
-    def get_sp_levels(self,pixel):
+    async def get_sp_levels(self,pixel):
         if not self.args.seabreeze:
             self.spectrum = self.spectrom.get_corrected_spectra()
         else: 
@@ -480,7 +480,7 @@ class pH_instrument(Common_instrument):
         while adj == False: 
             self.adjust_LED(led_ind, LED)  
             await asyncio.sleep(2)
-            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])  
+            pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])  
 
             print (pixelLevel,LED)
             if (pixelLevel < thrLevel * 0.95 or pixelLevel > thrLevel * 1.05): 
