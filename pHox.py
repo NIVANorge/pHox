@@ -23,9 +23,9 @@ from seabreeze.spectrometers import Spectrometer
 
 class Spectro_seabreeze(object):
     def __init__(self):
-        self.spec =  Spectrometer.from_serial_number('S06356')
-        print (self.spec)
-        #self.spec =  Spectrometer.from_first_available()
+        #self.spec =  Spectrometer.from_serial_number('S06356')
+        #print (self.spec)
+        self.spec =  Spectrometer.from_first_available()
 
     def set_integration_time(self,time_millisec):
         microsec = time_millisec * 1000
@@ -144,9 +144,9 @@ class STSVIS(object):
         return spectralCounts
 
 class Common_instrument(object):
-    def __init__(self,panelargs):
+    def __init__(self,panelargs,config_name):
         self.args = panelargs
-
+        self.config_name = config_name
         if self.args.seabreeze:
             self.spectrom = Spectro_seabreeze()    
         else:
@@ -189,7 +189,7 @@ class Common_instrument(object):
 
     def load_config(self):
 
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)  
 
         conf_operational = j['Operational']
@@ -283,12 +283,12 @@ class Common_instrument(object):
         return spec[pixel],spec.max()
 
 class CO3_instrument(Common_instrument):
-    def __init__(self,panelargs):
-        super().__init__(panelargs)
+    def __init__(self,panelargs,config_name):
+        super().__init__(panelargs,config_name)
         self.load_config_co3() 
 
     def load_config_co3(self):      
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)  
 
         conf = j['CO3']
@@ -328,8 +328,8 @@ class CO3_instrument(Common_instrument):
         log_beta1_e2 = 5.507074-0.041259*S_corr + 0.000180*S_corr**2
         arg = (R - e1)/(1 - R*e2e3) 
 
-        CO3 = dilution * 1E6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
-        print ('[CO3--] = %.1f µmol/kg, T = %.2f\n' %(CO3, Tdeg))
+        CO3 = dilution * 1.e6*(10**-(log_beta1_e2+np.log10(arg)))  # umol/kg
+        print (r'[CO3--] = {} umol/kg, T = {}'.format(CO3, Tdeg))
 
         self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
                                      "log_beta1_e2", "vNTC", "S", 
@@ -339,8 +339,8 @@ class CO3_instrument(Common_instrument):
         #return  CO3, e1, e2e3, log_beta1_e2, vNTC, S  
 
 class pH_instrument(Common_instrument):
-    def __init__(self,panelargs):
-        super().__init__(panelargs)
+    def __init__(self,panelargs,config_name):
+        super().__init__(panelargs,config_name)
         #self.args = panelargs
         self.load_config_pH()       
 
@@ -356,7 +356,7 @@ class pH_instrument(Common_instrument):
         self.reset_lines()
 
     def load_config_pH(self):
-        with open('config.json') as json_file:
+        with open(self.config_name) as json_file:
             j = json.load(json_file)
 
         conf_pH = j['pH']
@@ -381,7 +381,7 @@ class pH_instrument(Common_instrument):
         self.LED1 = conf_pH["LED1"]
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
-
+        
         self.folderPath ='/home/pi/pHox/data/' # relative path
 
         if not os.path.exists(self.folderPath):
@@ -396,72 +396,119 @@ class pH_instrument(Common_instrument):
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
-    def find_LED(self,led_ind,adj,curr_value):
+    def find_LED(self,THR,led_ind,adj,curr_value):
         print ('led_ind',led_ind)
         SAT = 16000
         LED = curr_value 
+        self.adjust_LED(led_ind, LED)
+        pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])   
 
         while LED < 100: 
-            self.adjust_LED(led_ind, LED)
-            pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
-            dif_counts = self.THR - pixelLevel
-
+            dif_counts = THR - pixelLevel
             if (dif_counts > 500 and LED < 99) : 
-                dif_LED = (dif_counts * 30 / maxLevel)            
-                LED += dif_LED  
+                #print ('case1')
+                #print ('LED before',LED)
+                dif_LED = (dif_counts * 50 / maxLevel)    
+                dd =  (THR*LED)/pixelLevel - LED      
+                #print (dd)                 
+                LED += dd  
                 LED = min(99,LED)
-
-            elif dif_counts > 500 and LED == 99: 
-                break
+                self.adjust_LED(led_ind, LED)
+                #print ('LED after',LED)            
+                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
 
             elif dif_counts < -500 and LED>1:
-                dif_LED = (dif_counts * 30 / maxLevel)              
-                LED += dif_LED  
+                #print ('case3')                
+                #print ('dif',dif_counts)
+                #print ('LED before',LED)
+                dd = LED - (THR*LED)/pixelLevel   
+                #print (dd)                   
+                dif_LED = (dif_counts * 30 / maxLevel)       
+                #print (dif_LED,'dif_LED')       
+                #LED += dif_LED
+                LED += dd  
                 LED = max(1,LED)
+                self.adjust_LED(led_ind, LED)
+                #print ('LED',LED)            
+                pixelLevel,maxLevel =  self.get_sp_levels(self.wvlPixels[led_ind])
+                #print ('pixelLevel,maxlevel',pixelLevel,maxLevel)
+
+            elif dif_counts > 500 and LED == 99: 
+                #print ('case2')                
+                #print ('LED before',LED)  
+                res = 'increase int time'              
+                #print ("cannot reach desired value with this integration time")
+                break
 
             elif dif_counts < -500 and LED == 1: 
-                print ('too high values')
+                #print ('case4')   
+                res = 'decrease int time'             
+                #print ('too high values')
+                #print ('dif',dif_counts)    
+                #print ('LED',LED)                            
                 break   
 
             elif dif_counts < 500 and dif_counts > -500: 
+                #print ('case5')                
                 adj = True
-                break            
+                #print ('LED',LED)  
+                res = 'adjusted'              
+                break        
 
-            elif dif_counts < (self.THR - SAT): 
-                print ('saturation')
-                break
+        if LED > 100: 
+            res = 'increase int time'
+        if LED == 1: 
+            res = 'decrease int time'
+        return LED,adj,res
 
-        return LED,adj
+    def call_adjust(self,sptIt):
+        print ('inside call adjust ')
+        adj1,adj2,adj3 = False, False, False
+        LED1,LED2,LED3 = None, None, None
+        res1,res2,res3 = None, None, None
+        self.spectrom.set_integration_time(sptIt)
+        print ('Trying %i ms integration time...' % sptIt)
+
+        LED1,adj1,res1 = self.find_LED(self.THR,
+            led_ind = 0,adj = adj1,
+            curr_value = self.LED1)
+
+        if adj1:
+            print ('adj1 = True')
+            LED2,adj2,res2 = self.find_LED(self.THR,
+                led_ind = 1,adj = adj2,
+                curr_value = self.LED2)
+            if adj2:    
+                print ('adj2 = True')
+                LED3,adj3,res3 = self.find_LED(self.THR-3000,
+                    led_ind = 2,adj = adj3, 
+                    curr_value = self.LED3)    
+
+        return LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3
 
     def auto_adjust(self,*args):
         
         #self.textBox.setText('Autoadjusting leds')
-        sptItRange = [500,750,1000,1500,3000]
+        
+        sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
-        for sptIt in sptItRange:
-            adj1,adj2,adj3 = False, False, False
-            LED1,LED2,LED3 = None, None, None
+        #for sptIt in sptItRange:
+        n = 0
+        while n < 100:
+            n += 1
+            f = self.call_adjust(sptIt)
 
-            self.spectrom.set_integration_time(sptIt)
-            print ('Trying %i ms integration time...' % sptIt)
-
-            LED1,adj1 = self.find_LED(
-                led_ind = 0,adj = adj1,
-                curr_value = self.LED1)
-
-            if adj1:
-                print ('adj1 = True')
-                LED2,adj2 = self.find_LED(
-                    led_ind = 1,adj = adj2,
-                    curr_value = self.LED2)
-                if adj2:    
-                    print ('adj2 = True')
-                    LED3,adj3 = self.find_LED(
-                        led_ind = 2,adj = adj3, 
-                        curr_value = self.LED3)    
-
-            if (adj1 and adj2 and adj3):
+            LED1,LED2,LED3,adj1,adj2,adj3,res1,res2,res3 = f
+   
+            if any(t == 'decrease int time' for t in [res1,res2,res3]):
+                print ('decreasing time') 
+                sptIt -= 100
+            elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
+                print ('increasing time')
+                sptIt += 100
+            elif (adj1 and adj2 and adj3):
                print ('Levels adjusted')
                break 
 
@@ -474,7 +521,7 @@ class pH_instrument(Common_instrument):
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
-        vNTC = round(self.vNTCch, prec['vNTC'])
+        vNTC = round(vNTC, prec['vNTC'])
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
 
         T = 273.15 + Tdeg
@@ -486,7 +533,7 @@ class pH_instrument(Common_instrument):
         S_corr = round(fb_sal * dilution , prec['salinity'])
 
         R = A2/A1
-        
+
         if self.dye == 'TB':
             e1 = -0.00132 + 1.6E-5*T
             e2 = 7.2326 + -0.0299717*T + 4.6E-5*(T**2)
@@ -532,24 +579,27 @@ class pH_instrument(Common_instrument):
         T_lab = evalPar_df["Tdeg"][0]
         pH_lab = evalPar_df["pH"][0]
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] - T_lab) 
+
         nrows = evalPar_df.shape[0]
 
         if nrows>1:
             x = evalPar_df['Vol_injected'].values
             y = pH_t_corr.values
             slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
+            final_slope = slope1
             if r_value**2  > 0.9 :
                 pH_lab = intercept 
                 print ('r_value **2 > 0.9')
             else: 
+                print ('r_value **2 < 0.9 take two last measurements')                
                 x = x[:-2]
                 y = y[:-2]
                 slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
+                final_slope = slope2
                 if r_value**2  > 0.9 :  
                     pH_lab = intercept
                 else: 
                     pH_lab = pH_t_corr[0]
-
 
         pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
@@ -558,5 +608,5 @@ class pH_instrument(Common_instrument):
         pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
-                 pH_insitu)      
+                 pH_insitu,x,y,final_slope, intercept)      
 
