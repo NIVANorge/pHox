@@ -539,8 +539,9 @@ class Panel(QtGui.QWidget):
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
 
-    @asyncSlot()
-    async def sld_change(self):
+    @asyncSlot(*args)
+    async def sld_change(self,*args):
+        print (*args)
         source = self.sender()
         ind = self.sliders.index(source)
         value = self.sliders[ind].value()
