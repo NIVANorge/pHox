@@ -276,12 +276,6 @@ class Common_instrument(object):
             V += self.adc.read_voltage(channel)
         return V/nAver  
 
-    '''def get_V(self, nAver, ch):
-        V = 0.0000
-        for i in range (nAver):
-            V += self.instrument.adcdac.read_adc_voltage(ch,0) #1: read channel in differential mode
-        return V/nAver'''
-
     def calc_wavelengths(self):   
         '''
         assign wavelengths to pixels 
@@ -340,10 +334,6 @@ class CO3_instrument(Common_instrument):
         await asyncio.sleep(10)
         print ('finished')
         adjusted = False 
-
-
-
-
 
         while adjusted == False: 
             self.spectrom.set_integration_time(self.specIntTime)
