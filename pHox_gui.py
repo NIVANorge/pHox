@@ -555,11 +555,11 @@ class Panel(QtGui.QWidget):
     async def sld_0_change(self):   
         _ = await self.sld_change(0)
 
-   @asyncSlot()
+    @asyncSlot()
     async def sld_1_change(self):   
         _ = await self.sld_change(1)
 
-   @asyncSlot()
+    @asyncSlot()
     async def sld_2_change(self):   
         _ = await self.sld_change(2)
 
