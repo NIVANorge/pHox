@@ -457,7 +457,7 @@ class pH_instrument(Common_instrument):
             self.wvlPixels.append(
                 self.find_nearest(wvls,wl))
 
-    async def adjust_LED(self, led, LED):
+    def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led],LED)
 
     async def find_LED(self,led_ind,adj,LED):

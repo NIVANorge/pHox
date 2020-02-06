@@ -553,27 +553,27 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def sld_0_change(self): 
-        value = self.sliders[ind].value()
-        _ = await self.instrument.adjust_LED(ind,value)
+        value = self.sliders[0].value()
+        self.instrument.adjust_LED(0,value)
         #self.spinboxes[0].setValue(value)
         self.btn_leds.setChecked(True)        
-        _ = await self.update_spectra_plot()
+        await self.update_spectra_plot()
         #_ = await self.sld_change(0)
 
     @asyncSlot()
     async def sld_1_change(self):   
         value = self.sliders[1].value()
-        _ = await self.instrument.adjust_LED(1,value)
+        self.instrument.adjust_LED(1,value)
         #self.spinboxes[1].setValue(value)
         self.btn_leds.setChecked(True)        
-        _ = await self.update_spectra_plot()        
+        await self.update_spectra_plot()        
         #_ = await self.sld_change(1)
 
     @asyncSlot()
     async def sld_2_change(self): 
         value = self.sliders[2].value()
         print ('value2',value)
-        _ = await self.instrument.adjust_LED(2,value)
+        self.instrument.adjust_LED(2,value)
         #elf.spinboxes[2].setValue(value)
         self.btn_leds.setChecked(True)        
         _ = await self.update_spectra_plot()          
