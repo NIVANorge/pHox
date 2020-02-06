@@ -544,24 +544,40 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)'''
 
 
-    async def sld_change(self,ind):
+    '''async def sld_change(self,ind):
         value = self.sliders[ind].value()
         _ = await self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-        _ = await self.update_spectra_plot()
+        _ = await self.update_spectra_plot()'''
 
     @asyncSlot()
-    async def sld_0_change(self):   
-        _ = await self.sld_change(0)
+    async def sld_0_change(self): 
+        value = self.sliders[ind].value()
+        _ = await self.instrument.adjust_LED(ind,value)
+        #self.spinboxes[0].setValue(value)
+        self.btn_leds.setChecked(True)        
+        _ = await self.update_spectra_plot()
+        #_ = await self.sld_change(0)
 
     @asyncSlot()
     async def sld_1_change(self):   
-        _ = await self.sld_change(1)
+        value = self.sliders[1].value()
+        _ = await self.instrument.adjust_LED(1,value)
+        #self.spinboxes[1].setValue(value)
+        self.btn_leds.setChecked(True)        
+        _ = await self.update_spectra_plot()        
+        #_ = await self.sld_change(1)
 
     @asyncSlot()
-    async def sld_2_change(self):   
-        _ = await self.sld_change(2)
+    async def sld_2_change(self): 
+        value = self.sliders[2].value()
+        print ('value2',value)
+        _ = await self.instrument.adjust_LED(2,value)
+        #elf.spinboxes[2].setValue(value)
+        self.btn_leds.setChecked(True)        
+        _ = await self.update_spectra_plot()          
+        #_ = await self.sld_change(2)
 
 
     @asyncSlot()
