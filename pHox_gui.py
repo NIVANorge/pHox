@@ -530,21 +530,24 @@ class Panel(QtGui.QWidget):
         self.change_plus_minus_butn(
             ind,dif)
 
-    def spin_change(self,value):
+    @asyncSlot()
+    async def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
-        self.instrument.adjust_LED(ind,value)
+        value = self.spinboxes[ind].value()
+        _ = await self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
 
-    #@asyncSlot()
-    async def sld_change(self,value):
+    @asyncSlot()
+    async def sld_change(self):
         source = self.sender()
         ind = self.sliders.index(source)
+        value = self.sliders[ind].value()
         _ = await self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-        self.update_spectra_plot()
+        _ = await self.update_spectra_plot()
 
     @asyncSlot()
     async def set_LEDs(self, state):
