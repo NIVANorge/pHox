@@ -413,9 +413,13 @@ class Panel(QtGui.QWidget):
             self.sliders[ind].setTracking(True) 
             self.spinboxes.append(QtGui.QSpinBox())
             # create connections 
-            self.sliders[ind].valueChanged[int].connect(self.sld_change)   
+            #self.sliders[ind].valueChanged[int].connect(self.sld_change)   
             self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
-            
+
+        self.sliders[0].valueChanged[int].connect(self.sld_0_change)       
+        self.sliders[1].valueChanged[int].connect(self.sld_1_change)  
+        self.sliders[2].valueChanged[int].connect(self.sld_2_change)     
+
         grid = QtGui.QGridLayout()
 
         grid.addWidget(QtGui.QLabel('Blue:'),0,0)
@@ -539,16 +543,26 @@ class Panel(QtGui.QWidget):
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
 
-    @asyncSlot(*args)
-    async def sld_change(self,*args):
-        print (*args)
-        source = self.sender()
-        ind = self.sliders.index(source)
+
+    async def sld_change(self,ind):
         value = self.sliders[ind].value()
         _ = await self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
         _ = await self.update_spectra_plot()
+
+    @asyncSlot()
+    async def sld_0_change(self):   
+        _ = await self.sld_change(0)
+
+   @asyncSlot()
+    async def sld_1_change(self):   
+        _ = await self.sld_change(1)
+
+   @asyncSlot()
+    async def sld_2_change(self):   
+        _ = await self.sld_change(2)
+
 
     @asyncSlot()
     async def set_LEDs(self, state):
