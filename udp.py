@@ -5,7 +5,7 @@ import os
 
 UDP_SEND = 6801
 UDP_RECV = 6802
-UDP_IP   = '192.168.0.2'  # Should be the IP of the Ferrybox
+UDP_IP   = '192.168.0.1'  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 
 Ferrybox = {
@@ -13,7 +13,8 @@ Ferrybox = {
     'temperature': 15.0,
     'longitude'  : 0.0,
     'latitude'   : 0.0,
-    'pumping'    : 1
+    'pumping'    : 1,
+    'udp_ok'     : False
     }
 
 def udp_server():
@@ -25,10 +26,12 @@ def udp_server():
     print ('UDP server started')
     while not UDP_EXIT:
         try:
+            Ferrybox['udp_ok'] = False
             (data,addr) = sock.recvfrom(500)
         except:
             pass
         else:
+            Ferrybox['udp_ok'] = True
             print ('received: %s' % (data.strip()))
             w = data.split(',')
             if data.startswith('$PFBOX,TIME,'):
