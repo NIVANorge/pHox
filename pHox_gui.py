@@ -414,7 +414,7 @@ class Panel(QtGui.QWidget):
             self.spinboxes.append(QtGui.QSpinBox())
             # create connections 
             #self.sliders[ind].valueChanged[int].connect(self.sld_change)   
-            self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
+            ##self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
         self.sliders[0].valueChanged[int].connect(self.sld_0_change)       
         self.sliders[1].valueChanged[int].connect(self.sld_1_change)  
@@ -534,14 +534,14 @@ class Panel(QtGui.QWidget):
         self.change_plus_minus_butn(
             ind,dif)
 
-    @asyncSlot()
+    '''@asyncSlot()
     async def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
         value = self.spinboxes[ind].value()
         _ = await self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
-        self.btn_leds.setChecked(True)
+        self.btn_leds.setChecked(True)'''
 
 
     async def sld_change(self,ind):
