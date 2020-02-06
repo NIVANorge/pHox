@@ -575,10 +575,10 @@ class Panel(QtGui.QWidget):
         self.update_spectra_plot()          
 
 
-    @asyncSlot()
-    async def set_LEDs(self, state):
+
+    def set_LEDs(self, state):
         for i in range(0,3):
-            r = await self.instrument.adjust_LED(i, state*self.sliders[i].value())
+            self.instrument.adjust_LED(i, state*self.sliders[i].value())
         self.append_logbox('Leds {}'.format(str(state)))
 
     def btn_leds_checked(self):
