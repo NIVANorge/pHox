@@ -65,11 +65,8 @@ class Panel(QtGui.QWidget):
                 
         self.make_tab_log()    
         self.make_tab1()
-  
-
         self.make_tab_manual()
         self.make_tab_config()   
-
         self.make_plotwidgets()
 
         # combine layout for plots and buttons
@@ -413,8 +410,8 @@ class Panel(QtGui.QWidget):
             self.sliders[ind].setTracking(True) 
             self.spinboxes.append(QtGui.QSpinBox())
             # create connections 
-            #self.sliders[ind].valueChanged[int].connect(self.sld_change)   
-            ##self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
+            self.sliders[ind].valueChanged[int].connect(self.sld_change)   
+            self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
         self.sliders[0].valueChanged[int].connect(self.sld_0_change)       
         self.sliders[1].valueChanged[int].connect(self.sld_1_change)  
@@ -441,6 +438,7 @@ class Panel(QtGui.QWidget):
             Btn.setCheckable(True)
         return Btn
 
+    #TODO: async
     def btn_stirr_clicked(self):
         if self.btn_stirr.isChecked():
             self.instrument.turn_on_relay(
@@ -449,6 +447,7 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.stirrer_slot)
 
+    #TODO: async    
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
             self.instrument.turn_on_relay(
@@ -457,6 +456,7 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
 
+    #TODO: async
     def btn_lightsource_clicked(self):
         print ('btn_lightsource_clicked')
         print (self.btn_lightsource.isChecked())
@@ -468,9 +468,11 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.light_slot)        
 
+    #TODO: async
     def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
+    #TODO: async
     def btn_valve_clicked(self):
         self.instrument.set_Valve(self.btn_valve.isChecked())
 
@@ -534,46 +536,21 @@ class Panel(QtGui.QWidget):
         self.change_plus_minus_butn(
             ind,dif)
 
-    '''@asyncSlot()
+
     async def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
         value = self.spinboxes[ind].value()
-        _ = await self.instrument.adjust_LED(ind,value)
+        self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
-        self.btn_leds.setChecked(True)'''
+        self.btn_leds.setChecked(True)
 
 
-    '''async def sld_change(self,ind):
+    def sld_change(self,ind):
         value = self.sliders[ind].value()
-        _ = await self.instrument.adjust_LED(ind,value)
+        self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-        _ = await self.update_spectra_plot()'''
-
-    @asyncSlot()
-    async def sld_0_change(self): 
-        value = self.sliders[0].value()
-        self.instrument.adjust_LED(0,value)
-        self.btn_leds.setChecked(True)        
-        self.update_spectra_plot()
-
-    @asyncSlot()
-    async def sld_1_change(self):   
-        value = self.sliders[1].value()
-        self.instrument.adjust_LED(1,value)
-        self.btn_leds.setChecked(True)        
-        self.update_spectra_plot()        
-
-    @asyncSlot()
-    async def sld_2_change(self): 
-        value = self.sliders[2].value()
-        print ('value2',value)
-        self.instrument.adjust_LED(2,value)
-        #elf.spinboxes[2].setValue(value)
-        self.btn_leds.setChecked(True)        
-        self.update_spectra_plot()          
-
 
 
     def set_LEDs(self, state):
