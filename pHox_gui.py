@@ -537,7 +537,7 @@ class Panel(QtGui.QWidget):
             ind,dif)
 
 
-    async def spin_change(self,value):
+    def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
         value = self.spinboxes[ind].value()
@@ -561,7 +561,7 @@ class Panel(QtGui.QWidget):
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
         self.set_LEDs(state)
-        self.update_spectra_plot()
+
 
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
@@ -655,7 +655,7 @@ class Panel(QtGui.QWidget):
                 self.update_spec_int_time_table()
                 self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
                                                     pen=None, symbol='+') 
-                self.update_spectra_plot()
+
 
         else: 
 
@@ -807,7 +807,6 @@ class Panel(QtGui.QWidget):
 
         self.sample()
         self.continuous_sample_finished() 
-
 
 
     def unclick_enable(self,btns):
@@ -976,7 +975,6 @@ class Panel(QtGui.QWidget):
             self.btn_cont_meas_clicked()
 
         if not self.args.debug:
-            self.update_spectra_plot()
             self.textBox.setText('The instrument is ready')
             #self.on_deploy_clicked(True)
         if self.args.pco2:
@@ -1130,16 +1128,10 @@ class Panel(QtGui.QWidget):
         self.instrument.turn_on_relay(self.instrument.light_slot)  
         self.btn_lightsource.setChecked(True) '''
 
-
-        self.update_spectra_plot()   
-        QtGui.QApplication.processEvents() 
         print ('before blank', self.instrument.specIntTime)
         blank_min_dark, dark = self.valve_and_blank()
         print ('after blank', self.instrument.specIntTime)       
-        QtGui.QApplication.processEvents()  
-        self.update_spectra_plot()        
-        QtGui.QApplication.processEvents()   
-
+ 
         for n_inj in range(self.instrument.ncycles):  
             print ('n_inj in co3 sample')
           
@@ -1150,7 +1142,7 @@ class Panel(QtGui.QWidget):
                     vol_injected  + self.instrument.Cuvette_V)      
 
             spAbs,vNTC = self.inject_measure(n_inj,blank_min_dark,dark)
-            self.update_spectra_plot()  
+
             self.update_absorption_plot(n_inj,spAbs)
             self.append_logbox('Calculate init CO3') 
             QtGui.QApplication.processEvents()  
@@ -1159,7 +1151,6 @@ class Panel(QtGui.QWidget):
                                 spAbs,vNTC,dilution,vol_injected)
 
         self.append_logbox('Opening the valve ...')
-        QtGui.QApplication.processEvents()
         self.instrument.set_Valve(False)
         self.timerSpectra_plot.start()   
         self.unclick_enable([self.btn_single_meas,
