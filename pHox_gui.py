@@ -1103,6 +1103,8 @@ class Panel(QtGui.QWidget):
         await self.measurement_cycle(blank_min_dark,dark)
 
         # Step 7 Open valve 
+        self.sample_steps[7].setChecked(True)  
+        await asyncio.sleep(0.05) 
         print ('Opening the valve ...')
         self.append_logbox('Opening the valve ...')
         await self.instrument.set_Valve(False)
