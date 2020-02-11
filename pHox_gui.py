@@ -1130,13 +1130,17 @@ class Panel(QtGui.QWidget):
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
     async def pump_if_needed(self):
-        self.append_logbox('Start new measurement')
+
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
+            self.append_logbox('pumping')            
             await self.instrument.pumping(self.instrument.pumpTime) 
 
         elif self.mode == 'Calibration':
+            self.append_logbox('pumping')
             await self.instrument.pumping(self.instrument.pumpTime) 
 
+        else: 
+            self.append_logbox('pumping is not needed ')
     async def measure_dark(self):
         # turn off light and LED
         if self.args.co3:
