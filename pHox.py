@@ -334,16 +334,14 @@ class CO3_instrument(Common_instrument):
                 self.find_nearest(wvls,wl))
 
     async def auto_adjust(self,*args):
-        print ('try slee async in subfunc')
-        await asyncio.sleep(10)
-        print ('finished')
+
         adjusted = False 
 
         while adjusted == False: 
             self.spectrom.set_integration_time(self.specIntTime)
 
             print ('init self.specIntTime', self.specIntTime)
-            pixelLevel = self.get_sp_levels(self.wvlPixels[1])
+            await pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
             print ('new level,max from spectro')
             print (pixelLevel)
@@ -481,7 +479,7 @@ class pH_instrument(Common_instrument):
                 self.adjust_LED(led_ind, LED )  
                 #await asyncio.sleep(10)
                 print ("new_LED", LED)    
-                pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
+                await pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
                 print('new pixel level',pixelLevel)                  
 
             elif pixelLevel ==  maxlevel and LED <= 20:
@@ -505,7 +503,7 @@ class pH_instrument(Common_instrument):
                     self.adjust_LED(led_ind, new_LED)  
                     await asyncio.sleep(1)
    
-                    pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
+                    await pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind])     
                     print('new pixel level',pixelLevel)  
             else: 
                 adj = True  
@@ -531,17 +529,17 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.5)
             print ('Trying %i ms integration time...' % self.specIntTime)
 
-            LED1,adj1,res1 = await self.find_LED(
+            await LED1,adj1,res1 = self.find_LED(
                 led_ind = 0,adj = adj1,LED = self.LED1)
 
             if adj1:
                 print ('adj1 = True')
-                LED2,adj2,res2 = await self.find_LED(
+                await LED2,adj2,res2 = self.find_LED(
                     led_ind = 1,adj = adj2, LED = self.LED2)
 
                 if adj2:    
                     print ('adj2 = True')
-                    LED3,adj3,res3 = await self.find_LED(
+                    await LED3,adj3,res3 = self.find_LED(
                         led_ind = 2,adj = adj3, LED = self.LED3)    
 
             if any(t == 'decrease int time' for t in [res1,res2,res3]):

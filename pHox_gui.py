@@ -629,7 +629,7 @@ class Panel(QtGui.QWidget):
 
     def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
-        adj,pixelLevel = await self.instrument.auto_adjust()  
+        await adj,pixelLevel = self.instrument.auto_adjust()  
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.update_spec_int_time_table()
@@ -637,7 +637,7 @@ class Panel(QtGui.QWidget):
                                                 pen=None, symbol='+') 
 
     def autoAdjust_LED(self):
-        self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
+        await self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
             self.sliders[0].setValue(self.LED1)
@@ -1080,7 +1080,7 @@ class Panel(QtGui.QWidget):
         self.on_autoAdjust_clicked()
 
         # Step 2. Take dark and blank 
-        dark =  await self.measure_dark()
+        await dark = self.measure_dark()
         blank,blank_min_dark = self.measure_blank() 
 
         # Steps 3,4,5,6 Measurement cycle 
@@ -1161,7 +1161,7 @@ class Panel(QtGui.QWidget):
         
         #turn on the light and LED
         if self.args.co3:
-            _ = await self.instrument.turn_on_relay(self.instrument.light_slot)
+            await self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
             await asyncio.sleep(2)
         else: 
@@ -1176,7 +1176,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[2].setChecked(True)
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
-            blank = await self.instrument.spectrom.get_corrected_spectra()
+            await blank = self.instrument.spectrom.get_corrected_spectra()
             blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrom.get_intensities(
@@ -1196,7 +1196,7 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            vNTC = await self.inject_dye(n_inj)
+            await vNTC = self.inject_dye(n_inj)
             spAbs_min_blank = self.calc_spectrum(n_inj,blank_min_dark,dark)
             #self.append_logbox('Calculate init pH') 
             print ('Calculate init pH') 
@@ -1215,7 +1215,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[n_inj+3].setChecked(True)
 
         self.append_logbox('Start stirrer')               
-        _ = await self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+        await self.instrument.turn_on_relay(self.instrument.stirrer_slot)
 
         if not self.args.debug:
             self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
@@ -1237,7 +1237,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
         if not self.args.seabreeze:
-            postinj = await self.instrument.spectrom.get_corrected_spectra()
+            await postinj = self.instrument.spectrom.get_corrected_spectra()
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj,1,16000)
             #print ('postinj_min_dark')
@@ -1260,7 +1260,7 @@ class Panel(QtGui.QWidget):
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-            postinj_spec = await self.instrument.spectrom.get_intensities(
+            await postinj_spec = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
