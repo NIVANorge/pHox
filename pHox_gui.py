@@ -574,7 +574,8 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_absorption_plot(self,n_inj,spAbs):
-        self.abs_lines[n_inj].setData(self.wvls,spAbs) 
+        self.abs_lines[n_inj].setData(self.wvls,spAbs)
+        await asyncio.sleep(0.005)
 
     @asyncSlot()
     async def update_spectra_plot(self):
@@ -1228,6 +1229,7 @@ class Panel(QtGui.QWidget):
             else:                                  
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
                                 spAbs_min_blank,vNTC,dilution,vol_injected)
+                await self.update_absorption_plot(n_inj, spAbs_min_blank)
         return 
 
     async def inject_dye(self,n_inj): 
