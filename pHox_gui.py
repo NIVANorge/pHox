@@ -750,7 +750,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
-
+        print ('clicked single meas ')
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
                     "Did you pump to clean?",
@@ -1081,7 +1081,7 @@ class Panel(QtGui.QWidget):
         if not res: 
             print ('could not adjust leds')
             return 
-            
+
         # Step 2. Take dark and blank 
         dark = await self.measure_dark()
         blank,blank_min_dark = self.measure_blank() 
