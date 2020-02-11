@@ -790,7 +790,7 @@ class Panel(QtGui.QWidget):
 
 
             self.mode = 'Single'
-            await r = self.sample(flnmStr, timeStamp)
+            r = await self.sample(flnmStr, timeStamp)
             print ('*****aftr sample',r)
             await self.single_sample_finished()
 
@@ -1241,7 +1241,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Start stirrer')               
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
         self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
-        
+
         if not self.args.debug:       
             #self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             await self.insturment.pump_dye(self.instrument.nshots)
