@@ -735,7 +735,7 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
             self.StatusBox.clear()            
-
+            self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
                 self.btn_single_meas.setEnabled(True) 
                 self.btn_calibr.setEnabled(True)
