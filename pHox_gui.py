@@ -527,7 +527,7 @@ class Panel(QtGui.QWidget):
 
     def sld_change(self,value):
         source = self.sender()
-        ind = self.spinboxes.index(source)       
+        ind = self.sliders.index(source)       
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
