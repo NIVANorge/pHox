@@ -127,7 +127,7 @@ class Panel(QtGui.QWidget):
 
         self.plotwidget1.setBackground('#19232D')
         self.plotwidget1.showGrid(x=True, y=True)
-        self.plotwidget1.settTtle="LEDs intensities"
+        self.plotwidget1.setTitle="LEDs intensities"
 
 
         #self.plotwidget2.setYRange(0,1.3)
@@ -787,7 +787,7 @@ class Panel(QtGui.QWidget):
             self.mode = 'Single'
             r = await self.sample(flnmStr, timeStamp)
             print ('*****aftr sample',r)
-            await self.single_sample_finished()
+            await self.single_sample_finished(timeStamp)
 
         else: 
             self.btn_single_meas.setChecked(False) 
@@ -800,22 +800,21 @@ class Panel(QtGui.QWidget):
         flnmStr, timeStamp = self.get_filename()          
         self.continous_mode_is_on = True
 
-        await self.sample(flnmStr, timeStamp)
-
-        self.continuous_sample_finished() 
+        r = await self.sample(flnmStr, timeStamp)
+        self.continuous_sample_finished(timeStamp) 
 
     def unclick_enable(self,btns):
         for btn in btns:
             btn.setChecked(False)    
             btn.setEnabled(True)            
 
-    def get_final_pH(self):
+    def get_final_pH(self,timeStamp):
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
         pH_lab, T_lab, perturbation, evalAnir, pH_insitu,self.x,self.y,self.slope, self.intercept = p
 
         self.pH_log_row = pd.DataFrame({
-            "Time"         : [self.instrument.timeStamp[0:16]],
+            "Time"         : [timeStamp[0:16]],
             "Lon"          : [fbox['longitude']], 
             "Lat"          : [fbox['latitude']] ,
             "fb_temp"      : [fbox['temperature']], 
@@ -851,11 +850,11 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
-    def single_sample_finished(self):
+    def single_sample_finished(self,timeStamp):
 
         print ('single sample finished inside func')    
-        if self.args == 'co3':
-            self.get_final_pH()
+        if not self.args == 'co3':
+            self.get_final_pH(timeStamp)
             self.save_results()
             self.update_pH_plot()        
             self.update_infotable()
