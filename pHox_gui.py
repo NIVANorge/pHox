@@ -1110,7 +1110,7 @@ class Panel(QtGui.QWidget):
 
         return folderPath
 
-    def create_new_df(self,par):
+    def create_new_df(self):
 
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
