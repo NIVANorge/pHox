@@ -521,15 +521,13 @@ class Panel(QtGui.QWidget):
     def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
-        value = self.spinboxes[ind].value()
         self.instrument.adjust_LED(ind,value)
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
 
-    def sld_change(self,ind):
-        print (ind)
-        print (self.sliders[ind])
-        value = self.sliders[ind].value()
+    def sld_change(self,value):
+        source = self.sender()
+        ind = self.spinboxes.index(source)       
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
