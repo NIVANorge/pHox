@@ -761,8 +761,7 @@ class Panel(QtGui.QWidget):
 
         flnmStr, timeStamp = self.get_filename()        
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
-                                        self.instrument.flnmStr)
-
+                                        flnmStr)
         if ok:
             if text != '':
                 flnmStr = text
@@ -775,7 +774,6 @@ class Panel(QtGui.QWidget):
 
             self.mode = 'Single'
             await self.sample(flnmStr, timeStamp)
-
             self.single_sample_finished()
 
         else: 
