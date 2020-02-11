@@ -465,46 +465,42 @@ class pH_instrument(Common_instrument):
             minval = self.THR * 0.95
 
         print ('led_ind',led_ind)
-
-        pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])          
-        while adj == False: 
+        step = 0
+        # first increment will be equeal to LED/2
+        increment = LED
         
-            maxlevel = np.max(self.spectrum)
-            print (maxlevel)
-            print (pixelLevel,LED)
-            if pixelLevel ==  maxlevel and LED >20:
-                print ('case0')
-                print ('saturated,reduce LED to half')
-                LED = LED/2 
-                self.adjust_LED(led_ind, LED )  
-                await asyncio.sleep(1)
-                print ("new_LED", LED)    
-                pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
-                print('new pixel level',pixelLevel)                  
+        while adj == False: 
+            print ('step', step)
+            print ('LED', LED)
+            step += 1
+            increment = increment/2
 
-            elif pixelLevel ==  maxlevel and LED <= 20:
+            self.adjust_LED(led_ind, LED)        
+            await asyncio.sleep(0.1)
+            pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])      
+            await asyncio.sleep(0.1)                   
+            #maxlevel = np.max(self.spectrum)
+            print ('pixelLevel,maxlevel', pixelLevel,maxlevel)
+
+            if pixelLevel > maxval and LED > 15:
+                print ('case0  Too low pixellevel ')
+                print ('saturated,reduce LED to half')
+                LED = LED - increment
+
+            elif (pixelLevel < minval and LED < 90):
+                print ('case3 Too low pixellevel, increase LED tvice')
+                LED = LED + increment
+
+            elif pixelLevel > maxval and LED <= 15:
                 print ('case1')                
                 res = 'decrease int time' 
                 break
-            elif (pixelLevel < minval or pixelLevel > maxval): 
-                print ('case2')
-                new_LED = self.THR*LED/pixelLevel
-                print ("new_LED", new_LED)   
-                LED = new_LED  
-                if new_LED >= 95: 
-                    res = 'increase int time'              
-                    break
-                elif new_LED <= 5:
-                    res = 'decrease int time'                                       
-                    break     
-                else: 
-                    print ('ch led')
-                    LED = new_LED     
-                    self.adjust_LED(led_ind, new_LED)  
-                    await asyncio.sleep(1)
-   
-                    pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
-                    print('new pixel level',pixelLevel)  
+
+            elif (pixelLevel < minval and LED >= 90):
+                print ('case2 Too low pixellevel and high LED')                   
+                res = 'increase int time'              
+                break                
+
             else: 
                 adj = True  
                 res = 'adjusted'      

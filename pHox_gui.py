@@ -1081,6 +1081,7 @@ class Panel(QtGui.QWidget):
         if not res: 
             print ('could not adjust leds')
             return 
+            
         # Step 2. Take dark and blank 
         dark = await self.measure_dark()
         blank,blank_min_dark = self.measure_blank() 
