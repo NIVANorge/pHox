@@ -1084,7 +1084,7 @@ class Panel(QtGui.QWidget):
             return 
         # Step 2. Take dark and blank 
         await dark = self.measure_dark()
-        blank,blank_min_dark = self.measure_blank() 
+        await blank,blank_min_dark = self.measure_blank() 
 
         # Steps 3,4,5,6 Measurement cycle 
         await self.measurement_cycle(blank_min_dark,dark)
@@ -1173,7 +1173,7 @@ class Panel(QtGui.QWidget):
         self.spCounts_df['dark'] = dark
         return dark 
 
-    def measure_blank(self,dark):
+    async def measure_blank(self,dark):
         print ('Measuring blank...')
         #self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
