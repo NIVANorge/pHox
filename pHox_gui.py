@@ -664,7 +664,7 @@ class Panel(QtGui.QWidget):
             res = await self.autoAdjust_IntTime()
         else:
             res = await self.autoAdjust_LED() 
-
+        print (res,'res after adjust')
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
         return res
