@@ -627,7 +627,7 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
 
-    def autoAdjust_IntTime(self):
+    async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
         await adj,pixelLevel = self.instrument.auto_adjust()  
         if adj: 
@@ -635,8 +635,9 @@ class Panel(QtGui.QWidget):
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
                                                 pen=None, symbol='+') 
+         return adj                                        
 
-    def autoAdjust_LED(self):
+    async def autoAdjust_LED(self):
         await self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
@@ -651,8 +652,7 @@ class Panel(QtGui.QWidget):
                 str(self.instrument.specIntTime)))  
             if not self.args.seabreeze:    
                 self.instrument.specAvScans = 3000/sptIt
-        else:
-            pass
+            return result
             #self.textBox.setText('Could not adjust leds')
 
     @asyncSlot()
@@ -661,13 +661,13 @@ class Panel(QtGui.QWidget):
         print ('on_autoAdjust_clicked')
         self.adjusting = True
         if self.args.co3:
-            self.autoAdjust_IntTime()
+            res = self.autoAdjust_IntTime()
         else:
-            self.autoAdjust_LED() 
+            res = self.autoAdjust_LED() 
 
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
-        return 'Finished'
+        return res
 
     def add_pco2_info(self):
         self.CO2_instrument.portSens.write(
@@ -781,7 +781,8 @@ class Panel(QtGui.QWidget):
         else: 
             self.btn_single_meas.setChecked(False) 
 
-    def continuous_mode_timer_finished(self):
+    @asyncSlot()
+    async def continuous_mode_timer_finished(self):
         print ('continuous_mode_timer_finished')
         self.append_logbox('continuous_mode_timer_finished')
 
@@ -1077,8 +1078,10 @@ class Panel(QtGui.QWidget):
         # Step 1. Autoadjust LEDS
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        self.on_autoAdjust_clicked()
-
+        res = self.on_autoAdjust_clicked()
+        if not res: 
+            print ('could not adjust leds')
+            return 
         # Step 2. Take dark and blank 
         await dark = self.measure_dark()
         blank,blank_min_dark = self.measure_blank() 
