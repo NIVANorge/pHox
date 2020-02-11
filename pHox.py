@@ -622,30 +622,40 @@ class pH_instrument(Common_instrument):
 
         nrows = evalPar_df.shape[0]
 
-        if nrows>1:
-            x = evalPar_df['Vol_injected'].values
+        if self.args == 'debug':
+            x = evalPar_df['Vol_injected'].values 
             y = pH_t_corr.values
-            slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
-            final_slope = slope1
-            if r_value**2  > 0.9 :
-                pH_lab = intercept 
-                print ('r_value **2 > 0.9')
-            else: 
-                print ('r_value **2 < 0.9 take two last measurements')                
-                x = x[:-2]
-                y = y[:-2]
-                slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
-                final_slope = slope2
-                if r_value**2  > 0.9 :  
-                    pH_lab = intercept
+            final_slope = 1
+            perturbation = 1
+            pH_insitu = 999
+            pH_lab = 999
+            intercept = 0
+
+        else:
+            if nrows>1:
+                x = evalPar_df['Vol_injected'].values
+                y = pH_t_corr.values
+                slope1, intercept, r_value, _, _ = stats.linregress(x,y) 
+                final_slope = slope1
+                if r_value**2  > 0.9 :
+                    pH_lab = intercept 
+                    print ('r_value **2 > 0.9')
                 else: 
-                    pH_lab = pH_t_corr[0]
+                    print ('r_value **2 < 0.9 take two last measurements')                
+                    x = x[:-2]
+                    y = y[:-2]
+                    slope2, intercept, r_value,_, _ = stats.linregress(x,y) 
+                    final_slope = slope2
+                    if r_value**2  > 0.9 :  
+                        pH_lab = intercept
+                    else: 
+                        pH_lab = pH_t_corr[0]
 
-        pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
+            pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data['temperature'])
 
-        perturbation = round(slope1, prec['perturbation'])        
-        pH_insitu = round(pH_insitu , prec['pH'])
-        pH_lab = round(pH_lab , prec['pH'])
+            perturbation = round(slope1, prec['perturbation'])        
+            pH_insitu = round(pH_insitu , prec['pH'])
+            pH_lab = round(pH_lab , prec['pH'])
 
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu,x,y,final_slope, intercept)      
