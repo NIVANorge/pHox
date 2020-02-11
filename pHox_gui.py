@@ -572,10 +572,10 @@ class Panel(QtGui.QWidget):
                            
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
-    @asyncSlot()
-    async def update_absorption_plot(self,n_inj,spAbs):
+    async def update_absorbance_plot(self,n_inj,spAbs):
         self.abs_lines[n_inj].setData(self.wvls,spAbs)
         await asyncio.sleep(0.005)
+        return
 
     @asyncSlot()
     async def update_spectra_plot(self):
@@ -603,7 +603,7 @@ class Panel(QtGui.QWidget):
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
-        [self.update_absorption_plot(n_inj,z) for n_inj 
+        [self.update_absorbance_plot(n_inj,z) for n_inj 
             in range(self.instrument.ncycles)]
 
     def save_pCO2_data(self, pH = None):
@@ -1226,10 +1226,10 @@ class Panel(QtGui.QWidget):
             if self.args == 'co3':
                 self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(
                                 spAbs_min_blank,vNTC,dilution,vol_injected) 
+                await self.update_absorbance_plot(n_inj, spAbs_min_blank)
             else:                                  
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
                                 spAbs_min_blank,vNTC,dilution,vol_injected)
-                await self.update_absorption_plot(n_inj, spAbs_min_blank)
         return 
 
     async def inject_dye(self,n_inj): 
