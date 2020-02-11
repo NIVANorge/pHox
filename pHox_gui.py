@@ -1095,7 +1095,7 @@ class Panel(QtGui.QWidget):
 
         # Step 2. Take dark and blank 
         dark = await self.measure_dark()
-        blank,blank_min_dark = self.measure_blank() 
+        blank,blank_min_dark = self.measure_blank(dark) 
 
         # Steps 3,4,5,6 Measurement cycle 
         await self.measurement_cycle(blank_min_dark,dark)
@@ -1187,7 +1187,7 @@ class Panel(QtGui.QWidget):
 
     async def measure_blank(self,dark):
         print ('Measuring blank...')
-        #self.append_logbox('Measuring blank...')
+        self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
@@ -1199,7 +1199,6 @@ class Panel(QtGui.QWidget):
             blank_min_dark =   blank - dark    
         self.spCounts_df['blank'] = blank
 
-        
         return blank,blank_min_dark
 
     async def measurement_cycle(self,blank_min_dark,dark):
