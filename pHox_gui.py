@@ -791,7 +791,6 @@ class Panel(QtGui.QWidget):
 
         self.continuous_sample_finished() 
 
-
     def unclick_enable(self,btns):
         for btn in btns:
             btn.setChecked(False)    
@@ -1045,7 +1044,7 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    async def sample(self):
+    async def sample(self,flnmStr, timeStamp):
 
         # Step 0. Start mesurement, create new df,
         # reset Absorption plot
@@ -1054,7 +1053,6 @@ class Panel(QtGui.QWidget):
         if self.mode == 'Continuous' or self.mode == 'Calibration': 
             if not fbox['pumping']:
                 return               
-            flnmStr, timeStamp = self.get_filename() 
 
         print ('sample, mode is {}'.format(self.mode))
         self.StatusBox.setText('Ongoing measurement')
