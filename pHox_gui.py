@@ -847,6 +847,7 @@ class Panel(QtGui.QWidget):
         self.save_logfile_df(folderPath)
   
     def update_pH_plot(self):
+        print ('in update pH plot')
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
@@ -875,17 +876,17 @@ class Panel(QtGui.QWidget):
                         "Are you sure??????",
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
 
-    def continuous_sample_finished(self):
+    def continuous_sample_finished(self,timeStamp):
 
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
+        if not self.args == 'co3':
+            self.get_final_pH(timeStamp) 
+            self.StatusBox.setText('Measurement is finished') 
 
-        self.get_final_pH() 
-        self.StatusBox.setText('Measurement is finished') 
-
-        self.save_results()
-        self.update_pH_plot()
-        self.update_infotable()   
+            self.save_results()
+            self.update_pH_plot()
+            self.update_infotable()   
 
         [step.setChecked(False) for step in self.sample_steps]
 
