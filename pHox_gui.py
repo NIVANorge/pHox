@@ -1094,7 +1094,8 @@ class Panel(QtGui.QWidget):
             return 
 
         # Step 2. Take dark and blank 
-        self.sample_steps[2].setChecked(True)           
+        self.sample_steps[2].setChecked(True)    
+        await asyncio.sleep(0.05)       
         dark = await self.measure_dark()
         blank_min_dark = await self.measure_blank(dark) 
 
@@ -1207,7 +1208,7 @@ class Panel(QtGui.QWidget):
         for n_inj in range(self.instrument.ncycles):
             print ('n_inj',n_inj)            
             self.sample_steps[n_inj+3].setChecked(True)
-
+            await asyncio.sleep(0.05)     
             vol_injected = round(
                 self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
                  prec['vol_injected'])
@@ -1246,7 +1247,7 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Wait')            
         await asyncio.sleep(self.instrument.waitT)
-        
+
         # measuring Voltage for temperature probe
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
         return vNTC 
@@ -1282,7 +1283,11 @@ class Panel(QtGui.QWidget):
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
-            spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
+            try:
+                spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
+            except: 
+                print ('WRONG VALUES')
+                spAbs_min_blank = postinj_spec_min_dark 
             #blank
         self.spCounts_df[str(n_inj)] = postinj_spec
 
