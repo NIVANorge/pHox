@@ -1085,8 +1085,8 @@ class Panel(QtGui.QWidget):
         await self.instrument.set_Valve(True)
 
         # Step 1. Autoadjust LEDS
+        self.sample_steps[1].setChecked(True)        
         self.append_logbox('Autoadjust LEDS')
-        self.sample_steps[1].setChecked(True)
         res = await self.call_autoAdjust()
         print ('res after autoadjust', res )
         if not res: 
@@ -1094,6 +1094,7 @@ class Panel(QtGui.QWidget):
             return 
 
         # Step 2. Take dark and blank 
+        self.sample_steps[2].setChecked(True)           
         dark = await self.measure_dark()
         blank_min_dark = await self.measure_blank(dark) 
 
@@ -1102,8 +1103,8 @@ class Panel(QtGui.QWidget):
 
         # Step 7 Open valve 
         print ('Opening the valve ...')
-        #self.append_logbox('Opening the valve ...')
-        self.instrument.set_Valve(False)
+        self.append_logbox('Opening the valve ...')
+        await self.instrument.set_Valve(False)
 
         return 
 
@@ -1154,6 +1155,7 @@ class Panel(QtGui.QWidget):
 
         else: 
             self.append_logbox('pumping is not needed ')
+
     async def measure_dark(self):
         # turn off light and LED
         if self.args.co3:
@@ -1185,10 +1187,10 @@ class Panel(QtGui.QWidget):
         self.spCounts_df['dark'] = dark
         return dark 
 
-    async def measure_blank(self,dark):
+    async def measure_blank(self,dark):    
         print ('Measuring blank...')
         self.append_logbox('Measuring blank...')
-        self.sample_steps[2].setChecked(True)
+
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
             blank = self.instrument.spectrom.get_corrected_spectra()
@@ -1203,6 +1205,8 @@ class Panel(QtGui.QWidget):
 
     async def measurement_cycle(self,blank_min_dark,dark):
         for n_inj in range(self.instrument.ncycles):
+            print ('n_inj',n_inj)            
+            self.sample_steps[n_inj+3].setChecked(True)
 
             vol_injected = round(
                 self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
@@ -1225,8 +1229,6 @@ class Panel(QtGui.QWidget):
 
     async def inject_dye(self,n_inj): 
         # create dataframe and store 
-        print ('n_inj',n_inj)            
-        self.sample_steps[n_inj+3].setChecked(True)
 
         self.append_logbox('Start stirrer')               
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
@@ -1236,13 +1238,15 @@ class Panel(QtGui.QWidget):
             #self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             await self.insturment.pump_dye(self.instrument.nshots)
 
-        #self.append_logbox("Mixing")
+        self.append_logbox("Mixing")
         await asyncio.sleep(self.instrument.mixT)
-        #self.append_logbox('Stop stirrer')    
-        self.instrument.turn_off_relay(self.instrument.stirrer_slot)
-        #self.append_logbox('Wait')            
-        await asyncio.sleep(self.instrument.waitT)
 
+        self.append_logbox('Stop stirrer')    
+        self.instrument.turn_off_relay(self.instrument.stirrer_slot)
+
+        self.append_logbox('Wait')            
+        await asyncio.sleep(self.instrument.waitT)
+        
         # measuring Voltage for temperature probe
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
         return vNTC 
