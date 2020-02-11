@@ -169,7 +169,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps = [  
                         QtWidgets.QCheckBox('0. Start new measurement'),
                         QtWidgets.QCheckBox('1. Adjusting LEDS'),
-                        QtWidgets.QCheckBox('2  Measuring blank'),
+                        QtWidgets.QCheckBox('2  Measuring dark and blank'),
                         QtWidgets.QCheckBox('3. Measurement 1'), 
                         QtWidgets.QCheckBox('4. Measurement 2'),                        
                         QtWidgets.QCheckBox('5. Measurement 3'),
@@ -350,7 +350,6 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp = self.create_button('Dye pump',False)        
         self.btn_wpump = self.create_button('Water pump',True)
         self.btn_calibr = self.create_button('Make calibration',True)
-        self.test_button = self.create_button('Test async',False)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_calibr, 0, 1)
@@ -362,14 +361,13 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
-        btn_grid.addWidget(self.test_button,4,1)
 
         # Define connections Button clicked - Result 
         self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.test_button.clicked.connect(self.test_btn_clicked)
+
         if self.args.co3 :
             self.btn_lightsource = self.create_button('light source',True)
             btn_grid.addWidget(self.btn_lightsource , 4, 1)
@@ -381,16 +379,6 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
-
-    @asyncSlot()
-    async def test_btn_clicked(self):
-        print ('Start waiting 15 seconds to test async')
-        self.StatusBox.setText('Start waiting 15 seconds to test async')
-        #self.logTextBox.appendPlainText('Start waiting 15 seconds to test async')
-        await asyncio.sleep(15)
-        print ('stop')
-        self.StatusBox.setText('stop')
-        #self.logTextBox.appendPlainText('Stop waiting to test async')
 
     def make_slidergroupbox(self):    
         self.sliders_groupBox = QtGui.QGroupBox("LED values")
@@ -413,10 +401,6 @@ class Panel(QtGui.QWidget):
             self.sliders[ind].valueChanged[int].connect(self.sld_change)   
             self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
-        self.sliders[0].valueChanged[int].connect(self.sld_0_change)       
-        self.sliders[1].valueChanged[int].connect(self.sld_1_change)  
-        self.sliders[2].valueChanged[int].connect(self.sld_2_change)     
-
         grid = QtGui.QGridLayout()
 
         grid.addWidget(QtGui.QLabel('Blue:'),0,0)
@@ -438,7 +422,6 @@ class Panel(QtGui.QWidget):
             Btn.setCheckable(True)
         return Btn
 
-    #TODO: async
     def btn_stirr_clicked(self):
         if self.btn_stirr.isChecked():
             self.instrument.turn_on_relay(
@@ -446,8 +429,7 @@ class Panel(QtGui.QWidget):
         else: 
             self.instrument.turn_off_relay(
                 self.instrument.stirrer_slot)
-
-    #TODO: async    
+  
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
             self.instrument.turn_on_relay(
@@ -456,8 +438,7 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
 
-    #TODO: async
-    def btn_lightsource_clicked(self):
+    async def btn_lightsource_clicked(self):
         print ('btn_lightsource_clicked')
         print (self.btn_lightsource.isChecked())
 
@@ -469,7 +450,8 @@ class Panel(QtGui.QWidget):
                 self.instrument.light_slot)        
 
     #TODO: async
-    def btn_dye_pmp_clicked(self):
+    @asyncSlot
+    async def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
     #TODO: async
@@ -536,7 +518,6 @@ class Panel(QtGui.QWidget):
         self.change_plus_minus_butn(
             ind,dif)
 
-
     def spin_change(self,value):
         source = self.sender()
         ind = self.spinboxes.index(source)
@@ -545,13 +526,11 @@ class Panel(QtGui.QWidget):
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
 
-
     def sld_change(self,ind):
         value = self.sliders[ind].value()
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)        
-
 
     def set_LEDs(self, state):
         for i in range(0,3):
@@ -597,7 +576,6 @@ class Panel(QtGui.QWidget):
     async def update_absorption_plot(self,n_inj,spAbs):
         self.abs_lines[n_inj].setData(self.wvls,spAbs) 
 
-
     @asyncSlot()
     async def update_spectra_plot(self):
         if self.adjusting == False:  
@@ -622,6 +600,11 @@ class Panel(QtGui.QWidget):
         except: 
             pass 
 
+    def reset_absorp_plot(self):
+        z = np.zeros(len(self.wvls))
+        [self.update_absorption_plot(n_inj,z) for n_inj 
+            in range(self.instrument.ncycles)]
+
     def save_pCO2_data(self, pH = None):
         self.add_pco2_info()
         d = self.CO2_instrument.franatech 
@@ -644,41 +627,46 @@ class Panel(QtGui.QWidget):
         udp.send_data('PCO2,' + s)
         return
 
+    def autoAdjust_IntTime(self):
+        # Function calls autoadjust without leds
+        adj,pixelLevel = await self.instrument.auto_adjust()  
+        if adj: 
+            self.append_logbox('Finished Autoadjust LEDS')
+            self.update_spec_int_time_table()
+            self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
+                                                pen=None, symbol='+') 
+
+    def autoAdjust_LED(self):
+        self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
+        print (self.LED1,self.LED2,self.LED3)
+        if result:
+            self.sliders[0].setValue(self.LED1)
+            self.sliders[1].setValue(self.LED2)
+            self.sliders[2].setValue(self.LED3)
+
+            #self.plot_sp_levels()
+            self.instrument.specIntTime = sptIt
+            self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
+            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
+                str(self.instrument.specIntTime)))  
+            if not self.args.seabreeze:    
+                self.instrument.specAvScans = 3000/sptIt
+        else:
+            pass
+            #self.textBox.setText('Could not adjust leds')
+
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
+        self.btn_adjust_leds.setChecked(True)        
         print ('on_autoAdjust_clicked')
         self.adjusting = True
         if self.args.co3:
-            adj,pixelLevel = await self.instrument.auto_adjust()  
-            if adj: 
-                self.append_logbox('Finished Autoadjust LEDS')
-                self.update_spec_int_time_table()
-                self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
-                                                    pen=None, symbol='+') 
+            self.autoAdjust_IntTime()
+        else:
+            self.autoAdjust_LED() 
 
-
-        else: 
-
-            self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
-            print (self.LED1,self.LED2,self.LED3)
-            if result:
-                self.sliders[0].setValue(self.LED1)
-                self.sliders[1].setValue(self.LED2)
-                self.sliders[2].setValue(self.LED3)
-
-                #self.plot_sp_levels()
-                self.instrument.specIntTime = sptIt
-                self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
-                self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
-                    str(self.instrument.specIntTime)))  
-                if not self.args.seabreeze:    
-                    self.instrument.specAvScans = 3000/sptIt
-            else:
-                pass
-                #self.textBox.setText('Could not adjust leds')
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
-        
         return 'Finished'
 
     def add_pco2_info(self):
@@ -708,16 +696,16 @@ class Panel(QtGui.QWidget):
 
     def get_next_sample(self):
         t = datetime.now()
-        self.instrument.timeStamp  = t.isoformat('_')
+        #self.instrument.timeStamp  = t.isoformat('_')
         tsBegin = (t-datetime(1970,1,1)).total_seconds()
         nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
         return str(nextSamplename.strftime("%H:%M"))    
 
     def get_filename(self):
         t = datetime.now()
-        self.instrument.timeStamp  = t.isoformat('_')
-        self.instrument.flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
-        return
+        timeStamp  = t.isoformat('_')
+        flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
+        return flnmStr, timeStamp
 
     def btn_cont_meas_clicked(self):
         print ('btn_cont_meas_clicked')
@@ -771,41 +759,37 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setChecked(False)             
             return
 
-        self.get_filename()        
+        flnmStr, timeStamp = self.get_filename()        
         text, ok = QtGui.QInputDialog.getText(None, 'Enter Sample name', 
                                         self.instrument.flnmStr)
+
         if ok:
             if text != '':
-                self.instrument.flnmStr = text
+                flnmStr = text
 
+            # disable all btns in manual tab 
             self.btn_cont_meas.setEnabled(False)
             self.btn_single_meas.setEnabled(False) 
             self.btn_calibr.setEnabled(False) 
-            # disable all btns in manual tab 
+
 
             self.mode = 'Single'
+            await self.sample(flnmStr, timeStamp)
 
-            #self.instrument.reset_lines()
-            self.timerSpectra_plot.stop()
-            if self.args.co3 :
-                await self.co3_sample()
-            else: 
-                await self.sample()
-                self.single_sample_finished()
+            self.single_sample_finished()
 
         else: 
             self.btn_single_meas.setChecked(False) 
 
     def continuous_mode_timer_finished(self):
-        print ('start continuous mode')
-        self.append_logbox('Inside continuous_mode...')
+        print ('continuous_mode_timer_finished')
+        self.append_logbox('continuous_mode_timer_finished')
 
-        self.instrument.reset_lines()
-        self.timerSpectra_plot.stop()
-        self.sample_thread = Sample_thread(self,self.args)
+        flnmStr, timeStamp = self.get_filename()          
         self.continous_mode_is_on = True
 
-        self.sample()
+        await self.sample(flnmStr, timeStamp)
+
         self.continuous_sample_finished() 
 
 
@@ -837,15 +821,10 @@ class Panel(QtGui.QWidget):
          
         #print (self.x,self.y,self.intercept,self.slope)        
 
-    def save_results(self):
-    
-        if self.mode == 'Calibration':
-            folderPath = '/home/pi/pHox/data_calibr/'            
-        else: 
-            folderPath = self.instrument.folderPath   
+    def save_results(self,folderPath):
 
+        #self.sample_steps[7].setChecked(True)    
         self.append_logbox('Save spectrum data to file')
-        #self.sample_steps[7].setChecked(True)
         self.save_spt(folderPath)
 
         self.append_logbox('Save evl data to file')
@@ -864,13 +843,13 @@ class Panel(QtGui.QWidget):
     def single_sample_finished(self):
 
         print ('single sample finished inside func')    
+        if self.args == 'co3':
+            self.get_final_pH()
+            self.save_results()
+            self.update_pH_plot()        
+            self.update_infotable()
 
-        self.get_final_pH()
         self.StatusBox.setText('Measurement is finished')       
-
-        self.save_results()
-        self.update_pH_plot()        
-        self.update_infotable()
 
         self.unclick_enable([self.btn_single_meas,self.btn_calibr,self.btn_cont_meas])
         [step.setChecked(False) for step in self.sample_steps]
@@ -964,9 +943,6 @@ class Panel(QtGui.QWidget):
 
         self.timerSpectra_plot.start(3.e3)
         self.timerTemp_info.start(1.e3)
-        #print ('run autoadjust')        
-        #self.textBox.setText('Adjusting LEDs')
-        #self.on_autoAdjust_clicked()
 
         if not self.args.co3 or not self.args.debug: 
             print ('Starting continuous mode ')
@@ -976,7 +952,7 @@ class Panel(QtGui.QWidget):
 
         if not self.args.debug:
             self.textBox.setText('The instrument is ready')
-            #self.on_deploy_clicked(True)
+
         if self.args.pco2:
             # change to config file 
             self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.e3) #milliseconds
@@ -1070,187 +1046,111 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    def co3_sample(self):   
-        z = np.zeros(len(self.wvls))
-        [self.update_absorption_plot(n_inj,z) for n_inj in range(self.instrument.ncycles)]
-        self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
-                                     "log_beta1_e2", "vNTC", "S", 
-                                     "A1", "A2", "R", "Tdeg", 
-                                     "Vinj", " S_corr"])   
-                                          
-        QtGui.QApplication.processEvents()   
-        if self.mode == 'Calibration': 
-            folderPath = '/home/pi/pHox/data_co3_calibr/'
-        else:
-            folderPath = self.instrument.folderPath        
-        print ('co3_sample')
-        #self.get_filename()
-        #time.sleep(2)
+    async def sample(self):
 
+        # Step 0. Start mesurement, create new df,
+        # reset Absorption plot
+        # pump if single, close the valve 
+
+        if self.mode == 'Continuous' or self.mode == 'Calibration': 
+            if not fbox['pumping']:
+                return               
+            flnmStr, timeStamp = self.get_filename() 
+
+        print ('sample, mode is {}'.format(self.mode))
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
-        print ('self.sample_steps[0].setChecked(True)')
-        #time.sleep(2)
 
-        self.spCounts_df = pd.DataFrame(columns=['Wavelengths','blank'])
-        self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
-        print ('self.spCounts_df')
-        #time.sleep(2)
+        self.create_new_df()  
+        folderPath = self.get_folderPath() 
 
-        if not fbox['pumping']:
-            return
-
-        self.append_logbox('Start new measurement')
+        if self.args == 'co3':
+            self.reset_absorp_plot()
 
 
-        '''if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
-            self.pumping(self.instrument.pumpTime) 
-            self.append_logbox('Pumping, Standalone, Continous')
+        await self.pump_if_needed()
 
-        elif self.mode == 'Calibration':
-            self.pumping(self.instrument.pumpTime) 
-            self.append_logbox('Pumping, Calibration') '''   
+        #self.append_logbox('Closing valve ...')
+        print ("Closing the valve ...")
+        self.instrument.set_Valve(True)
 
-
-
+        # Step 1. Autoadjust LEDS
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-
         self.on_autoAdjust_clicked()
 
+        # Step 2. Take dark and blank 
+        dark =  await self.measure_dark()
+        blank,blank_min_dark = self.measure_blank() 
 
+        # Steps 3,4,5,6 Measurement cycle 
+        await self.measurement_cycle(blank_min_dark,dark)
 
-
-        #reset light source 
-        '''self.instrument.turn_off_relay(self.instrument.light_slot)    
-        self.btn_lightsource.setChecked(False)        
-        time.sleep(0.1)     
-        self.instrument.turn_on_relay(self.instrument.light_slot)  
-        self.btn_lightsource.setChecked(True) '''
-
-        print ('before blank', self.instrument.specIntTime)
-        blank_min_dark, dark = self.valve_and_blank()
-        print ('after blank', self.instrument.specIntTime)       
- 
-        for n_inj in range(self.instrument.ncycles):  
-            print ('n_inj in co3 sample')
-          
-            vol_injected = round(
-                self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
-                 prec['vol_injected'])
-            dilution = (self.instrument.Cuvette_V) / (
-                    vol_injected  + self.instrument.Cuvette_V)      
-
-            spAbs,vNTC = self.inject_measure(n_inj,blank_min_dark,dark)
-
-            self.update_absorption_plot(n_inj,spAbs)
-            self.append_logbox('Calculate init CO3') 
-            QtGui.QApplication.processEvents()  
-
-            self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(
-                                spAbs,vNTC,dilution,vol_injected)
-
-        self.append_logbox('Opening the valve ...')
+        # Step 7 Open valve 
+        print ('Opening the valve ...')
+        #self.append_logbox('Opening the valve ...')
         self.instrument.set_Valve(False)
-        self.timerSpectra_plot.start()   
-        self.unclick_enable([self.btn_single_meas,
-        self.btn_calibr,self.btn_cont_meas])
-        [step.setChecked(False) for step in self.sample_steps]
 
-        self.append_logbox('Save spectrum data to file')
-        #self.sample_steps[7].setChecked(True)
-        self.save_spt(folderPath)
+        return 
 
-        self.append_logbox('Save evl data to file')
-        self.save_evl(folderPath)          
-        #self.append_logbox('Autoadjust LEDS')'''
-        print ('finished sample')
+    def get_folderPath(self):
 
+        if self.args == 'co3': 
+            if self.mode == 'Calibration': 
+                folderPath = '/home/pi/pHox/data_co3_calibr/'
+            else:
+                folderPath = '/home/pi/pHox/data_co3/'
+        else:
+            if self.mode == 'Calibration': 
+                folderPath = '/home/pi/pHox/data_calibr/'  
+            else:
+                folderPath ='/home/pi/pHox/data/' 
 
-    def create_new_df(self):
+        if not os.path.exists(folderPath):
+            os.makedirs(folderPath)
+
+        return folderPath
+
+    def create_new_df(self,par):
+
         self.spCounts_df = pd.DataFrame(columns=['Wavelengths','dark','blank'])
         self.spCounts_df['Wavelengths'] = ["%.2f" % w for w in self.wvls] 
-
-        self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
+        if self.args == 'co3':
+            self.CO3_eval = pd.DataFrame(columns=["CO3", "e1", "e2e3",
+                                        "log_beta1_e2", "vNTC", "S", 
+                                        "A1", "A2", "R", "Tdeg", 
+                                        "Vinj", " S_corr"])  
+        else:
+            self.evalPar_df = pd.DataFrame(columns=["pH", "pK", "e1",
                                                 "e2", "e3", "vNTC",
                                         'salinity', "A1", "A2","Tdeg",  
                                        "S_corr", "Anir",'Vol_injected',
                                        "TempProbe_id","Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
-    async def sample(self):
-   
-        _= await self.start_pump_adjustleds()
-
-        blank_min_dark,dark =  await self.valve_and_blank()
 
 
-        for n_inj in range(self.instrument.ncycles):  
-            vol_injected = round(
-                self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
-                 prec['vol_injected'])
-            dilution = (self.instrument.Cuvette_V) / (
-                    vol_injected  + self.instrument.Cuvette_V)      
 
-            spAbs,vNTC = await self.inject_measure(n_inj,blank_min_dark,dark)
-
-            #self.append_logbox('Calculate init pH') 
-            print ('Calculate init pH') 
-            self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
-                                spAbs,vNTC,dilution,vol_injected)
-        print ('Opening the valve ...')
-        #self.append_logbox('Opening the valve ...')
-
-        self.instrument.set_Valve(False)
-
-    async def start_pump_adjustleds(self):
-        print ('pH_sample, mode is {}'.format(self.mode))
-
-        self.StatusBox.setText('Ongoing measurement')
-        self.sample_steps[0].setChecked(True)
-
-        if self.mode == 'Continuous' or self.mode == 'Calibration': 
-            if not fbox['pumping']:
-                return               
-            self.get_filename() 
-
-        self.create_new_df()
-
+    async def pump_if_needed(self):
         self.append_logbox('Start new measurement')
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
-            _ = await self.instrument.pumping(self.instrument.pumpTime) 
-            #self.append_logbox('Pumping, Standalone, Continous')
+            await self.instrument.pumping(self.instrument.pumpTime) 
 
         elif self.mode == 'Calibration':
-            self.instrument.pumping(self.instrument.pumpTime) 
-            #self.append_logbox('Pumping, Calibration') 
+            await self.instrument.pumping(self.instrument.pumpTime) 
 
-        self.append_logbox('Autoadjust LEDS')
-        self.sample_steps[1].setChecked(True)
-        _ = await self.on_autoAdjust_clicked()  
-        #self.append_logbox('Finished Autoadjust LEDS')
-        self.set_LEDs(True)
-        self.btn_leds.setChecked(True)
-
-    async def valve_and_blank(self):
-        #self.append_logbox('Closing valve ...')
-        print ("Closing valve ...")
-        self.instrument.set_Valve(True)
-        #time.sleep(self.instrument.waitT)
-        
-        ### take the dark
+    async def measure_dark(self):
+        # turn off light and LED
         if self.args.co3:
             self.instrument.turn_off_relay(self.instrument.light_slot)
             print ('turn of the light source')
-            time.sleep(5)
+            await asyncio.sleep(1)
         else: 
             self.set_LEDs(False)
-            # turn off light and LED
-            # grab spectrum
-            
+
+        # grab spectrum
         if not self.args.seabreeze:
             dark = await self.instrument.spectrom.get_corrected_spectra()
-
         elif self.args.seabreeze:
             #raw = str(n_inj)+'raw'
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
@@ -1263,11 +1163,14 @@ class Panel(QtGui.QWidget):
         if self.args.co3:
             _ = await self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
         else: 
             self.set_LEDs(True)
 
+        self.spCounts_df['dark'] = dark
+        return dark 
 
+    def measure_blank(self,dark):
         print ('Measuring blank...')
         #self.append_logbox('Measuring blank...')
         self.sample_steps[2].setChecked(True)
@@ -1279,26 +1182,45 @@ class Panel(QtGui.QWidget):
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
             blank_min_dark =   blank - dark    
-            print ('max blank',np.max(blank))
-
         self.spCounts_df['blank'] = blank
-        self.spCounts_df['dark'] = dark
-        
-        return blank_min_dark , dark 
 
-    async def inject_measure(self,n_inj,blank_min_dark,dark): 
+        
+        return blank,blank_min_dark
+
+    async def measurement_cycle(self,blank_min_dark,dark):
+        for n_inj in range(self.instrument.ncycles):
+
+            vol_injected = round(
+                self.instrument.dye_vol_inj*(n_inj+1)*self.instrument.nshots,
+                 prec['vol_injected'])
+            dilution = (self.instrument.Cuvette_V) / (
+                    vol_injected  + self.instrument.Cuvette_V)      
+
+            vNTC = await self.inject_dye(n_inj)
+            spAbs_min_blank = self.calc_spectrum(n_inj,blank_min_dark,dark)
+            #self.append_logbox('Calculate init pH') 
+            print ('Calculate init pH') 
+
+            if self.args == 'co3':
+                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(
+                                spAbs_min_blank,vNTC,dilution,vol_injected) 
+            else:                                  
+                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
+                                spAbs_min_blank,vNTC,dilution,vol_injected)
+            return 
+
+    async def inject_dye(self,n_inj): 
         # create dataframe and store 
         print ('n_inj',n_inj)            
         self.sample_steps[n_inj+3].setChecked(True)
-
-        shots = self.instrument.nshots
 
         self.append_logbox('Start stirrer')               
         _ = await self.instrument.turn_on_relay(self.instrument.stirrer_slot)
 
         if not self.args.debug:
             self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
-            self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
+            #self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
+            await self.insturment.pump_dye(self.instrument.nshots)
 
         #self.append_logbox("Mixing")
         await asyncio.sleep(self.instrument.mixT)
@@ -1309,6 +1231,9 @@ class Panel(QtGui.QWidget):
 
         # measuring Voltage for temperature probe
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
+        return vNTC 
+
+    def calc_spectrum(self,n_inj,blank_min_dark,dark):    
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
         if not self.args.seabreeze:
@@ -1326,7 +1251,7 @@ class Panel(QtGui.QWidget):
 
             bmdCorr = blank_min_dark * cfb
             pmdCorr = postinj_min_dark * cfp
-            spAbs = np.log10((bmdCorr/pmdCorr).astype(int))
+            spAbs_min_blank = np.log10((bmdCorr/pmdCorr).astype(int))
             sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))         
                 
         # Write spectrum to the file 
@@ -1342,7 +1267,8 @@ class Panel(QtGui.QWidget):
             spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
             #blank
         self.spCounts_df[str(n_inj)] = postinj_spec
-        return (spAbs_min_blank,vNTC)
+
+        return spAbs_min_blank
 
     def save_evl(self,folderPath):
         evlpath = folderPath + 'evl/'

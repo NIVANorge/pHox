@@ -187,6 +187,7 @@ class Common_instrument(object):
         ch1 =  self.valve_slots[1]
         ch2 =  self.valve_slots[2]
         if status:
+            print ("Closing the valve ...")
             ch1= self.valve_slots[2]
             ch2= self.valve_slots[1]
         self.rpi.write(ch1, True)
@@ -256,17 +257,24 @@ class Common_instrument(object):
         await asyncio.sleep(pumpTime)
         self.turn_off_relay(self.stirrer_slot) # turn off the pump
         self.turn_off_relay(self.wpump_slot) # turn off the stirrer
+        return 
 
-    def cycle_line (self, line, nCycles):
-        ON = 0.3
-        OFF = 0.3
+    async def cycle_line (self, line, nCycles):
         for nCy in range(nCycles):
             self.turn_on_relay(line)
-            time.sleep(ON)
+            await asyncio.sleep(wait_time)
             self.turn_off_relay(line)
-            time.sleep(OFF)
-        pass
+            await asyncio.sleep(wait_time)
 
+    async def pump_dye(self,nshots):
+        for shot in range(nshots):
+            self.turn_on_relay(self.dyepump_slot)
+            await asyncio.sleep(wait_time)
+            self.turn_off_relay(line)
+            await asyncio.sleep(wait_time)
+        return 
+
+        
     def print_Com(self, port, txtData):
         port.write(txtData)
 
@@ -318,10 +326,6 @@ class CO3_instrument(Common_instrument):
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"] 
-
-        self.folderPath ='/home/pi/pHox/data_co3/' # relative path
-        if not os.path.exists(self.folderPath):
-            os.makedirs(self.folderPath)
 
     def get_wvlPixels(self,wvls):
         self.wvlPixels = []
@@ -446,11 +450,6 @@ class pH_instrument(Common_instrument):
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
         
-        self.folderPath ='/home/pi/pHox/data/' # relative path
-
-        if not os.path.exists(self.folderPath):
-            os.makedirs(self.folderPath)
-
     def get_wvlPixels(self,wvls):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):      
@@ -479,7 +478,7 @@ class pH_instrument(Common_instrument):
                 print ('case0')
                 print ('saturated,reduce LED to half')
                 LED = LED/2 
-                r = await self.adjust_LED(led_ind, LED )  
+                self.adjust_LED(led_ind, LED )  
                 #await asyncio.sleep(10)
                 print ("new_LED", LED)    
                 pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])     
@@ -521,7 +520,7 @@ class pH_instrument(Common_instrument):
             self.spectrom.set_scans_average(1)
 
         n = 0
-        while n < 100:
+        while n < 10:
             n += 1
 
             print ('inside call adjust ')
@@ -529,6 +528,7 @@ class pH_instrument(Common_instrument):
             LED1,LED2,LED3 = None, None, None
             res1,res2,res3 = None, None, None
             self.spectrom.set_integration_time(self.specIntTime)
+            await asyncio.sleep(0.5)
             print ('Trying %i ms integration time...' % self.specIntTime)
 
             LED1,adj1,res1 = await self.find_LED(
