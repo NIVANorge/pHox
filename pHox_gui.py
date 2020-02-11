@@ -1068,7 +1068,6 @@ class Panel(QtGui.QWidget):
         if self.args == 'co3':
             self.reset_absorp_plot()
 
-
         await self.pump_if_needed()
 
         #self.append_logbox('Closing valve ...')
@@ -1084,7 +1083,7 @@ class Panel(QtGui.QWidget):
             return 
         # Step 2. Take dark and blank 
         await dark = self.measure_dark()
-        await blank,blank_min_dark = self.measure_blank() 
+        blank,blank_min_dark = self.measure_blank() 
 
         # Steps 3,4,5,6 Measurement cycle 
         await self.measurement_cycle(blank_min_dark,dark)
@@ -1131,9 +1130,6 @@ class Panel(QtGui.QWidget):
                                        "TempProbe_id","Probe_iscalibr",
                                         'TempCalCoef1','TempCalCoef2','DYE'])
 
-
-
-
     async def pump_if_needed(self):
         self.append_logbox('Start new measurement')
         if self.instrument.deployment == 'Standalone' and self.mode == 'Continuous':
@@ -1153,7 +1149,7 @@ class Panel(QtGui.QWidget):
 
         # grab spectrum
         if not self.args.seabreeze:
-            dark = await self.instrument.spectrom.get_corrected_spectra()
+            dark = self.instrument.spectrom.get_corrected_spectra()
         elif self.args.seabreeze:
             #raw = str(n_inj)+'raw'
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
@@ -1164,7 +1160,7 @@ class Panel(QtGui.QWidget):
         
         #turn on the light and LED
         if self.args.co3:
-            await self.instrument.turn_on_relay(self.instrument.light_slot)
+            self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
             await asyncio.sleep(2)
         else: 
@@ -1179,7 +1175,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[2].setChecked(True)
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
-            await blank = self.instrument.spectrom.get_corrected_spectra()
+            blank = self.instrument.spectrom.get_corrected_spectra()
             blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrom.get_intensities(
@@ -1218,7 +1214,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[n_inj+3].setChecked(True)
 
         self.append_logbox('Start stirrer')               
-        await self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+        self.instrument.turn_on_relay(self.instrument.stirrer_slot)
 
         if not self.args.debug:
             self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
@@ -1240,7 +1236,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
         if not self.args.seabreeze:
-            await postinj = self.instrument.spectrom.get_corrected_spectra()
+            postinj = self.instrument.spectrom.get_corrected_spectra()
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj,1,16000)
             #print ('postinj_min_dark')
@@ -1263,7 +1259,7 @@ class Panel(QtGui.QWidget):
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-            await postinj_spec = self.instrument.spectrom.get_intensities(
+            postinj_spec = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
