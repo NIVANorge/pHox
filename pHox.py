@@ -480,7 +480,7 @@ class pH_instrument(Common_instrument):
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])      
             await asyncio.sleep(0.1)                   
             #maxlevel = np.max(self.spectrum)
-            print ('pixelLevel,maxlevel', pixelLevel,maxlevel)
+            print ('pixelLevel', pixelLevel)
 
             if pixelLevel > maxval and LED > 15:
                 print ('case0  Too low pixellevel ')
