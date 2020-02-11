@@ -635,7 +635,7 @@ class Panel(QtGui.QWidget):
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2],[pixelLevel], 
                                                 pen=None, symbol='+') 
-         return adj                                        
+        return adj                                        
 
     async def autoAdjust_LED(self):
         await self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
