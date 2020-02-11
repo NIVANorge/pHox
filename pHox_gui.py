@@ -1095,7 +1095,7 @@ class Panel(QtGui.QWidget):
 
         # Step 2. Take dark and blank 
         dark = await self.measure_dark()
-        blank,blank_min_dark = self.measure_blank(dark) 
+        blank_min_dark = await self.measure_blank(dark) 
 
         # Steps 3,4,5,6 Measurement cycle 
         await self.measurement_cycle(blank_min_dark,dark)
@@ -1199,7 +1199,7 @@ class Panel(QtGui.QWidget):
             blank_min_dark =   blank - dark    
         self.spCounts_df['blank'] = blank
 
-        return blank,blank_min_dark
+        return blank_min_dark
 
     async def measurement_cycle(self,blank_min_dark,dark):
         for n_inj in range(self.instrument.ncycles):
