@@ -534,6 +534,7 @@ class Panel(QtGui.QWidget):
 
     def set_LEDs(self, state):
         for i in range(0,3):
+            print ('i',i)
             self.instrument.adjust_LED(i, state*self.sliders[i].value())
         self.append_logbox('Leds {}'.format(str(state)))
 
