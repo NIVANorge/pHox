@@ -1240,9 +1240,9 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Start stirrer')               
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
-
-        if not self.args.debug:
-            self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
+        self.append_logbox('Dye Injection %d:' %(n_inj+1)) 
+        
+        if not self.args.debug:       
             #self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             await self.insturment.pump_dye(self.instrument.nshots)
 
