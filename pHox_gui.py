@@ -629,7 +629,7 @@ class Panel(QtGui.QWidget):
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
-        await adj,pixelLevel = self.instrument.auto_adjust()  
+        adj,pixelLevel = await self.instrument.auto_adjust()  
         if adj: 
             self.append_logbox('Finished Autoadjust LEDS')
             self.update_spec_int_time_table()
@@ -638,7 +638,7 @@ class Panel(QtGui.QWidget):
         return adj                                        
 
     async def autoAdjust_LED(self):
-        await self.LED1,self.LED2,self.LED3,sptIt,result  = self.instrument.auto_adjust()
+        self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
             self.sliders[0].setValue(self.LED1)
@@ -1082,7 +1082,7 @@ class Panel(QtGui.QWidget):
             print ('could not adjust leds')
             return 
         # Step 2. Take dark and blank 
-        await dark = self.measure_dark()
+        dark = await self.measure_dark()
         blank,blank_min_dark = self.measure_blank() 
 
         # Steps 3,4,5,6 Measurement cycle 
@@ -1195,7 +1195,7 @@ class Panel(QtGui.QWidget):
             dilution = (self.instrument.Cuvette_V) / (
                     vol_injected  + self.instrument.Cuvette_V)      
 
-            await vNTC = self.inject_dye(n_inj)
+            vNTC = await self.inject_dye(n_inj)
             spAbs_min_blank = self.calc_spectrum(n_inj,blank_min_dark,dark)
             #self.append_logbox('Calculate init pH') 
             print ('Calculate init pH') 
