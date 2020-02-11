@@ -661,9 +661,9 @@ class Panel(QtGui.QWidget):
         print ('on_autoAdjust_clicked')
         self.adjusting = True
         if self.args.co3:
-            res = self.autoAdjust_IntTime()
+            res = await self.autoAdjust_IntTime()
         else:
-            res = self.autoAdjust_LED() 
+            res = await self.autoAdjust_LED() 
 
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
