@@ -669,6 +669,19 @@ class Panel(QtGui.QWidget):
         self.btn_adjust_leds.setChecked(False)
         return res
 
+    async def call_autoAdjust(self):
+        self.btn_adjust_leds.setChecked(True)        
+        print ('Autoadjust from sample func')
+        self.adjusting = True
+        if self.args.co3:
+            res = await self.autoAdjust_IntTime()
+        else:
+            res = await self.autoAdjust_LED() 
+        print (res,'res after adjust')
+        self.adjusting = False
+        self.btn_adjust_leds.setChecked(False)
+        return res
+
     def add_pco2_info(self):
         self.CO2_instrument.portSens.write(
             self.CO2_instrument.QUERY_CO2)
@@ -1074,7 +1087,7 @@ class Panel(QtGui.QWidget):
         # Step 1. Autoadjust LEDS
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        res = await self.on_autoAdjust_clicked()
+        res = await self.call_autoAdjust()
         print ('res after autoadjust', res )
         if not res: 
             print ('could not adjust leds')
