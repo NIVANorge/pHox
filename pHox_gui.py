@@ -527,6 +527,8 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
 
     def sld_change(self,ind):
+        print (ind)
+        print (self.sliders[ind])
         value = self.sliders[ind].value()
         self.instrument.adjust_LED(ind,value)
         self.spinboxes[ind].setValue(value)
@@ -534,9 +536,6 @@ class Panel(QtGui.QWidget):
 
     def set_LEDs(self, state):
         for i in range(0,3):
-            print ('i',i)
-            print (self.sliders)
-            print (self.sliders[i])
             self.instrument.adjust_LED(i, state*self.sliders[i].value())
         self.append_logbox('Leds {}'.format(str(state)))
 
