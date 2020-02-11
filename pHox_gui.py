@@ -786,9 +786,9 @@ class Panel(QtGui.QWidget):
 
 
             self.mode = 'Single'
-            _ = await self.sample(flnmStr, timeStamp)
+            await self.sample(flnmStr, timeStamp)
             print ('*****aftr sample')
-            #self.single_sample_finished()
+            await self.single_sample_finished()
 
         else: 
             self.btn_single_meas.setChecked(False) 
