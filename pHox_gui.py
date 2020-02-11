@@ -722,7 +722,6 @@ class Panel(QtGui.QWidget):
         flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
         return flnmStr, timeStamp
 
-    @asyncSlot()
     def btn_cont_meas_clicked(self):
         print ('btn_cont_meas_clicked')
         self.mode = 'Continuous'
@@ -736,7 +735,7 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
             self.StatusBox.clear()            
-            self.timer_contin_mode.stop()
+
             if not self.continous_mode_is_on:
                 self.btn_single_meas.setEnabled(True) 
                 self.btn_calibr.setEnabled(True)
@@ -760,10 +759,6 @@ class Panel(QtGui.QWidget):
 
         await self.sample()
         self.single_sample_finished()
-
-        #self.sample_thread = Sample_thread(self,self.args)
-        #self.sample_thread.start()
-        #self.sample_thread.finished.connect(self.single_sample_finished)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
