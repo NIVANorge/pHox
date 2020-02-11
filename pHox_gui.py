@@ -155,10 +155,11 @@ class Panel(QtGui.QWidget):
         self.plotSpc = self.plotwidget1.plot()
         self.plotAbs = self.plotwidget2.plot()
 
-        color = ['r','g','b','m','y']
-        self.abs_lines = []
-        for n_inj in range(self.instrument.ncycles):
-            self.abs_lines.append(self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj])))
+        if self.args == 'co3': 
+            color = ['r','g','b','m','y']
+            self.abs_lines = []
+            for n_inj in range(self.instrument.ncycles):
+                self.abs_lines.append(self.plotwidget2.plot(x = self.wvls,y = np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj])))
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
@@ -721,6 +722,7 @@ class Panel(QtGui.QWidget):
         flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
         return flnmStr, timeStamp
 
+    @asyncSlot()
     def btn_cont_meas_clicked(self):
         print ('btn_cont_meas_clicked')
         self.mode = 'Continuous'
@@ -737,9 +739,10 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
                 self.btn_single_meas.setEnabled(True) 
-                self.btn_calibr.setEnabled(True) 
+                self.btn_calibr.setEnabled(True)
 
-    def btn_calibr_clicked(self):
+    @asyncSlot()
+    async def btn_calibr_clicked(self):
         message = QtGui.QMessageBox.question(self,
                     "Crazy important message!!!",
                     "Switch the valve to calibration mode",
@@ -755,7 +758,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.reset_lines()
 
-        self.sample()
+        await self.sample()
         self.single_sample_finished()
 
         #self.sample_thread = Sample_thread(self,self.args)
@@ -787,8 +790,8 @@ class Panel(QtGui.QWidget):
 
 
             self.mode = 'Single'
-            await self.sample(flnmStr, timeStamp)
-            print ('*****aftr sample')
+            await r = self.sample(flnmStr, timeStamp)
+            print ('*****aftr sample',r)
             await self.single_sample_finished()
 
         else: 
@@ -1110,7 +1113,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox('Opening the valve ...')
         await self.instrument.set_Valve(False)
 
-        return 
+        return 'Finished'
 
     def get_folderPath(self):
 
