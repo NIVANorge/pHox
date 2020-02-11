@@ -1069,12 +1069,12 @@ class Panel(QtGui.QWidget):
 
         #self.append_logbox('Closing valve ...')
         print ("Closing the valve ...")
-        self.instrument.set_Valve(True)
+        await self.instrument.set_Valve(True)
 
         # Step 1. Autoadjust LEDS
         self.append_logbox('Autoadjust LEDS')
         self.sample_steps[1].setChecked(True)
-        res = self.on_autoAdjust_clicked()
+        res = await self.on_autoAdjust_clicked()
         if not res: 
             print ('could not adjust leds')
             return 
