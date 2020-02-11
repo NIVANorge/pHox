@@ -484,7 +484,7 @@ class pH_instrument(Common_instrument):
 
             if pixelLevel > maxval and LED > 15:
                 print ('case0  Too low pixellevel ')
-                print ('saturated,reduce LED to half')
+                print ('reduce LED to half')
                 LED = LED - increment
 
             elif (pixelLevel < minval and LED < 90):

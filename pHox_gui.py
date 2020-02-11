@@ -1228,7 +1228,7 @@ class Panel(QtGui.QWidget):
             else:                                  
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
                                 spAbs_min_blank,vNTC,dilution,vol_injected)
-            return 
+        return 
 
     async def inject_dye(self,n_inj): 
         # create dataframe and store 
