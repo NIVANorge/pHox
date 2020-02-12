@@ -854,10 +854,14 @@ class Panel(QtGui.QWidget):
     def single_sample_finished(self,timeStamp):
 
         print ('single sample finished inside func')    
-        if not self.args == 'co3':
+        if not self.args.co3 :
+            print ('get final pH')
             self.get_final_pH(timeStamp)
+            print ('save results')
             self.save_results()
-            self.update_pH_plot()        
+            print ('update pH plot')
+            self.update_pH_plot()     
+            pirnt ('update infotable ')   
             self.update_infotable()
 
         self.StatusBox.setText('Measurement is finished')       

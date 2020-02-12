@@ -622,7 +622,8 @@ class pH_instrument(Common_instrument):
 
         nrows = evalPar_df.shape[0]
 
-        if self.args == 'debug':
+        if self.args.debug :
+            print ('ph eval debug mode')
             x = evalPar_df['Vol_injected'].values 
             y = pH_t_corr.values
             final_slope = 1
