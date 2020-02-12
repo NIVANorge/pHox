@@ -649,12 +649,11 @@ class Panel(QtGui.QWidget):
             self.sliders[2].setValue(self.LED3)
 
             #self.plot_sp_levels()
-            
+            self.update_spec_int_time_table()             
             self.append_logbox(
                 'Adjusted LEDS with intergration time {}'.format(
                     self.instrument.specIntTime))
-            self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
-                str(self.instrument.specIntTime)))  
+
 
             datay = self.instrument.spectrom.get_intensities() 
             await asyncio.sleep(0.1)
