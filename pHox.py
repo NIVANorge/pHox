@@ -522,6 +522,8 @@ class pH_instrument(Common_instrument):
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
 
+        self.adj_action = None
+        increment_sptint = 200
         n = 0
         while n < 10:
             n += 1
@@ -548,15 +550,24 @@ class pH_instrument(Common_instrument):
                         led_ind = 2,adj = adj3, LED = self.LED3)    
 
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
-                print ('decreasing time') 
-                self.specIntTime -= 100
+                if self.adj_action == 'increase':
+                    increment_sptint = increment_sptint / 2     
+
+                self.specIntTime -= increment_sptint
+                self.adj_action = 'decrease'
+
             elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
-                print ('increasing time')
                 if self.specIntTime< 5000:
-                    self.specIntTime += 100
+                    if self.adj_action == 'decrease': 
+                        increment_sptint = increment_sptint / 2 
+
+                    self.specIntTime += increment_sptint
+                    self.adj_action = 'increase'                    
+
                 else: 
                     print ('too high spt')
                     break 
+
             elif (adj1 and adj2 and adj3):
                print ('Levels adjusted')
                break 
