@@ -336,10 +336,18 @@ class CO3_instrument(Common_instrument):
     async def auto_adjust(self,*args):
 
         adjusted = False 
+        pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
+
+        increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
+
+
+        maxval = self.THR * 1.05
+        minval = self.THR * 0.95
 
         while adjusted == False: 
-            self.spectrom.set_integration_time(self.specIntTime)
 
+            self.spectrom.set_integration_time(self.specIntTime)
+            await asyncio.sleep(self.specIntTime*1.e-3)
             print ('init self.specIntTime', self.specIntTime)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
@@ -349,20 +357,23 @@ class CO3_instrument(Common_instrument):
             print ('integration time')
             print (self.specIntTime)
    
-            if (pixelLevel < self.THR * 0.95 or pixelLevel > self.THR * 1.05):
 
-                new_specintTime = self.specIntTime * self.THR / pixelLevel
+            if self.specIntTime > 5000:
+                print ('Too high specint time value') 
+                break 
 
-                if new_specintTime < 50: 
-                    print ('Something is wrong, specint time is too low ')
-                elif new_specintTime > 5000:
-                    print ('Too high specint time value') 
-                    break 
+            elif self.specIntTime < 100: 
+                print ('Something is wrong, specint time is too low ')
+                break  
 
-                self.specIntTime = new_specintTime
+            elif pixelLevel < minval :
+                self.specIntTime += increment
+                increment = increment / 2 
 
-                await asyncio.sleep(self.specIntTime*1.e-3)
-               
+            elif pixelLevel > maxval: 
+                self.specIntTime -= increment
+                increment = increment / 2 
+
             else: 
                 adjusted = True 
 
@@ -473,8 +484,6 @@ class pH_instrument(Common_instrument):
             print ('step', step)
             print ('LED', LED)
             step += 1
-            increment = increment/2
-
             self.adjust_LED(led_ind, LED)        
             await asyncio.sleep(0.1)
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])      
@@ -500,11 +509,11 @@ class pH_instrument(Common_instrument):
                 print ('case2 Too low pixellevel and high LED')                   
                 res = 'increase int time'              
                 break                
-
             else: 
                 adj = True  
-                res = 'adjusted'      
+                res = 'adjusted'    
 
+            increment = increment/2
         return LED,adj,res
 
     async def auto_adjust(self,*args):
