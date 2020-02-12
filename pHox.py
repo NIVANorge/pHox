@@ -509,7 +509,7 @@ class pH_instrument(Common_instrument):
 
     async def auto_adjust(self,*args):
  
-        #sptIt = self.specIntTime
+
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
 
@@ -543,7 +543,7 @@ class pH_instrument(Common_instrument):
                 self.specIntTime -= 100
             elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
                 print ('increasing time')
-                if sptIt < 5000:
+                if self.specIntTime< 5000:
                     self.specIntTime += 100
                 else: 
                     print ('too high spt')

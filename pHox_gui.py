@@ -52,10 +52,11 @@ class Panel(QtGui.QWidget):
 
         self.tabs = QtGui.QTabWidget()
 
-        self.tab1 =        QtGui.QWidget()
+        self.tab1       =  QtGui.QWidget()
         self.tab_manual =  QtGui.QWidget()
-        self.tab_log =     QtGui.QWidget()
+        self.tab_log    =  QtGui.QWidget()
         self.tab_config =  QtGui.QWidget()
+        self.plots      =  QtGui.QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1,       "Home")  
@@ -662,7 +663,7 @@ class Panel(QtGui.QWidget):
                 self.instrument.specAvScans = 3000/self.instrument.specIntTime
         else:
             result = False
-            
+
         return result
 
     @asyncSlot()
