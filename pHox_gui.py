@@ -640,7 +640,7 @@ class Panel(QtGui.QWidget):
         return adj                                        
 
     async def autoAdjust_LED(self):
-        self.LED1,self.LED2,self.LED3,sptIt,result  = await self.instrument.auto_adjust()
+        self.LED1,self.LED2,self.LED3,result  = await self.instrument.auto_adjust()
         print (self.LED1,self.LED2,self.LED3)
         if result:
             self.sliders[0].setValue(self.LED1)
@@ -648,20 +648,22 @@ class Panel(QtGui.QWidget):
             self.sliders[2].setValue(self.LED3)
 
             #self.plot_sp_levels()
-            self.instrument.specIntTime = sptIt
-            self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
+            
+            self.append_logbox(
+                'Adjusted LEDS with intergration time {}'.format(
+                    self.instrument.specIntTime))
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
                 str(self.instrument.specIntTime)))  
-            print (sptIt)
+
             datay = self.instrument.spectrom.get_intensities() 
             await asyncio.sleep(0.1)
             self.plotSpc.setData(self.wvls,datay)
             if not self.args.seabreeze:    
-                self.instrument.specAvScans = 3000/sptIt
-            # await to 
-
-            return result
-            #self.textBox.setText('Could not adjust leds')
+                self.instrument.specAvScans = 3000/self.instrument.specIntTime
+        else:
+            result = False
+            
+        return result
 
     @asyncSlot()
     async def on_autoAdjust_clicked(self):

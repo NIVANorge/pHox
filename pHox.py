@@ -509,7 +509,7 @@ class pH_instrument(Common_instrument):
 
     async def auto_adjust(self,*args):
  
-        sptIt = self.specIntTime
+        #sptIt = self.specIntTime
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
 
@@ -557,7 +557,7 @@ class pH_instrument(Common_instrument):
         else:
             result = True 
 
-        return LED1,LED2,LED3,sptIt,result
+        return LED1,LED2,LED3,result
 
     def calc_pH(self,absSp, vNTC,dilution,vol_injected):
 
