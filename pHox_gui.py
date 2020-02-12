@@ -853,7 +853,10 @@ class Panel(QtGui.QWidget):
   
     def update_pH_plot(self):
         print ('in update pH plot')
+        print ('self.x,self.y',self.x,self.y)
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
+        print ('after first plot')
+        print ('intercept',self.intersept)
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
     def single_sample_finished(self,folderPath,timeStamp,flnmStr):

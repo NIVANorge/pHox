@@ -567,7 +567,7 @@ class pH_instrument(Common_instrument):
         T = 273.15 + Tdeg
         A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
         A2   = round(absSp[self.wvlPixels[1]], prec['A2'])
-        Anir = round(absSp[self.wvlPixels[2]], prec['Anir']) 
+        Anir = round(absSp[self.wvlPixels[2]], prec['Anir'])
 
         fb_sal = round(self.fb_data['salinity'], prec['salinity'])
         S_corr = round(fb_sal * dilution , prec['salinity'])
@@ -625,7 +625,7 @@ class pH_instrument(Common_instrument):
         if self.args.debug :
             print ('ph eval debug mode')
             x = evalPar_df['Vol_injected'].values 
-            y = 0
+            y = pH_t_corr.values*0
             final_slope = 1
             perturbation = 1
             pH_insitu = 999
