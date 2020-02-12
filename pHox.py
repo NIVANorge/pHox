@@ -625,7 +625,7 @@ class pH_instrument(Common_instrument):
         if self.args.debug :
             print ('ph eval debug mode')
             x = evalPar_df['Vol_injected'].values 
-            y = pH_t_corr.values
+            y = 0
             final_slope = 1
             perturbation = 1
             pH_insitu = 999

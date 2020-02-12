@@ -863,7 +863,7 @@ class Panel(QtGui.QWidget):
             self.save_results(folderPath,flnmStr)
             print ('update pH plot')
             self.update_pH_plot()     
-            pirnt ('update infotable ')   
+            print ('update infotable ')   
             self.update_infotable()
 
         self.StatusBox.setText('Measurement is finished')       
@@ -903,7 +903,7 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(True) 
             self.btn_calibr.setEnabled(True)
             # enable all btns in manual tab 
-        else: 
+        else:
             nextSamplename = self.get_next_sample()
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
@@ -917,6 +917,7 @@ class Panel(QtGui.QWidget):
         self.fill_table_pH(5,1,str(Voltage)) 
         
     def update_infotable(self):
+        print ('inside update infotable')
         if not self.args.co3:
             pH_lab = str(self.pH_log_row["pH_lab"].values[0])
             self.fill_table_pH(0,1,pH_lab)
