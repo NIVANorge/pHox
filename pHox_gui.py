@@ -794,7 +794,7 @@ class Panel(QtGui.QWidget):
 
             r = await self.sample(folderPath, flnmStr, timeStamp)
             print ('*****aftr sample',r)
-            await self.single_sample_finished(folderPath,timeStamp,flnmStr)
+            self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
         else: 
             self.btn_single_meas.setChecked(False) 
