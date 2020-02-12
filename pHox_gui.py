@@ -838,10 +838,10 @@ class Panel(QtGui.QWidget):
         #self.sample_steps[7].setChecked(True)    
         self.append_logbox('Save spectrum data to file')
         self.save_spt(folderPath)
-
+        print ('Save evl data to file')
         self.append_logbox('Save evl data to file')
         self.save_evl(folderPath)   
-
+        print ('Send data to ferrybox')
         self.append_logbox('Send data to ferrybox')        
         self.send_to_ferrybox()
 
