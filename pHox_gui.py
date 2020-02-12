@@ -788,7 +788,7 @@ class Panel(QtGui.QWidget):
 
             r = await self.sample(folderPath, flnmStr, timeStamp)
             print ('*****aftr sample',r)
-            await self.single_sample_finished(timeStamp,folderPath)
+            await self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
         else: 
             self.btn_single_meas.setChecked(False) 
@@ -803,7 +803,7 @@ class Panel(QtGui.QWidget):
         folderPath = self.get_folderPath() 
 
         r = await self.sample(flnmStr, timeStamp)
-        self.continuous_sample_finished(timeStamp,folderPath) 
+        self.continuous_sample_finished(folderPath,timeStamp,flnmStr) 
 
     def unclick_enable(self,btns):
         for btn in btns:
@@ -833,14 +833,14 @@ class Panel(QtGui.QWidget):
          
         #print (self.x,self.y,self.intercept,self.slope)        
 
-    def save_results(self,folderPath):
+    def save_results(self,folderPath,flnmStr):
 
         #self.sample_steps[7].setChecked(True)    
         self.append_logbox('Save spectrum data to file')
-        self.save_spt(folderPath)
+        self.save_spt(folderPath,flnmStr)
         print ('Save evl data to file')
         self.append_logbox('Save evl data to file')
-        self.save_evl(folderPath)   
+        self.save_evl(folderPath,flnmStr)   
         print ('Send data to ferrybox')
         self.append_logbox('Send data to ferrybox')        
         self.send_to_ferrybox()
@@ -853,14 +853,14 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
-    def single_sample_finished(self,timeStamp,folderPath):
+    def single_sample_finished(self,folderPath,timeStamp,flnmStr):
 
         print ('single sample finished inside func')    
         if not self.args.co3 :
             print ('get final pH')
             self.get_final_pH(timeStamp)
             print ('save results')
-            self.save_results(folderPath)
+            self.save_results(folderPath,flnmStr)
             print ('update pH plot')
             self.update_pH_plot()     
             pirnt ('update infotable ')   
@@ -882,7 +882,7 @@ class Panel(QtGui.QWidget):
                         "Are you sure??????",
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
 
-    def continuous_sample_finished(self,timeStamp):
+    def continuous_sample_finished(self,folderPath,timeStamp,flnmStr):
 
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
@@ -890,7 +890,7 @@ class Panel(QtGui.QWidget):
             self.get_final_pH(timeStamp) 
             self.StatusBox.setText('Measurement is finished') 
 
-            self.save_results()
+            self.save_results(folderPath,flnmStr)
             self.update_pH_plot()
             self.update_infotable()   
 
@@ -1301,22 +1301,22 @@ class Panel(QtGui.QWidget):
 
         return spAbs_min_blank
 
-    def save_evl(self,folderPath):
+    def save_evl(self,folderPath,flnmStr):
         evlpath = folderPath + 'evl/'
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
-        flnm = evlpath + self.instrument.flnmStr +'.evl'
+        flnm = evlpath + flnmStr +'.evl'
         if self.args.co3:
             self.CO3_eval.to_csv(flnm, index = False, header=True) 
         else:
             self.evalPar_df.to_csv(flnm, index = False, header=True) 
 
-    def save_spt(self,folderPath):
+    def save_spt(self,folderPath,flnmStr):
         sptpath = folderPath + 'spt/'
         if not os.path.exists(sptpath):
             os.makedirs(sptpath)
         self.spCounts_df.T.to_csv(
-            sptpath + self.instrument.flnmStr + '.spt',
+            sptpath + flnmStr + '.spt',
             index = True, header=False)
 
     def save_logfile_df(self,folderPath):
