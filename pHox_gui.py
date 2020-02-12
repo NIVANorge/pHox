@@ -652,8 +652,11 @@ class Panel(QtGui.QWidget):
             self.append_logbox('Adjusted LEDS with intergration time {}'.format(sptIt))
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
                 str(self.instrument.specIntTime)))  
+            print (sptIt)
             if not self.args.seabreeze:    
                 self.instrument.specAvScans = 3000/sptIt
+            # await to 
+            await asyncio.sleep(0.1)
             return result
             #self.textBox.setText('Could not adjust leds')
 
