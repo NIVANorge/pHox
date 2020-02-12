@@ -441,7 +441,7 @@ class Panel(QtGui.QWidget):
         else: 
             self.instrument.turn_off_relay(
                 self.instrument.wpump_slot)
-
+    @asyncSlot
     async def btn_lightsource_clicked(self):
         print ('btn_lightsource_clicked')
         print (self.btn_lightsource.isChecked())
