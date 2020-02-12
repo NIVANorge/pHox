@@ -778,16 +778,17 @@ class Panel(QtGui.QWidget):
             if text != '':
                 flnmStr = text
 
+            self.mode = 'Single'
+            folderPath = self.get_folderPath() 
             # disable all btns in manual tab 
             self.btn_cont_meas.setEnabled(False)
             self.btn_single_meas.setEnabled(False) 
             self.btn_calibr.setEnabled(False) 
 
 
-            self.mode = 'Single'
-            r = await self.sample(flnmStr, timeStamp)
+            r = await self.sample(folderPath, flnmStr, timeStamp)
             print ('*****aftr sample',r)
-            await self.single_sample_finished(timeStamp)
+            await self.single_sample_finished(timeStamp,folderPath)
 
         else: 
             self.btn_single_meas.setChecked(False) 
@@ -799,9 +800,10 @@ class Panel(QtGui.QWidget):
 
         flnmStr, timeStamp = self.get_filename()          
         self.continous_mode_is_on = True
+        folderPath = self.get_folderPath() 
 
         r = await self.sample(flnmStr, timeStamp)
-        self.continuous_sample_finished(timeStamp) 
+        self.continuous_sample_finished(timeStamp,folderPath) 
 
     def unclick_enable(self,btns):
         for btn in btns:
@@ -851,14 +853,14 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.plot(self.x,self.y, pen=None, symbol='o', clear=True)  
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
-    def single_sample_finished(self,timeStamp):
+    def single_sample_finished(self,timeStamp,folderPath):
 
         print ('single sample finished inside func')    
         if not self.args.co3 :
             print ('get final pH')
             self.get_final_pH(timeStamp)
             print ('save results')
-            self.save_results()
+            self.save_results(folderPath)
             print ('update pH plot')
             self.update_pH_plot()     
             pirnt ('update infotable ')   
@@ -1061,7 +1063,7 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
-    async def sample(self,flnmStr, timeStamp):
+    async def sample(self,folderPath,flnmStr, timeStamp):
 
         # Step 0. Start mesurement, create new df,
         # reset Absorption plot
@@ -1076,7 +1078,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[0].setChecked(True)
 
         self.create_new_df()  
-        folderPath = self.get_folderPath() 
+        
 
         if self.args == 'co3':
             self.reset_absorp_plot()
@@ -1289,9 +1291,9 @@ class Panel(QtGui.QWidget):
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
-            try:
+            if not self.args.debug: 
                 spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
-            except: 
+            else: 
                 print ('WRONG VALUES')
                 spAbs_min_blank = postinj_spec_min_dark 
             #blank
