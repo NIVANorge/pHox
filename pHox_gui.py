@@ -365,7 +365,8 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_wpump, 4, 0)
 
         # Define connections Button clicked - Result 
-        self.btn_leds.clicked.connect(self.btn_leds_checked)
+        if not self.args.co3:
+            self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
@@ -400,8 +401,9 @@ class Panel(QtGui.QWidget):
             self.sliders[ind].setTracking(True) 
             self.spinboxes.append(QtGui.QSpinBox())
             # create connections 
-            self.sliders[ind].valueChanged[int].connect(self.sld_change)   
-            self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
+            if not self.args.co3:
+                self.sliders[ind].valueChanged[int].connect(self.sld_change)   
+                self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
         grid = QtGui.QGridLayout()
 
