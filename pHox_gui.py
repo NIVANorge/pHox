@@ -454,7 +454,7 @@ class Panel(QtGui.QWidget):
                 self.instrument.light_slot)        
 
     #TODO: async
-    @asyncSlot
+    @asyncSlot()
     async def btn_dye_pmp_clicked(self):
         self.instrument.cycle_line(self.instrument.dyepump_slot,3)
 
