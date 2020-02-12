@@ -653,10 +653,13 @@ class Panel(QtGui.QWidget):
             self.tableWidget.setItem(6,1,QtGui.QTableWidgetItem(
                 str(self.instrument.specIntTime)))  
             print (sptIt)
+            datay = self.instrument.spectrom.get_intensities() 
+            await asyncio.sleep(0.1)
+            self.plotSpc.setData(self.wvls,datay)
             if not self.args.seabreeze:    
                 self.instrument.specAvScans = 3000/sptIt
             # await to 
-            await asyncio.sleep(0.1)
+
             return result
             #self.textBox.setText('Could not adjust leds')
 
