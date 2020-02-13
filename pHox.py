@@ -482,7 +482,7 @@ class pH_instrument(Common_instrument):
         self.led_action = None
         # Increment is decreased twice in case we change the direction 
         # of decrease/increase 
-        
+
         while adj == False: 
             print ('step', step)
             print ('LED', LED)
@@ -499,14 +499,14 @@ class pH_instrument(Common_instrument):
                 print ('reduce LED to half')
                 if self.led_action == 'increase':
                     increment = increment/2
-                LED = LED - increment
+                LED = max(1,LED - increment)
                 self.led_action = 'decrease'
 
             elif (pixelLevel < minval and LED < 90):
                 print ('case3 Too low pixellevel, increase LED')
                 if self.led_action == 'decrease':
                     increment = increment/2
-                LED = LED + increment
+                LED = min(99,LED + increment)
                 self.led_action = 'increase'
 
             elif pixelLevel > maxval and LED <= 15:
