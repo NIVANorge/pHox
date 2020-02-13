@@ -459,7 +459,7 @@ class Panel(QtGui.QWidget):
         print ('in pump dye clicke')
         await self.instrument.pump_dye(3)
         self.btn_dye_pmp.setChecked(False)
-        
+
     #TODO: async
     def btn_valve_clicked(self):
         self.instrument.set_Valve(self.btn_valve.isChecked())
@@ -735,10 +735,11 @@ class Panel(QtGui.QWidget):
         return flnmStr, timeStamp
 
     def btn_cont_meas_clicked(self):
-        print ('btn_cont_meas_clicked')
+
         self.mode = 'Continuous'
         state = self.btn_cont_meas.isChecked()
         if state:
+            print ('btn_cont_meas_clicked')
             self.btn_single_meas.setEnabled(False) 
             self.btn_calibr.setEnabled(False) 
             # disable all btns in manual tab 
@@ -746,6 +747,7 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
+            print ('btn_cont_meas_UNclicked')
             self.StatusBox.clear()            
             self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
