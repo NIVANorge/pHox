@@ -459,9 +459,11 @@ class Panel(QtGui.QWidget):
     #TODO: async
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
-        print ('in pump dye clicke')
-        await self.instrument.pump_dye(3)
-        self.btn_dye_pmp.setChecked(False)
+        state = self.btn_dye_pmp.isChecked()
+        if state:
+            print ('in pump dye clicke')
+            await self.instrument.pump_dye(3)
+            self.btn_dye_pmp.setChecked(False)
 
     #TODO: async
     def btn_valve_clicked(self):
@@ -549,7 +551,6 @@ class Panel(QtGui.QWidget):
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
         self.set_LEDs(state)
-
 
     def on_selFolderBtn_released(self):
         self.folderDialog = QtGui.QFileDialog()
