@@ -262,16 +262,16 @@ class Common_instrument(object):
     async def cycle_line (self, line, nCycles):
         for nCy in range(nCycles):
             self.turn_on_relay(line)
-            await asyncio.sleep(wait_time)
+            await asyncio.sleep(self.wait_time)
             self.turn_off_relay(line)
-            await asyncio.sleep(wait_time)
+            await asyncio.sleep(self.wait_time)
 
     async def pump_dye(self,nshots):
         for shot in range(nshots):
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(wait_time)
-            self.turn_off_relay(line)
-            await asyncio.sleep(wait_time)
+            await asyncio.sleep(self.wait_time)
+            self.turn_off_relay(self.dyepump_slot)
+            await asyncio.sleep(self.wait_time)
         return 
 
         
