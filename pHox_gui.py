@@ -600,7 +600,7 @@ class Panel(QtGui.QWidget):
                 except:
                     print ('Exception error') 
                     pass
-            await asyncio.sleep(self.instrument.specIntTime*1.e-6)
+            #await asyncio.sleep(self.instrument.specIntTime*1.e-6)
         elif self.adjusting == True: 
             try: 
                 datay = self.instrument.spectrum
