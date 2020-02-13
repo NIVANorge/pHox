@@ -812,7 +812,7 @@ class Panel(QtGui.QWidget):
         self.continous_mode_is_on = True
         folderPath = self.get_folderPath() 
 
-        r = await self.sample(flnmStr, timeStamp)
+        r = await self.sample(folderPath, flnmStr, timeStamp)
         self.continuous_sample_finished(folderPath,timeStamp,flnmStr) 
 
     def unclick_enable(self,btns):
