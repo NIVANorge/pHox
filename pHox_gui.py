@@ -1100,7 +1100,6 @@ class Panel(QtGui.QWidget):
         await self.pump_if_needed()
 
         self.append_logbox('Closing valve ...')
-        print ("Closing the valve ...")
         await self.instrument.set_Valve(True)
 
         # Step 1. Autoadjust LEDS
@@ -1259,7 +1258,7 @@ class Panel(QtGui.QWidget):
 
         if not self.args.debug:       
             #self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
-            await self.insturment.pump_dye(self.instrument.nshots)
+            await self.instrument.pump_dye(self.instrument.nshots)
 
         self.append_logbox("Mixing")
         await asyncio.sleep(self.instrument.mixT)
