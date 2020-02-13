@@ -588,8 +588,8 @@ class Panel(QtGui.QWidget):
         await asyncio.sleep(0.005)
         return
 
-    @asyncSlot()
-    async def update_spectra_plot(self):
+    #@asyncSlot()
+    def update_spectra_plot(self):
         if self.adjusting == False:  
             if not self.args.seabreeze:
                 datay = self.instrument.spectrom.get_corrected_spectra()      
@@ -869,7 +869,7 @@ class Panel(QtGui.QWidget):
         self.send_to_ferrybox()
 
         self.append_logbox('Save final data in %s' % (folderPath+'pH.log'))
-        self.save_logfile_df(folderPath)
+        self.save_logfile_df(folderPath,flnmStr)
   
     def update_pH_plot(self):
         print ('in update pH plot')
@@ -1346,7 +1346,7 @@ class Panel(QtGui.QWidget):
             sptpath + flnmStr + '.spt',
             index = True, header=False)
 
-    def save_logfile_df(self,folderPath):
+    def save_logfile_df(self,folderPath,flnmStr):
 
         # check time of cration of the last log file 
         # if more than one hour,
@@ -1354,20 +1354,34 @@ class Panel(QtGui.QWidget):
         # in the separate logs folder .  
         # additionaly to regular common Ph log  
         hour_log_path = folderPath + 'logs/'
+        hour_log_flnm = hour_log_path + flnmStr +'.log'  
+
         if not os.path.exists(hour_log_path):
-            os.makedirs(hour_log_path)  
+            os.makedirs(hour_log_path)
+
+            self.pH_log_row.to_csv(hour_log_flnm, index = False, header=True)                                     
             # and create logfile 
         else: 
-            # list all files in the directory 
-            #files_in_path = (entry for entry in hour_log_path.iterdir() if entry.is_file())   
+            # list all files in the directory   
             files_in_path = [entry  for entry in  hour_log_path.iterdir() if entry.is_file()]  
-            ind  = np.argmin([entry.stat().st_mtime  for entry in files_in_path])
-            last_file = files_in_path[ind]
-            # get name of the last file and time of creation 
-            # compare with the name we have now from flnmString 
-            
-        self.logtime = None 
+            # find the index of the last modified file 
+            ind  = np.argmax([entry.stat().st_mtime  for entry in files_in_path])
+            # get the name of the last modified file
+            # remove last 4 characters (.log)
+            last_file = files_in_path[ind].name[:-4]
 
+            new_time = datetime.strptime(flnmStr, "%Y%m%d_%H%M%S")
+            # convert filename to datetime 
+            last_time = datetime.strptime(last_file, "%Y%m%d_%H%M%S")
+            # calculate delta in hours 
+            delta = (new_time - last_time).seconds // 3600
+
+            if delta > 1: 
+                # if more than hour, create a new file  
+                self.pH_log_row.to_csv(hour_log_flnm, index = False, header=True)    
+            else: 
+                # else append the old hourly file 
+                self.pH_log_row.to_csv(last_file, mode = 'a', index = False, header=False) 
 
 
         logfile = os.path.join(folderPath, 'pH.log')
@@ -1375,11 +1389,11 @@ class Panel(QtGui.QWidget):
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
         else: 
-            log_df = pd.DataFrame(
+            '''log_df = pd.DataFrame(
                 columns= ["Time","Lon","Lat","fb_temp",
                          "fb_sal",'SHIP',"pH_lab", 
                           "T_lab", "perturbation",
-                          "evalAnir", "pH_insitu"])
+                          "evalAnir", "pH_insitu"])'''
             self.pH_log_row.to_csv(logfile, index = False, header=True) 
         print ('saved log_df')
 
