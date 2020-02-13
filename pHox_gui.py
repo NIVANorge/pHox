@@ -470,7 +470,7 @@ class Panel(QtGui.QWidget):
         self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
-        
+        print ('btn_save_config_clicked')
         with open(self.config_name,'r+') as json_file:
             j = json.load(json_file)
 
@@ -478,7 +478,7 @@ class Panel(QtGui.QWidget):
 
             j['Operational']["Spectro_Integration_time"] = self.instrument.specIntTime
             minutes = int(self.samplingInt_combo.currentText())
-            print ('minute',minutes,type(minutes))
+            
             j['Operational']["SAMPLING_INTERVAL_SEC"] = minutes*60
             json_file.seek(0)  # rewind
             json.dump(j, json_file, indent=4)
