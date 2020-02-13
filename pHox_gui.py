@@ -349,7 +349,7 @@ class Panel(QtGui.QWidget):
         self.btn_leds = self.create_button('LEDs',True)
         self.btn_valve = self.create_button('Inlet valve',True)   
         self.btn_stirr = self.create_button('Stirrer',True)
-        self.btn_dye_pmp = self.create_button('Dye pump',False)        
+        self.btn_dye_pmp = self.create_button('Dye pump',True)        
         self.btn_wpump = self.create_button('Water pump',True)
         self.btn_calibr = self.create_button('Make calibration',True)
 
@@ -456,8 +456,10 @@ class Panel(QtGui.QWidget):
     #TODO: async
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
+        print ('in pump dye clicke')
         await self.instrument.pump_dye(3)
-
+        self.btn_dye_pmp.setChecked(False)
+        
     #TODO: async
     def btn_valve_clicked(self):
         self.instrument.set_Valve(self.btn_valve.isChecked())
