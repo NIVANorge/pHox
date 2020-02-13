@@ -979,7 +979,7 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.timerSpectra_plot.start(1.e2)
+        self.timerSpectra_plot.start(1.e1)
         self.timerTemp_info.start(1.e3)
 
         if not self.args.co3 or not self.args.debug: 
