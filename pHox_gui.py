@@ -99,16 +99,19 @@ class Panel(QtGui.QWidget):
     def create_timers(self):
 
         self.timer_contin_mode = QtCore.QTimer()
+        self.timer_contin_mode.timeout.connect(
+            self.continuous_mode_timer_finished)  
+
         self.timerSpectra_plot = QtCore.QTimer()
+        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)   
+
         self.timerTemp_info = QtCore.QTimer()
-        self.timerSave = QtCore.QTimer()
+        self.timerTemp_info.timeout.connect(self.update_T_lab)    
+
         self.timerAuto = QtCore.QTimer()
-        self.timerSpectra_plot.setInterval(1.e3) # 10 sec     
-        self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
-        self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
-        self.timerTemp_info.timeout.connect(self.update_T_lab)
 
         if self.args.pco2:
+            self.timerSave = QtCore.QTimer()            
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
     def make_plotwidgets(self):
@@ -914,7 +917,7 @@ class Panel(QtGui.QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
         print ('start timer spectra plot')
-        self.timerSpectra_plot.start(1000)
+        
         if not self.btn_cont_meas.isChecked():
             self.StatusBox.setText('Continuous mode is off')
             self.btn_single_meas.setEnabled(True) 
@@ -975,7 +978,7 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.timerSpectra_plot.start(3.e3)
+        self.timerSpectra_plot.start(1.e3)
         self.timerTemp_info.start(1.e3)
 
         if not self.args.co3 or not self.args.debug: 
@@ -1000,7 +1003,7 @@ class Panel(QtGui.QWidget):
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
         #self.on_deploy_clicked(False)
-        #self.timerSpectra_plot.stop()
+        self.timerSpectra_plot.stop()
         self.timer_contin_mode.stop()
         #self.timerSensUpd.stop()
         #self.timerSave.stop()
