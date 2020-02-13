@@ -139,6 +139,7 @@ class Panel(QtGui.QWidget):
         #self.plotwidget2.setXRange(410,610)
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground('#19232D')     
+        self.plotwidget2.setTitle("Last pH measurement")
 
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
