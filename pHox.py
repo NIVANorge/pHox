@@ -270,9 +270,9 @@ class Common_instrument(object):
         for shot in range(nshots):
             print ('inject shot {}'.format(shot))
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(self.waitT)
+            await asyncio.sleep(0.3)
             self.turn_off_relay(self.dyepump_slot)
-            await asyncio.sleep(self.waitT)
+            #await asyncio.sleep(self.waitT)
         return 
 
         

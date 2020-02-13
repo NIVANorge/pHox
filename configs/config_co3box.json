@@ -26,7 +26,7 @@
         "Comment": "all intervals are in seconds",
         "pumpTime": 15,
         "mixTime": 5,
-        "waitTime": 0.3,
+        "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 3000,
         "Deployment_mode": "Standalone",

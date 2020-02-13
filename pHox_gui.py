@@ -761,23 +761,27 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
-        message = QtGui.QMessageBox.question(self,
+        state = self.btn_calibr.isChecked()
+        if state:
+            message = QtGui.QMessageBox.question(self,
                     "Crazy important message!!!",
                     "Switch the valve to calibration mode",
                     QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
-        if message == QtGui.QMessageBox.No:
-            return
+            if message == QtGui.QMessageBox.No:
+                return
 
-        self.btn_cont_meas.setEnabled(False)
-        self.btn_single_meas.setEnabled(False) 
-        # disable all btns in manual tab 
+            self.btn_cont_meas.setEnabled(False)
+            self.btn_single_meas.setEnabled(False) 
+            # disable all btns in manual tab 
 
-        self.mode = 'Calibration'
+ 
+            self.mode = 'Calibration'
+            folderPath = self.get_folderPath() 
+            flnmStr, timeStamp = self.get_filename()    
 
-        self.instrument.reset_lines()
-
-        await self.sample()
-        self.single_sample_finished()
+            r = await self.sample(folderPath, flnmStr, timeStamp)
+            print ('*****aftr sample calibration',r)
+            self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
@@ -1202,6 +1206,8 @@ class Panel(QtGui.QWidget):
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
+
+
             dark = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
         
@@ -1341,6 +1347,13 @@ class Panel(QtGui.QWidget):
             index = True, header=False)
 
     def save_logfile_df(self,folderPath):
+
+        # check time of cration of the last log file 
+        # if more than one hour,
+        # create new file and write data there .
+        # in the separate logs folder .  
+        # additionaly to regular common Ph log  
+
         logfile = os.path.join(folderPath, 'pH.log')
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
