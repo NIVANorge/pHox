@@ -493,7 +493,7 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.1)                   
             #maxlevel = np.max(self.spectrum)
             print ('pixelLevel', pixelLevel)
-            print (f'increment = {increment}')
+            print (f"increment = {increment}")
             if pixelLevel > maxval and LED > 15:
                 print ('case0  Too high pixellevel, decrease LED ')
                 print ('reduce LED to half')
