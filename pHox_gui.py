@@ -967,7 +967,6 @@ class Panel(QtGui.QWidget):
             self.btn_lightsource.setChecked(True)     
 
         elif not self.args.co3:
-            self.set_LEDs(True)
             self.update_LEDs()
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
