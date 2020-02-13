@@ -501,7 +501,7 @@ class pH_instrument(Common_instrument):
                 LED = LED + increment
 
             elif pixelLevel > maxval and LED <= 15:
-                print ('case1')                
+                print ('case1 decrease int time')                
                 res = 'decrease int time' 
                 break
 
@@ -548,7 +548,7 @@ class pH_instrument(Common_instrument):
                     print ('*** adj2 = True')
                     LED3,adj3,res3 = await self.find_LED(
                         led_ind = 2,adj = adj3, LED = self.LED3)    
-
+            print (res1,res2,res3,'res123')
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 if self.adj_action == 'increase':
                     increment_sptint = increment_sptint / 2     
