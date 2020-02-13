@@ -1353,8 +1353,25 @@ class Panel(QtGui.QWidget):
         # create new file and write data there .
         # in the separate logs folder .  
         # additionaly to regular common Ph log  
+        hour_log_path = folderPath + 'logs/'
+        if not os.path.exists(hour_log_path):
+            os.makedirs(hour_log_path)  
+            # and create logfile 
+        else: 
+            # list all files in the directory 
+            #files_in_path = (entry for entry in hour_log_path.iterdir() if entry.is_file())   
+            files_in_path = [entry  for entry in  hour_log_path.iterdir() if entry.is_file()]  
+            ind  = np.argmin([entry.stat().st_mtime  for entry in files_in_path])
+            last_file = files_in_path[ind]
+            # get name of the last file and time of creation 
+            # compare with the name we have now from flnmString 
+            
+        self.logtime = None 
+
+
 
         logfile = os.path.join(folderPath, 'pH.log')
+        #logfile_hourly = 
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode = 'a', index = False, header=False) 
         else: 
