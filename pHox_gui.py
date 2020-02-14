@@ -3,11 +3,14 @@
 from pHox import *
 from pco2 import CO2_instrument
 import os,sys
-os.chdir('/home/pi/pHox')
-os.system('clear')
+#os.chdir('/home/pi/pHox')
+#os.system('clear')    
+try:
+    import warnings, time, RPi.GPIO 
+    import RPi.GPIO as GPIO
+except: 
+    pass
 
-import warnings, time, RPi.GPIO 
-import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
 import numpy as np
@@ -35,10 +38,13 @@ class Panel(QtGui.QWidget):
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             self.instrument = CO3_instrument(self.args,self.config_name)
+        elif self.args.debug:
+            self.instrument = Test_instrument(self.args,self.config_name)            
         else:
             self.instrument = pH_instrument(self.args,self.config_name)
 
         self.wvls = self.instrument.calc_wavelengths()
+        print (type(self.wvls))
         self.instrument.get_wvlPixels(self.wvls)
 
         print ('instrument created')
@@ -885,8 +891,9 @@ class Panel(QtGui.QWidget):
         if not self.args.co3 :
             print ('get final pH')
             self.get_final_pH(timeStamp)
-            print ('save results')
-            self.save_results(folderPath,flnmStr)
+            if not self.args.debug:
+                self.save_results(folderPath,flnmStr)            
+                print ('save results')
             print ('update pH plot')
             self.update_pH_plot()     
             print ('update infotable ')   
@@ -915,8 +922,8 @@ class Panel(QtGui.QWidget):
         if not self.args == 'co3':
             self.get_final_pH(timeStamp) 
             self.StatusBox.setText('Measurement is finished') 
-
-            self.save_results(folderPath,flnmStr)
+            if not self.args.debug:
+                self.save_results(folderPath,flnmStr)
             self.update_pH_plot()
             self.update_infotable()   
 
@@ -984,7 +991,7 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        #self.timerSpectra_plot.start(600)
+        self.timerSpectra_plot.start(600)
         #self.timerTemp_info.start(600)
 
         if not self.args.co3 or not self.args.debug: 
@@ -1290,7 +1297,31 @@ class Panel(QtGui.QWidget):
     def calc_spectrum(self,n_inj,blank_min_dark,dark):    
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
-        if not self.args.seabreeze:
+        #Write spectrum to the file 
+        if self.args.seabreeze:
+            #raw = str(n_inj)+'raw'
+            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
+            #        self.instrument.specAvScans,correct=False)
+            # time.sleep(0.5)
+            postinj_spec = self.instrument.spectrom.get_intensities(
+                    self.instrument.specAvScans,correct=True)
+            postinj_spec_min_dark = postinj_spec - dark
+            # Absorbance 
+            if not self.args.debug: 
+                spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
+            else: 
+                print ('WRONG VALUES')
+                spAbs_min_blank = postinj_spec 
+            #blank
+
+        elif self.args.debug:
+            print ('in debug')
+            postinj_spec = self.instrument.spectrom.get_intensities(
+                    self.instrument.specAvScans,correct=True)
+            postinj_spec_min_dark = postinj_spec # - dark
+            spAbs_min_blank = postinj_spec_min_dark 
+            #blank
+        else :
             postinj = self.instrument.spectrom.get_corrected_spectra()
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj,1,16000)
@@ -1306,26 +1337,8 @@ class Panel(QtGui.QWidget):
             bmdCorr = blank_min_dark * cfb
             pmdCorr = postinj_min_dark * cfp
             spAbs_min_blank = np.log10((bmdCorr/pmdCorr).astype(int))
-            sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))         
-                
-        # Write spectrum to the file 
-        elif self.args.seabreeze:
-            #raw = str(n_inj)+'raw'
-            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
-            #        self.instrument.specAvScans,correct=False)
-            # time.sleep(0.5)
-            postinj_spec = self.instrument.spectrom.get_intensities(
-                    self.instrument.specAvScans,correct=True)
-            postinj_spec_min_dark = postinj_spec - dark
-            # Absorbance 
-            if not self.args.debug: 
-                spAbs_min_blank = - np.log10 (postinj_spec_min_dark / blank_min_dark)
-            else: 
-                print ('WRONG VALUES')
-                spAbs_min_blank = postinj_spec_min_dark 
-            #blank
+            sp = np.log10((blank_min_dark/postinj_min_dark).astype(int))    
         self.spCounts_df[str(n_inj)] = postinj_spec
-
         return spAbs_min_blank
 
     def save_evl(self,folderPath,flnmStr):
@@ -1475,6 +1488,7 @@ class boxUI(QtGui.QMainWindow):
 if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
+    d = os.getcwd()
     qss_file = open('styles.qss').read()
     app.setStyleSheet(qss_file)
 

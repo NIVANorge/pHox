@@ -2,29 +2,66 @@
 
 import json, warnings
 import os,sys
-os.chdir('/home/pi/pHox')
-os.system('clear')
 import usb, usb.core
-from ADCDACPi import ADCDACPi
-from ADCDifferentialPi import ADCDifferentialPi
 import struct, time
-import RPi.GPIO as GPIO
 from datetime import datetime, timedelta
-import pigpio
 from PyQt5 import QtGui, QtCore
 import numpy as np
 import pandas as pd 
 import random,udp
 from scipy import stats
 from precisions import precision as prec 
-import seabreeze
-seabreeze.use('cseabreeze')
-from seabreeze.spectrometers import Spectrometer
-from seabreeze.spectrometers import list_devices
-import seabreeze.cseabreeze as sbb 
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 import re
+
+try:
+    import pigpio
+    import RPi.GPIO as GPIO
+    from ADCDACPi import ADCDACPi
+    from ADCDifferentialPi import ADCDifferentialPi
+    import seabreeze
+    seabreeze.use('cseabreeze')
+    from seabreeze.spectrometers import Spectrometer
+    from seabreeze.spectrometers import list_devices
+    import seabreeze.cseabreeze as sbb 
+except: 
+    pass
+
+class Spectro_localtest(object):
+    def __init__(self):
+
+        self.spec =  'Test'
+        self.spectro_type = 'Test'
+
+        test_spt = pd.read_csv('data_localtests/20200213_105508.spt') #.T
+        self.wvl = np.array([np.float(n) for n in test_spt.iloc[0].index.values[1:]])
+        x = test_spt.T
+        x.columns = x.iloc[0]
+        self.test_df = x[1:]
+
+    @asyncSlot()
+    async def set_integration_time(self,time_millisec):
+        microsec = time_millisec * 1000
+        await asyncio.sleep(time_millisec/1.e3)
+        return
+
+    def get_wavelengths(self):
+        #wavelengths in (nm) corresponding to each pixel of the spectrom
+        return self.wvl
+
+    def get_corrected_spectra(self):
+        sp = self.test_df['0'].values
+        return sp
+
+    def get_intensities(self,num_avg = 1, correct = True):
+        sp = self.test_df['0'].values
+        print ('sp',sp)
+        return sp      
+
+    def set_scans_average(self,num):
+        # not supported for FLAME spectrom
+        pass
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -32,6 +69,7 @@ class Spectro_seabreeze(object):
         self.spec =  Spectrometer.from_first_available()
 
         f = re.search('STS',str(self.spec))
+        print(f)
         if f == None :
             re.search('Flame',str(self.spec))    
         self.spectro_type = f.group()
@@ -158,19 +196,23 @@ class Common_instrument(object):
         self.config_name = config_name
         if self.args.seabreeze:
             self.spectrom = Spectro_seabreeze()    
+        elif self.args.debug: 
+            self.spectrom = Spectro_localtest()               
         else:
             self.spectrom = STSVIS()
 
         #initialize PWM lines
-        self.rpi = pigpio.pi()
+        if not self.args.debug:
+            self.rpi = pigpio.pi()
+
         self.fb_data = udp.Ferrybox
 
         self.load_config()
         self.spectrom.set_integration_time(self.specIntTime)
-
-        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
-        self.adc.set_pga(1)
-        self.adcdac = ADCDACPi()
+        if not self.args.debug:
+            self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+            self.adc.set_pga(1)
+            self.adcdac = ADCDACPi()
 
         # For signaling to threads
         self._exit = False 
@@ -245,6 +287,7 @@ class Common_instrument(object):
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])     
         elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
+
     def turn_on_relay (self, line):
         self.rpi.write(line, True)
 
@@ -426,12 +469,13 @@ class pH_instrument(Common_instrument):
             self.spectrom.set_scans_average(1)
         
         #setup PWM and SSR lines
-        for pin in range (4):
-            self.rpi.set_mode(self.led_slots[pin],pigpio.OUTPUT)
-            self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
-            self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
-            self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
-        self.reset_lines()
+        if not self.args.debug:
+            for pin in range (4):
+                self.rpi.set_mode(self.led_slots[pin],pigpio.OUTPUT)
+                self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
+                self.rpi.set_PWM_dutycycle(self.led_slots[pin],0)
+                self.rpi.set_mode(self.ssrLines[pin], pigpio.OUTPUT)
+            self.reset_lines()
 
     def load_config_pH(self):
         with open(self.config_name) as json_file:
@@ -689,3 +733,93 @@ class pH_instrument(Common_instrument):
 
         return (pH_lab, T_lab, perturbation, evalAnir,
                  pH_insitu,x,y,final_slope, intercept)      
+
+class Test_instrument(pH_instrument):
+    def __init__(self,panelargs,config_name):
+        super().__init__(panelargs,config_name)
+        pass
+
+    def get_wvlPixels(self,wvls):
+        self.wvlPixels = []
+        for wl in (self.HI, self.I2, self.NIR):      
+            self.wvlPixels.append(
+                self.find_nearest(wvls,wl))
+
+    def adjust_LED(self, led, LED):
+        pass
+
+    async def find_LED(self,led_ind,adj,LED):
+        LED = 50        
+        adj = True  
+        res = 'adjusted'    
+
+        return LED,adj,res
+
+    async def auto_adjust(self,*args):
+        result = True 
+        LED1,LED2,LED3 = 50,60,70
+        return LED1,LED2,LED3,result
+
+    def reset_lines(self):
+        pass
+  
+    async def set_Valve(self, status):
+        pass
+        if status:
+            print ("Closing the valve ...")
+        await asyncio.sleep(0.3)
+
+    def turn_on_relay (self, line):
+        pass
+
+    def turn_off_relay (self, line):
+        pass
+
+    async def pumping(self,pumpTime):    
+        self.turn_on_relay(self.wpump_slot) # start the instrument pump
+        self.turn_on_relay(self.stirrer_slot) # start the stirrer
+        await asyncio.sleep(pumpTime)
+        self.turn_off_relay(self.stirrer_slot) # turn off the pump
+        self.turn_off_relay(self.wpump_slot) # turn off the stirrer
+        return 
+
+    async def cycle_line (self, line, nCycles):
+        for nCy in range(nCycles):
+            self.turn_on_relay(line)
+            await asyncio.sleep(self.waitT)
+            self.turn_off_relay(line)
+            await asyncio.sleep(self.waitT)
+
+    async def pump_dye(self,nshots):
+        for shot in range(nshots):
+            print ('inject shot {}'.format(shot))
+            self.turn_on_relay(self.dyepump_slot)
+            await asyncio.sleep(0.3)
+            self.turn_off_relay(self.dyepump_slot)
+            await asyncio.sleep(0.3)
+        return 
+
+    def print_Com(self, port, txtData):
+        pass
+
+    def get_Vd(self, nAver, channel):
+        V = 0
+        for i in range (nAver):
+            V +=  0.6
+
+        return V/nAver  
+
+    def calc_wavelengths(self):   
+        '''
+        assign wavelengths to pixels 
+        and find pixel number of reference wavelengths
+        '''
+        wvls = self.spectrom.get_wavelengths()
+
+        return wvls
+
+
+    async def get_sp_levels(self,pixel):
+        self.spectrum = self.spectrom.get_intensities()
+        return self.spectrum[pixel]
+
