@@ -18,7 +18,7 @@ import time
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec 
-
+import Path
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
@@ -1364,7 +1364,7 @@ class Panel(QtGui.QWidget):
             # and create logfile 
         else: 
             # list all files in the directory   
-            files_in_path = [entry  for entry in  hour_log_path.iterdir() if entry.is_file()]  
+            files_in_path = [entry  for entry in Path(hour_log_path).iterdir() if entry.is_file()]  
             # find the index of the last modified file 
             ind  = np.argmax([entry.stat().st_mtime  for entry in files_in_path])
             # get the name of the last modified file
