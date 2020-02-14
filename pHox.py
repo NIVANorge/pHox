@@ -67,7 +67,7 @@ class Spectro_seabreeze(object):
     def __init__(self):
 
         self.spec =  Spectrometer.from_first_available()
-
+        print (self.spec)
         f = re.search('STS',str(self.spec))
         print(f)
         if f == None :
