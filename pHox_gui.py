@@ -33,7 +33,7 @@ class Panel(QtGui.QWidget):
         self.config_name = config_name
         self.adjusting = False 
         self.create_timers()
-
+        self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             self.instrument = CO3_instrument(self.args,self.config_name)
         else:
@@ -563,7 +563,7 @@ class Panel(QtGui.QWidget):
         stabfile = os.path.join('/home/pi/pHox/sp_stability.log')        
         if not self.args.co3:
             stabfile_df = pd.DataFrame({
-            'datetime' : [datetime.now().strftime("%Y%m%d_%H%M%S") ],
+            'datetime' : [datetime.now().strftime(self.fformat) ],
             "led0" : [datay[self.instrument.wvlPixels[0]]],
             "led1" : [datay[self.instrument.wvlPixels[1]]],
             "led2" : [datay[self.instrument.wvlPixels[2]]],
@@ -737,7 +737,7 @@ class Panel(QtGui.QWidget):
     def get_filename(self):
         t = datetime.now()
         timeStamp  = t.isoformat('_')
-        flnmStr =  datetime.now().strftime("%Y%m%d_%H%M%S") 
+        flnmStr =  datetime.now().strftime(self.fformat) 
         return flnmStr, timeStamp
 
     def btn_cont_meas_clicked(self):
@@ -1363,27 +1363,33 @@ class Panel(QtGui.QWidget):
             self.pH_log_row.to_csv(hour_log_flnm, index = False, header=True)                                     
             # and create logfile 
         else: 
-            # list all files in the directory   
-            files_in_path = [entry  for entry in Path(hour_log_path).iterdir() if entry.is_file()]  
-            # find the index of the last modified file 
-            ind  = np.argmax([entry.stat().st_mtime  for entry in files_in_path])
-            # get the name of the last modified file
-            # remove last 4 characters (.log)
-            last_file = files_in_path[ind].name[:-4]
+            # list all files in the directory  
+            files_in_path = os.listdir(hour_log_path)
 
-            new_time = datetime.strptime(flnmStr, "%Y%m%d_%H%M%S")
-            # convert filename to datetime 
-            last_time = datetime.strptime(last_file, "%Y%m%d_%H%M%S")
+            # convert names to datetimes 
+            file_times = [datetime.strptime(n[:-4], self.fformat) for n in files_in_path]
+
+            #find latest file            
+            last_file_time =max(file_times)
+            
+            # and its index
+            ind_last_file = np.argmax(file_times)
+
+            # get the name 
+            last_file_name = files_in_path[ind_last_file]  
+
+            # convert filename (newcoming) to datetime 
+            new_time = datetime.strptime(flnmStr, self.fformat)
+
             # calculate delta in hours 
-            delta = (new_time - last_time).seconds // 3600
+            delta = (new_time - last_file_time).seconds // 3600
 
             if delta > 1: 
-                # if more than hour, create a new file  
+                # if more than hour, create a new file
                 self.pH_log_row.to_csv(hour_log_flnm, index = False, header=True)    
             else: 
                 # else append the old hourly file 
-                self.pH_log_row.to_csv(last_file, mode = 'a', index = False, header=False) 
-
+                self.pH_log_row.to_csv(last_file_name, mode = 'a', index = False, header=False) 
 
         logfile = os.path.join(folderPath, 'pH.log')
         #logfile_hourly = 
