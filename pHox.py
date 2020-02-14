@@ -71,8 +71,11 @@ class Spectro_seabreeze(object):
         f = re.search('STS',str(self.spec))
         print(f)
         if f == None :
-            re.search('FLMT',str(self.spec))    
-        self.spectro_type = f.group()
+            f = re.search('FLMT',str(self.spec))    
+            self.spectro_type = f.group()
+        else: 
+            self.spectro_type = 'STS'
+
 
     @asyncSlot()
     async def set_integration_time(self,time_millisec):
@@ -283,7 +286,7 @@ class Common_instrument(object):
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
 
-        if self.spectrom.spectro_type == "FLAME":
+        if self.spectrom.spectro_type == "FLM":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])     
         elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
