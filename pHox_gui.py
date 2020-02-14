@@ -467,8 +467,9 @@ class Panel(QtGui.QWidget):
             self.btn_dye_pmp.setChecked(False)
 
     #TODO: async
-    def btn_valve_clicked(self):
-        self.instrument.set_Valve(self.btn_valve.isChecked())
+    @asyncSlot()    
+    async def btn_valve_clicked(self):
+        await self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
         print ('btn_save_config_clicked')
