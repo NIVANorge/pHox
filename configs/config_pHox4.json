@@ -1,9 +1,9 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_4",
         "DEF_TEMP_CAL_COEF": [
-            70.582,
-            16.213
+            70.469,
+            16.198
         ],
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
@@ -17,7 +17,7 @@
         ],
         "DYE_V_INJ": 0.03,
         "CUVETTE_V": 16,
-        "dye_nshots": 4,
+        "dye_nshots": 1,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
@@ -28,7 +28,7 @@
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 1800,
+        "Spectro_Integration_time": 1200,
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
         "comment Deployment_mode": "#modes can be Ferry or Standalone ",
@@ -38,14 +38,14 @@
     },
     "pH": {
         "LED_SLOTS": [
-            19,
-            13,
             12,
+            13,
+            19,
             16
         ],
-        "LED1": 29,
-        "LED2": 16,
-        "LED3": 80,
+        "LED1": 39,
+        "LED2": 22,
+        "LED3": 96,
         "LED_THRESHOLD": 15500,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
@@ -113,6 +113,7 @@
                 16.213
             ]
         },
+
         "Probe_2": {
             "is_calibrated": "False",
             "calibr_date": "NaN",
@@ -120,6 +121,17 @@
                 "NaN",
                 "NaN"
             ]
+        },
+
+        "Probe_4": {
+            "comment": "installed on pHox4 at NIVA now",
+            "is_calibrated": "True",
+            "calibr_date": "NaN",
+            "Calibr_coef": [
+                70.582,
+                16.213
+            ]
         }
+
     }
 }

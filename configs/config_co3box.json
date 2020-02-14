@@ -17,7 +17,7 @@
         ],
         "DYE_V_INJ": 0.03,
         "CUVETTE_V": 16,
-        "dye_nshots": 4,
+        "dye_nshots": 1,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
@@ -28,13 +28,10 @@
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 1800,
+        "Spectro_Integration_time": 3000,
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
-        "comment Deployment_mode": "#modes can be Ferry or Standalone ",
-        "Spectro_connected": "Seabreeze",
-        "LIGHT_THRESHOLD_STS": 15500,            
-        "LIGHT_THRESHOLD_FLAME": 60000     
+        "comment Deployment_mode": "#modes can be Ferry or Standalone "
     },
     "pH": {
         "LED_SLOTS": [
@@ -98,10 +95,9 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
-        "LIGHT_SLOT": 22,
+        "LIGHT_SLOT": 5,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
-           
+        "Default_DYE": "Pb_perchlor"    
     },
     "TempProbes": {
         "Probe_1": {
