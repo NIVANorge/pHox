@@ -272,7 +272,7 @@ class Common_instrument(object):
             self.turn_on_relay(self.dyepump_slot)
             await asyncio.sleep(0.3)
             self.turn_off_relay(self.dyepump_slot)
-            #await asyncio.sleep(self.waitT)
+            await asyncio.sleep(0.3)
         return 
 
         
