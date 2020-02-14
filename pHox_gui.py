@@ -18,7 +18,6 @@ import time
 import udp # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec 
-from path import Path
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
@@ -1371,7 +1370,7 @@ class Panel(QtGui.QWidget):
 
             #find latest file            
             last_file_time =max(file_times)
-            
+
             # and its index
             ind_last_file = np.argmax(file_times)
 
