@@ -528,7 +528,6 @@ class pH_instrument(Common_instrument):
 
     async def auto_adjust(self,*args):
  
-
         if not self.args.seabreeze:
             self.spectrom.set_scans_average(1)
 

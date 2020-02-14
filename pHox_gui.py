@@ -651,12 +651,12 @@ class Panel(QtGui.QWidget):
         return adj                                        
 
     async def autoAdjust_LED(self):
-        self.LED1,self.LED2,self.LED3,result  = await self.instrument.auto_adjust()
-        print (self.LED1,self.LED2,self.LED3)
+        self.instrument.LED1,self.instrument.LED2,self.instrument.LED3,result  = await self.instrument.auto_adjust()
+        print ('values after autoadjust', self.instrument.LED1,self.instrument.LED2,self.instrument.LED3)
         if result:
-            self.sliders[0].setValue(self.LED1)
-            self.sliders[1].setValue(self.LED2)
-            self.sliders[2].setValue(self.LED3)
+            self.sliders[0].setValue(self.instrument.LED1)
+            self.sliders[1].setValue(self.instrument.LED2)
+            self.sliders[2].setValue(self.instrument.LED3)
 
             #self.plot_sp_levels()
             self.update_spec_int_time_table()             
