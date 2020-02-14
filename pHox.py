@@ -71,7 +71,7 @@ class Spectro_seabreeze(object):
         f = re.search('STS',str(self.spec))
         print(f)
         if f == None :
-            re.search('Flame',str(self.spec))    
+            re.search('FLMT',str(self.spec))    
         self.spectro_type = f.group()
 
     @asyncSlot()
