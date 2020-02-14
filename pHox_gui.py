@@ -984,8 +984,8 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.timerSpectra_plot.start(600)
-        self.timerTemp_info.start(600)
+        #self.timerSpectra_plot.start(600)
+        #self.timerTemp_info.start(600)
 
         if not self.args.co3 or not self.args.debug: 
             print ('Starting continuous mode ')
@@ -1440,7 +1440,7 @@ class boxUI(QtGui.QMainWindow):
 
         with loop:
             sys.exit(loop.run_forever())
-        
+            
     def closeEvent(self,event):
         result = QtGui.QMessageBox.question(self,
                       "Confirm Exit...",
