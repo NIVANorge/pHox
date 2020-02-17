@@ -285,10 +285,9 @@ class Common_instrument(object):
         self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
-        print ('self.spectrom.spectro_type',self.spectrom.spectro_type)
+
         if self.spectrom.spectro_type == "FLMT":
-            self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])  
-            print ('self.THR ',self.THR)   
+            self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])   
         elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
 
@@ -315,7 +314,6 @@ class Common_instrument(object):
 
     async def pump_dye(self,nshots):
         for shot in range(nshots):
-            print ('inject shot {}'.format(shot))
             self.turn_on_relay(self.dyepump_slot)
             await asyncio.sleep(0.3)
             self.turn_off_relay(self.dyepump_slot)
@@ -396,22 +394,14 @@ class CO3_instrument(Common_instrument):
 
             self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime*1.e-3)
-            print ('init self.specIntTime', self.specIntTime)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
-            print ('new level,max from spectro')
-            print (pixelLevel)
-
-            print ('integration time')
-            print (self.specIntTime)
-   
-
             if self.specIntTime > 5000:
-                print ('Too high specint time value') 
+                print ('Too high spec int time value,break') 
                 break 
 
             elif self.specIntTime < 100: 
-                print ('Something is wrong, specint time is too low ')
+                print ('Something is wrong, specint time is too low,break ')
                 break  
 
             elif pixelLevel < minval :
@@ -526,12 +516,11 @@ class pH_instrument(Common_instrument):
 
         print ('led_ind',led_ind)
         step = 0
-        # first increment will be equeal to LED/2
-        increment = LED
+
+        increment = 50
         self.led_action = None
         # Increment is decreased twice in case we change the direction 
         # of decrease/increase 
-
         while adj == False: 
             print ('step', step)
             print ('LED', LED)
@@ -540,12 +529,10 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.1)
             pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])      
             await asyncio.sleep(0.1)                   
-            #maxlevel = np.max(self.spectrum)
             print ('pixelLevel', pixelLevel)
 
             if pixelLevel > maxval and LED > 15:
                 print ('case0  Too high pixellevel, decrease LED ')
-                print ('reduce LED to half')
                 if self.led_action == 'increase':
                     increment = increment/2
                 LED = max(1,LED - increment)
@@ -604,14 +591,16 @@ class pH_instrument(Common_instrument):
                 if adj2:    
                     print ('*** adj2 = True')
                     LED3,adj3,res3 = await self.find_LED(
-                        led_ind = 2,adj = adj3, LED = self.LED3)    
-            print (res1,res2,res3,'res123')
+                        led_ind = 2,adj = adj3, LED = self.LED3) 
+
             if any(t == 'decrease int time' for t in [res1,res2,res3]):
                 if self.adj_action == 'increase':
                     increment_sptint = increment_sptint / 2     
-
-                self.specIntTime -= increment_sptint
                 self.adj_action = 'decrease'
+                self.specIntTime -= increment_sptint
+                if self.specIntTime < 50: 
+                    print('self.specIntTime < 50')
+                    break
 
             elif any(t == 'increase int time' for t in [res1,res2,res3]) : 
                 if self.specIntTime< 5000:
