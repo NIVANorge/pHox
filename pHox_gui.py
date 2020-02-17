@@ -66,7 +66,7 @@ class Panel(QtGui.QWidget):
         print ('instrument created')
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument(self.config_name)
-
+        self.measuring = False
         self.init_ui()
 
     def init_ui(self):
@@ -100,10 +100,7 @@ class Panel(QtGui.QWidget):
         #self.showMaximized()
 
     def clean_threads(self):
-        print(len(self.current_threads), self.current_threads)
         self.current_threads = [t for t in self.current_threads if not t.isFinished()]
-        print(len(self.current_threads), self.current_threads)
-        print('done')
 
     def start_thread_cleaner(self):
         self.thread_cleaner_timer = QtCore.QTimer()
@@ -645,38 +642,34 @@ class Panel(QtGui.QWidget):
         await asyncio.sleep(0.005)
         return
 
+
     def spectra_plot_update_callback(self, datay):
         try:
             self.plotSpc.setData(self.wvls, datay)
+            if self.args.stability:
+                self.save_stability_test(datay)
         except:
             print('could not set Data')
             pass
 
-    @asyncSlot()
-    async def update_spectra_plot(self):
 
-        if not self.adjusting:
-            if not self.args.seabreeze and self.args.debug:
-                self.run_in_thread(self.instrument.spectrom.get_corrected_spectra, self.spectra_plot_update_callback)
-            else:
-                try:
-                    from timeit import timeit
-                    time = timeit(self.instrument.spectrom.get_intensities, number=1)
-                    print(time*1.e6)
-                    datay = self.instrument.spectrom.get_intensities() 
-                    if self.args.stability:
-                        self.save_stability_test(datay)
-                except:
-                    print ('Exception error') 
-                    pass
+    def update_spectra_plot(self):
+
+        if not self.adjusting and not self.measuring :
+            try:
+                self.run_in_thread(self.instrument.spectrom.get_intensities, 
+                                    self.spectra_plot_update_callback)
+                #datay = self.instrument.spectrom.get_intensities() 
+
+            except:
+                print ('Exception error') 
+                pass
         else:
             try: 
                 datay = self.instrument.spectrum
-                await asyncio.sleep(self.instrument.specIntTime*1.e-3)
-                self.spectra_plot_update_callback(datay)
+                self.plotSpc.setData(self.wvls, datay)
             except: 
                 pass
-
 
 
     def reset_absorp_plot(self):
@@ -853,6 +846,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
+        self.measuring = True
         print ('clicked single meas ')
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
@@ -886,6 +880,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
+        self.measuring = True
         print ('continuous_mode_timer_finished')
         self.append_logbox('continuous_mode_timer_finished')
 
@@ -949,7 +944,8 @@ class Panel(QtGui.QWidget):
 
     def single_sample_finished(self,folderPath,timeStamp,flnmStr):
 
-        print ('single sample finished inside func')    
+        print ('single sample finished inside func')   
+        self.measuring = False 
         if not self.args.co3 :
             print ('get final pH')
             self.get_final_pH(timeStamp)
@@ -981,6 +977,7 @@ class Panel(QtGui.QWidget):
 
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
+        self.measuring = False 
         if not self.args == 'co3':
             self.get_final_pH(timeStamp) 
             self.StatusBox.setText('Measurement is finished') 
@@ -1168,7 +1165,7 @@ class Panel(QtGui.QWidget):
         if self.mode == 'Continuous' or self.mode == 'Calibration': 
             if not fbox['pumping']:
                 return               
-
+        self.sampling = True
         print ('sample, mode is {}'.format(self.mode))
         self.StatusBox.setText('Ongoing measurement')
         self.sample_steps[0].setChecked(True)
@@ -1197,6 +1194,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[2].setChecked(True)    
         await asyncio.sleep(0.05)       
         dark = await self.measure_dark()
+        print (dark)
         blank_min_dark = await self.measure_blank(dark) 
 
         # Steps 3,4,5,6 Measurement cycle 
@@ -1210,6 +1208,11 @@ class Panel(QtGui.QWidget):
         await self.instrument.set_Valve(False)
 
         return 'Finished'
+
+    def continue_after_dark(self, dark):
+        pass
+    def continue_after_blank(self, blank):
+        pass
 
     def get_folderPath(self):
 
@@ -1270,14 +1273,12 @@ class Panel(QtGui.QWidget):
 
         # grab spectrum
         if not self.args.seabreeze:
-            dark = self.instrument.spectrom.get_corrected_spectra()
+            dark = self.instrument.spectrom.get_intensities()
         elif self.args.seabreeze:
             #raw = str(n_inj)+'raw'
             #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-
-
             dark = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
         
@@ -1288,7 +1289,7 @@ class Panel(QtGui.QWidget):
             await asyncio.sleep(2)
         else: 
             self.set_LEDs(True)
-
+        self.instrument.spectrum = dark
         self.spCounts_df['dark'] = dark
         return dark 
 
@@ -1298,12 +1299,16 @@ class Panel(QtGui.QWidget):
 
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
-            blank = self.instrument.spectrom.get_corrected_spectra()
+            blank = self.instrument.spectrom.get_intensities()
+            
             blank_min_dark= np.clip(blank,1,16000)
         else: 
             blank = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
-            blank_min_dark =   blank - dark    
+            print ('blank',blank)
+            blank_min_dark =   blank - dark  
+
+        self.instrument.spectrum = blank  
         self.spCounts_df['blank'] = blank
 
         return blank_min_dark
@@ -1368,6 +1373,7 @@ class Panel(QtGui.QWidget):
             # time.sleep(0.5)
             postinj_spec = self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
+            self.instrument.spectrum = postinj_spec
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
             if not self.args.debug: 
@@ -1385,7 +1391,7 @@ class Panel(QtGui.QWidget):
             spAbs_min_blank = postinj_spec_min_dark 
             #blank
         else :
-            postinj = self.instrument.spectrom.get_corrected_spectra()
+            postinj = self.instrument.spectrom.get_intensities()
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj,1,16000)
             #print ('postinj_min_dark')

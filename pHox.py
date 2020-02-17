@@ -49,24 +49,17 @@ class Spectro_localtest(object):
         await asyncio.sleep(time_millisec/1.e3)
         return
 
+    def set_scans_average(self,num):
+        pass
+    
     def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
-    def get_corrected_spectra(self):
-        time.sleep(self.integration_time)
-        sp = self.test_df['0'].values  + random.randrange(-150,150, 1)
-        return sp
-
     def get_intensities(self,num_avg = 1, correct = True):
         time.sleep(self.integration_time)
         sp = self.test_df['0'].values + random.randrange(-150, 150, 1)
-        return sp      
-
-    def set_scans_average(self,num):
-        # not supported for FLAME spectrom
-        pass
-
+        return sp
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -78,7 +71,6 @@ class Spectro_seabreeze(object):
             self.spectro_type = f.group()
         else: 
             self.spectro_type = 'FLMT'
-
 
     @asyncSlot()
     async def set_integration_time(self,time_millisec):
@@ -188,7 +180,7 @@ class STSVIS(object):
             wvlCalCoeff.append(float(struct.unpack('<f',struct.pack('4B',*rx_packet[24:28]))[0]))
         return wvlCalCoeff
           
-    def get_corrected_spectra(self):
+    def get_intensities(self):
         self._dev.write(self.EP1_out, self.gcsCmd)
         rx_packet = self._dev.read(self.EP1_in, 64+2048, timeout=10000)
         spec = rx_packet[44:2092]
@@ -354,10 +346,7 @@ class Common_instrument(object):
         return idx
 
     async def get_sp_levels(self,pixel):
-        if not self.args.seabreeze:
-            self.spectrum = self.spectrom.get_corrected_spectra()
-        else: 
-            self.spectrum = self.spectrom.get_intensities()
+        self.spectrum = self.spectrom.get_intensities()
         return self.spectrum[pixel]
 
 class CO3_instrument(Common_instrument):
@@ -530,7 +519,7 @@ class pH_instrument(Common_instrument):
             step += 1
             self.adjust_LED(led_ind, LED)        
             await asyncio.sleep(0.1)
-            pixelLevel =  await self.get_sp_levels(self.wvlPixels[led_ind])      
+            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind]) 
             await asyncio.sleep(0.1)                   
             print ('pixelLevel', pixelLevel)
 
@@ -815,7 +804,6 @@ class Test_instrument(pH_instrument):
         return wvls
 
 
-    async def get_sp_levels(self,pixel):
+    def get_sp_levels(self,pixel):
         self.spectrum = self.spectrom.get_intensities()
         return self.spectrum[pixel]
-
