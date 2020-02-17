@@ -27,6 +27,7 @@ try:
     import seabreeze.cseabreeze as sbb 
 except: 
     pass
+import random
 
 class Spectro_localtest(object):
     def __init__(self):
@@ -51,11 +52,11 @@ class Spectro_localtest(object):
         return self.wvl
 
     def get_corrected_spectra(self):
-        sp = self.test_df['0'].values
+        sp = self.test_df['0'].values  + random.randrange(-150,150, 1)  
         return sp
 
     def get_intensities(self,num_avg = 1, correct = True):
-        sp = self.test_df['0'].values
+        sp = self.test_df['0'].values + random.randrange(-150, 150, 1)  
         print ('sp',sp)
         return sp      
 

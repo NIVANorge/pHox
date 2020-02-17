@@ -606,8 +606,8 @@ class Panel(QtGui.QWidget):
         await asyncio.sleep(0.005)
         return
 
-    #@asyncSlot()
-    def update_spectra_plot(self):
+    @asyncSlot()
+    async def update_spectra_plot(self):
         if self.adjusting == False:  
             if not self.args.seabreeze:
                 datay = self.instrument.spectrom.get_corrected_spectra()      
@@ -619,15 +619,17 @@ class Panel(QtGui.QWidget):
                 except:
                     print ('Exception error') 
                     pass
-            #await asyncio.sleep(self.instrument.specIntTime*1.e-6)
+            
         elif self.adjusting == True: 
             try: 
                 datay = self.instrument.spectrum
+                await asyncio.sleep(self.instrument.specIntTime*1.e-3)
             except: 
                 pass
         try:    
             self.plotSpc.setData(self.wvls,datay) 
         except: 
+            print ('could not set Data')
             pass 
 
     def reset_absorp_plot(self):
@@ -1004,7 +1006,8 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.timerSpectra_plot.start(600)
+        self.btn_liveplot.click()
+        #self.timerSpectra_plot.start(600)
         #self.timerTemp_info.start(600)
 
         if not self.args.co3 or not self.args.debug: 
