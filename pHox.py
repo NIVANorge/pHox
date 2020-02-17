@@ -57,7 +57,6 @@ class Spectro_localtest(object):
 
     def get_intensities(self,num_avg = 1, correct = True):
         sp = self.test_df['0'].values + random.randrange(-150, 150, 1)  
-        print ('sp',sp)
         return sp      
 
     def set_scans_average(self,num):
@@ -68,9 +67,8 @@ class Spectro_seabreeze(object):
     def __init__(self):
 
         self.spec =  Spectrometer.from_first_available()
-        print (self.spec)
         f = re.search('STS',str(self.spec))
-        print(f)
+
         if f == None :
             f = re.search('FLMT',str(self.spec))    
             self.spectro_type = f.group()
