@@ -60,10 +60,8 @@ class Panel(QtGui.QWidget):
             self.instrument = pH_instrument(self.args,self.config_name)
 
         self.wvls = self.instrument.calc_wavelengths()
-        print (type(self.wvls))
         self.instrument.get_wvlPixels(self.wvls)
 
-        print ('instrument created')
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument(self.config_name)
         self.measuring = False
@@ -100,9 +98,9 @@ class Panel(QtGui.QWidget):
         #self.showMaximized()
 
     def clean_threads(self):
-        print (len(self.current_threads))
+        print ('self.current_threads: ',len(self.current_threads))
         self.current_threads = [t for t in self.current_threads if not t.isFinished()]
-        print (self.current_threads)
+
     def start_thread_cleaner(self):
         self.thread_cleaner_timer = QtCore.QTimer()
         self.thread_cleaner_timer.timeout.connect(self.clean_threads)
@@ -368,7 +366,7 @@ class Panel(QtGui.QWidget):
         index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), 
                                 QtCore.Qt.MatchFixedString)
         print (str(self.instrument.specIntTime))
-        print (index)
+
         if index >= 0: 
             self.specIntTime_combo.setCurrentIndex(index)
 
@@ -376,7 +374,7 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setItem(x,y,QtGui.QTableWidgetItem(item))
 
     def sampling_int_chngd(self,ind):
-        print ('value chaged',ind)
+
         minutes = int(self.samplingInt_combo.currentText())
         self.instrument.samplingInterval = int(minutes)*60
 
@@ -501,8 +499,6 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot
     async def btn_lightsource_clicked(self):
-        print ('btn_lightsource_clicked')
-        print (self.btn_lightsource.isChecked())
 
         if self.btn_lightsource.isChecked():  
             self.instrument.turn_on_relay(
@@ -516,7 +512,7 @@ class Panel(QtGui.QWidget):
     async def btn_dye_pmp_clicked(self):
         state = self.btn_dye_pmp.isChecked()
         if state:
-            print ('in pump dye clicke')
+            print ('in pump dye clicked')
             await self.instrument.pump_dye(3)
             self.btn_dye_pmp.setChecked(False)
 
@@ -526,7 +522,7 @@ class Panel(QtGui.QWidget):
         await self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
-        print ('btn_save_config_clicked')
+
         with open(self.config_name,'r+') as json_file:
             j = json.load(json_file)
 
@@ -547,7 +543,7 @@ class Panel(QtGui.QWidget):
             return default
    
     def dye_combo_chngd(self,ind):
-        print ('value chaged',ind)
+
         self.dye = self.dye_combo.currentText()
         default = self.load_config_file()
         if self.dye == 'MCP':
@@ -660,8 +656,6 @@ class Panel(QtGui.QWidget):
             try:
                 self.run_in_thread(self.instrument.spectrom.get_intensities, 
                                     self.spectra_plot_update_callback)
-                #datay = self.instrument.spectrom.get_intensities() 
-
             except:
                 print ('Exception error') 
                 pass
@@ -745,20 +739,19 @@ class Panel(QtGui.QWidget):
             res = await self.autoAdjust_IntTime()
         else:
             res = await self.autoAdjust_LED() 
-        print (res,'res after adjust')
+
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
         return res
 
     async def call_autoAdjust(self):
         self.btn_adjust_leds.setChecked(True)        
-        print ('Autoadjust from sample func')
         self.adjusting = True
         if self.args.co3:
             res = await self.autoAdjust_IntTime()
         else:
             res = await self.autoAdjust_LED() 
-        print (res,'res after adjust')
+
         self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
         return res
@@ -814,7 +807,7 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval*1000)
         else:
-            print ('btn_cont_meas_UNclicked')
+            print ('btn_cont_meas_Unclicked')
             self.StatusBox.clear()            
             self.timer_contin_mode.stop()
             if not self.continous_mode_is_on:
@@ -836,13 +829,11 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(False) 
             # disable all btns in manual tab 
 
- 
             self.mode = 'Calibration'
             folderPath = self.get_folderPath() 
             flnmStr, timeStamp = self.get_filename()    
 
             r = await self.sample(folderPath, flnmStr, timeStamp)
-            print ('*****aftr sample calibration',r)
             self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
     @asyncSlot()
@@ -873,8 +864,7 @@ class Panel(QtGui.QWidget):
             self.btn_calibr.setEnabled(False) 
 
 
-            r = await self.sample(folderPath, flnmStr, timeStamp)
-            print ('*****aftr sample',r)
+            await self.sample(folderPath, flnmStr, timeStamp)
             self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
         else: 
@@ -890,7 +880,7 @@ class Panel(QtGui.QWidget):
         self.continous_mode_is_on = True
         folderPath = self.get_folderPath() 
 
-        r = await self.sample(folderPath, flnmStr, timeStamp)
+        await self.sample(folderPath, flnmStr, timeStamp)
         self.continuous_sample_finished(folderPath,timeStamp,flnmStr) 
 
     def unclick_enable(self,btns):
@@ -918,15 +908,12 @@ class Panel(QtGui.QWidget):
 
         self.append_logbox('Single measurement is done...')
         #self.sample_steps[8].setChecked(True)
-         
-        #print (self.x,self.y,self.intercept,self.slope)        
-
+                 
     def save_results(self,folderPath,flnmStr):
 
         #self.sample_steps[7].setChecked(True)    
         self.append_logbox('Save spectrum data to file')
         self.save_spt(folderPath,flnmStr)
-        print ('Save evl data to file')
         self.append_logbox('Save evl data to file')
         self.save_evl(folderPath,flnmStr)   
         print ('Send data to ferrybox')
@@ -1196,7 +1183,6 @@ class Panel(QtGui.QWidget):
         self.sample_steps[2].setChecked(True)    
         await asyncio.sleep(0.05)       
         dark = await self.measure_dark()
-        print (dark)
         blank_min_dark = await self.measure_blank(dark) 
 
         # Steps 3,4,5,6 Measurement cycle 
@@ -1431,7 +1417,7 @@ class Panel(QtGui.QWidget):
             index = True, header=False)
 
     def save_logfile_df(self,folderPath,flnmStr):
-
+        print ('save log file df')
         # check time of cration of the last log file 
         # if more than one hour,
         # create new file and write data there .
@@ -1454,7 +1440,7 @@ class Panel(QtGui.QWidget):
 
             #find latest file            
             last_file_time =max(file_times)
-
+            print ('last_file_time',last_file_time)
             # and its index
             ind_last_file = np.argmax(file_times)
 
@@ -1466,7 +1452,7 @@ class Panel(QtGui.QWidget):
 
             # calculate delta in hours 
             delta = (new_time - last_file_time).seconds // 3600
-
+            print ('delta in times log file',delta)
             if delta > 1: 
                 # if more than hour, create a new file
                 self.pH_log_row.to_csv(hour_log_flnm, index = False, header=True)    
