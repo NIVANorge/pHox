@@ -40,9 +40,11 @@ class Spectro_localtest(object):
         x = test_spt.T
         x.columns = x.iloc[0]
         self.test_df = x[1:]
+        self.integration_time = 100/1000
 
     @asyncSlot()
     async def set_integration_time(self,time_millisec):
+        self.integration_time = time_millisec / 1000
         microsec = time_millisec * 1000
         await asyncio.sleep(time_millisec/1.e3)
         return
@@ -52,25 +54,27 @@ class Spectro_localtest(object):
         return self.wvl
 
     def get_corrected_spectra(self):
-        sp = self.test_df['0'].values  + random.randrange(-150,150, 1)  
+        time.sleep(self.integration_time)
+        sp = self.test_df['0'].values  + random.randrange(-150,150, 1)
         return sp
 
     def get_intensities(self,num_avg = 1, correct = True):
-        sp = self.test_df['0'].values + random.randrange(-150, 150, 1)  
+        time.sleep(self.integration_time)
+        sp = self.test_df['0'].values + random.randrange(-150, 150, 1)
         return sp      
 
     def set_scans_average(self,num):
         # not supported for FLAME spectrom
         pass
 
+
 class Spectro_seabreeze(object):
     def __init__(self):
+        self.spec = Spectrometer.from_first_available()
+        f = re.search('STS', str(self.spec))
 
-        self.spec =  Spectrometer.from_first_available()
-        f = re.search('STS',str(self.spec))
-
-        if f == None :
-            f = re.search('FLMT',str(self.spec))    
+        if f is None:
+            f = re.search('FLMT', str(self.spec))
             self.spectro_type = f.group()
         else: 
             self.spectro_type = 'FLMT'

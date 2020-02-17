@@ -18,18 +18,34 @@ import pyqtgraph as pg
 import argparse, socket
 import pandas as pd 
 import time 
-import udp # Ferrybox data
+import udp  # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec 
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
 
+class SimpleThread(QtCore.QThread):
+    finished = QtCore.pyqtSignal(object)
+    def __init__(self, slow_function, callback):
+        super(SimpleThread, self).__init__()
+        self.caller = slow_function
+        self.finished.connect(callback)
+
+    def run(self):
+        self.finished.emit(self.caller())
+
+
 class Panel(QtGui.QWidget):
-    def __init__(self,parent,panelargs,config_name):
+    def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
-        #super(Panel, self).__init__()
-                                                                                    
+
+        self.thread_cleaner_timer = None
+        self.current_threads = []
+        self.start_thread_cleaner()
+        # This is a test of the threadrunner
+        self.run_in_thread(self.test_thread_runner, self.test_thread_completer)
+
         self.continous_mode_is_on = False
         self.args = panelargs
         self.config_name = config_name
@@ -82,6 +98,29 @@ class Panel(QtGui.QWidget):
     
         self.setLayout(hboxPanel)
         #self.showMaximized()
+
+    def clean_threads(self):
+        print(len(self.current_threads), self.current_threads)
+        self.current_threads = [t for t in self.current_threads if not t.isFinished()]
+        print(len(self.current_threads), self.current_threads)
+        print('done')
+
+    def start_thread_cleaner(self):
+        self.thread_cleaner_timer = QtCore.QTimer()
+        self.thread_cleaner_timer.timeout.connect(self.clean_threads)
+        self.thread_cleaner_timer.start(2000)
+
+    def run_in_thread(self, caller, callee):
+        new_thread = SimpleThread(caller, callee)
+        new_thread.start()
+        self.current_threads.append(new_thread)
+
+    def test_thread_runner(self):
+        time.sleep(3)
+        return 'an argument'
+
+    def test_thread_completer(self, a):
+        print("Tested the thread runner, I received:'{}'".format(a))
 
     def make_tab_manual(self):
         
@@ -606,13 +645,21 @@ class Panel(QtGui.QWidget):
         await asyncio.sleep(0.005)
         return
 
+    def spectra_plot_update_callback(self, datay):
+        try:
+            self.plotSpc.setData(self.wvls, datay)
+        except:
+            print('could not set Data')
+            pass
+
     @asyncSlot()
     async def update_spectra_plot(self):
 
-        if self.adjusting == False:  
-            if self.args.seabreeze or self.args.debug :
-                print ('debug')
-                try: 
+        if not self.adjusting:
+            if not self.args.seabreeze and self.args.debug:
+                self.run_in_thread(self.instrument.spectrom.get_corrected_spectra, self.spectra_plot_update_callback)
+            else:
+                try:
                     from timeit import timeit
                     time = timeit(self.instrument.spectrom.get_intensities, number=1)
                     print(time*1.e6)
@@ -622,19 +669,15 @@ class Panel(QtGui.QWidget):
                 except:
                     print ('Exception error') 
                     pass
-            else :
-                datay = self.instrument.spectrom.get_corrected_spectra()                  
-        elif self.adjusting == True: 
+        else:
             try: 
                 datay = self.instrument.spectrum
                 await asyncio.sleep(self.instrument.specIntTime*1.e-3)
+                self.spectra_plot_update_callback(datay)
             except: 
                 pass
-        try:    
-            self.plotSpc.setData(self.wvls,datay) 
-        except: 
-            print ('could not set Data')
-            pass 
+
+
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
@@ -1361,7 +1404,7 @@ class Panel(QtGui.QWidget):
         self.spCounts_df[str(n_inj)] = postinj_spec
         return spAbs_min_blank
 
-    def save_evl(self,folderPath,flnmStr):
+    def save_evl(self, folderPath, flnmStr):
         evlpath = folderPath + 'evl/'
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
@@ -1440,6 +1483,7 @@ class Panel(QtGui.QWidget):
         row_to_string = self.pH_log_row.to_csv(index = False, header=True).rstrip()
         udp.send_data('$PPHOX,' + row_to_string + ',*\n')   
 
+
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1505,8 +1549,8 @@ class boxUI(QtGui.QMainWindow):
             sys.exit()
             event.accept()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     d = os.getcwd()
     qss_file = open('styles.qss').read()
