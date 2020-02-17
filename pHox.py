@@ -51,7 +51,7 @@ class Spectro_localtest(object):
 
     def set_scans_average(self,num):
         pass
-    
+
     def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
@@ -345,7 +345,7 @@ class Common_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
-    async def get_sp_levels(self,pixel):
+    def get_sp_levels(self,pixel):
         self.spectrum = self.spectrom.get_intensities()
         return self.spectrum[pixel]
 
@@ -374,7 +374,7 @@ class CO3_instrument(Common_instrument):
     async def auto_adjust(self,*args):
 
         adjusted = False 
-        pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
+        pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
         increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
 
@@ -386,7 +386,7 @@ class CO3_instrument(Common_instrument):
 
             self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime*1.e-3)
-            pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
+            pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
             if self.specIntTime > 5000:
                 print ('Too high spec int time value,break') 
