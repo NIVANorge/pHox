@@ -837,10 +837,9 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def btn_single_meas_clicked(self):
         self.measuring = True
-        while True: 
-            len(self.current_threads) > 0
+        while len(self.current_threads) > 0: 
             print(len(self.current_threads))
-            
+
         print ('clicked single meas ')
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
