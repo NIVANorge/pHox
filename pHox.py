@@ -32,7 +32,7 @@ class Spectro_localtest(object):
     def __init__(self):
 
         self.spec =  'Test'
-        self.spectro_type = 'Test'
+        self.spectro_type = 'FLMT'
 
         test_spt = pd.read_csv('data_localtests/20200213_105508.spt') #.T
         self.wvl = np.array([np.float(n) for n in test_spt.iloc[0].index.values[1:]])
@@ -74,7 +74,7 @@ class Spectro_seabreeze(object):
             f = re.search('FLMT',str(self.spec))    
             self.spectro_type = f.group()
         else: 
-            self.spectro_type = 'STS'
+            self.spectro_type = 'FLMT'
 
 
     @asyncSlot()
@@ -285,9 +285,10 @@ class Common_instrument(object):
         self.specIntTime = conf_operational['Spectro_Integration_time']
         self.deployment = conf_operational['Deployment_mode']
         self.ship_code = conf_operational['Ship_Code']
-
-        if self.spectrom.spectro_type == "FLM":
-            self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])     
+        print ('self.spectrom.spectro_type',self.spectrom.spectro_type)
+        if self.spectrom.spectro_type == "FLMT":
+            self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])  
+            print ('self.THR ',self.THR)   
         elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])     
 
@@ -498,7 +499,7 @@ class pH_instrument(Common_instrument):
             self.HI =  int(conf_pH['TB_wl_HI'])
             self.I2 =  int(conf_pH['TB_wl_I2'])
 
-        self.THR = int(conf_pH["LED_THRESHOLD"])
+
         self.NIR = int(conf_pH['wl_NIR-'])
 
         #self.molAbsRats = default['MOL_ABS_RATIOS']

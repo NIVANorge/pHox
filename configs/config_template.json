@@ -28,7 +28,9 @@
         "Spectro_Integration_time": 500,
         "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
-        "comment Deployment_mode":"#modes can be Ferry or Standalone "        
+        "comment Deployment_mode":"#modes can be Ferry or Standalone ",
+        "LIGHT_THRESHOLD_STS": 15500,            
+        "LIGHT_THRESHOLD_FLAME": 60000                     
     },
 
     "pH":{
@@ -36,7 +38,6 @@
         "LED1" : 29,
         "LED2" : 16,
         "LED3" : 80,
-        "LED_THRESHOLD": 14000, 
         "Default_DYE":"MCP",
         "wl_NIR-" : 730,
         "MCP_wl_HI": 434,

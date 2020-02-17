@@ -126,8 +126,9 @@ class Panel(QtGui.QWidget):
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget2 = pg.PlotWidget()
                 
-        if not self.args.co3:
-            self.plotwidget1.setYRange(1000,self.instrument.THR*1.05)
+
+        self.plotwidget1.setYRange(1000,self.instrument.THR*1.05)
+
         if self.args.co3: 
             #self.plotwidget1.setYRange(1000,67000)
             self.plotwidget2.setYRange(0,1)
