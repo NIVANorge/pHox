@@ -100,8 +100,9 @@ class Panel(QtGui.QWidget):
         #self.showMaximized()
 
     def clean_threads(self):
+        print (len(self.current_threads)
         self.current_threads = [t for t in self.current_threads if not t.isFinished()]
-
+        print (self.current_threads)
     def start_thread_cleaner(self):
         self.thread_cleaner_timer = QtCore.QTimer()
         self.thread_cleaner_timer.timeout.connect(self.clean_threads)
@@ -853,7 +854,8 @@ class Panel(QtGui.QWidget):
                     "Did you pump to clean?",
                     QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
         if message == QtGui.QMessageBox.No:
-            self.btn_single_meas.setChecked(False)             
+            self.btn_single_meas.setChecked(False)  
+            self.measuring = False         
             return
 
         flnmStr, timeStamp = self.get_filename()        
