@@ -100,7 +100,7 @@ class Panel(QtGui.QWidget):
         #self.showMaximized()
 
     def clean_threads(self):
-        print (len(self.current_threads)
+        print (len(self.current_threads))
         self.current_threads = [t for t in self.current_threads if not t.isFinished()]
         print (self.current_threads)
     def start_thread_cleaner(self):
