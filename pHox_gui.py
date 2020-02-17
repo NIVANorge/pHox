@@ -365,7 +365,6 @@ class Panel(QtGui.QWidget):
     def update_spec_int_time_table(self):
         index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), 
                                 QtCore.Qt.MatchFixedString)
-        print (str(self.instrument.specIntTime))
 
         if index >= 0: 
             self.specIntTime_combo.setCurrentIndex(index)
@@ -733,7 +732,6 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
         self.btn_adjust_leds.setChecked(True)        
-        print ('on_autoAdjust_clicked')
         self.adjusting = True
         if self.args.co3:
             res = await self.autoAdjust_IntTime()
@@ -839,6 +837,10 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def btn_single_meas_clicked(self):
         self.measuring = True
+        while True: 
+            len(self.current_threads) > 0
+            print(len(self.current_threads))
+            
         print ('clicked single meas ')
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
@@ -1489,7 +1491,7 @@ class boxUI(QtGui.QMainWindow):
         except:
             box_id = 'template'
         config_name = 'configs/config_'+ box_id + '.json'
-        print (config_name)
+
         parser.add_argument("--pco2",
                             action="store_true")     
         parser.add_argument("--co3",

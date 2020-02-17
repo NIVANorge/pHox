@@ -412,7 +412,7 @@ class CO3_instrument(Common_instrument):
     def calc_CO3(self,absSp, vNTC,dilution,vol_injected):
         
         vNTC = round(vNTC, prec['vNTC'])
-        print (vNTC)
+
         Tdeg = round((self.TempCalCoef[0]*vNTC) + self.TempCalCoef[1], prec['Tdeg'])
         #T = 273.15 + Tdeg
         A1   = round(absSp[self.wvlPixels[0]], prec['A1'])
@@ -514,8 +514,7 @@ class pH_instrument(Common_instrument):
         # Increment is decreased twice in case we change the direction 
         # of decrease/increase 
         while adj == False: 
-            print ('step', step)
-            print ('LED', LED)
+            print ('step', step,'LED', LED)
             step += 1
             self.adjust_LED(led_ind, LED)        
             await asyncio.sleep(0.1)
