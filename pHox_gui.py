@@ -347,7 +347,7 @@ class Panel(QtGui.QWidget):
         new_int_time = int(self.specIntTime_combo.currentText())
         self.instrument.specIntTime = new_int_time
         self.instrument.spectrom.set_integration_time(new_int_time)
-        self.timerSpectra_plot.set_interval(new_int_time)
+        self.timerSpectra_plot.setInterval(new_int_time)
 
     def make_btngroupbox(self):
         # Define widgets for main tab 
@@ -664,7 +664,7 @@ class Panel(QtGui.QWidget):
             self.sliders[0].setValue(self.instrument.LED1)
             self.sliders[1].setValue(self.instrument.LED2)
             self.sliders[2].setValue(self.instrument.LED3)
-            self.timerSpectra_plot.set_interval(self.instrument.specIntTime)
+            self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
             
             #self.plot_sp_levels()
             self.update_spec_int_time_table()             
