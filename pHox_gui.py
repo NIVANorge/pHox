@@ -456,7 +456,7 @@ class Panel(QtGui.QWidget):
                 self.instrument.wpump_slot)
 
     def btn_liveplot_clicked(self):
-        state = self.btn_liveplot.clicked()
+        state = self.btn_liveplot.isChecked()
         if state: 
             self.timerSpectra_plot.start(self.instrument.specIntTime+100)
         else: 
