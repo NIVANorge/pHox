@@ -27,6 +27,7 @@ import asyncio
 
 class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
+
     def __init__(self, slow_function, callback):
         super(SimpleThread, self).__init__()
         self.caller = slow_function
@@ -36,15 +37,24 @@ class SimpleThread(QtCore.QThread):
         self.finished.emit(self.caller())
 
 
+class AsyncThreadWrapper:
+    def __init__(self, slow_function):
+        self.callback_returned, self.result = False, None
+        self.thread = SimpleThread(slow_function, self.result_setter)
+        self.thread.start()
+
+    def result_setter(self, res):
+        self.result, self.callback_returned = res, True
+
+    async def result_returner(self):
+        while not self.callback_returned:
+            await asyncio.sleep(.1)
+        return self.result
+
+
 class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
-
-        self.thread_cleaner_timer = None
-        self.current_threads = []
-        self.start_thread_cleaner()
-        # This is a test of the threadrunner
-        self.run_in_thread(self.test_thread_runner, self.test_thread_completer)
 
         self.continous_mode_is_on = False
         self.args = panelargs
@@ -96,27 +106,6 @@ class Panel(QtGui.QWidget):
     
         self.setLayout(hboxPanel)
         #self.showMaximized()
-
-    def clean_threads(self):
-        print ('self.current_threads: ',len(self.current_threads))
-        self.current_threads = [t for t in self.current_threads if not t.isFinished()]
-
-    def start_thread_cleaner(self):
-        self.thread_cleaner_timer = QtCore.QTimer()
-        self.thread_cleaner_timer.timeout.connect(self.clean_threads)
-        self.thread_cleaner_timer.start(2000)
-
-    def run_in_thread(self, caller, callee):
-        new_thread = SimpleThread(caller, callee)
-        new_thread.start()
-        self.current_threads.append(new_thread)
-
-    def test_thread_runner(self):
-        time.sleep(3)
-        return 'an argument'
-
-    def test_thread_completer(self, a):
-        print("Tested the thread runner, I received:'{}'".format(a))
 
     def make_tab_manual(self):
         
@@ -275,7 +264,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.StatusBox,  1, 0, 1, 1)    
         self.tab1.layout.addWidget(self.ferrypump_box,  1, 1, 1, 1)
         self.tab1.layout.addWidget(self.sample_steps_groupBox,2,0,1,1) 
-        self.tab1.layout.addWidget(self.table_pH,2,1,1,1)         
+        self.tab1.layout.addWidget(self.table_pH,2,1,1,1)
 
         self.tab1.setLayout(self.tab1.layout)
 
@@ -633,38 +622,36 @@ class Panel(QtGui.QWidget):
                            
             stabfile_df.to_csv(stabfile, index = False, header=True) 
 
-    async def update_absorbance_plot(self,n_inj,spAbs):
-        self.abs_lines[n_inj].setData(self.wvls,spAbs)
+    async def update_absorbance_plot(self, n_inj, spAbs):
+        self.abs_lines[n_inj].setData(self.wvls, spAbs)
         await asyncio.sleep(0.005)
         return
 
-
-    def spectra_plot_update_callback(self, datay):
+    @asyncSlot()
+    async def update_spectra_plot(self):
+        if not self.adjusting and not self.measuring:
+            if self.args.seabreeze or self.args.debug:
+                try:
+                    async_thread_wrapper = AsyncThreadWrapper(self.instrument.spectrom.get_intensities)
+                    datay = await async_thread_wrapper.result_returner()
+                    if self.args.stability:
+                        self.save_stability_test(datay)
+                except:
+                    print('Exception error')
+                    pass
+            else:
+                datay = self.instrument.spectrom.get_corrected_spectra()
+        else:
+            try:
+                datay = self.instrument.spectrum
+                await asyncio.sleep(self.instrument.specIntTime*1.e-3)
+            except:
+                pass
         try:
             self.plotSpc.setData(self.wvls, datay)
-            if self.args.stability:
-                self.save_stability_test(datay)
         except:
             print('could not set Data')
             pass
-
-
-    def update_spectra_plot(self):
-
-        if not self.adjusting and not self.measuring :
-            try:
-                self.run_in_thread(self.instrument.spectrom.get_intensities, 
-                                    self.spectra_plot_update_callback)
-            except:
-                print ('Exception error') 
-                pass
-        else:
-            try: 
-                datay = self.instrument.spectrum
-                self.plotSpc.setData(self.wvls, datay)
-            except: 
-                pass
-
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
@@ -1482,7 +1469,6 @@ class Panel(QtGui.QWidget):
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
         parser = argparse.ArgumentParser()
 
         try: 
@@ -1545,6 +1531,7 @@ class boxUI(QtGui.QMainWindow):
             event.accept()
 
 
+loop = None
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     d = os.getcwd()
