@@ -50,12 +50,17 @@ class Spectro_localtest(object):
         self.test_df = x[1:]
         self.integration_time = 100/1000
 
-    @asyncSlot()
-    async def set_integration_time(self,time_millisec):
-        self.integration_time = time_millisec / 1000
+    def set_integration_time_not_async(self,time_millisec):
         microsec = time_millisec * 1000
-        await asyncio.sleep(time_millisec/1.e3)
-        return
+        self.busy = True     
+        self.integration_time = time_millisec / 1000
+        self.busy = False
+
+    async def set_integration_time(self,time_millisec):
+        while self.busy:
+            await asyncio.sleep(.1)
+        self.set_integration_time_not_async(time_millisec)
+        #time.sleep(time_millisec/1.e3)
 
     def set_scans_average(self,num):
         pass
@@ -75,6 +80,7 @@ class Spectro_localtest(object):
 
 class Spectro_seabreeze(object):
     def __init__(self):
+        self.busy = False
         self.spec = Spectrometer.from_first_available()
         f = re.search('STS', str(self.spec))
 
@@ -82,19 +88,27 @@ class Spectro_seabreeze(object):
             f = re.search('FLMT', str(self.spec))
             self.spectro_type = f.group()
         else: 
+            print ('could not get the spectro type')
+            print (self.spec)
             self.spectro_type = 'FLMT'
 
-    @asyncSlot()
-    async def set_integration_time(self,time_millisec):
+    def set_integration_time_not_async(self,time_millisec):
         microsec = time_millisec * 1000
+        self.busy = True     
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
+        self.busy = False
+
+    async def set_integration_time(self,time_millisec):
+        while self.busy:
+            await asyncio.sleep(.05)
+        self.set_integration_time_not_async(time_millisec)
         #time.sleep(time_millisec/1.e3)
 
     def get_wavelengths(self):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    @asyncSlot()
+    
     async def get_intensities(self,num_avg = 1, correct = True):
         def _get_intensities():
             sp = self.spec.intensities(correct_nonlinearity = correct)
@@ -104,8 +118,13 @@ class Spectro_seabreeze(object):
                                 correct_nonlinearity = correct)])
                 sp = np.mean(np.array(sp),axis = 0)        
             return sp
+        while self.busy:
+            await asyncio.sleep(.05)
+        self.busy = True
         async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
-        return await async_thread_wrapper.result_returner()  
+        sp = await async_thread_wrapper.result_returner()  
+        self.busy = False
+        return sp
     
     def set_scans_average(self,num):
         # not supported for FLAME spectrom
@@ -222,7 +241,7 @@ class Common_instrument(object):
         self.fb_data = udp.Ferrybox
 
         self.load_config()
-        self.spectrom.set_integration_time(self.specIntTime)
+        self.spectrom.set_integration_time_not_async(self.specIntTime)
         if not self.args.debug:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
@@ -400,7 +419,7 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False: 
 
-            self.spectrom.set_integration_time(self.specIntTime)
+            await self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime*1.e-3)
             pixelLevel = self.get_sp_levels(self.wvlPixels[1])
 
@@ -583,7 +602,7 @@ class pH_instrument(Common_instrument):
             adj1,adj2,adj3 = False, False, False
             LED1,LED2,LED3 = None, None, None
             res1,res2,res3 = None, None, None
-            self.spectrom.set_integration_time(self.specIntTime)
+            await self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
             print ('Trying %i ms integration time...' % self.specIntTime)
 

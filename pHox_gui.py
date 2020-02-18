@@ -367,10 +367,11 @@ class Panel(QtGui.QWidget):
         minutes = int(self.samplingInt_combo.currentText())
         self.instrument.samplingInterval = int(minutes)*60
 
-    def specIntTime_combo_chngd(self,ind):
+    @asyncSlot()
+    async def specIntTime_combo_chngd(self):        
         new_int_time = int(self.specIntTime_combo.currentText())
         self.instrument.specIntTime = new_int_time
-        self.instrument.spectrom.set_integration_time(new_int_time)
+        await self.instrument.spectrom.set_integration_time(new_int_time)
         self.timerSpectra_plot.setInterval(new_int_time*2)
 
     def make_btngroupbox(self):
@@ -632,22 +633,19 @@ class Panel(QtGui.QWidget):
     async def update_spectra_plot(self):
         self.update_spectra_in_progress = True
         if not self.adjusting and not self.measuring:
-            if self.args.seabreeze or self.args.debug:
-                try:
-                    datay = await self.instrument.spectrom.get_intensities()
-                    if self.args.stability:
-                        self.save_stability_test(datay)
-                except:
-                    print('Exception error')
-                    pass
-            else:
-                datay = self.instrument.spectrom.get_corrected_spectra()
-        else:
             try:
-                datay = self.instrument.spectrum
-                await asyncio.sleep(self.instrument.specIntTime*1.e-3)
+                datay = await self.instrument.spectrom.get_intensities()
+                if self.args.stability:
+                    self.save_stability_test(datay)
             except:
+                print('Exception error')
                 pass
+        #else:
+        #    try:
+        #        datay = self.instrument.spectrum
+        #        await asyncio.sleep(self.instrument.specIntTime*1.e-3)
+        #    except:
+        #        pass
         try:
             self.plotSpc.setData(self.wvls, datay)
         except:
@@ -709,8 +707,7 @@ class Panel(QtGui.QWidget):
 
 
             datay = await self.instrument.spectrom.get_intensities() 
-            await asyncio.sleep(0.1)
-            self.plotSpc.setData(self.wvls,datay)
+            await self.update_spectra_plot_manual(datay)
             if not self.args.seabreeze:    
                 self.instrument.specAvScans = 3000/self.instrument.specIntTime
         else:
@@ -720,6 +717,9 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
+        if self.btn_liveplot.isChecked():
+            self.btn_liveplot.click()     
+        self.btn_liveplot.setEnabled(False)
         self.btn_adjust_leds.setChecked(True)        
         self.adjusting = True
         if self.args.co3:
@@ -728,6 +728,8 @@ class Panel(QtGui.QWidget):
             res = await self.autoAdjust_LED() 
 
         self.adjusting = False
+        self.btn_liveplot.setEnabled(True)
+        self.btn_liveplot.click()   
         self.btn_adjust_leds.setChecked(False)
         return res
 
@@ -804,7 +806,8 @@ class Panel(QtGui.QWidget):
     def change_widget_state(self,state):
         self.dye_combo.setEnabled(state)
         self.specIntTime_combo.setEnabled(state)
-        # add mroe 
+        self.samplingInt_combo.setEnabled(state)
+
 
 
     @asyncSlot()
@@ -1309,7 +1312,7 @@ class Panel(QtGui.QWidget):
 
         self.instrument.spectrum = blank  
         self.spCounts_df['blank'] = blank
-        self.plotSpc.setData(self.wvls,blank)  
+        await self.update_spectra_plot_manual(blank) 
         return blank_min_dark
 
     async def measurement_cycle(self,blank_min_dark,dark):
@@ -1373,8 +1376,8 @@ class Panel(QtGui.QWidget):
             postinj_spec = await self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             self.instrument.spectrum = postinj_spec
-            self.plotSpc.setData(self.wvls,postinj_spec)
-            await asyncio.sleep(0.05)
+            await self.update_spectra_plot_manual(postinj_spec)
+
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
             if not self.args.debug: 
@@ -1382,7 +1385,6 @@ class Panel(QtGui.QWidget):
             else: 
                 print ('WRONG VALUES')
                 spAbs_min_blank = postinj_spec 
-            #blank
 
         elif self.args.debug:
             print ('in debug')
@@ -1390,9 +1392,8 @@ class Panel(QtGui.QWidget):
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec # - dark
             spAbs_min_blank = postinj_spec_min_dark 
-            self.plotSpc.setData(self.wvls,postinj_spec)
-            await asyncio.sleep(0.05)            
-            #blank
+            await self.update_spectra_plot_manual(postinj_spec)         
+
         else :
             postinj = await self.instrument.spectrom.get_intensities()
             # postinjection minus dark     
