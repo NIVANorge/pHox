@@ -1436,8 +1436,11 @@ class Panel(QtGui.QWidget):
         # create new file and write data there .
         # in the separate logs folder .  
         # additionaly to regular common Ph log  
+
         hour_log_path = folderPath + 'logs/'
+        print ('hour_log_path', hour_log_path)        
         hour_log_flnm = hour_log_path + flnmStr +'.log'  
+        print ('hour_log_path', hour_log_flnm)
 
         if not os.path.exists(hour_log_path):
             os.makedirs(hour_log_path)
@@ -1447,12 +1450,12 @@ class Panel(QtGui.QWidget):
         else: 
             # list all files in the directory  
             files_in_path = os.listdir(hour_log_path)
-
+            print ('files in path', files_in_path)
             # convert names to datetimes 
             file_times = [datetime.strptime(n[:-4], self.fformat) for n in files_in_path]
 
             #find latest file            
-            last_file_time =max(file_times)
+            last_file_time = max(file_times)
             print ('last_file_time',last_file_time)
             # and its index
             ind_last_file = np.argmax(file_times)
