@@ -381,8 +381,8 @@ class Common_instrument(object):
         idx = (abs(items-value)).argmin()
         return idx
 
-    def get_sp_levels(self,pixel):
-        self.spectrum = self.spectrom.get_intensities()
+    async def get_sp_levels(self,pixel):
+        self.spectrum = await self.spectrom.get_intensities()
         return self.spectrum[pixel]
 
 class CO3_instrument(Common_instrument):
@@ -410,7 +410,7 @@ class CO3_instrument(Common_instrument):
     async def auto_adjust(self,*args):
 
         adjusted = False 
-        pixelLevel = self.get_sp_levels(self.wvlPixels[1])
+        pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
         increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
 
@@ -422,7 +422,7 @@ class CO3_instrument(Common_instrument):
 
             await self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime*1.e-3)
-            pixelLevel = self.get_sp_levels(self.wvlPixels[1])
+            pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
             if self.specIntTime > 5000:
                 print ('Too high spec int time value,break') 
@@ -554,7 +554,7 @@ class pH_instrument(Common_instrument):
             step += 1
             self.adjust_LED(led_ind, LED)        
             await asyncio.sleep(0.1)
-            pixelLevel =  self.get_sp_levels(self.wvlPixels[led_ind]) 
+            pixelLevel = await self.get_sp_levels(self.wvlPixels[led_ind]) 
             await asyncio.sleep(0.1)                   
             print ('pixelLevel', pixelLevel)
 
