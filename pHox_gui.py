@@ -645,7 +645,7 @@ class Panel(QtGui.QWidget):
             except:
                 print('could not set Data')
                 pass
-            
+
         self.update_spectra_in_progress = False
 
     def reset_absorp_plot(self):
@@ -737,7 +737,6 @@ class Panel(QtGui.QWidget):
         else:
             res = await self.autoAdjust_LED() 
 
-        self.adjusting = False
         self.btn_adjust_leds.setChecked(False)
         return res
 
@@ -1179,6 +1178,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps[1].setChecked(True)        
         self.append_logbox('Autoadjust LEDS')
         res = await self.call_autoAdjust()
+        self.adjusting = False
         print ('res after autoadjust', res )
         if not res: 
             print ('could not adjust leds')
