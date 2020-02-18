@@ -95,6 +95,9 @@ class Spectro_seabreeze(object):
 
     def set_integration_time_not_async(self,time_millisec):
         microsec = time_millisec * 1000
+        if self.busy:
+            print('set_integration_time was called twice, retunrning without doing anything')
+        return
         self.busy = True     
         self.spec.integration_time_micros(microsec)  # 0.1 seconds
         self.busy = False
