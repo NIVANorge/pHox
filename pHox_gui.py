@@ -717,6 +717,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
+        # Callback func for autoadjust button 
         if self.btn_liveplot.isChecked():
             self.btn_liveplot.click()     
         self.btn_liveplot.setEnabled(False)
@@ -808,8 +809,6 @@ class Panel(QtGui.QWidget):
         self.specIntTime_combo.setEnabled(state)
         self.samplingInt_combo.setEnabled(state)
 
-
-
     @asyncSlot()
     async def btn_calibr_clicked(self):
         self.change_widget_state(False)
@@ -852,7 +851,10 @@ class Panel(QtGui.QWidget):
                     QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
         if message == QtGui.QMessageBox.No:
             self.btn_single_meas.setChecked(False)  
-            self.measuring = False         
+            self.measuring = False  
+            # Re-enable live update button and start it
+            self.btn_liveplot.setEnabled(True)
+            self.btn_liveplot.click()
             return
 
         flnmStr, timeStamp = self.get_filename()        
