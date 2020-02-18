@@ -82,15 +82,16 @@ class Spectro_seabreeze(object):
     def __init__(self):
         self.busy = False
         self.spec = Spectrometer.from_first_available()
-        f = re.search('STS', str(self.spec))
-
-        if f is None:
-            f = re.search('FLMT', str(self.spec))
-            self.spectro_type = f.group()
-        else: 
-            print ('could not get the spectro type')
-            print (self.spec)
+        self.spectro_type = None
+        for sensor_code in ['STS', 'FLMT']:
+            f = re.search(sensor_code, str(self.spec))
+            if f:
+                self.spectro_type = sensor_code
+                break
+        if not self.spectro_type:
+            print ('could not get the spectro type, defaulting to FLMT')
             self.spectro_type = 'FLMT'
+        print("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
 
     def set_integration_time_not_async(self,time_millisec):
         microsec = time_millisec * 1000
