@@ -57,6 +57,7 @@ class Panel(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
 
         self.continous_mode_is_on = False
+        self.update_spectra_in_progress = False
         self.args = panelargs
         self.config_name = config_name
         self.adjusting = False 
@@ -480,7 +481,7 @@ class Panel(QtGui.QWidget):
 
     def btn_liveplot_clicked(self):
         state = self.btn_liveplot.isChecked()
-        if state: 
+        if state:
             self.timerSpectra_plot.start(self.instrument.specIntTime+100)
         else: 
             self.timerSpectra_plot.stop()
@@ -629,11 +630,11 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
+        self.update_spectra_in_progress = True
         if not self.adjusting and not self.measuring:
             if self.args.seabreeze or self.args.debug:
                 try:
-                    async_thread_wrapper = AsyncThreadWrapper(self.instrument.spectrom.get_intensities)
-                    datay = await async_thread_wrapper.result_returner()
+                    datay = await self.instrument.spectrom.get_intensities()
                     if self.args.stability:
                         self.save_stability_test(datay)
                 except:
@@ -652,6 +653,7 @@ class Panel(QtGui.QWidget):
         except:
             print('could not set Data')
             pass
+        self.update_spectra_in_progress = False
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
@@ -706,7 +708,7 @@ class Panel(QtGui.QWidget):
                     self.instrument.specIntTime))
 
 
-            datay = self.instrument.spectrom.get_intensities() 
+            datay = await self.instrument.spectrom.get_intensities() 
             await asyncio.sleep(0.1)
             self.plotSpc.setData(self.wvls,datay)
             if not self.args.seabreeze:    
@@ -799,8 +801,15 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True) 
                 self.btn_calibr.setEnabled(True)
 
+    def change_widget_state(self,state):
+        self.dye_combo.setEnabled(state)
+        self.specIntTime_combo.setEnabled(state)
+        # add mroe 
+
+
     @asyncSlot()
     async def btn_calibr_clicked(self):
+        self.change_widget_state(False)
         state = self.btn_calibr.isChecked()
         if state:
             message = QtGui.QMessageBox.question(self,
@@ -823,10 +832,16 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
+        self.change_widget_state(False)
+        # Disable live updating and block button
+        if self.btn_liveplot.isChecked():
+            self.btn_liveplot.click()
+        self.btn_liveplot.setEnabled(False)
         self.measuring = True
-        while len(self.current_threads) > 0: 
-            print(len(self.current_threads))
-
+        # Wait for last live update to finish
+        while self.update_spectra_in_progress:
+            await asyncio.sleep(.1)
+        # Start single sampling process
         print ('clicked single meas ')
         message = QtGui.QMessageBox.question(self,
                     "important message!!!",
@@ -856,7 +871,10 @@ class Panel(QtGui.QWidget):
             self.single_sample_finished(folderPath,timeStamp,flnmStr)
 
         else: 
-            self.btn_single_meas.setChecked(False) 
+            self.btn_single_meas.setChecked(False)
+        # Re-enable live update button and start it
+        self.btn_liveplot.setEnabled(True)
+        self.btn_liveplot.click()
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
@@ -920,7 +938,7 @@ class Panel(QtGui.QWidget):
         self.plotwidget2.plot(self.x,self.intercept + self.slope*self.x)   
 
     def single_sample_finished(self,folderPath,timeStamp,flnmStr):
-
+        self.change_widget_state(True)
         print ('single sample finished inside func')   
         self.measuring = False 
         if not self.args.co3 :
@@ -951,12 +969,12 @@ class Panel(QtGui.QWidget):
                         QtGui.QMessageBox.Yes| QtGui.QMessageBox.No)
 
     def continuous_sample_finished(self,folderPath,timeStamp,flnmStr):
-
+        self.change_widget_state(True)
         print ('inside continuous_sample_finished')
         self.continous_mode_is_on = False
         self.measuring = False 
         if not self.args == 'co3':
-            self.get_final_pH(timeStamp) 
+            self.get_final_pH(timeStamp)
             self.StatusBox.setText('Measurement is finished') 
             if not self.args.debug:
                 self.save_results(folderPath,flnmStr)
@@ -1138,7 +1156,6 @@ class Panel(QtGui.QWidget):
         # Step 0. Start mesurement, create new df,
         # reset Absorption plot
         # pump if single, close the valve 
-
         if self.mode == 'Continuous' or self.mode == 'Calibration': 
             if not fbox['pumping']:
                 return               
@@ -1249,25 +1266,31 @@ class Panel(QtGui.QWidget):
 
         # grab spectrum
         if not self.args.seabreeze:
-            dark = self.instrument.spectrom.get_intensities()
+            dark = await self.instrument.spectrom.get_intensities()
         elif self.args.seabreeze:
             #raw = str(n_inj)+'raw'
-            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
+            #self.spCounts_df[raw] = await self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-            dark = self.instrument.spectrom.get_intensities(
+            dark = await self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
-        
-        #turn on the light and LED
+
         if self.args.co3:
+            # Turn on the light source
             self.instrument.turn_on_relay(self.instrument.light_slot)
             print ('turn on the light source')
             await asyncio.sleep(2)
         else: 
+            # Turn on LEDs after taking dark 
             self.set_LEDs(True)
         self.instrument.spectrum = dark
         self.spCounts_df['dark'] = dark
+        await self.update_spectra_plot_manual(dark)
         return dark 
+
+    async def update_spectra_plot_manual(self,spectrum):
+        self.plotSpc.setData(self.wvls,spectrum)
+        await asyncio.sleep(0.05)
 
     async def measure_blank(self,dark):    
         print ('Measuring blank...')
@@ -1275,18 +1298,18 @@ class Panel(QtGui.QWidget):
 
         if not self.args.seabreeze:
             self.nlCoeff = [1.0229, -9E-6, 6E-10] # we don't know what it is  
-            blank = self.instrument.spectrom.get_intensities()
+            blank = await self.instrument.spectrom.get_intensities()
             
             blank_min_dark= np.clip(blank,1,16000)
         else: 
-            blank = self.instrument.spectrom.get_intensities(
+            blank = await self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)    
             print ('blank',blank)
             blank_min_dark =   blank - dark  
 
         self.instrument.spectrum = blank  
         self.spCounts_df['blank'] = blank
-
+        self.plotSpc.setData(self.wvls,blank)  
         return blank_min_dark
 
     async def measurement_cycle(self,blank_min_dark,dark):
@@ -1301,7 +1324,7 @@ class Panel(QtGui.QWidget):
                     vol_injected  + self.instrument.Cuvette_V)      
 
             vNTC = await self.inject_dye(n_inj)
-            spAbs_min_blank = self.calc_spectrum(n_inj,blank_min_dark,dark)
+            spAbs_min_blank = await self.calc_spectrum(n_inj,blank_min_dark,dark)
             #self.append_logbox('Calculate init pH') 
             print ('Calculate init pH') 
 
@@ -1338,18 +1361,20 @@ class Panel(QtGui.QWidget):
         vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
         return vNTC 
 
-    def calc_spectrum(self,n_inj,blank_min_dark,dark):    
+    async def calc_spectrum(self,n_inj,blank_min_dark,dark):    
         self.append_logbox('Get spectrum')
         # measure spectrum after injecting nshots of dye 
         #Write spectrum to the file 
         if self.args.seabreeze:
             #raw = str(n_inj)+'raw'
-            #self.spCounts_df[raw] = self.instrument.spectrom.get_intensities(
+            #self.spCounts_df[raw] = await self.instrument.spectrom.get_intensities(
             #        self.instrument.specAvScans,correct=False)
             # time.sleep(0.5)
-            postinj_spec = self.instrument.spectrom.get_intensities(
+            postinj_spec = await self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             self.instrument.spectrum = postinj_spec
+            self.plotSpc.setData(self.wvls,postinj_spec)
+            await asyncio.sleep(0.05)
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance 
             if not self.args.debug: 
@@ -1361,13 +1386,15 @@ class Panel(QtGui.QWidget):
 
         elif self.args.debug:
             print ('in debug')
-            postinj_spec = self.instrument.spectrom.get_intensities(
+            postinj_spec = await self.instrument.spectrom.get_intensities(
                     self.instrument.specAvScans,correct=True)
             postinj_spec_min_dark = postinj_spec # - dark
             spAbs_min_blank = postinj_spec_min_dark 
+            self.plotSpc.setData(self.wvls,postinj_spec)
+            await asyncio.sleep(0.05)            
             #blank
         else :
-            postinj = self.instrument.spectrom.get_intensities()
+            postinj = await self.instrument.spectrom.get_intensities()
             # postinjection minus dark     
             postinj_min_dark = np.clip(postinj,1,16000)
             #print ('postinj_min_dark')

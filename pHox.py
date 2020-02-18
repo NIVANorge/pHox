@@ -1,19 +1,26 @@
 #! /usr/bin/python
 
-import json, warnings
-import os,sys
-import usb, usb.core
-import struct, time
-from datetime import datetime, timedelta
-from PyQt5 import QtGui, QtCore
-import numpy as np
-import pandas as pd 
-import random,udp
-from scipy import stats
-from precisions import precision as prec 
-from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
+import json
+import os
+import random
 import re
+import struct
+import sys
+import time
+import warnings
+from datetime import datetime, timedelta
+
+import numpy as np
+import usb
+import usb.core
+
+import pandas as pd
+import udp
+from asyncqt import QEventLoop, asyncClose, asyncSlot
+from precisions import precision as prec
+from PyQt5 import QtCore, QtGui
+from scipy import stats
 
 try:
     import pigpio
@@ -27,7 +34,8 @@ try:
     import seabreeze.cseabreeze as sbb 
 except: 
     pass
-import random
+
+from pHox_gui import AsyncThreadWrapper
 
 class Spectro_localtest(object):
     def __init__(self):
@@ -56,10 +64,14 @@ class Spectro_localtest(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
-    def get_intensities(self,num_avg = 1, correct = True):
-        time.sleep(self.integration_time)
-        sp = self.test_df['0'].values + random.randrange(-150, 150, 1)
-        return sp
+    async def get_intensities(self,num_avg = 1, correct = True):
+        def _get_intensities():
+            time.sleep(self.integration_time)
+            sp = self.test_df['0'].values + random.randrange(-1500, 1500, 1)
+            return sp
+        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
+        return await async_thread_wrapper.result_returner()  
+
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -82,15 +94,19 @@ class Spectro_seabreeze(object):
         #wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.spec.wavelengths()
 
-    def get_intensities(self,num_avg = 1, correct = True):
-        sp = self.spec.intensities(correct_nonlinearity = correct)
-        if num_avg > 1: 
-            for _ in range(num_avg):
-                sp = np.vstack([sp,self.spec.intensities(
-                            correct_nonlinearity = correct)])
-            sp = np.mean(np.array(sp),axis = 0)        
-        return sp
-
+    @asyncSlot()
+    async def get_intensities(self,num_avg = 1, correct = True):
+        def _get_intensities():
+            sp = self.spec.intensities(correct_nonlinearity = correct)
+            if num_avg > 1: 
+                for _ in range(num_avg):
+                    sp = np.vstack([sp,self.spec.intensities(
+                                correct_nonlinearity = correct)])
+                sp = np.mean(np.array(sp),axis = 0)        
+            return sp
+        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
+        return await async_thread_wrapper.result_returner()  
+    
     def set_scans_average(self,num):
         # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
