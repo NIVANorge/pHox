@@ -640,17 +640,12 @@ class Panel(QtGui.QWidget):
             except:
                 print('Exception error')
                 pass
-        #else:
-        #    try:
-        #        datay = self.instrument.spectrum
-        #        await asyncio.sleep(self.instrument.specIntTime*1.e-3)
-        #    except:
-        #        pass
-        try:
-            self.plotSpc.setData(self.wvls, datay)
-        except:
-            print('could not set Data')
-            pass
+            try:
+                self.plotSpc.setData(self.wvls, datay)
+            except:
+                print('could not set Data')
+                pass
+            
         self.update_spectra_in_progress = False
 
     def reset_absorp_plot(self):

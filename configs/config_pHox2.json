@@ -17,7 +17,7 @@
         ],
         "DYE_V_INJ": 0.03,
         "CUVETTE_V": 16,
-        "dye_nshots": 4,
+        "dye_nshots": 1,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
