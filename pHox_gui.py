@@ -38,7 +38,6 @@ class SimpleThread(QtCore.QThread):
     def run(self):
         self.finished.emit(self.caller())
 
-
 class AsyncThreadWrapper:
     def __init__(self, slow_function):
         self.callback_returned, self.result = False, None
@@ -1188,17 +1187,17 @@ class Panel(QtGui.QWidget):
     def autorun(self):
         self.append_logbox("Inside continuous_mode...")
         print("start autorun")
-        if (self.instrument._autostart) and (self.instrument._automode == "time"):
+        if self.instrument._autostart and self.instrument._automode == "time":
             self.textBox.setText("Automatic scheduled start enabled")
             self.timerAuto.timeout.connect(self.autostart_time)
             self.timerAuto.start(1000)
 
-        elif (self.instrument._autostart) and (self.instrument._automode == "pump"):
+        elif self.instrument._autostart and self.instrument._automode == "pump":
             self.textBox.setText("Automatic start at pump enabled")
             self.timerAuto.timeout.connect(self.autostart_pump)
             self.timerAuto.start(1000)
 
-        elif (self.instrument._autostart) and (self.instrument._automode == "now"):
+        elif self.instrument._autostart and self.instrument._automode == "now":
             self.textBox.setText("Immediate automatic start enabled")
             self._autostart()
         return
@@ -1223,7 +1222,7 @@ class Panel(QtGui.QWidget):
 
         await self.pump_if_needed()
 
-        self.append_logbox("Closing valve ...")
+        self.append_logbox("Closing the valve ...")
         await self.instrument.set_Valve(True)
 
         # Step 1. Autoadjust LEDS
@@ -1253,12 +1252,6 @@ class Panel(QtGui.QWidget):
         await self.instrument.set_Valve(False)
 
         return "Finished"
-
-    def continue_after_dark(self, dark):
-        pass
-
-    def continue_after_blank(self, blank):
-        pass
 
     def get_folderPath(self):
         if self.args.localdev:

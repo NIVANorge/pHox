@@ -148,18 +148,18 @@ class Common_instrument(object):
         self.args = panelargs
         self.config_name = config_name
         self.spectrom = (
-            Spectro_seabreeze() if not self.args.debug else Spectro_localtest()
+            Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
         )
 
         # initialize PWM lines
-        if not self.args.debug:
+        if not self.args.localdev:
             self.rpi = pigpio.pi()
 
         self.fb_data = udp.Ferrybox
 
         self.load_config()
         self.spectrom.set_integration_time_not_async(self.specIntTime)
-        if not self.args.debug:
+        if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
             self.adcdac = ADCDACPi()
@@ -189,6 +189,7 @@ class Common_instrument(object):
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, False)
+
 
     def load_config(self):
 
@@ -410,7 +411,7 @@ class pH_instrument(Common_instrument):
         self.load_config_pH()
 
         # setup PWM and SSR lines
-        if not self.args.debug:
+        if not self.args.localdev:
             for pin in range(4):
                 self.rpi.set_mode(self.led_slots[pin], pigpio.OUTPUT)
                 self.rpi.set_PWM_frequency(self.led_slots[pin], 100)
@@ -658,8 +659,8 @@ class pH_instrument(Common_instrument):
 
         nrows = evalPar_df.shape[0]
 
-        if self.args.debug:
-            print("ph eval debug mode")
+        if self.args.localdev:
+            print("ph eval local mode")
             x = evalPar_df["Vol_injected"].values
             y = pH_t_corr.values * 0
             final_slope = 1
