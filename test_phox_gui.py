@@ -9,6 +9,7 @@ from pHox_gui import boxUI
 
 class Namespace:
     """Class for faking return value of argparse.ArgumentParser()).parse_args()"""
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
@@ -22,9 +23,13 @@ def test_basics(qtbot):
 
     loop = QEventLoop(qt_api.QApplication.instance())
     asyncio.set_event_loop(loop)
-    faked_args = Namespace(co3=False, debug=True, pco2=False, seabreeze=False, stability=False)
+    faked_args = Namespace(
+        co3=False, debug=True, pco2=False, seabreeze=False, stability=False
+    )
 
-    with patch('pHox_gui.argparse', autospec=True) as argparse_path, patch('pHox_gui.loop', loop) as patched_loop:
+    with patch("pHox_gui.argparse", autospec=True) as argparse_path, patch(
+        "pHox_gui.loop", loop
+    ) as patched_loop:
         argparse_path.ArgumentParser.return_value.parse_args.return_value = faked_args
         widget = boxUI()
         qtbot.addWidget(widget)
