@@ -82,7 +82,6 @@ class Panel(QtGui.QWidget):
     def init_ui(self):
 
         self.tabs = QtGui.QTabWidget()
-
         self.tab1 = QtGui.QWidget()
         self.tab_manual = QtGui.QWidget()
         self.tab_log = QtGui.QWidget()
@@ -100,20 +99,26 @@ class Panel(QtGui.QWidget):
         self.make_tab_manual()
         self.make_tab_config()
         self.make_plotwidgets()
+        # disable all manual control buttons
 
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwdigets_groupbox)
         hboxPanel.addWidget(self.tabs)
 
+        # Disable all manual buttons in the Automatic mode
+        self.widgets_enabled_change(False)
         self.setLayout(hboxPanel)
         # self.showMaximized()
 
     def make_tab_manual(self):
 
         self.tab_manual.layout = QtGui.QGridLayout()
+        self.btn_manual_mode = self.create_button('Enable manual mode', True)
+        self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
         self.make_btngroupbox()
         self.make_slidergroupbox()
+        self.tab_manual.layout.addWidget(self.btn_manual_mode)
         self.tab_manual.layout.addWidget(self.sliders_groupBox)
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
         self.tab_manual.setLayout(self.tab_manual.layout)
@@ -143,6 +148,13 @@ class Panel(QtGui.QWidget):
         if self.args.pco2:
             self.timerSave = QtCore.QTimer()
             self.timerSave.timeout.connect(self.save_pCO2_data)
+
+    def btn_manual_mode_clicked(self):
+        print ('btn_manual_mode')
+        if self.btn_manual_mode.isChecked():
+            self.widgets_enabled_change(True)
+        else:
+            self.widgets_enabled_change(False)
 
     def make_plotwidgets(self):
         # create plotwidgets
@@ -266,16 +278,22 @@ class Panel(QtGui.QWidget):
 
         self.StatusBox = QtGui.QLineEdit()
 
-        self.table_pH = QtGui.QTableWidget(6, 2)
-        self.table_pH.verticalHeader().hide()
-        self.table_pH.horizontalHeader().hide()
-        self.table_pH.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.fill_table_pH(0, 0, "pH lab")
-        self.fill_table_pH(1, 0, "T lab")
-        self.fill_table_pH(2, 0, "pH insitu")
-        self.fill_table_pH(3, 0, "T insitu")
-        self.fill_table_pH(4, 0, "S insitu")
-        self.fill_table_pH(5, 0, "Voltage")
+        self.table_measurements = QtGui.QTableWidget(12, 2)
+        self.table_measurements.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.table_measurements.verticalHeader().hide()
+        self.table_measurements.horizontalHeader().hide()
+        self.table_measurements.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+
+        font = QtGui.QFont()
+        font.setBold(True)
+        self.fill_table_measurements(0, 0, 'Last Measurement')
+        self.fill_table_measurements(6, 0, 'Live Updates')
+
+        self.table_measurements.item(0, 0).setFont(font)
+        self.table_measurements.item(6, 0).setFont(font)
+
+        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"],1)]
+        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["T lab", 'Voltage', "pH insitu", "T insitu", "S insitu"], 7)]
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -301,7 +319,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.StatusBox, 1, 0, 1, 1)
         self.tab1.layout.addWidget(self.ferrypump_box, 1, 1, 1, 1)
         self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 1, 1)
-        self.tab1.layout.addWidget(self.table_pH, 2, 1, 1, 1)
+        self.tab1.layout.addWidget(self.table_measurements, 2, 1, 1, 1)
 
         self.tab1.setLayout(self.tab1.layout)
 
@@ -309,8 +327,11 @@ class Panel(QtGui.QWidget):
         t = datetime.now().strftime("%b-%d %H:%M:%S")
         self.logTextBox.appendPlainText(t + "  " + message)
 
-    def fill_table_pH(self, x, y, item):
-        self.table_pH.setItem(x, y, QtGui.QTableWidgetItem(item))
+    def fill_table_measurements(self, x, y, item):
+        self.table_measurements.setItem(x, y, QtGui.QTableWidgetItem(item))
+
+    def fill_table_config(self, x, y, item):
+        self.tableConfigWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
 
     def make_tab_config(self):
         self.tab_config.layout = QtGui.QGridLayout()
@@ -328,18 +349,18 @@ class Panel(QtGui.QWidget):
 
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
 
-        self.tableWidget = QtGui.QTableWidget()
+        self.tableConfigWidget = QtGui.QTableWidget()
 
-        self.tableWidget.verticalHeader().hide()
-        self.tableWidget.horizontalHeader().hide()
+        self.tableConfigWidget.verticalHeader().hide()
+        self.tableConfigWidget.horizontalHeader().hide()
 
-        self.tableWidget.setRowCount(8)
-        self.tableWidget.setColumnCount(2)
-        self.tableWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
-        # self.tableWidget.horizontalHeader().setStretchLastSection(True)
+        self.tableConfigWidget.setRowCount(8)
+        self.tableConfigWidget.setColumnCount(2)
+        self.tableConfigWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        # self.tableConfigWidget.horizontalHeader().setStretchLastSection(True)
 
         self.fill_table_config(0, 0, "DYE type")
-        self.tableWidget.setCellWidget(0, 1, self.dye_combo)
+        self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
         if not self.args.co3:
             self.fill_table_config(1, 0, "NIR:")
             self.fill_table_config(1, 1, str(self.instrument.NIR))
@@ -365,12 +386,12 @@ class Panel(QtGui.QWidget):
         self.update_spec_int_time_table()
 
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
-        self.tableWidget.setCellWidget(6, 1, self.specIntTime_combo)
+        self.tableConfigWidget.setCellWidget(6, 1, self.specIntTime_combo)
 
         self.samplingInt_combo = QtGui.QComboBox()
         self.samplingInt_combo.addItem("5")
         self.samplingInt_combo.addItem("10")
-        self.tableWidget.setCellWidget(5, 1, self.samplingInt_combo)
+        self.tableConfigWidget.setCellWidget(5, 1, self.samplingInt_combo)
 
         index = self.samplingInt_combo.findText(
             str(self.instrument.samplingInterval), QtCore.Qt.MatchFixedString
@@ -381,7 +402,7 @@ class Panel(QtGui.QWidget):
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.tableWidget, 1, 0, 2, 2)
+        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 2, 2)
 
         self.tab_config.setLayout(self.tab_config.layout)
 
@@ -393,9 +414,6 @@ class Panel(QtGui.QWidget):
         if index >= 0:
             self.specIntTime_combo.setCurrentIndex(index)
 
-    def fill_table_config(self, x, y, item):
-        self.tableWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
-
     def sampling_int_chngd(self, ind):
         minutes = int(self.samplingInt_combo.currentText())
         self.instrument.samplingInterval = int(minutes) * 60
@@ -404,6 +422,24 @@ class Panel(QtGui.QWidget):
     async def specIntTime_combo_chngd(self):
         new_int_time = int(self.specIntTime_combo.currentText())
         await self.updater.set_specIntTime(new_int_time)
+
+    def widgets_enabled_change(self, state):
+        print('widgets_enabled_change, state is ', state)
+        self.btn_adjust_leds.setEnabled(state)
+        self.btn_leds.setEnabled(state)
+        self.btn_valve.setEnabled(state)
+        self.btn_stirr.setEnabled(state)
+        self.btn_dye_pmp.setEnabled(state)
+        self.btn_calibr.setEnabled(state)
+
+        self.btn_wpump.setEnabled(state)
+        self.btn_liveplot.setEnabled(state)
+        [b.setEnabled(state) for b in self.plus_btns]
+        [b.setEnabled(state) for b in self.minus_btns]
+        [s.setEnabled(state) for s in self.sliders]
+        [s.setEnabled(state) for s in self.spinboxes]
+        if self.args.co3:
+            self.btn_lightsource.setEnabled(state)
 
     def make_btngroupbox(self):
         # Define widgets for main tab
@@ -565,9 +601,9 @@ class Panel(QtGui.QWidget):
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
-        self.tableWidget.setItem(2, 1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
+        self.tableConfigWidget.setItem(2, 1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
 
-        self.tableWidget.setItem(3, 1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
+        self.tableConfigWidget.setItem(3, 1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
 
     def change_plus_minus_butn(self, ind, dif):
         value = self.spinboxes[ind].value() + dif
@@ -992,7 +1028,7 @@ class Panel(QtGui.QWidget):
             print("update pH plot")
             self.update_pH_plot()
             print("update infotable ")
-            self.update_infotable()
+            self.update_table_last_meas()
 
         self.StatusBox.setText("Measurement is finished")
 
@@ -1046,30 +1082,23 @@ class Panel(QtGui.QWidget):
             (self.instrument.TempCalCoef[0] * Voltage) + self.instrument.TempCalCoef[1],
             prec["Tdeg"],
         )
-        self.fill_table_pH(1, 1, str(T_lab))
-        self.fill_table_pH(5, 1, str(Voltage))
 
-    def update_infotable(self):
-        print("inside update infotable")
+        self.table_live.setItem
+        self.fill_table_live(7, 1, str(T_lab))
+        self.fill_table_live(8, 1, str(Voltage))
+
+    def update_table_last_meas(self):
         if not self.args.co3:
-            pH_lab = str(self.pH_log_row["pH_lab"].values[0])
-            self.fill_table_pH(0, 1, pH_lab)
 
-            T_lab = str(self.pH_log_row["T_lab"].values[0])
-            self.fill_table_pH(1, 1, T_lab)
+            '''self.fill_table_measurements(1, 1, str(self.pH_log_row["pH_lab"].values[0]))
+            self.fill_table_measurements(2, 1, str(self.pH_log_row["T_lab"].values[0]))
+            self.fill_table_measurements(3, 1, str(self.pH_log_row["pH_insitu"].values[0]))
+            self.fill_table_measurements(4, 1, str(self.pH_log_row["fb_temp"].values[0]))
+            self.fill_table_measurements(5, 1, str(self.pH_log_row["fb_sal"].values[0]))'''
 
-            pH_insitu = str(self.pH_log_row["pH_insitu"].values[0])
-            self.fill_table_pH(2, 1, pH_insitu)
+            [self.fill_table_measurements(k, 1, str(self.pH_log_row[v].values[0]))
+             for k, v in enumerate(["pH_lab","T_lab","pH_insitu","fb_temp","fb_sal"],1)]
 
-            T_insitu = str(self.pH_log_row["fb_temp"].values[0])
-            self.fill_table_pH(3, 1, T_insitu)
-
-            S_insitu = str(self.pH_log_row["fb_sal"].values[0])
-            self.fill_table_pH(4, 1, S_insitu)
-
-            Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
-
-            self.fill_table_pH(5, 1, str(Voltage))
         else:
             print("to be filled with data")
 
