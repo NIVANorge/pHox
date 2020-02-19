@@ -1,4 +1,5 @@
 #! /usr/bin/python
+from contextlib import asynccontextmanager
 
 from pHox import *
 from pco2 import CO2_instrument
@@ -58,7 +59,6 @@ class Panel(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
 
         self.continous_mode_is_on = False
-        self.update_spectra_in_progress = False
         self.args = panelargs
         self.config_name = config_name
         self.adjusting = False
@@ -66,7 +66,7 @@ class Panel(QtGui.QWidget):
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             self.instrument = CO3_instrument(self.args, self.config_name)
-        elif self.args.debug:
+        elif self.args.localdev:
             self.instrument = Test_instrument(self.args, self.config_name)
         else:
             self.instrument = pH_instrument(self.args, self.config_name)
@@ -78,6 +78,7 @@ class Panel(QtGui.QWidget):
             self.CO2_instrument = CO2_instrument(self.config_name)
         self.measuring = False
         self.init_ui()
+        self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
 
     def init_ui(self):
 
@@ -397,16 +398,13 @@ class Panel(QtGui.QWidget):
         self.tableWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
 
     def sampling_int_chngd(self, ind):
-
         minutes = int(self.samplingInt_combo.currentText())
         self.instrument.samplingInterval = int(minutes) * 60
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
         new_int_time = int(self.specIntTime_combo.currentText())
-        self.instrument.specIntTime = new_int_time
-        await self.instrument.spectrom.set_integration_time(new_int_time)
-        self.timerSpectra_plot.setInterval(new_int_time * 2)
+        await self.updater.set_specIntTime(new_int_time)
 
     def make_btngroupbox(self):
         # Define widgets for main tab
@@ -510,14 +508,11 @@ class Panel(QtGui.QWidget):
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
 
-    def btn_liveplot_clicked(self):
-        state = self.btn_liveplot.isChecked()
-        if state:
-            self.timerSpectra_plot.start(self.instrument.specIntTime + 100)
-        else:
-            self.timerSpectra_plot.stop()
+    @asyncSlot()
+    async def btn_liveplot_clicked(self):
+        await self.updater.btn_liveplot_clicked_updater()
 
-    @asyncSlot
+    @asyncSlot()
     async def btn_lightsource_clicked(self):
 
         if self.btn_lightsource.isChecked():
@@ -663,22 +658,17 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
-        self.update_spectra_in_progress = True
-        if not self.adjusting and not self.measuring:
-            try:
+        self.updater.update_spectra_in_progress = True
+        try:
+            if not self.adjusting and not self.measuring:
                 datay = await self.instrument.spectrom.get_intensities()
                 if self.args.stability:
                     self.save_stability_test(datay)
-            except:
-                print("Exception error")
-                pass
-            try:
                 self.plotSpc.setData(self.wvls, datay)
-            except:
-                print("could not set Data")
-                pass
-
-        self.update_spectra_in_progress = False
+        except Exception as e:
+            print("could not read and set Data", e)
+        finally:
+            self.updater.update_spectra_in_progress = False
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
@@ -761,8 +751,6 @@ class Panel(QtGui.QWidget):
 
             datay = await self.instrument.spectrom.get_intensities()
             await self.update_spectra_plot_manual(datay)
-            if not self.args.seabreeze:
-                self.instrument.specAvScans = 3000 / self.instrument.specIntTime
         else:
             result = False
 
@@ -770,33 +758,22 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def on_autoAdjust_clicked(self):
-        # Callback func for autoadjust button
-        if self.btn_liveplot.isChecked():
-            self.btn_liveplot.click()
-        self.btn_liveplot.setEnabled(False)
-        self.btn_adjust_leds.setChecked(True)
-        self.adjusting = True
-        if self.args.co3:
-            res = await self.autoAdjust_IntTime()
-        else:
-            res = await self.autoAdjust_LED()
-
-        self.adjusting = False
-        self.btn_liveplot.setEnabled(True)
-        self.btn_liveplot.click()
-        self.btn_adjust_leds.setChecked(False)
-        return res
+        await self.call_autoAdjust()
 
     async def call_autoAdjust(self):
-        self.btn_adjust_leds.setChecked(True)
-        self.adjusting = True
-        if self.args.co3:
-            res = await self.autoAdjust_IntTime()
-        else:
-            res = await self.autoAdjust_LED()
-
-        self.btn_adjust_leds.setChecked(False)
-        return res
+        async with self.updater.disable_live_plotting():
+            self.btn_adjust_leds.setChecked(True)
+            self.adjusting = True
+            await asyncio.sleep(2)
+            try:
+                if self.args.co3:
+                    res = await self.autoAdjust_IntTime()
+                else:
+                    res = await self.autoAdjust_LED()
+            finally:
+                self.adjusting = False
+                self.btn_adjust_leds.setChecked(False)
+            return res
 
     def add_pco2_info(self):
         self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_CO2)
@@ -894,50 +871,40 @@ class Panel(QtGui.QWidget):
     async def btn_single_meas_clicked(self):
         self.change_widget_state(False)
         # Disable live updating and block button
-        if self.btn_liveplot.isChecked():
-            self.btn_liveplot.click()
-        self.btn_liveplot.setEnabled(False)
-        self.measuring = True
-        # Wait for last live update to finish
-        while self.update_spectra_in_progress:
-            await asyncio.sleep(0.1)
-        # Start single sampling process
-        print("clicked single meas ")
-        message = QtGui.QMessageBox.question(
-            self,
-            "important message!!!",
-            "Did you pump to clean?",
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-        )
-        if message == QtGui.QMessageBox.No:
-            self.btn_single_meas.setChecked(False)
-            self.measuring = False
-            # Re-enable live update button and start it
-            self.btn_liveplot.setEnabled(True)
-            self.btn_liveplot.click()
-            return
+        async with self.updater.disable_live_plotting():
+            self.measuring = True
+            # Start single sampling process
+            print("clicked single meas ")
+            message = QtGui.QMessageBox.question(
+                self,
+                "important message!!!",
+                "Did you pump to clean?",
+                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+            )
+            if message == QtGui.QMessageBox.No:
+                self.btn_single_meas.setChecked(False)
+                self.measuring = False
+                return
 
-        flnmStr, timeStamp = self.get_filename()
-        text, ok = QtGui.QInputDialog.getText(None, "Enter Sample name", flnmStr)
-        if ok:
-            if text != "":
-                flnmStr = text
+            flnmStr, timeStamp = self.get_filename()
+            text, ok = QtGui.QInputDialog.getText(None, "Enter Sample name", flnmStr)
+            if ok:
+                if text != "":
+                    flnmStr = text
 
-            self.mode = "Single"
-            folderPath = self.get_folderPath()
-            # disable all btns in manual tab
-            self.btn_cont_meas.setEnabled(False)
-            self.btn_single_meas.setEnabled(False)
-            self.btn_calibr.setEnabled(False)
+                self.mode = "Single"
+                folderPath = self.get_folderPath()
+                # disable all btns in manual tab
+                self.btn_cont_meas.setEnabled(False)
+                self.btn_single_meas.setEnabled(False)
+                self.btn_calibr.setEnabled(False)
 
-            await self.sample(folderPath, flnmStr, timeStamp)
-            self.single_sample_finished(folderPath, timeStamp, flnmStr)
+                await self.sample(folderPath, flnmStr, timeStamp)
+                self.single_sample_finished(folderPath, timeStamp, flnmStr)
 
-        else:
-            self.btn_single_meas.setChecked(False)
-        # Re-enable live update button and start it
-        self.btn_liveplot.setEnabled(True)
-        self.btn_liveplot.click()
+            else:
+                self.btn_single_meas.setChecked(False)
+                self.measuring = False
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
@@ -992,7 +959,8 @@ class Panel(QtGui.QWidget):
         # self.sample_steps[8].setChecked(True)
 
     def save_results(self, folderPath, flnmStr):
-
+        if self.args.localdev:
+            return
         # self.sample_steps[7].setChecked(True)
         self.append_logbox("Save spectrum data to file")
         self.save_spt(folderPath, flnmStr)
@@ -1020,9 +988,8 @@ class Panel(QtGui.QWidget):
         if not self.args.co3:
             print("get final pH")
             self.get_final_pH(timeStamp)
-            if not self.args.debug:
-                self.save_results(folderPath, flnmStr)
-                print("save results")
+            self.save_results(folderPath, flnmStr)
+            print("save results")
             print("update pH plot")
             self.update_pH_plot()
             print("update infotable ")
@@ -1056,8 +1023,7 @@ class Panel(QtGui.QWidget):
         if not self.args == "co3":
             self.get_final_pH(timeStamp)
             self.StatusBox.setText("Measurement is finished")
-            if not self.args.debug:
-                self.save_results(folderPath, flnmStr)
+            self.save_results(folderPath, flnmStr)
             self.update_pH_plot()
             self.update_infotable()
 
@@ -1120,8 +1086,7 @@ class Panel(QtGui.QWidget):
             print("turn on light source")
             self.instrument.turn_on_relay(self.instrument.light_slot)
             self.btn_lightsource.setChecked(True)
-
-        elif not self.args.co3:
+        else:
             self.update_LEDs()
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
@@ -1130,14 +1095,13 @@ class Panel(QtGui.QWidget):
         # self.timerSpectra_plot.start(600)
         # self.timerTemp_info.start(600)
 
-        if not self.args.co3 or not self.args.debug:
+        if not self.args.co3:
             print("Starting continuous mode ")
             self.textBox.setText("Starting continuous mode ")
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
-        if not self.args.debug:
-            self.textBox.setText("The instrument is ready")
+        self.textBox.setText("The instrument is ready")
 
         if self.args.pco2:
             # change to config file
@@ -1297,7 +1261,8 @@ class Panel(QtGui.QWidget):
         pass
 
     def get_folderPath(self):
-
+        if self.args.localdev:
+            return "IN_LOCALDEV_MODE__NOT_A_FILE"
         if self.args == "co3":
             if self.mode == "Calibration":
                 folderPath = "/home/pi/pHox/data_co3_calibr/"
@@ -1311,7 +1276,6 @@ class Panel(QtGui.QWidget):
 
         if not os.path.exists(folderPath):
             os.makedirs(folderPath)
-
         return folderPath
 
     def create_new_df(self):
@@ -1382,16 +1346,9 @@ class Panel(QtGui.QWidget):
             self.set_LEDs(False)
 
         # grab spectrum
-        if not self.args.seabreeze:
-            dark = await self.instrument.spectrom.get_intensities()
-        elif self.args.seabreeze:
-            # raw = str(n_inj)+'raw'
-            # self.spCounts_df[raw] = await self.instrument.spectrom.get_intensities(
-            #        self.instrument.specAvScans,correct=False)
-            # time.sleep(0.5)
-            dark = await self.instrument.spectrom.get_intensities(
-                self.instrument.specAvScans, correct=True
-            )
+        dark = await self.instrument.spectrom.get_intensities(
+            self.instrument.specAvScans, correct=True
+        )
 
         if self.args.co3:
             # Turn on the light source
@@ -1414,17 +1371,10 @@ class Panel(QtGui.QWidget):
         print("Measuring blank...")
         self.append_logbox("Measuring blank...")
 
-        if not self.args.seabreeze:
-            self.nlCoeff = [1.0229, -9e-6, 6e-10]  # we don't know what it is
-            blank = await self.instrument.spectrom.get_intensities()
-
-            blank_min_dark = np.clip(blank, 1, 16000)
-        else:
-            blank = await self.instrument.spectrom.get_intensities(
-                self.instrument.specAvScans, correct=True
-            )
-            print("blank", blank)
-            blank_min_dark = blank - dark
+        blank = await self.instrument.spectrom.get_intensities(
+            self.instrument.specAvScans, correct=True
+        )
+        blank_min_dark = blank - dark
 
         self.instrument.spectrum = blank
         self.spCounts_df["blank"] = blank
@@ -1468,7 +1418,6 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Dye Injection %d:" % (n_inj + 1))
 
         if not self.args.debug:
-            # self.instrument.cycle_line(self.instrument.dyepump_slot, shots)
             await self.instrument.pump_dye(self.instrument.nshots)
 
         self.append_logbox("Mixing")
@@ -1488,11 +1437,15 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Get spectrum")
         # measure spectrum after injecting nshots of dye
         # Write spectrum to the file
-        if self.args.seabreeze:
-            # raw = str(n_inj)+'raw'
-            # self.spCounts_df[raw] = await self.instrument.spectrom.get_intensities(
-            #        self.instrument.specAvScans,correct=False)
-            # time.sleep(0.5)
+        if self.args.localdev:
+            print("in debug")
+            postinj_spec = await self.instrument.spectrom.get_intensities(
+                self.instrument.specAvScans, correct=True
+            )
+            postinj_spec_min_dark = postinj_spec  # - dark
+            spAbs_min_blank = postinj_spec_min_dark
+            await self.update_spectra_plot_manual(postinj_spec)
+        else:
             postinj_spec = await self.instrument.spectrom.get_intensities(
                 self.instrument.specAvScans, correct=True
             )
@@ -1501,42 +1454,8 @@ class Panel(QtGui.QWidget):
 
             postinj_spec_min_dark = postinj_spec - dark
             # Absorbance
-            if not self.args.debug:
-                spAbs_min_blank = -np.log10(postinj_spec_min_dark / blank_min_dark)
-            else:
-                print("WRONG VALUES")
-                spAbs_min_blank = postinj_spec
+            spAbs_min_blank = -np.log10(postinj_spec_min_dark / blank_min_dark)
 
-        elif self.args.debug:
-            print("in debug")
-            postinj_spec = await self.instrument.spectrom.get_intensities(
-                self.instrument.specAvScans, correct=True
-            )
-            postinj_spec_min_dark = postinj_spec  # - dark
-            spAbs_min_blank = postinj_spec_min_dark
-            await self.update_spectra_plot_manual(postinj_spec)
-
-        else:
-            postinj = await self.instrument.spectrom.get_intensities()
-            # postinjection minus dark
-            postinj_min_dark = np.clip(postinj, 1, 16000)
-            # print ('postinj_min_dark')
-            cfb = (
-                self.nlCoeff[0]
-                + self.nlCoeff[1] * blank_min_dark
-                + self.nlCoeff[2] * blank_min_dark ** 2
-            )
-
-            cfp = (
-                self.nlCoeff[0]
-                + self.nlCoeff[1] * postinj_min_dark
-                + self.nlCoeff[2] * postinj_min_dark ** 2
-            )
-
-            bmdCorr = blank_min_dark * cfb
-            pmdCorr = postinj_min_dark * cfp
-            spAbs_min_blank = np.log10((bmdCorr / pmdCorr).astype(int))
-            sp = np.log10((blank_min_dark / postinj_min_dark).astype(int))
         self.spCounts_df[str(n_inj)] = postinj_spec
         return spAbs_min_blank
 
@@ -1625,6 +1544,62 @@ class Panel(QtGui.QWidget):
         udp.send_data("$PPHOX," + row_to_string + ",*\n")
 
 
+class SensorStateUpdateManager:
+    """
+    This class should control reading values from sensors and if new values have been fetched, it is responsible for
+    updating the relevant Widgets in the main panel.
+
+    In addition an object of this class control if the updating is done via a live loop or if the live loop is disabled
+    and the updates have to be called manually.
+    """
+    def __init__(self, main_qt_panel: Panel, live_button: QtGui.QPushButton):
+        # Number of UI elements that have entered the 'disable_live_plotting' CM
+        self.disable_requests = 0
+        self.main_qt_panel = main_qt_panel
+        self.update_spectra_in_progress = False
+        self.live_button = live_button
+
+    def get_interval_time(self):
+        time_buffer = min(max(self.main_qt_panel.instrument.specIntTime * 2, 200), 1000)
+        return self.main_qt_panel.instrument.specIntTime + time_buffer
+
+    @asynccontextmanager
+    async def disable_live_plotting(self):
+        self.disable_requests += 1
+        self.live_button.setEnabled(False)
+        await self.stop_live_plot()
+        try:
+            yield None
+        finally:
+            self.disable_requests -= 1
+            if self.disable_requests == 0:
+                self.live_button.setEnabled(True)
+                self.start_live_plot()
+
+    def start_live_plot(self):
+        if not self.live_button.isChecked():
+            self.live_button.setChecked(True)
+        self.main_qt_panel.timerSpectra_plot.start(self.get_interval_time())
+
+    async def stop_live_plot(self):
+        if self.live_button.isChecked():
+            self.live_button.setChecked(False)
+        self.main_qt_panel.timerSpectra_plot.stop()
+        while self.update_spectra_in_progress:
+            await asyncio.sleep(0.05)
+
+    async def btn_liveplot_clicked_updater(self):
+        if not self.live_button.isChecked():
+            await self.stop_live_plot()
+        else:
+            self.start_live_plot()
+
+    async def set_specIntTime(self, new_int_time):
+        await self.main_qt_panel.instrument.spectrom.set_integration_time(new_int_time)
+        self.main_qt_panel.instrument.specIntTime = new_int_time
+        self.main_qt_panel.timerSpectra_plot.setInterval(self.get_interval_time())
+
+
 class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1639,7 +1614,7 @@ class boxUI(QtGui.QMainWindow):
         parser.add_argument("--pco2", action="store_true")
         parser.add_argument("--co3", action="store_true")
         parser.add_argument("--debug", action="store_true")
-        parser.add_argument("--seabreeze", action="store_true")
+        parser.add_argument("--localdev", action="store_true")
         parser.add_argument("--stability", action="store_true")
 
         self.args = parser.parse_args()
@@ -1673,9 +1648,8 @@ class boxUI(QtGui.QMainWindow):
                 self.main_widget.instrument.turn_off_relay(
                     self.main_widget.instrument.light_slot
                 )
-            if self.args.seabreeze:
-                self.main_widget.instrument.spectrom.spec.close()
 
+            self.main_widget.instrument.spectrom.spec.close()
             print("timer is stopped")
             self.main_widget.timer_contin_mode.stop()
             udp.UDP_EXIT = True

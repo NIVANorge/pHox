@@ -11,7 +11,7 @@ import time
 
 class CO2_instrument(object):
     def __init__(self, config_name):
-        self.config_name = config
+        self.config_name = config_name
         self.load_config()
 
         """def get_V(self, nAver, ch):

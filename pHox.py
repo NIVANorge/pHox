@@ -101,14 +101,12 @@ class Spectro_seabreeze(object):
         )
 
     def set_integration_time_not_async(self, time_millisec):
-        microsec = time_millisec * 1000
         if self.busy:
             print(
-                "set_integration_time was called twice, retunrning without doing anything"
+                "set_integration_time was called twice, returning without doing anything"
             )
-        return
         self.busy = True
-        self.spec.integration_time_micros(microsec)  # 0.1 seconds
+        self.spec.integration_time_micros(time_millisec * 1000)
         self.busy = False
 
     async def set_integration_time(self, time_millisec):
@@ -145,135 +143,13 @@ class Spectro_seabreeze(object):
         self.spec.scans_to_average(num)
 
 
-class STSVIS(object):
-    ## Ocean Optics STS protocol manager ##
-    # DO NOT CHANGE WITHOUT PROPER KNOWLEDGE OF THE DEVICE USB PROTOCOL #
-    # spectrophotometer functions, used for pH
-
-    def __init__(self):
-        # Create object (connection) for the device
-        self._dev = usb.core.find(idVendor=0x2457, idProduct=0x4000)
-        if self._dev == None:
-            raise ValueError("OceanOptics STS: device not found\n")
-        else:
-            print("Initializing STS spectrophotometer...")
-
-        self.EP1_out = 0x01  # endpoint address
-        self.EP1_in = 0x81
-        self.EP2_in = 0x82
-        self.EP2_out = 0x02
-
-        self.gcsCmd = self.build_packet(
-            b"\x00\x10\x10\x00", b"\x00", b"\x00\x00\x00\x00"
-        )
-        self.pixels = 1024
-        self.nWvlCalCoeff = b"\x00\x01\x02\x03"
-        self.reset_device()
-        time.sleep(0.5)
-        self.wvlCalCoeff = self.get_wvlCalCoeff()
-
-    def build_packet(self, messageType, immediateDataLength, immediateData):
-        headerTop = b"\xC1\xC0"
-        protocolVersion = b"\x00\x10"
-        flags = b"\x00\x00"
-        errorNumber = b"\x00\x00"
-        regarding = b"\x00" * 4
-        reserved = b"\x00" * 6
-        checksumType = b"\x00"
-        unused = b"\x00" * 12
-        bytesRemaining = b"\x14\x00\x00\x00"
-        checksum = b"\x00" * 16
-        footer = b"\xC5\xC4\xC3\xC2"
-        packet = (
-            headerTop
-            + protocolVersion
-            + flags
-            + errorNumber
-            + messageType
-            + regarding
-            + reserved
-            + checksumType
-            + immediateDataLength
-            + immediateData
-            + unused
-            + bytesRemaining
-            + checksum
-            + footer
-        )
-        return packet
-
-    def reset_device(self):
-        msgType = b"\x00" * 4
-        immDataLength = b"\x00"
-        immData = b"\x00" * 4
-        try:
-            self._dev.write(
-                self.EP1_out, self.build_packet(msgType, immDataLength, immData)
-            )
-        except usb.core.USBError:
-            pass
-        time.sleep(1.5)
-        self._dev = usb.core.find(idVendor=0x2457, idProduct=0x4000)
-        if self._dev is None:
-            raise ValueError("Device not found")
-
-    def set_integration_time(self, time_ms):
-        msgType = b"\x10\x00\x11\x00"
-        immDataLength = b"\x04"
-        immData = struct.pack("<I", time_ms * 1000)
-        self._dev.write(
-            self.EP1_out, self.build_packet(msgType, immDataLength, immData)
-        )
-        time.sleep(0.5)
-
-    def set_scans_average(self, nscans):
-        print("inside func set_scans_average nscans", nscans)
-        msgType = b"\x10\x00\x12\x00"
-        immDataLength = b"\x02"
-        immData = struct.pack("<H", int(nscans)) + b"\x00\x00"
-        print("send message to instr, set scan average")
-        self._dev.write(
-            self.EP1_out, self.build_packet(msgType, immDataLength, immData)
-        )
-        time.sleep(5)
-
-    def get_wvlCalCoeff(self):
-        # get the coefficients
-        print("Getting wavelength calibration coefficients...")
-        msgType = b"\x01\x01\x18\x00"
-        immDataLength = b"\x01"
-
-        wvlCalCoeff = []
-        for i in range(4):
-            immData = struct.pack("B", i) + b"\x00\x00\x00"
-            self._dev.write(
-                self.EP1_out, self.build_packet(msgType, immDataLength, immData)
-            )
-            rx_packet = self._dev.read(self.EP1_in, 64, timeout=1000)  # receive message
-            wvlCalCoeff.append(
-                float(struct.unpack("<f", struct.pack("4B", *rx_packet[24:28]))[0])
-            )
-        return wvlCalCoeff
-
-    def get_intensities(self):
-        self._dev.write(self.EP1_out, self.gcsCmd)
-        rx_packet = self._dev.read(self.EP1_in, 64 + 2048, timeout=10000)
-        spec = rx_packet[44:2092]
-        spectralCounts = struct.unpack("<1024H", struct.pack("2048B", *spec))
-        spectralCounts = np.array(spectralCounts, dtype=float)
-        return spectralCounts
-
-
 class Common_instrument(object):
     def __init__(self, panelargs, config_name):
         self.args = panelargs
         self.config_name = config_name
-        if self.args.seabreeze:
-            self.spectrom = Spectro_seabreeze()
-        elif self.args.debug:
-            self.spectrom = Spectro_localtest()
-        else:
-            self.spectrom = STSVIS()
+        self.spectrom = (
+            Spectro_seabreeze() if not self.args.debug else Spectro_localtest()
+        )
 
         # initialize PWM lines
         if not self.args.debug:
@@ -410,19 +286,7 @@ class Common_instrument(object):
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
         """
-        if not self.args.seabreeze:
-            coeffs = self.spectrom.wvlCalCoeff
-            wvls = np.zeros(self.spectrom.pixels, dtype=float)
-            pixels = np.arange(self.spectrom.pixels)
-            wvls = (
-                coeffs[0]
-                + coeffs[1] * pixels
-                + coeffs[2] * (pixels ** 2)
-                + coeffs[3] * (pixels ** 3)
-            )
-        else:
-            wvls = self.spectrom.get_wavelengths()
-
+        wvls = self.spectrom.get_wavelengths()
         return wvls
 
     def find_nearest(self, items, value):
@@ -545,9 +409,6 @@ class pH_instrument(Common_instrument):
         # self.args = panelargs
         self.load_config_pH()
 
-        if not self.args.seabreeze:
-            self.spectrom.set_scans_average(1)
-
         # setup PWM and SSR lines
         if not self.args.debug:
             for pin in range(4):
@@ -644,10 +505,6 @@ class pH_instrument(Common_instrument):
         return LED, adj, res
 
     async def auto_adjust(self, *args):
-
-        if not self.args.seabreeze:
-            self.spectrom.set_scans_average(1)
-
         self.adj_action = None
         increment_sptint = 200
         n = 0
