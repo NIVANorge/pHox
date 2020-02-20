@@ -165,15 +165,27 @@ class Panel(QtGui.QWidget):
         # TODO Add more invalidating checks
         if mode_set == "Manual":
             self.manual_widgets_set_enabled(True)
+
         if mode_set == "Continuous":
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
-        if mode_set == "Measuring":
+            self.config_widgets_set_state(False)
+            self.manual_widgets_set_enabled(False)
+
+        if mode_set == 'Calibration':
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
+            self.config_widgets_set_state(False)
+            self.btn_manual_mode.setEnabled(False)
+
+        if mode_set in ["Measuring", "Adjusting"]:
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+
             if "Continuous" not in self.major_modes:
                 self.btn_cont_meas.setEnabled(False)
-            self.btn_manual_mode.setEnabled(False)
+            if 'Manual' not in self.major_modes:
+                self.btn_manual_mode.setEnabled(False)
             self.manual_widgets_set_enabled(False)
             self.config_widgets_set_state(False)
 
@@ -194,11 +206,40 @@ class Panel(QtGui.QWidget):
             if "Measuring" not in self.major_modes:
                 self.btn_single_meas.setEnabled(True)
                 self.btn_calibr.setEnabled(True)
+                self.config_widgets_set_state(True)
+
         if mode_unset == "Measuring":
             if "Continuous" not in self.major_modes:
                 self.btn_single_meas.setEnabled(True)
                 self.btn_calibr.setEnabled(True)
+                self.config_widgets_set_state(True)
+                self.btn_manual_mode.setEnabled(True)
             self.btn_cont_meas.setEnabled(True)
+
+        #if mode_unset == "Adjusting" and "Measuring" not in self.major_modes:
+        #    self.manual_widgets_set_enabled(True)
+        #    self.config_widgets_set_state(True)
+
+        #if mode_unset == 'Adjusting' and "Measuring" in self.major_modes:
+        if mode_unset == 'Adjusting'  and "Measuring" not in self.major_modes:
+            self.manual_widgets_set_enabled(True)
+            self.config_widgets_set_state(True)
+            self.btn_calibr.setEnabled(True)
+        '''if mode_unset == 'Adjusting' and 'Manual' not in self.major_modes and 'Measuring' not in self.major_modes:
+            self.manual_widgets_set_enabled(True)
+            self.config_widgets_set_state(True)
+            self.btn_calibr.setEnabled(True)'''
+        if mode_unset == "Manual" and 'Adjusting' in self.major_modes:
+            self.manual_widgets_set_enabled(False)
+
+
+        if mode_unset == "Measuring":
+            if "Continuous" not in self.major_modes:
+                self.btn_single_meas.setEnabled(True)
+                self.btn_calibr.setEnabled(True)
+                self.config_widgets_set_state(True)
+            self.btn_cont_meas.setEnabled(True)
+
 
         self.major_modes.remove(mode_unset)
         logging.debug(f"New mode:{self.major_modes}")
@@ -266,14 +307,14 @@ class Panel(QtGui.QWidget):
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [
-            QtWidgets.QCheckBox("0. Start new measurement"),
+            #QtWidgets.QCheckBox("0. Start new measurement"),
             QtWidgets.QCheckBox("1. Adjusting LEDS"),
             QtWidgets.QCheckBox("2  Measuring dark and blank"),
             QtWidgets.QCheckBox("3. Measurement 1"),
             QtWidgets.QCheckBox("4. Measurement 2"),
             QtWidgets.QCheckBox("5. Measurement 3"),
             QtWidgets.QCheckBox("6. Measurement 4"),
-            QtWidgets.QCheckBox("7. Save the Data"),
+            #QtWidgets.QCheckBox("7. Save the Data"),
         ]
 
         layout = QtGui.QGridLayout()
@@ -306,10 +347,8 @@ class Panel(QtGui.QWidget):
         self.table_measurements.item(0, 0).setFont(font)
         self.table_measurements.item(6, 0).setFont(font)
 
-        [
-            self.fill_table_measurements(k, 0, v)
-            for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"], 1)
-        ]
+        [self.fill_table_measurements(k, 0, v)
+            for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"], 1)]
         [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["T lab", "Voltage", "T insitu", "S insitu"], 7)]
 
         self.textBox_LastpH = QtGui.QTextEdit()
@@ -322,21 +361,26 @@ class Panel(QtGui.QWidget):
 
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
+        self.btn_calibr = self.create_button("Make calibration", True)
+
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         if not self.args.co3:
             self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
         self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
-        self.ferrypump_box.setChecked(True)
+        #self.ferrypump_box.setChecked(True)
 
         self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
 
         self.tab1.layout.addWidget(self.StatusBox, 1, 0, 1, 1)
-        self.tab1.layout.addWidget(self.ferrypump_box, 1, 1, 1, 1)
+
         self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 1, 1)
-        self.tab1.layout.addWidget(self.table_measurements, 2, 1, 1, 1)
+        self.tab1.layout.addWidget(self.table_measurements, 2, 1, 3, 1)
+
+        self.tab1.layout.addWidget(self.ferrypump_box, 3, 0, 1, 1)
+        self.tab1.layout.addWidget(self.btn_calibr, 4, 0)
 
         self.tab1.setLayout(self.tab1.layout)
 
@@ -440,6 +484,7 @@ class Panel(QtGui.QWidget):
         self.dye_combo.setEnabled(state)
         self.specIntTime_combo.setEnabled(state)
         self.samplingInt_combo.setEnabled(state)
+        self.btn_save_config.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
         logging.info(f"widgets_enabled_change, state is '{state}'")
@@ -470,11 +515,11 @@ class Panel(QtGui.QWidget):
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
-        self.btn_calibr = self.create_button("Make calibration", True)
+
         self.btn_liveplot = self.create_button("Live plot", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-        btn_grid.addWidget(self.btn_calibr, 0, 1)
+
 
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
@@ -838,23 +883,28 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
-        if self.btn_calibr.isChecked():
-            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
-                valve_turned = QtGui.QMessageBox.question(self, "Manually turn the valve to calibration mode",
-                                                          QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-                valve_turned_confirm = QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
-                                                                  QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-                if valve_turned == QtGui.QMessageBox.Yes and valve_turned_confirm == QtGui.QMessageBox.Yes:
-                    folderPath = self.get_folderPath()
-                    flnmStr, timeStamp = self.get_filename()
-                    await self.sample(folderPath, flnmStr, timeStamp)
+        #if self.btn_calibr.isChecked():
+        async with self.updater.disable_live_plotting(),self.ongoing_major_mode_contextmanager("Calibration") :
+            logging.info("clicked calibration")
 
-                    QtGui.QMessageBox.question(self, "Manually turn the valve back to ferrybox mode",
-                                               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            valve_turned = QtGui.QMessageBox.question(self,"important message!!!",
+                                                      "Manually turn the valve to calibration mode",
+                                                      QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            valve_turned_confirm = QtGui.QMessageBox.question(self,"important message!!!",
+                                                    "ARE YOU SURE YOU TURNED THE VALVE???",
+                                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
 
-                    QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
-                                               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-                self.btn_calibr.setChecked(False)
+            if valve_turned == QtGui.QMessageBox.Yes and valve_turned_confirm == QtGui.QMessageBox.Yes:
+                folderPath = self.get_folderPath()
+                flnmStr, timeStamp = self.get_filename()
+                await self.sample(folderPath, flnmStr, timeStamp)
+
+                QtGui.QMessageBox.question(self, "Manually turn the valve back to ferrybox mode",
+                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+
+                QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
+                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            self.btn_calibr.setChecked(False)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
