@@ -333,26 +333,30 @@ class Panel(QtGui.QWidget):
 
         self.StatusBox = QtGui.QLineEdit()
 
-        self.table_measurements = QtGui.QTableWidget(12, 2)
-        self.table_measurements.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-        self.table_measurements.verticalHeader().hide()
-        self.table_measurements.horizontalHeader().hide()
-        self.table_measurements.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.last_measurement_table_groupbox = QtGui.QGroupBox("Last Measurement")
+        self.live_table_groupbox = QtGui.QGroupBox("Live Updates")
 
-        font = QtGui.QFont()
-        font.setBold(True)
-        self.fill_table_measurements(0, 0, "Last")
-        self.fill_table_measurements(0, 1, 'Measurement')
+        self.last_measurement_table = QtGui.QTableWidget(5, 2)
+        self.live_updates_table = QtGui.QTableWidget(5, 2)
 
-        self.fill_table_measurements(6, 0, "Live ")
-        self.fill_table_measurements(6, 1, "Updates")
+        for table in [self.last_measurement_table,self.live_updates_table]:
+            table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+            table.verticalHeader().hide()
+            table.horizontalHeader().hide()
+            table.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
 
-        self.table_measurements.item(0, 0).setFont(font)
-        self.table_measurements.item(6, 0).setFont(font)
+        [self.fill_table_measurement(k, 0, v)
+            for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
+        [self.fill_live_updates_table(k, 0, v) for k, v in enumerate(["T lab", "Voltage", "T insitu", "S insitu"])]
 
-        [self.fill_table_measurements(k, 0, v)
-            for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"], 1)]
-        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["T lab", "Voltage", "T insitu", "S insitu"], 7)]
+
+        self.table_grid = QtGui.QGridLayout()
+        self.table_live_grid = QtGui.QGridLayout()
+        self.table_live_grid.addWidget(self.live_updates_table)
+        self.table_grid.addWidget(self.last_measurement_table)
+
+        self.last_measurement_table_groupbox.setLayout(self.table_grid)
+        self.live_table_groupbox.setLayout(self.table_live_grid)
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -374,13 +378,17 @@ class Panel(QtGui.QWidget):
         self.ferrypump_box.setEnabled(False)
         #self.ferrypump_box.setChecked(True)
 
-        self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
+
+
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
+        self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
+        self.tab1.layout.addWidget(self.live_table_groupbox, 2, 1, 3, 1)
 
-        self.tab1.layout.addWidget(self.StatusBox, 1, 0, 1, 1)
-        self.tab1.layout.addWidget(self.table_measurements, 1, 1, 4, 1)
 
-        self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 1, 1)
+        self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
+        self.tab1.layout.addWidget(self.sample_steps_groupBox, 1, 0, 1, 1)
+
+        self.tab1.layout.addWidget(self.StatusBox, 2, 0, 1, 1)
 
         self.tab1.layout.addWidget(self.ferrypump_box, 3, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_calibr, 4, 0)
@@ -391,8 +399,11 @@ class Panel(QtGui.QWidget):
         t = datetime.now().strftime("%b-%d %H:%M:%S")
         self.logTextBox.appendPlainText(t + "  " + message)
 
-    def fill_table_measurements(self, x, y, item):
-        self.table_measurements.setItem(x, y, QtGui.QTableWidgetItem(item))
+    def fill_table_measurement(self, x, y, item):
+        self.last_measurement_table.setItem(x, y, QtGui.QTableWidgetItem(item))
+
+    def fill_live_updates_table(self, x, y, item):
+        self.live_updates_table.setItem(x, y, QtGui.QTableWidgetItem(item))
 
     def fill_table_config(self, x, y, item):
         self.tableConfigWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
@@ -1004,9 +1015,9 @@ class Panel(QtGui.QWidget):
         Voltage = round(Voltage, prec["vNTC"])
         T_lab = round((self.instrument.TempCalCoef[0] * Voltage) + self.instrument.TempCalCoef[1], prec["Tdeg"],)
 
-        self.table_live.setItem
-        self.fill_table_live(7, 1, str(T_lab))
-        self.fill_table_live(8, 1, str(Voltage))
+
+        self.fill_live_updates_table(0, 1, str(T_lab))
+        self.fill_live_updates_table(1, 1, str(Voltage))
 
     def update_table_last_meas(self):
         if not self.args.co3:
