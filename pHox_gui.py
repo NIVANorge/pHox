@@ -309,7 +309,7 @@ class Panel(QtGui.QWidget):
         self.sample_steps = [
             #QtWidgets.QCheckBox("0. Start new measurement"),
             QtWidgets.QCheckBox("1. Adjusting LEDS"),
-            QtWidgets.QCheckBox("2  Measuring dark and blank"),
+            QtWidgets.QCheckBox("2  Measuring dark,blank"),
             QtWidgets.QCheckBox("3. Measurement 1"),
             QtWidgets.QCheckBox("4. Measurement 2"),
             QtWidgets.QCheckBox("5. Measurement 3"),
@@ -341,8 +341,11 @@ class Panel(QtGui.QWidget):
 
         font = QtGui.QFont()
         font.setBold(True)
-        self.fill_table_measurements(0, 0, "Last Measurement")
-        self.fill_table_measurements(6, 0, "Live Updates")
+        self.fill_table_measurements(0, 0, "Last")
+        self.fill_table_measurements(0, 1, 'Measurement')
+
+        self.fill_table_measurements(6, 0, "Live ")
+        self.fill_table_measurements(6, 1, "Updates")
 
         self.table_measurements.item(0, 0).setFont(font)
         self.table_measurements.item(6, 0).setFont(font)
@@ -375,9 +378,9 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
 
         self.tab1.layout.addWidget(self.StatusBox, 1, 0, 1, 1)
+        self.tab1.layout.addWidget(self.table_measurements, 1, 1, 4, 1)
 
         self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 1, 1)
-        self.tab1.layout.addWidget(self.table_measurements, 2, 1, 3, 1)
 
         self.tab1.layout.addWidget(self.ferrypump_box, 3, 0, 1, 1)
         self.tab1.layout.addWidget(self.btn_calibr, 4, 0)
@@ -969,11 +972,12 @@ class Panel(QtGui.QWidget):
             }
         )
 
-        self.append_logbox("Single measurement is done...")
-        # self.sample_steps[8].setChecked(True)
-
     def save_results(self, folderPath, flnmStr):
+        print('saving results')
         if self.args.localdev:
+            print('saving results localdev')
+            folderPath = os.getcwd()
+            self.save_logfile_df(folderPath, flnmStr)
             return
         # self.sample_steps[7].setChecked(True)
         self.append_logbox("Save spectrum data to file")
@@ -1006,13 +1010,6 @@ class Panel(QtGui.QWidget):
 
     def update_table_last_meas(self):
         if not self.args.co3:
-
-            """self.fill_table_measurements(1, 1, str(self.pH_log_row["pH_lab"].values[0]))
-            self.fill_table_measurements(2, 1, str(self.pH_log_row["T_lab"].values[0]))
-            self.fill_table_measurements(3, 1, str(self.pH_log_row["pH_insitu"].values[0]))
-            self.fill_table_measurements(4, 1, str(self.pH_log_row["fb_temp"].values[0]))
-            self.fill_table_measurements(5, 1, str(self.pH_log_row["fb_sal"].values[0]))"""
-
             [
                 self.fill_table_measurements(k, 1, str(self.pH_log_row[v].values[0]))
                 for k, v in enumerate(["pH_lab", "T_lab", "pH_insitu", "fb_temp", "fb_sal"], 1)
@@ -1160,7 +1157,6 @@ class Panel(QtGui.QWidget):
             # pump if single, close the valve
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
-            self.sample_steps[0].setChecked(True)
 
             self.create_new_df()
 
@@ -1173,7 +1169,7 @@ class Panel(QtGui.QWidget):
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
-            self.sample_steps[1].setChecked(True)
+            self.sample_steps[0].setChecked(True)
             self.append_logbox("Autoadjust LEDS")
             res = await self.call_autoAdjust()
             logging.info(f"res after autoadjust: '{res}")
@@ -1181,7 +1177,7 @@ class Panel(QtGui.QWidget):
                 logging.info("could not adjust leds")
 
                 # Step 2. Take dark and blank
-                self.sample_steps[2].setChecked(True)
+                self.sample_steps[1].setChecked(True)
                 await asyncio.sleep(0.05)
                 dark = await self.measure_dark()
                 blank_min_dark = await self.measure_blank(dark)
@@ -1190,14 +1186,14 @@ class Panel(QtGui.QWidget):
                 await self.measurement_cycle(blank_min_dark, dark)
 
                 # Step 7 Open valve
-                self.sample_steps[7].setChecked(True)
-                await asyncio.sleep(0.05)
                 logging.info("Opening the valve ...")
                 self.append_logbox("Opening the valve ...")
                 await self.instrument.set_Valve(False)
 
         if not self.args.co3:
             self.get_final_pH(timeStamp)
+            self.append_logbox("Single measurement is done...")
+            self.append_logbox('Saving results')
             self.save_results(folderPath, flnmStr)
             self.update_pH_plot()
             self.update_table_last_meas()
@@ -1310,7 +1306,7 @@ class Panel(QtGui.QWidget):
     async def measurement_cycle(self, blank_min_dark, dark):
         for n_inj in range(self.instrument.ncycles):
             logging.info(f"n_inj='{n_inj}")
-            self.sample_steps[n_inj + 3].setChecked(True)
+            self.sample_steps[n_inj + 2].setChecked(True)
             await asyncio.sleep(0.05)
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
@@ -1392,69 +1388,24 @@ class Panel(QtGui.QWidget):
 
     def save_logfile_df(self, folderPath, flnmStr):
         logging.info("save log file df")
-        # check time of cration of the last log file
-        # if more than one hour,
-        # create new file and write data there .
-        # in the separate logs folder .
-        # additionaly to regular common Ph log
-
-        hour_log_path = folderPath + "logs/"
-        logging.info(f"hour_log_path: {hour_log_path}")
-        hour_log_flnm = hour_log_path + flnmStr + ".log"
-        logging.info(f"hour_log_flnm: {hour_log_flnm}")
-
+        hour_log_path = folderPath + "/logs/"
         if not os.path.exists(hour_log_path):
             os.makedirs(hour_log_path)
 
+        hour_log_flnm = os.path.join(hour_log_path, datetime.now().strftime("%Y%m%d_%H")) + '.log'
+        if not os.path.exists(hour_log_flnm):
             self.pH_log_row.to_csv(hour_log_flnm, index=False, header=True)
-            # and create logfile
         else:
-            # list all files in the directory
-            files_in_path = os.listdir(hour_log_path)
-            logging.info(f"files_in_path: {files_in_path}")
+            self.pH_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=True)
 
-            # convert names to datetimes
-            file_times = [datetime.strptime(n[:-4], self.fformat) for n in files_in_path]
-
-            # find latest file
-            last_file_time = max(file_times)
-            logging.info(f"last_file_time: {last_file_time}")
-            # and its index
-            ind_last_file = np.argmax(file_times)
-
-            # get the name
-            last_file_name = files_in_path[ind_last_file]
-
-            # convert filename (newcoming) to datetime
-            new_time = datetime.strptime(flnmStr, self.fformat)
-
-            # calculate delta in hours
-            delta = (new_time - last_file_time).seconds // 3600
-            logging.info(f"delta in times log file {delta}")
-            if delta > 1:
-                # if more than hour, create a new file
-                self.pH_log_row.to_csv(hour_log_flnm, index=False, header=True)
-            else:
-                # else append the old hourly file
-                self.pH_log_row.to_csv(last_file_name, mode="a", index=False, header=False)
-
-        logfile = os.path.join(folderPath, "pH.log")
-        # logfile_hourly =
-        if os.path.exists(logfile):
-            self.pH_log_row.to_csv(logfile, mode="a", index=False, header=False)
-        else:
-            """log_df = pd.DataFrame(
-                columns= ["Time","Lon","Lat","fb_temp",
-                         "fb_sal",'SHIP',"pH_lab", 
-                          "T_lab", "perturbation",
-                          "evalAnir", "pH_insitu"])"""
-            self.pH_log_row.to_csv(logfile, index=False, header=True)
+        logging.info(f"hour_log_path: {hour_log_path}")
+        hour_log_flnm = hour_log_path + flnmStr + ".log"
+        logging.info(f"hour_log_flnm: {hour_log_flnm}")
         logging.info("saved log_df")
 
     def send_to_ferrybox(self):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
         udp.send_data("$PPHOX," + row_to_string + ",*\n")
-
 
 class SensorStateUpdateManager:
     """

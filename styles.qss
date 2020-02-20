@@ -39,7 +39,7 @@ QSlider::sub-page {background: #79c98d;}
 
 QPushButton {
   font-size: 10pt;
-  background-color: #505F69;
+  background-color: #32414B;
   border: 1px solid #32414B;
   color: #F0F0F0;
   border-radius: 4px;
@@ -49,7 +49,7 @@ QPushButton {
 }
 
 QPushButton:disabled {
-  background-color: #32414B;
+  background-color:  #505F69;
   border: 1px solid #32414B;
   color: #F0F0F0;
   border-radius: 4px;

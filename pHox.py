@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import os
 import random
 import re
@@ -92,13 +93,13 @@ class Spectro_seabreeze(object):
                 self.spectro_type = sensor_code
                 break
         if not self.spectro_type:
-            print("could not get the spectro type, defaulting to FLMT")
+            logging.info("could not get the spectro type, defaulting to FLMT")
             self.spectro_type = "FLMT"
-        print("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
+        logging.info("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
 
     def set_integration_time_not_async(self, time_millisec):
         if self.busy:
-            print("set_integration_time was called twice, returning without doing anything")
+            logging.info("set_integration_time was called twice, returning without doing anything")
         self.busy = True
         self.spec.integration_time_micros(time_millisec * 1000)
         self.busy = False
@@ -168,7 +169,7 @@ class Common_instrument(object):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
-            print("Closing the valve ...")
+            logging.info("Closing the valve ...")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
         self.rpi.write(ch1, True)
         self.rpi.write(ch2, False)
@@ -634,7 +635,7 @@ class pH_instrument(Common_instrument):
         nrows = evalPar_df.shape[0]
 
         if self.args.localdev:
-            print("ph eval local mode")
+            logging.info("ph eval local mode")
             x = evalPar_df["Vol_injected"].values
             y = pH_t_corr.values * 0
             final_slope = 1
@@ -651,9 +652,9 @@ class pH_instrument(Common_instrument):
                 final_slope = slope1
                 if r_value ** 2 > 0.9:
                     pH_lab = intercept
-                    print("r_value **2 > 0.9")
+                    logging.info("r_value **2 > 0.9")
                 else:
-                    print("r_value **2 < 0.9 take two last measurements")
+                    logging.info("r_value **2 < 0.9 take two last measurements")
                     x = x[:-2]
                     y = y[:-2]
                     slope2, intercept, r_value, _, _ = stats.linregress(x, y)
@@ -713,7 +714,7 @@ class Test_instrument(pH_instrument):
     async def set_Valve(self, status):
         pass
         if status:
-            print("Closing the valve ...")
+            logging.info("Closing the valve ...")
         await asyncio.sleep(0.3)
 
     def turn_on_relay(self, line):
@@ -739,7 +740,7 @@ class Test_instrument(pH_instrument):
 
     async def pump_dye(self, nshots):
         for shot in range(nshots):
-            print("inject shot {}".format(shot))
+            logging.info("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
             await asyncio.sleep(0.3)
             self.turn_off_relay(self.dyepump_slot)
