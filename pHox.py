@@ -94,17 +94,11 @@ class Spectro_seabreeze(object):
         if not self.spectro_type:
             print("could not get the spectro type, defaulting to FLMT")
             self.spectro_type = "FLMT"
-        print(
-            "spectro_type set to '{}' for spec '{}'".format(
-                self.spectro_type, self.spec
-            )
-        )
+        print("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
 
     def set_integration_time_not_async(self, time_millisec):
         if self.busy:
-            print(
-                "set_integration_time was called twice, returning without doing anything"
-            )
+            print("set_integration_time was called twice, returning without doing anything")
         self.busy = True
         self.spec.integration_time_micros(time_millisec * 1000)
         self.busy = False
@@ -124,9 +118,7 @@ class Spectro_seabreeze(object):
             sp = self.spec.intensities(correct_nonlinearity=correct)
             if num_avg > 1:
                 for _ in range(num_avg):
-                    sp = np.vstack(
-                        [sp, self.spec.intensities(correct_nonlinearity=correct)]
-                    )
+                    sp = np.vstack([sp, self.spec.intensities(correct_nonlinearity=correct)])
                 sp = np.mean(np.array(sp), axis=0)
             return sp
 
@@ -147,9 +139,7 @@ class Common_instrument(object):
     def __init__(self, panelargs, config_name):
         self.args = panelargs
         self.config_name = config_name
-        self.spectrom = (
-            Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
-        )
+        self.spectrom = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
 
         # initialize PWM lines
         if not self.args.localdev:
@@ -176,12 +166,10 @@ class Common_instrument(object):
 
     async def set_Valve(self, status):
         chEn = self.valve_slots[0]
-        ch1 = self.valve_slots[1]
-        ch2 = self.valve_slots[2]
+        ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
             print("Closing the valve ...")
-            ch1 = self.valve_slots[2]
-            ch2 = self.valve_slots[1]
+            ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
         self.rpi.write(ch1, True)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, True)
@@ -189,7 +177,6 @@ class Common_instrument(object):
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, False)
-
 
     def load_config(self):
 
@@ -524,15 +511,11 @@ class pH_instrument(Common_instrument):
 
             if adj1:
                 print("*** adj1 = True")
-                LED2, adj2, res2 = await self.find_LED(
-                    led_ind=1, adj=adj2, LED=self.LED2
-                )
+                LED2, adj2, res2 = await self.find_LED(led_ind=1, adj=adj2, LED=self.LED2)
 
                 if adj2:
                     print("*** adj2 = True")
-                    LED3, adj3, res3 = await self.find_LED(
-                        led_ind=2, adj=adj3, LED=self.LED3
-                    )
+                    LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LED3)
 
             if any(t == "decrease int time" for t in [res1, res2, res3]):
                 if self.adj_action == "increase":
@@ -585,22 +568,13 @@ class pH_instrument(Common_instrument):
             e1 = -0.00132 + 1.6e-5 * T
             e2 = 7.2326 + -0.0299717 * T + 4.6e-5 * (T ** 2)
             e3 = 0.0223 + 0.0003917 * T
-            pK = (
-                4.706 * (S_corr / T)
-                + 26.3300
-                - 7.17218 * np.log10(T)
-                - 0.017316 * S_corr
-            )
+            pK = 4.706 * (S_corr / T) + 26.3300 - 7.17218 * np.log10(T) - 0.017316 * S_corr
             arg = (R - e1) / (e2 - R * e3)
             pH = 0.0047 + pK + np.log10(arg)
 
         elif self.dye == "MCP":
             e1 = -0.007762 + (4.5174 * 10 ** -5) * T
-            e2e3 = (
-                -0.020813
-                + ((2.60262 * 10 ** -4) * T)
-                + (1.0436 * 10 ** -4) * (S_corr - 35)
-            )
+            e2e3 = -0.020813 + ((2.60262 * 10 ** -4) * T) + (1.0436 * 10 ** -4) * (S_corr - 35)
             arg = (R - e1) / (1 - R * e2e3)
             pK = (
                 5.561224

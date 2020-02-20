@@ -44,8 +44,7 @@ class MainWindow(QWidget):
         self.layout().addWidget(self.btnFetch)
 
         self.session = aiohttp.ClientSession(
-            loop=asyncio.get_event_loop(),
-            timeout=aiohttp.ClientTimeout(total=self._SESSION_TIMEOUT),
+            loop=asyncio.get_event_loop(), timeout=aiohttp.ClientTimeout(total=self._SESSION_TIMEOUT),
         )
 
     @asyncClose

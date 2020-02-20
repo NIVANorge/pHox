@@ -146,9 +146,7 @@ class PuckManager(object):
 
     # Instrument mode -------------------------
     def poll_host_softbreak(self):
-        print(
-            "listening to host..."
-        )  # 750ms and 500ms sleep intervals seem to work with PUCK timing
+        print("listening to host...")  # 750ms and 500ms sleep intervals seem to work with PUCK timing
         try:
             rx = host.read(6)
             # print( '<-- '+ rx)
@@ -232,9 +230,7 @@ class PuckManager(object):
     def enter_instrument_mode(self, args):
         print("Entering instrument mode...")
         self.puckMode = False
-        self.timerHostPoll.start(
-            30000
-        )  # poll host for instrument specific commands, 1000ms seems to work with timing
+        self.timerHostPoll.start(30000)  # poll host for instrument specific commands, 1000ms seems to work with timing
 
     def puck(self, args):
         host.write(PRD)

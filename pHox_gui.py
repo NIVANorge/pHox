@@ -1,4 +1,5 @@
 #! /usr/bin/python
+import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
@@ -38,6 +39,7 @@ class SimpleThread(QtCore.QThread):
     def run(self):
         self.finished.emit(self.caller())
 
+
 class AsyncThreadWrapper:
     def __init__(self, slow_function):
         self.callback_returned, self.result = False, None
@@ -56,11 +58,24 @@ class AsyncThreadWrapper:
 class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
+        self.major_modes = set()
+        self.valid_modes = [
+            set(),
+            {"Measuring"},
+            {"Adjusting"},
+            {"Measuring", "Adjusting"},
+            {"Manual"},
+            {"Manual", "Adjusting"},
+            {"Continuous"},
+            {"Continuous", "Measuring"},
+            {"Continuous", "Adjusting"},
+            {"Continuous", "Measuring", "Adjusting"},
+            {"Continuous", "Manual"},
+            {"Continuous", "Manual", "Adjusting"},
+        ]
 
-        self.continous_mode_is_on = False
         self.args = panelargs
         self.config_name = config_name
-        self.adjusting = False
         self.create_timers()
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
@@ -75,12 +90,10 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument(self.config_name)
-        self.measuring = False
         self.init_ui()
         self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
 
     def init_ui(self):
-
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
         self.tab_manual = QtGui.QWidget()
@@ -109,12 +122,10 @@ class Panel(QtGui.QWidget):
         # Disable all manual buttons in the Automatic mode
         self.widgets_enabled_change(False)
         self.setLayout(hboxPanel)
-        # self.showMaximized()
 
     def make_tab_manual(self):
-
         self.tab_manual.layout = QtGui.QGridLayout()
-        self.btn_manual_mode = self.create_button('Enable manual mode', True)
+        self.btn_manual_mode = self.create_button("Manual Control", True)
         self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
         self.make_btngroupbox()
         self.make_slidergroupbox()
@@ -150,11 +161,40 @@ class Panel(QtGui.QWidget):
             self.timerSave.timeout.connect(self.save_pCO2_data)
 
     def btn_manual_mode_clicked(self):
-        print ('btn_manual_mode')
         if self.btn_manual_mode.isChecked():
+            self.set_major_mode("Manual")
             self.widgets_enabled_change(True)
         else:
+            self.unset_major_mode("Manual")
             self.widgets_enabled_change(False)
+
+    def set_major_mode(self, mode):
+        """Refer to Panel.valid_modes for a list of allowed modes"""
+        logging.info(f"Current mode:{self.major_modes}")
+        if mode in self.major_modes:
+            logging.info(f"ERROR, '{mode}' is already in major_modes: {self.major_modes}")
+            return False
+        if self.major_modes.union({mode}) in self.valid_modes:
+            self.major_modes.add(mode)
+        else:
+            logging.info(f"ERROR, Adding '{mode}' Would lead to invalid state, current mode: {self.major_modes}")
+            return False
+        logging.info(f"New mode:{self.major_modes}")
+        return True
+
+    def unset_major_mode(self, mode):
+        """Refer to Panel.valid_modes for a list of allowed modes"""
+        logging.info(f"Current mode:{self.major_modes}")
+        if mode not in self.major_modes:
+            logging.info(f"ERROR, '{mode}' is currently not in major_modes: '{self.major_modes}'")
+            return False
+        if self.major_modes - {mode} in self.valid_modes:
+            self.major_modes.remove(mode)
+        else:
+            logging.info(f"ERROR, Removing '{mode}' Would lead to invalid state, current mode: '{self.major_modes}'")
+            return False
+        logging.info(f"New mode:{self.major_modes}")
+        return True
 
     def make_plotwidgets(self):
         # create plotwidgets
@@ -186,49 +226,19 @@ class Panel(QtGui.QWidget):
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
         if self.args.co3:
-            self.plotwidget2.addLine(
-                x=self.instrument.wvl1,
-                y=None,
-                pen=pg.mkPen("b", width=1, style=QtCore.Qt.DotLine),
-            )
-            self.plotwidget2.addLine(
-                x=self.instrument.wvl2,
-                y=None,
-                pen=pg.mkPen("#eb8934", width=1, style=QtCore.Qt.DotLine),
-            )
-            # self.plotwidget1.addLine(x=None, y=self.instrument.THR, pen=pg.mkPen('w', width=1, style=QtCore.Qt.DotLine))
-            self.plotwidget1.addLine(
-                x=self.instrument.wvl1,
-                y=None,
-                pen=pg.mkPen("b", width=1, style=QtCore.Qt.DotLine),
-            )
-            self.plotwidget1.addLine(
-                x=self.instrument.wvl2,
-                y=None,
-                pen=pg.mkPen("#eb8934", width=1, style=QtCore.Qt.DotLine),
-            )
+            for widget in [self.plotwidget1, self.plotwidget2]:
+                for instrument, color in [[self.instrument.wvl1, "b"], [self.instrument.wvl2, "#eb8934"]]:
+                    widget.addLine(x=instrument, y=None, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
         else:
-
-            self.plotwidget1.addLine(
-                x=None,
-                y=self.instrument.THR,
-                pen=pg.mkPen("w", width=1, style=QtCore.Qt.DotLine),
-            )
-            self.plotwidget1.addLine(
-                x=self.instrument.HI,
-                y=None,
-                pen=pg.mkPen("b", width=1, style=QtCore.Qt.DotLine),
-            )
-            self.plotwidget1.addLine(
-                x=self.instrument.I2,
-                y=None,
-                pen=pg.mkPen("#eb8934", width=1, style=QtCore.Qt.DotLine),
-            )
-            self.plotwidget1.addLine(
-                x=self.instrument.NIR,
-                y=None,
-                pen=pg.mkPen("r", width=1, style=QtCore.Qt.DotLine),
-            )
+            # Format for line spec is [x, y, color]
+            line_specs = [
+                [None, self.instrument.THR, "w"],
+                [self.instrument.HI, None, "b"],
+                [self.instrument.I2, None, "#eb8934"],
+                [self.instrument.NIR, None, "r"],
+            ]
+            for x, y, color in line_specs:
+                self.plotwidget1.addLine(x=x, y=y, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
 
         self.plotSpc = self.plotwidget1.plot()
         self.plotAbs = self.plotwidget2.plot()
@@ -238,11 +248,7 @@ class Panel(QtGui.QWidget):
             self.abs_lines = []
             for n_inj in range(self.instrument.ncycles):
                 self.abs_lines.append(
-                    self.plotwidget2.plot(
-                        x=self.wvls,
-                        y=np.zeros(len(self.wvls)),
-                        pen=pg.mkPen(color[n_inj]),
-                    )
+                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]),)
                 )
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
@@ -286,14 +292,20 @@ class Panel(QtGui.QWidget):
 
         font = QtGui.QFont()
         font.setBold(True)
-        self.fill_table_measurements(0, 0, 'Last Measurement')
-        self.fill_table_measurements(6, 0, 'Live Updates')
+        self.fill_table_measurements(0, 0, "Last Measurement")
+        self.fill_table_measurements(6, 0, "Live Updates")
 
         self.table_measurements.item(0, 0).setFont(font)
         self.table_measurements.item(6, 0).setFont(font)
 
-        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"],1)]
-        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["T lab", 'Voltage', "pH insitu", "T insitu", "S insitu"], 7)]
+        [
+            self.fill_table_measurements(k, 0, v)
+            for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"], 1)
+        ]
+        [
+            self.fill_table_measurements(k, 0, v)
+            for k, v in enumerate(["T lab", "Voltage", "pH insitu", "T insitu", "S insitu"], 7)
+        ]
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -393,9 +405,7 @@ class Panel(QtGui.QWidget):
         self.samplingInt_combo.addItem("10")
         self.tableConfigWidget.setCellWidget(5, 1, self.samplingInt_combo)
 
-        index = self.samplingInt_combo.findText(
-            str(self.instrument.samplingInterval), QtCore.Qt.MatchFixedString
-        )
+        index = self.samplingInt_combo.findText(str(self.instrument.samplingInterval), QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.samplingInt_combo.setCurrentIndex(index)
 
@@ -407,9 +417,7 @@ class Panel(QtGui.QWidget):
         self.tab_config.setLayout(self.tab_config.layout)
 
     def update_spec_int_time_table(self):
-        index = self.specIntTime_combo.findText(
-            str(self.instrument.specIntTime), QtCore.Qt.MatchFixedString
-        )
+        index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), QtCore.Qt.MatchFixedString)
 
         if index >= 0:
             self.specIntTime_combo.setCurrentIndex(index)
@@ -424,20 +432,19 @@ class Panel(QtGui.QWidget):
         await self.updater.set_specIntTime(new_int_time)
 
     def widgets_enabled_change(self, state):
-        print('widgets_enabled_change, state is ', state)
-        self.btn_adjust_leds.setEnabled(state)
-        self.btn_leds.setEnabled(state)
-        self.btn_valve.setEnabled(state)
-        self.btn_stirr.setEnabled(state)
-        self.btn_dye_pmp.setEnabled(state)
-        self.btn_calibr.setEnabled(state)
-
-        self.btn_wpump.setEnabled(state)
-        self.btn_liveplot.setEnabled(state)
-        [b.setEnabled(state) for b in self.plus_btns]
-        [b.setEnabled(state) for b in self.minus_btns]
-        [s.setEnabled(state) for s in self.sliders]
-        [s.setEnabled(state) for s in self.spinboxes]
+        logging.info(f"widgets_enabled_change, state is '{state}'")
+        buttons = [
+            self.btn_adjust_leds,
+            self.btn_leds,
+            self.btn_valve,
+            self.btn_stirr,
+            self.btn_dye_pmp,
+            self.btn_calibr,
+            self.btn_wpump,
+            self.btn_liveplot,
+        ]
+        for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
+            widget.setEnabled(state)
         if self.args.co3:
             self.btn_lightsource.setEnabled(state)
 
@@ -560,7 +567,7 @@ class Panel(QtGui.QWidget):
     async def btn_dye_pmp_clicked(self):
         state = self.btn_dye_pmp.isChecked()
         if state:
-            print("in pump dye clicked")
+            logging.info("in pump dye clicked")
             await self.instrument.pump_dye(3)
             self.btn_dye_pmp.setChecked(False)
 
@@ -591,7 +598,6 @@ class Panel(QtGui.QWidget):
             return default
 
     def dye_combo_chngd(self, ind):
-
         self.dye = self.dye_combo.currentText()
         default = self.load_config_file()
         if self.dye == "MCP":
@@ -602,7 +608,6 @@ class Panel(QtGui.QWidget):
             self.instrument.I2 = int(default["TB_wl_I2"])
 
         self.tableConfigWidget.setItem(2, 1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
-
         self.tableConfigWidget.setItem(3, 1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
 
     def change_plus_minus_butn(self, ind, dif):
@@ -638,8 +643,8 @@ class Panel(QtGui.QWidget):
         self.btn_leds.setChecked(True)
 
     def set_LEDs(self, state):
-        for i in range(0, 3):
-            self.instrument.adjust_LED(i, state * self.sliders[i].value())
+        for i, slider in enumerate(self.sliders):
+            self.instrument.adjust_LED(i, state * slider.value())
         self.append_logbox("Leds {}".format(str(state)))
 
     def btn_leds_checked(self):
@@ -676,41 +681,34 @@ class Panel(QtGui.QWidget):
             stabfile_df.to_csv(stabfile, mode="a", index=False, header=False)
         else:
             if not self.args.co3:
-                stabfile_df = pd.DataFrame(
-                    columns=["datetime", "led0", "led1", "led2", "specint"]
-                )
+                stabfile_df = pd.DataFrame(columns=["datetime", "led0", "led1", "led2", "specint"])
             else:
-                stabfile_df = pd.DataFrame(
-                    columns=["datetime", "wvl1", "wvl2", "specint"]
-                )
+                stabfile_df = pd.DataFrame(columns=["datetime", "wvl1", "wvl2", "specint"])
 
             stabfile_df.to_csv(stabfile, index=False, header=True)
 
     async def update_absorbance_plot(self, n_inj, spAbs):
         self.abs_lines[n_inj].setData(self.wvls, spAbs)
         await asyncio.sleep(0.005)
-        return
 
     @asyncSlot()
     async def update_spectra_plot(self):
         self.updater.update_spectra_in_progress = True
         try:
-            if not self.adjusting and not self.measuring:
+            # I don't think this if statement is required
+            if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
                 datay = await self.instrument.spectrom.get_intensities()
                 if self.args.stability:
                     self.save_stability_test(datay)
                 self.plotSpc.setData(self.wvls, datay)
         except Exception as e:
-            print("could not read and set Data", e)
+            logging.exception("could not read and set Data")
         finally:
             self.updater.update_spectra_in_progress = False
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
-        [
-            self.update_absorbance_plot(n_inj, z)
-            for n_inj in range(self.instrument.ncycles)
-        ]
+        [self.update_absorbance_plot(n_inj, z) for n_inj in range(self.instrument.ncycles)]
 
     def save_pCO2_data(self, pH=None):
         self.add_pco2_info()
@@ -723,21 +721,8 @@ class Panel(QtGui.QWidget):
         if not os.path.exists(logfile):
             hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
         s = labelSample
-        s += ",%.6f,%.6f,%.3f,%.3f" % (
-            fbox["longitude"],
-            fbox["latitude"],
-            fbox["temperature"],
-            fbox["salinity"],
-        )
-        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (
-            d[0],
-            d[1],
-            d[2],
-            d[3],
-            d[4],
-            d[6],
-            d[7],
-        )
+        s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
+        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[6], d[7],)
         s += "\n"
         with open(logfile, "a") as logFile:
             if hdr:
@@ -752,9 +737,7 @@ class Panel(QtGui.QWidget):
         if adj:
             self.append_logbox("Finished Autoadjust LEDS")
             self.update_spec_int_time_table()
-            self.plotwidget1.plot(
-                [self.instrument.wvl2], [pixelLevel], pen=None, symbol="+"
-            )
+            self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         return adj
 
     async def autoAdjust_LED(self):
@@ -764,12 +747,8 @@ class Panel(QtGui.QWidget):
             self.instrument.LED3,
             result,
         ) = await self.instrument.auto_adjust()
-        print(
-            "values after autoadjust",
-            self.instrument.LED1,
-            self.instrument.LED2,
-            self.instrument.LED3,
-        )
+        led_values = [self.instrument.LED1, self.instrument.LED2, self.instrument.LED3]
+        logging.info(f"values after autoadjust: '{led_values}'")
         if result:
             self.sliders[0].setValue(self.instrument.LED1)
             self.sliders[1].setValue(self.instrument.LED2)
@@ -778,11 +757,7 @@ class Panel(QtGui.QWidget):
 
             # self.plot_sp_levels()
             self.update_spec_int_time_table()
-            self.append_logbox(
-                "Adjusted LEDS with intergration time {}".format(
-                    self.instrument.specIntTime
-                )
-            )
+            self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
 
             datay = await self.instrument.spectrom.get_intensities()
             await self.update_spectra_plot_manual(datay)
@@ -798,7 +773,7 @@ class Panel(QtGui.QWidget):
     async def call_autoAdjust(self):
         async with self.updater.disable_live_plotting():
             self.btn_adjust_leds.setChecked(True)
-            self.adjusting = True
+            self.set_major_mode("Adjusting")
             await asyncio.sleep(2)
             try:
                 if self.args.co3:
@@ -806,7 +781,7 @@ class Panel(QtGui.QWidget):
                 else:
                     res = await self.autoAdjust_LED()
             finally:
-                self.adjusting = False
+                self.unset_major_mode("Adjusting")
                 self.btn_adjust_leds.setChecked(False)
             return res
 
@@ -815,10 +790,7 @@ class Panel(QtGui.QWidget):
         resp = self.CO2_instrument.portSens.read(15)
         try:
             value = float(resp[3:])
-            value = (
-                self.CO2_instrument.ftCalCoef[6][0]
-                + self.CO2_instrument.ftCalCoef[6][1] * value
-            )
+            value = self.CO2_instrument.ftCalCoef[6][0] + self.CO2_instrument.ftCalCoef[6][1] * value
         except ValueError:
             value = 0
         self.CO2_instrument.franatech[6] = value
@@ -841,9 +813,7 @@ class Panel(QtGui.QWidget):
         t = datetime.now()
         # self.instrument.timeStamp  = t.isoformat('_')
         tsBegin = (t - datetime(1970, 1, 1)).total_seconds()
-        nextSamplename = datetime.fromtimestamp(
-            tsBegin + self.instrument.samplingInterval
-        )
+        nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
         return str(nextSamplename.strftime("%H:%M"))
 
     def get_filename(self):
@@ -853,11 +823,9 @@ class Panel(QtGui.QWidget):
         return flnmStr, timeStamp
 
     def btn_cont_meas_clicked(self):
-
         self.mode = "Continuous"
-        state = self.btn_cont_meas.isChecked()
-        if state:
-            print("btn_cont_meas_clicked")
+        if self.btn_cont_meas.isChecked():
+            self.set_major_mode("Continuous")
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             # disable all btns in manual tab
@@ -865,12 +833,11 @@ class Panel(QtGui.QWidget):
             self.StatusBox.setText("Next sample at {}".format(nextSamplename))
             self.timer_contin_mode.start(self.instrument.samplingInterval * 1000)
         else:
-            print("btn_cont_meas_Unclicked")
+            self.unset_major_mode("Continuous")
             self.StatusBox.clear()
             self.timer_contin_mode.stop()
-            if not self.continous_mode_is_on:
-                self.btn_single_meas.setEnabled(True)
-                self.btn_calibr.setEnabled(True)
+            self.btn_single_meas.setEnabled(True)
+            self.btn_calibr.setEnabled(True)  # This is probably wrong should be controlled by 'manual control' btn
 
     def change_widget_state(self, state):
         self.dye_combo.setEnabled(state)
@@ -880,8 +847,7 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def btn_calibr_clicked(self):
         self.change_widget_state(False)
-        state = self.btn_calibr.isChecked()
-        if state:
+        if self.btn_calibr.isChecked():
             message = QtGui.QMessageBox.question(
                 self,
                 "Crazy important message!!!",
@@ -899,26 +865,23 @@ class Panel(QtGui.QWidget):
             folderPath = self.get_folderPath()
             flnmStr, timeStamp = self.get_filename()
 
-            r = await self.sample(folderPath, flnmStr, timeStamp)
-            self.single_sample_finished(folderPath, timeStamp, flnmStr)
+            await self.sample(folderPath, flnmStr, timeStamp)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
         self.change_widget_state(False)
         # Disable live updating and block button
         async with self.updater.disable_live_plotting():
-            self.measuring = True
             # Start single sampling process
-            print("clicked single meas ")
+            logging.info("clicked single meas ")
             message = QtGui.QMessageBox.question(
                 self,
                 "important message!!!",
-                "Did you pump to clean?",
+                "Did you pump to flush the sampling chamber?",
                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
             )
             if message == QtGui.QMessageBox.No:
                 self.btn_single_meas.setChecked(False)
-                self.measuring = False
                 return
 
             flnmStr, timeStamp = self.get_filename()
@@ -929,50 +892,31 @@ class Panel(QtGui.QWidget):
 
                 self.mode = "Single"
                 folderPath = self.get_folderPath()
-                # disable all btns in manual tab
+                # disable all btns in manual tab (There are way more buttons now)
                 self.btn_cont_meas.setEnabled(False)
                 self.btn_single_meas.setEnabled(False)
-                self.btn_calibr.setEnabled(False)
+                self.btn_calibr.setEnabled(False)  # what does calibration do?
 
                 await self.sample(folderPath, flnmStr, timeStamp)
-                self.single_sample_finished(folderPath, timeStamp, flnmStr)
 
             else:
                 self.btn_single_meas.setChecked(False)
-                self.measuring = False
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
-        self.measuring = True
-        print("continuous_mode_timer_finished")
+
+        logging.info("continuous_mode_timer_finished")
         self.append_logbox("continuous_mode_timer_finished")
 
         flnmStr, timeStamp = self.get_filename()
-        self.continous_mode_is_on = True
         folderPath = self.get_folderPath()
 
         await self.sample(folderPath, flnmStr, timeStamp)
-        self.continuous_sample_finished(folderPath, timeStamp, flnmStr)
-
-    def unclick_enable(self, btns):
-        for btn in btns:
-            btn.setChecked(False)
-            btn.setEnabled(True)
 
     def get_final_pH(self, timeStamp):
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
-        (
-            pH_lab,
-            T_lab,
-            perturbation,
-            evalAnir,
-            pH_insitu,
-            self.x,
-            self.y,
-            self.slope,
-            self.intercept,
-        ) = p
+        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,) = p
 
         self.pH_log_row = pd.DataFrame(
             {
@@ -1001,7 +945,7 @@ class Panel(QtGui.QWidget):
         self.save_spt(folderPath, flnmStr)
         self.append_logbox("Save evl data to file")
         self.save_evl(folderPath, flnmStr)
-        print("Send data to ferrybox")
+        logging.info("Send data to ferrybox")
         self.append_logbox("Send data to ferrybox")
         self.send_to_ferrybox()
 
@@ -1009,79 +953,17 @@ class Panel(QtGui.QWidget):
         self.save_logfile_df(folderPath, flnmStr)
 
     def update_pH_plot(self):
-        print("in update pH plot")
-        print("self.x,self.y", self.x, self.y)
+        logging.info("in update pH plot")
+        logging.info(f"self.x='{self.x}', self.y='{self.y}'")
         self.plotwidget2.plot(self.x, self.y, pen=None, symbol="o", clear=True)
-        print("after first plot")
-        print("intercept", self.intercept)
+        logging.info("after first plot")
+        logging.info(f"intercept {self.intercept}")
         self.plotwidget2.plot(self.x, self.intercept + self.slope * self.x)
-
-    def single_sample_finished(self, folderPath, timeStamp, flnmStr):
-        self.change_widget_state(True)
-        print("single sample finished inside func")
-        self.measuring = False
-        if not self.args.co3:
-            print("get final pH")
-            self.get_final_pH(timeStamp)
-            self.save_results(folderPath, flnmStr)
-            print("save results")
-            print("update pH plot")
-            self.update_pH_plot()
-            print("update infotable ")
-            self.update_table_last_meas()
-
-        self.StatusBox.setText("Measurement is finished")
-
-        self.unclick_enable([self.btn_single_meas, self.btn_calibr, self.btn_cont_meas])
-        [step.setChecked(False) for step in self.sample_steps]
-
-        if self.mode == "Calibration":
-            res = QtGui.QMessageBox.question(
-                self,
-                "Crazy important message",
-                "Turn back the valve to Ferrybox mode",
-                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-            )
-
-            res = QtGui.QMessageBox.question(
-                self,
-                "Crazy important message",
-                "Are you sure??????",
-                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-            )
-
-    def continuous_sample_finished(self, folderPath, timeStamp, flnmStr):
-        self.change_widget_state(True)
-        print("inside continuous_sample_finished")
-        self.continous_mode_is_on = False
-        self.measuring = False
-        if not self.args == "co3":
-            self.get_final_pH(timeStamp)
-            self.StatusBox.setText("Measurement is finished")
-            self.save_results(folderPath, flnmStr)
-            self.update_pH_plot()
-            self.update_infotable()
-
-        [step.setChecked(False) for step in self.sample_steps]
-
-        print("start timer spectra plot")
-
-        if not self.btn_cont_meas.isChecked():
-            self.StatusBox.setText("Continuous mode is off")
-            self.btn_single_meas.setEnabled(True)
-            self.btn_calibr.setEnabled(True)
-            # enable all btns in manual tab
-        else:
-            nextSamplename = self.get_next_sample()
-            self.StatusBox.setText("Next sample at {}".format(nextSamplename))
 
     def update_T_lab(self):
         Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
         Voltage = round(Voltage, prec["vNTC"])
-        T_lab = round(
-            (self.instrument.TempCalCoef[0] * Voltage) + self.instrument.TempCalCoef[1],
-            prec["Tdeg"],
-        )
+        T_lab = round((self.instrument.TempCalCoef[0] * Voltage) + self.instrument.TempCalCoef[1], prec["Tdeg"],)
 
         self.table_live.setItem
         self.fill_table_live(7, 1, str(T_lab))
@@ -1090,17 +972,19 @@ class Panel(QtGui.QWidget):
     def update_table_last_meas(self):
         if not self.args.co3:
 
-            '''self.fill_table_measurements(1, 1, str(self.pH_log_row["pH_lab"].values[0]))
+            """self.fill_table_measurements(1, 1, str(self.pH_log_row["pH_lab"].values[0]))
             self.fill_table_measurements(2, 1, str(self.pH_log_row["T_lab"].values[0]))
             self.fill_table_measurements(3, 1, str(self.pH_log_row["pH_insitu"].values[0]))
             self.fill_table_measurements(4, 1, str(self.pH_log_row["fb_temp"].values[0]))
-            self.fill_table_measurements(5, 1, str(self.pH_log_row["fb_sal"].values[0]))'''
+            self.fill_table_measurements(5, 1, str(self.pH_log_row["fb_sal"].values[0]))"""
 
-            [self.fill_table_measurements(k, 1, str(self.pH_log_row[v].values[0]))
-             for k, v in enumerate(["pH_lab","T_lab","pH_insitu","fb_temp","fb_sal"],1)]
+            [
+                self.fill_table_measurements(k, 1, str(self.pH_log_row[v].values[0]))
+                for k, v in enumerate(["pH_lab", "T_lab", "pH_insitu", "fb_temp", "fb_sal"], 1)
+            ]
 
         else:
-            print("to be filled with data")
+            logging.info("to be filled with data")
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
@@ -1111,7 +995,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Inside _autostart...")
         self.textBox.setText("Turn on LEDs")
         if self.args.co3:
-            print("turn on light source")
+            logging.info("turn on light source")
             self.instrument.turn_on_relay(self.instrument.light_slot)
             self.btn_lightsource.setChecked(True)
         else:
@@ -1119,12 +1003,12 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
+        self.btn_liveplot.setEnabled(True)
         self.btn_liveplot.click()
-        # self.timerSpectra_plot.start(600)
-        # self.timerTemp_info.start(600)
+        self.btn_liveplot.setEnabled(False)
 
         if not self.args.co3:
-            print("Starting continuous mode ")
+            logging.info("Starting continuous mode ")
             self.textBox.setText("Starting continuous mode ")
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
@@ -1133,9 +1017,7 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             # change to config file
-            self.timerSave.start(
-                self.CO2_instrument.save_pco2_interv * 1.0e3
-            )  # milliseconds
+            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
         return
 
     def _autostop(self):
@@ -1174,8 +1056,7 @@ class Panel(QtGui.QWidget):
             dt = self.instrument._autotime - now
             self.timerAuto.start(int(dt.total_seconds() * 1000))
             self.logTextBox.appendPlainText(
-                "Instrument will start at "
-                + self.instrument._autostart.strftime("%Y-%m-%dT%H:%M:%S")
+                "Instrument will start at " + self.instrument._autostart.strftime("%Y-%m-%dT%H:%M:%S")
             )
         else:
             self.timerAuto.timeout.disconnect(self.autostart_time)
@@ -1183,9 +1064,7 @@ class Panel(QtGui.QWidget):
             t0 = self.instrument._autotime + self.instrument._autolen
             dt = t0 - now
             self.timerAuto.start(int(dt.total_seconds() * 1000))
-            self.logTextBox.appendPlainText(
-                "Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S")
-            )
+            self.logTextBox.appendPlainText("Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S"))
             self._autostart()
         return
 
@@ -1215,7 +1094,7 @@ class Panel(QtGui.QWidget):
 
     def autorun(self):
         self.append_logbox("Inside continuous_mode...")
-        print("start autorun")
+        logging.info("start autorun")
         if self.instrument._autostart and self.instrument._automode == "time":
             self.textBox.setText("Automatic scheduled start enabled")
             self.timerAuto.timeout.connect(self.autostart_time)
@@ -1232,7 +1111,7 @@ class Panel(QtGui.QWidget):
         return
 
     async def sample(self, folderPath, flnmStr, timeStamp):
-
+        self.set_major_mode("Measuring")
         # Step 0. Start mesurement, create new df,
         # reset Absorption plot
         # pump if single, close the valve
@@ -1240,7 +1119,7 @@ class Panel(QtGui.QWidget):
             if not fbox["pumping"]:
                 return
         self.sampling = True
-        print("sample, mode is {}".format(self.mode))
+        logging.info(f"sample, mode is {self.mode}")
         self.StatusBox.setText("Ongoing measurement")
         self.sample_steps[0].setChecked(True)
 
@@ -1258,10 +1137,9 @@ class Panel(QtGui.QWidget):
         self.sample_steps[1].setChecked(True)
         self.append_logbox("Autoadjust LEDS")
         res = await self.call_autoAdjust()
-        self.adjusting = False
-        print("res after autoadjust", res)
+        logging.info(f"res after autoadjust: '{res}")
         if not res:
-            print("could not adjust leds")
+            logging.info("could not adjust leds")
             return
 
         # Step 2. Take dark and blank
@@ -1276,11 +1154,42 @@ class Panel(QtGui.QWidget):
         # Step 7 Open valve
         self.sample_steps[7].setChecked(True)
         await asyncio.sleep(0.05)
-        print("Opening the valve ...")
+        logging.info("Opening the valve ...")
         self.append_logbox("Opening the valve ...")
         await self.instrument.set_Valve(False)
 
-        return "Finished"
+        self.change_widget_state(True)
+        self.unset_major_mode("Measuring")
+
+        if not self.args.co3:
+            self.get_final_pH(timeStamp)
+            self.save_results(folderPath, flnmStr)
+            self.update_pH_plot()
+            self.update_table_last_meas()
+
+        [step.setChecked(False) for step in self.sample_steps]
+
+        if "Continuous" in self.major_modes:
+            self.StatusBox.setText("Next sample at {}".format(self.get_next_sample()))
+        else:
+            for btn in [self.btn_single_meas, self.btn_calibr, self.btn_cont_meas]:
+                btn.setChecked(False)
+                btn.setEnabled(True)
+
+            if self.mode == "Calibration":
+                res = QtGui.QMessageBox.question(
+                    self,
+                    "Crazy important message",
+                    "Turn back the valve to Ferrybox mode",
+                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                )
+
+                res = QtGui.QMessageBox.question(
+                    self,
+                    "Crazy important message",
+                    "Are you sure??????",
+                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                )
 
     def get_folderPath(self):
         if self.args.localdev:
@@ -1306,20 +1215,7 @@ class Panel(QtGui.QWidget):
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         if self.args == "co3":
             self.CO3_eval = pd.DataFrame(
-                columns=[
-                    "CO3",
-                    "e1",
-                    "e2e3",
-                    "log_beta1_e2",
-                    "vNTC",
-                    "S",
-                    "A1",
-                    "A2",
-                    "R",
-                    "Tdeg",
-                    "Vinj",
-                    " S_corr",
-                ]
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", " S_corr",]
             )
         else:
             self.evalPar_df = pd.DataFrame(
@@ -1362,20 +1258,18 @@ class Panel(QtGui.QWidget):
         # turn off light and LED
         if self.args.co3:
             self.instrument.turn_off_relay(self.instrument.light_slot)
-            print("turn of the light source")
+            logging.info("turn of the light source")
             await asyncio.sleep(1)
         else:
             self.set_LEDs(False)
 
         # grab spectrum
-        dark = await self.instrument.spectrom.get_intensities(
-            self.instrument.specAvScans, correct=True
-        )
+        dark = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
 
         if self.args.co3:
             # Turn on the light source
             self.instrument.turn_on_relay(self.instrument.light_slot)
-            print("turn on the light source")
+            logging.info("turn on the light source")
             await asyncio.sleep(2)
         else:
             # Turn on LEDs after taking dark
@@ -1390,12 +1284,10 @@ class Panel(QtGui.QWidget):
         await asyncio.sleep(0.05)
 
     async def measure_blank(self, dark):
-        print("Measuring blank...")
+        logging.info("Measuring blank...")
         self.append_logbox("Measuring blank...")
 
-        blank = await self.instrument.spectrom.get_intensities(
-            self.instrument.specAvScans, correct=True
-        )
+        blank = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
         blank_min_dark = blank - dark
 
         self.instrument.spectrum = blank
@@ -1405,31 +1297,24 @@ class Panel(QtGui.QWidget):
 
     async def measurement_cycle(self, blank_min_dark, dark):
         for n_inj in range(self.instrument.ncycles):
-            print("n_inj", n_inj)
+            logging.info(f"n_inj='{n_inj}")
             self.sample_steps[n_inj + 3].setChecked(True)
             await asyncio.sleep(0.05)
             vol_injected = round(
-                self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots,
-                prec["vol_injected"],
+                self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
-            dilution = (self.instrument.Cuvette_V) / (
-                vol_injected + self.instrument.Cuvette_V
-            )
+            dilution = (self.instrument.Cuvette_V) / (vol_injected + self.instrument.Cuvette_V)
 
             vNTC = await self.inject_dye(n_inj)
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
             # self.append_logbox('Calculate init pH')
-            print("Calculate init pH")
+            logging.info("Calculate init pH")
 
             if self.args == "co3":
-                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(
-                    spAbs_min_blank, vNTC, dilution, vol_injected
-                )
+                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC, dilution, vol_injected)
                 await self.update_absorbance_plot(n_inj, spAbs_min_blank)
             else:
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
-                    spAbs_min_blank, vNTC, dilution, vol_injected
-                )
+                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC, dilution, vol_injected)
         return
 
     async def inject_dye(self, n_inj):
@@ -1460,17 +1345,13 @@ class Panel(QtGui.QWidget):
         # measure spectrum after injecting nshots of dye
         # Write spectrum to the file
         if self.args.localdev:
-            print("in debug")
-            postinj_spec = await self.instrument.spectrom.get_intensities(
-                self.instrument.specAvScans, correct=True
-            )
+            logging.info("in debug")
+            postinj_spec = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
             postinj_spec_min_dark = postinj_spec  # - dark
             spAbs_min_blank = postinj_spec_min_dark
             await self.update_spectra_plot_manual(postinj_spec)
         else:
-            postinj_spec = await self.instrument.spectrom.get_intensities(
-                self.instrument.specAvScans, correct=True
-            )
+            postinj_spec = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
             self.instrument.spectrum = postinj_spec
             await self.update_spectra_plot_manual(postinj_spec)
 
@@ -1498,7 +1379,7 @@ class Panel(QtGui.QWidget):
         self.spCounts_df.T.to_csv(sptpath + flnmStr + ".spt", index=True, header=False)
 
     def save_logfile_df(self, folderPath, flnmStr):
-        print("save log file df")
+        logging.info("save log file df")
         # check time of cration of the last log file
         # if more than one hour,
         # create new file and write data there .
@@ -1506,9 +1387,9 @@ class Panel(QtGui.QWidget):
         # additionaly to regular common Ph log
 
         hour_log_path = folderPath + "logs/"
-        print("hour_log_path", hour_log_path)
+        logging.info(f"hour_log_path: {hour_log_path}")
         hour_log_flnm = hour_log_path + flnmStr + ".log"
-        print("hour_log_path", hour_log_flnm)
+        logging.info(f"hour_log_flnm: {hour_log_flnm}")
 
         if not os.path.exists(hour_log_path):
             os.makedirs(hour_log_path)
@@ -1518,15 +1399,14 @@ class Panel(QtGui.QWidget):
         else:
             # list all files in the directory
             files_in_path = os.listdir(hour_log_path)
-            print("files in path", files_in_path)
+            logging.info(f"files_in_path: {files_in_path}")
+
             # convert names to datetimes
-            file_times = [
-                datetime.strptime(n[:-4], self.fformat) for n in files_in_path
-            ]
+            file_times = [datetime.strptime(n[:-4], self.fformat) for n in files_in_path]
 
             # find latest file
             last_file_time = max(file_times)
-            print("last_file_time", last_file_time)
+            logging.info(f"last_file_time: {last_file_time}")
             # and its index
             ind_last_file = np.argmax(file_times)
 
@@ -1538,15 +1418,13 @@ class Panel(QtGui.QWidget):
 
             # calculate delta in hours
             delta = (new_time - last_file_time).seconds // 3600
-            print("delta in times log file", delta)
+            logging.info(f"delta in times log file {delta}")
             if delta > 1:
                 # if more than hour, create a new file
                 self.pH_log_row.to_csv(hour_log_flnm, index=False, header=True)
             else:
                 # else append the old hourly file
-                self.pH_log_row.to_csv(
-                    last_file_name, mode="a", index=False, header=False
-                )
+                self.pH_log_row.to_csv(last_file_name, mode="a", index=False, header=False)
 
         logfile = os.path.join(folderPath, "pH.log")
         # logfile_hourly =
@@ -1559,7 +1437,7 @@ class Panel(QtGui.QWidget):
                           "T_lab", "perturbation",
                           "evalAnir", "pH_insitu"])"""
             self.pH_log_row.to_csv(logfile, index=False, header=True)
-        print("saved log_df")
+        logging.info("saved log_df")
 
     def send_to_ferrybox(self):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
@@ -1574,6 +1452,7 @@ class SensorStateUpdateManager:
     In addition an object of this class control if the updating is done via a live loop or if the live loop is disabled
     and the updates have to be called manually.
     """
+
     def __init__(self, main_qt_panel: Panel, live_button: QtGui.QPushButton):
         # Number of UI elements that have entered the 'disable_live_plotting' CM
         self.disable_requests = 0
@@ -1658,26 +1537,21 @@ class boxUI(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         result = QtGui.QMessageBox.question(
-            self,
-            "Confirm Exit...",
-            "Are you sure you want to exit ?",
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+            self, "Confirm Exit...", "Are you sure you want to exit ?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
         )
         event.ignore()
 
         if result == QtGui.QMessageBox.Yes:
             if self.args.co3:
-                self.main_widget.instrument.turn_off_relay(
-                    self.main_widget.instrument.light_slot
-                )
+                self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
 
             self.main_widget.instrument.spectrom.spec.close()
-            print("timer is stopped")
+            logging.info("timer is stopped")
             self.main_widget.timer_contin_mode.stop()
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():
-                print("UDP server closed")
+                logging.info("UDP server closed")
                 udp.server.join()
             self.main_widget.close()
             QtGui.QApplication.quit()
@@ -1685,8 +1559,12 @@ class boxUI(QtGui.QMainWindow):
             event.accept()
 
 
+# loop has to be declared for testing to work
 loop = None
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=15, format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
     app = QtGui.QApplication(sys.argv)
     d = os.getcwd()
     qss_file = open("styles.qss").read()
