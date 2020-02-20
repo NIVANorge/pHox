@@ -13,7 +13,7 @@ Ferrybox = {
     "temperature": 15.0,
     "longitude": 0.0,
     "latitude": 0.0,
-    "pumping": 1,
+    "pumping": None,
 }
 
 

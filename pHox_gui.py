@@ -59,20 +59,7 @@ class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
         self.major_modes = set()
-        self.valid_modes = [
-            set(),
-            {"Measuring"},
-            {"Adjusting"},
-            {"Measuring", "Adjusting"},
-            {"Manual"},
-            {"Manual", "Adjusting"},
-            {"Continuous"},
-            {"Continuous", "Measuring"},
-            {"Continuous", "Adjusting"},
-            {"Continuous", "Measuring", "Adjusting"},
-            {"Continuous", "Manual"},
-            {"Continuous", "Manual", "Adjusting"},
-        ]
+        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration"]
 
         self.args = panelargs
         self.config_name = config_name
@@ -120,7 +107,7 @@ class Panel(QtGui.QWidget):
         hboxPanel.addWidget(self.tabs)
 
         # Disable all manual buttons in the Automatic mode
-        self.widgets_enabled_change(False)
+        self.manual_widgets_set_enabled(False)
         self.setLayout(hboxPanel)
 
     def make_tab_manual(self):
@@ -163,37 +150,58 @@ class Panel(QtGui.QWidget):
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
             self.set_major_mode("Manual")
-            self.widgets_enabled_change(True)
         else:
             self.unset_major_mode("Manual")
-            self.widgets_enabled_change(False)
 
-    def set_major_mode(self, mode):
+    def set_major_mode(self, mode_set):
         """Refer to Panel.valid_modes for a list of allowed modes"""
-        logging.info(f"Current mode:{self.major_modes}")
-        if mode in self.major_modes:
-            logging.info(f"ERROR, '{mode}' is already in major_modes: {self.major_modes}")
+        logging.debug(f"Current mode:{self.major_modes}")
+        if mode_set not in self.valid_modes:
+            logging.info(f"ERROR, '{mode_set}' is not a valid mode, valid modes: {self.valid_modes}")
             return False
-        if self.major_modes.union({mode}) in self.valid_modes:
-            self.major_modes.add(mode)
-        else:
-            logging.info(f"ERROR, Adding '{mode}' Would lead to invalid state, current mode: {self.major_modes}")
+        if mode_set in self.major_modes:
+            logging.info(f"ERROR, '{mode_set}' is already in major_modes: {self.major_modes}")
             return False
-        logging.info(f"New mode:{self.major_modes}")
+        # TODO Add more invalidating checks
+        if mode_set == "Manual":
+            self.manual_widgets_set_enabled(True)
+        if mode_set == "Continuous":
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+        if mode_set == "Measuring":
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+            if "Continuous" not in self.major_modes:
+                self.btn_cont_meas.setEnabled(False)
+            self.btn_manual_mode.setEnabled(False)
+            self.manual_widgets_set_enabled(False)
+            self.config_widgets_set_state(False)
+
+        self.major_modes.add(mode_set)
+        logging.debug(f"New mode:{self.major_modes}")
         return True
 
-    def unset_major_mode(self, mode):
+    def unset_major_mode(self, mode_unset):
         """Refer to Panel.valid_modes for a list of allowed modes"""
-        logging.info(f"Current mode:{self.major_modes}")
-        if mode not in self.major_modes:
-            logging.info(f"ERROR, '{mode}' is currently not in major_modes: '{self.major_modes}'")
+        logging.debug(f"Current mode:{self.major_modes}")
+        if mode_unset not in self.major_modes:
+            logging.info(f"ERROR, '{mode_unset}' is currently not in major_modes: '{self.major_modes}'")
             return False
-        if self.major_modes - {mode} in self.valid_modes:
-            self.major_modes.remove(mode)
-        else:
-            logging.info(f"ERROR, Removing '{mode}' Would lead to invalid state, current mode: '{self.major_modes}'")
-            return False
-        logging.info(f"New mode:{self.major_modes}")
+        # TODO Add more invalidating checks
+        if mode_unset == "Manual":
+            self.manual_widgets_set_enabled(False)
+        if mode_unset == "Continuous":
+            if "Measuring" not in self.major_modes:
+                self.btn_single_meas.setEnabled(True)
+                self.btn_calibr.setEnabled(True)
+        if mode_unset == "Measuring":
+            if "Continuous" not in self.major_modes:
+                self.btn_single_meas.setEnabled(True)
+                self.btn_calibr.setEnabled(True)
+            self.btn_cont_meas.setEnabled(True)
+
+        self.major_modes.remove(mode_unset)
+        logging.debug(f"New mode:{self.major_modes}")
         return True
 
     def make_plotwidgets(self):
@@ -302,10 +310,7 @@ class Panel(QtGui.QWidget):
             self.fill_table_measurements(k, 0, v)
             for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"], 1)
         ]
-        [
-            self.fill_table_measurements(k, 0, v)
-            for k, v in enumerate(["T lab", "Voltage", "pH insitu", "T insitu", "S insitu"], 7)
-        ]
+        [self.fill_table_measurements(k, 0, v) for k, v in enumerate(["T lab", "Voltage", "T insitu", "S insitu"], 7)]
 
         self.textBox_LastpH = QtGui.QTextEdit()
         self.textBox_LastpH.setOverwriteMode(True)
@@ -431,7 +436,12 @@ class Panel(QtGui.QWidget):
         new_int_time = int(self.specIntTime_combo.currentText())
         await self.updater.set_specIntTime(new_int_time)
 
-    def widgets_enabled_change(self, state):
+    def config_widgets_set_state(self, state):
+        self.dye_combo.setEnabled(state)
+        self.specIntTime_combo.setEnabled(state)
+        self.samplingInt_combo.setEnabled(state)
+
+    def manual_widgets_set_enabled(self, state):
         logging.info(f"widgets_enabled_change, state is '{state}'")
         buttons = [
             self.btn_adjust_leds,
@@ -439,7 +449,6 @@ class Panel(QtGui.QWidget):
             self.btn_valve,
             self.btn_stirr,
             self.btn_dye_pmp,
-            self.btn_calibr,
             self.btn_wpump,
             self.btn_liveplot,
         ]
@@ -771,9 +780,8 @@ class Panel(QtGui.QWidget):
         await self.call_autoAdjust()
 
     async def call_autoAdjust(self):
-        async with self.updater.disable_live_plotting():
+        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
             self.btn_adjust_leds.setChecked(True)
-            self.set_major_mode("Adjusting")
             await asyncio.sleep(2)
             try:
                 if self.args.co3:
@@ -781,7 +789,6 @@ class Panel(QtGui.QWidget):
                 else:
                     res = await self.autoAdjust_LED()
             finally:
-                self.unset_major_mode("Adjusting")
                 self.btn_adjust_leds.setChecked(False)
             return res
 
@@ -810,11 +817,7 @@ class Panel(QtGui.QWidget):
             self.CO2_instrument.franatech[ch] = X
 
     def get_next_sample(self):
-        t = datetime.now()
-        # self.instrument.timeStamp  = t.isoformat('_')
-        tsBegin = (t - datetime(1970, 1, 1)).total_seconds()
-        nextSamplename = datetime.fromtimestamp(tsBegin + self.instrument.samplingInterval)
-        return str(nextSamplename.strftime("%H:%M"))
+        return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
 
     def get_filename(self):
         t = datetime.now()
@@ -823,54 +826,38 @@ class Panel(QtGui.QWidget):
         return flnmStr, timeStamp
 
     def btn_cont_meas_clicked(self):
-        self.mode = "Continuous"
         if self.btn_cont_meas.isChecked():
             self.set_major_mode("Continuous")
-            self.btn_single_meas.setEnabled(False)
-            self.btn_calibr.setEnabled(False)
-            # disable all btns in manual tab
-            nextSamplename = self.get_next_sample()
-            self.StatusBox.setText("Next sample at {}".format(nextSamplename))
+            if "Measuring" not in self.major_modes:
+                self.StatusBox.setText("Next sample at {}".format(self.get_next_sample()))
             self.timer_contin_mode.start(self.instrument.samplingInterval * 1000)
         else:
             self.unset_major_mode("Continuous")
             self.StatusBox.clear()
             self.timer_contin_mode.stop()
-            self.btn_single_meas.setEnabled(True)
-            self.btn_calibr.setEnabled(True)  # This is probably wrong should be controlled by 'manual control' btn
-
-    def change_widget_state(self, state):
-        self.dye_combo.setEnabled(state)
-        self.specIntTime_combo.setEnabled(state)
-        self.samplingInt_combo.setEnabled(state)
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
-        self.change_widget_state(False)
         if self.btn_calibr.isChecked():
-            message = QtGui.QMessageBox.question(
-                self,
-                "Crazy important message!!!",
-                "Switch the valve to calibration mode",
-                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-            )
-            if message == QtGui.QMessageBox.No:
-                return
+            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
+                valve_turned = QtGui.QMessageBox.question(self, "Manually turn the valve to calibration mode",
+                                                          QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                valve_turned_confirm = QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
+                                                                  QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                if valve_turned == QtGui.QMessageBox.Yes and valve_turned_confirm == QtGui.QMessageBox.Yes:
+                    folderPath = self.get_folderPath()
+                    flnmStr, timeStamp = self.get_filename()
+                    await self.sample(folderPath, flnmStr, timeStamp)
 
-            self.btn_cont_meas.setEnabled(False)
-            self.btn_single_meas.setEnabled(False)
-            # disable all btns in manual tab
+                    QtGui.QMessageBox.question(self, "Manually turn the valve back to ferrybox mode",
+                                               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
 
-            self.mode = "Calibration"
-            folderPath = self.get_folderPath()
-            flnmStr, timeStamp = self.get_filename()
-
-            await self.sample(folderPath, flnmStr, timeStamp)
+                    QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
+                                               QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                self.btn_calibr.setChecked(False)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
-        self.change_widget_state(False)
-        # Disable live updating and block button
         async with self.updater.disable_live_plotting():
             # Start single sampling process
             logging.info("clicked single meas ")
@@ -889,8 +876,6 @@ class Panel(QtGui.QWidget):
             if ok:
                 if text != "":
                     flnmStr = text
-
-                self.mode = "Single"
                 folderPath = self.get_folderPath()
                 # disable all btns in manual tab (There are way more buttons now)
                 self.btn_cont_meas.setEnabled(False)
@@ -898,20 +883,20 @@ class Panel(QtGui.QWidget):
                 self.btn_calibr.setEnabled(False)  # what does calibration do?
 
                 await self.sample(folderPath, flnmStr, timeStamp)
-
-            else:
-                self.btn_single_meas.setChecked(False)
+            self.btn_single_meas.setChecked(False)
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
-
         logging.info("continuous_mode_timer_finished")
         self.append_logbox("continuous_mode_timer_finished")
-
-        flnmStr, timeStamp = self.get_filename()
-        folderPath = self.get_folderPath()
-
-        await self.sample(folderPath, flnmStr, timeStamp)
+        if "Measuring" not in self.major_modes:
+            flnmStr, timeStamp = self.get_filename()
+            folderPath = self.get_folderPath()
+            if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
+                await self.sample(folderPath, flnmStr, timeStamp)
+        else:
+            logging.info("Skipped a sample because the previous measurement is still ongoing")
+            pass  # TODO Increase interval
 
     def get_final_pH(self, timeStamp):
         # get final pH
@@ -1071,7 +1056,7 @@ class Panel(QtGui.QWidget):
     def autostart_pump(self):
         self.append_logbox("Automatic start at pump enabled")
 
-        if fbox["pumping"]:
+        if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostart_pump)
             self.timerAuto.timeout.connect(self.autostop_pump)
@@ -1082,7 +1067,7 @@ class Panel(QtGui.QWidget):
         return
 
     def autostop_pump(self):
-        if not fbox["pumping"]:
+        if fbox["pumping"] == 0:
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostop_pump)
             self.timerAuto.timeout.connect(self.autostart_pump)
@@ -1110,56 +1095,56 @@ class Panel(QtGui.QWidget):
             self._autostart()
         return
 
+    @asynccontextmanager
+    async def ongoing_major_mode_contextmanager(self, mode):
+        self.set_major_mode(mode)
+        try:
+            yield None
+        finally:
+            self.unset_major_mode(mode)
+
     async def sample(self, folderPath, flnmStr, timeStamp):
-        self.set_major_mode("Measuring")
-        # Step 0. Start mesurement, create new df,
-        # reset Absorption plot
-        # pump if single, close the valve
-        if self.mode == "Continuous" or self.mode == "Calibration":
-            if not fbox["pumping"]:
-                return
-        self.sampling = True
-        logging.info(f"sample, mode is {self.mode}")
-        self.StatusBox.setText("Ongoing measurement")
-        self.sample_steps[0].setChecked(True)
+        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
+            # Step 0. Start measurement, create new df,
+            # reset Absorption plot
+            # pump if single, close the valve
+            logging.info(f"sample, mode is {self.major_modes}")
+            self.StatusBox.setText("Ongoing measurement")
+            self.sample_steps[0].setChecked(True)
 
-        self.create_new_df()
+            self.create_new_df()
 
-        if self.args == "co3":
-            self.reset_absorp_plot()
+            if self.args == "co3":
+                self.reset_absorp_plot()
 
-        await self.pump_if_needed()
+            await self.pump_if_needed()
 
-        self.append_logbox("Closing the valve ...")
-        await self.instrument.set_Valve(True)
+            self.append_logbox("Closing the valve ...")
+            await self.instrument.set_Valve(True)
 
-        # Step 1. Autoadjust LEDS
-        self.sample_steps[1].setChecked(True)
-        self.append_logbox("Autoadjust LEDS")
-        res = await self.call_autoAdjust()
-        logging.info(f"res after autoadjust: '{res}")
-        if not res:
-            logging.info("could not adjust leds")
-            return
+            # Step 1. Autoadjust LEDS
+            self.sample_steps[1].setChecked(True)
+            self.append_logbox("Autoadjust LEDS")
+            res = await self.call_autoAdjust()
+            logging.info(f"res after autoadjust: '{res}")
+            if res:
+                logging.info("could not adjust leds")
 
-        # Step 2. Take dark and blank
-        self.sample_steps[2].setChecked(True)
-        await asyncio.sleep(0.05)
-        dark = await self.measure_dark()
-        blank_min_dark = await self.measure_blank(dark)
+                # Step 2. Take dark and blank
+                self.sample_steps[2].setChecked(True)
+                await asyncio.sleep(0.05)
+                dark = await self.measure_dark()
+                blank_min_dark = await self.measure_blank(dark)
 
-        # Steps 3,4,5,6 Measurement cycle
-        await self.measurement_cycle(blank_min_dark, dark)
+                # Steps 3,4,5,6 Measurement cycle
+                await self.measurement_cycle(blank_min_dark, dark)
 
-        # Step 7 Open valve
-        self.sample_steps[7].setChecked(True)
-        await asyncio.sleep(0.05)
-        logging.info("Opening the valve ...")
-        self.append_logbox("Opening the valve ...")
-        await self.instrument.set_Valve(False)
-
-        self.change_widget_state(True)
-        self.unset_major_mode("Measuring")
+                # Step 7 Open valve
+                self.sample_steps[7].setChecked(True)
+                await asyncio.sleep(0.05)
+                logging.info("Opening the valve ...")
+                self.append_logbox("Opening the valve ...")
+                await self.instrument.set_Valve(False)
 
         if not self.args.co3:
             self.get_final_pH(timeStamp)
@@ -1171,36 +1156,17 @@ class Panel(QtGui.QWidget):
 
         if "Continuous" in self.major_modes:
             self.StatusBox.setText("Next sample at {}".format(self.get_next_sample()))
-        else:
-            for btn in [self.btn_single_meas, self.btn_calibr, self.btn_cont_meas]:
-                btn.setChecked(False)
-                btn.setEnabled(True)
-
-            if self.mode == "Calibration":
-                res = QtGui.QMessageBox.question(
-                    self,
-                    "Crazy important message",
-                    "Turn back the valve to Ferrybox mode",
-                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-                )
-
-                res = QtGui.QMessageBox.question(
-                    self,
-                    "Crazy important message",
-                    "Are you sure??????",
-                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
-                )
 
     def get_folderPath(self):
         if self.args.localdev:
             return "IN_LOCALDEV_MODE__NOT_A_FILE"
         if self.args == "co3":
-            if self.mode == "Calibration":
+            if "Calibration" in self.valid_modes:
                 folderPath = "/home/pi/pHox/data_co3_calibr/"
             else:
                 folderPath = "/home/pi/pHox/data_co3/"
         else:
-            if self.mode == "Calibration":
+            if "Calibration" in self.valid_modes:
                 folderPath = "/home/pi/pHox/data_calibr/"
             else:
                 folderPath = "/home/pi/pHox/data/"
@@ -1242,15 +1208,11 @@ class Panel(QtGui.QWidget):
             )
 
     async def pump_if_needed(self):
-
-        if self.instrument.deployment == "Standalone" and self.mode == "Continuous":
+        if (
+            self.instrument.deployment == "Standalone" and "Continuous" in self.major_modes
+        ) or "Calibration" in self.major_modes:
             self.append_logbox("pumping")
             await self.instrument.pumping(self.instrument.pumpTime)
-
-        elif self.mode == "Calibration":
-            self.append_logbox("pumping")
-            await self.instrument.pumping(self.instrument.pumpTime)
-
         else:
             self.append_logbox("pumping is not needed ")
 
@@ -1324,7 +1286,7 @@ class Panel(QtGui.QWidget):
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
         self.append_logbox("Dye Injection %d:" % (n_inj + 1))
 
-        if not self.args.debug:
+        if not self.args.nodye:
             await self.instrument.pump_dye(self.instrument.nshots)
 
         self.append_logbox("Mixing")
@@ -1512,6 +1474,7 @@ class boxUI(QtGui.QMainWindow):
             box_id = "template"
         config_name = "configs/config_" + box_id + ".json"
 
+        parser.add_argument("--nodye", action="store_true")
         parser.add_argument("--pco2", action="store_true")
         parser.add_argument("--co3", action="store_true")
         parser.add_argument("--debug", action="store_true")
@@ -1519,6 +1482,13 @@ class boxUI(QtGui.QMainWindow):
         parser.add_argument("--stability", action="store_true")
 
         self.args = parser.parse_args()
+
+        logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
+                            format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        if self.args.debug:
+            for name, logger in logging.root.manager.loggerDict.items():
+                if 'asyncqt' in name:
+                    logger.level = logging.INFO
 
         if self.args.pco2:
             self.setWindowTitle("pH Box Instrument, parameters pH and pCO2")
@@ -1562,9 +1532,6 @@ class boxUI(QtGui.QMainWindow):
 # loop has to be declared for testing to work
 loop = None
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=15, format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
     app = QtGui.QApplication(sys.argv)
     d = os.getcwd()
     qss_file = open("styles.qss").read()
