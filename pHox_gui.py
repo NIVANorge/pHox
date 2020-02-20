@@ -337,7 +337,7 @@ class Panel(QtGui.QWidget):
         self.live_table_groupbox = QtGui.QGroupBox("Live Updates")
 
         self.last_measurement_table = QtGui.QTableWidget(5, 2)
-        self.live_updates_table = QtGui.QTableWidget(5, 2)
+        self.live_updates_table = QtGui.QTableWidget(4, 2)
 
         for table in [self.last_measurement_table,self.live_updates_table]:
             table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -381,17 +381,17 @@ class Panel(QtGui.QWidget):
 
 
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
-        self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
-        self.tab1.layout.addWidget(self.live_table_groupbox, 2, 1, 3, 1)
+        self.tab1.layout.addWidget(self.live_table_groupbox, 1, 0, 1, 1)
+        self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 4, 1)
+
 
 
         self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
-        self.tab1.layout.addWidget(self.sample_steps_groupBox, 1, 0, 1, 1)
+        self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
+        self.tab1.layout.addWidget(self.StatusBox, 2, 1, 1, 1)
 
-        self.tab1.layout.addWidget(self.StatusBox, 2, 0, 1, 1)
-
-        self.tab1.layout.addWidget(self.ferrypump_box, 3, 0, 1, 1)
-        self.tab1.layout.addWidget(self.btn_calibr, 4, 0)
+        self.tab1.layout.addWidget(self.ferrypump_box, 3, 1, 1, 1)
+        self.tab1.layout.addWidget(self.btn_calibr, 4, 1)
 
         self.tab1.setLayout(self.tab1.layout)
 
@@ -989,6 +989,7 @@ class Panel(QtGui.QWidget):
             print('saving results localdev')
             folderPath = os.getcwd()
             self.save_logfile_df(folderPath, flnmStr)
+            self.send_to_ferrybox()
             return
         # self.sample_steps[7].setChecked(True)
         self.append_logbox("Save spectrum data to file")
@@ -1416,6 +1417,7 @@ class Panel(QtGui.QWidget):
 
     def send_to_ferrybox(self):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
+        print (row_to_string)
         udp.send_data("$PPHOX," + row_to_string + ",*\n")
 
 class SensorStateUpdateManager:
