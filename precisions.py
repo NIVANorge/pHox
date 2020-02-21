@@ -4,7 +4,7 @@ precision = {
     "e1": 6,
     "e2": 6,
     "e3": 6,
-    "vNTC": 5,
+    "vNTC": 3,
     "salinity": 2,
     "A1": 5,
     "A2": 5,
@@ -15,7 +15,7 @@ precision = {
     "latitude": 6,
     "fb_temperature": 3,
     "pH_lab": 4,
-    "T_lab": 4,
+    "T_lab": 3,
     "perturbation": 3,
     "evalAnir": 3,
 }

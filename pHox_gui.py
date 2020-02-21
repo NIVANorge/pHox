@@ -76,6 +76,7 @@ class Panel(QtGui.QWidget):
         self.instrument.get_wvlPixels(self.wvls)
         self.t_insitu_live = QtGui.QLineEdit()
         self.s_insitu_live = QtGui.QLineEdit()
+
         self.t_lab_live = QtGui.QLineEdit()
         self.voltage_live = QtGui.QLineEdit()
         if self.args.pco2:
@@ -324,7 +325,7 @@ class Panel(QtGui.QWidget):
         self.tab1.layout = QtGui.QGridLayout()
         self.textBox = QtGui.QTextEdit()
         self.textBox.setReadOnly(True)
-        self.textBox.setOverwriteMode(True)
+        #self.textBox.setOverwriteMode(True)
 
         self.StatusBox = QtGui.QTextEdit()
 
@@ -343,7 +344,9 @@ class Panel(QtGui.QWidget):
 
         self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
-        # self.ferrypump_box.setChecked(True)
+
+        if fbox['pumping'] or fbox['pumping'] == None:
+            self.ferrypump_box.setChecked(True)
 
         self.table_grid = QtGui.QGridLayout()
         self.table_grid.addWidget(self.last_measurement_table)
@@ -353,19 +356,18 @@ class Panel(QtGui.QWidget):
         live_widgets = [self.t_insitu_live, self.s_insitu_live, self.t_lab_live, self.voltage_live]
         [n.setReadOnly(True) for n in live_widgets]
 
-        [self.live_updates_grid.addWidget(v, k, 1) for k, v in enumerate(live_widgets)]
+        #[self.live_updates_grid.addWidget(v, k, 1) for k, v in enumerate(live_widgets)]
 
         self.live_updates_grid.addWidget(QtGui.QLabel('T insitu'), 0, 0)
         self.live_updates_grid.addWidget(self.t_insitu_live, 0, 1)
-
         self.live_updates_grid.addWidget(QtGui.QLabel('S insitu'), 0, 2)
         self.live_updates_grid.addWidget(self.s_insitu_live, 0, 3)
 
         self.live_updates_grid.addWidget(QtGui.QLabel('T lab'), 1, 0)
         self.live_updates_grid.addWidget(self.t_lab_live, 1, 1)
-
         self.live_updates_grid.addWidget(QtGui.QLabel('Voltage'), 1, 2)
         self.live_updates_grid.addWidget(self.voltage_live, 1, 3)
+
         self.live_updates_grid.addWidget(self.ferrypump_box, 2, 2, 1, 2)
         self.live_updates_grid.addWidget(self.StatusBox, 3, 0, 1, 4)
 
@@ -462,7 +464,17 @@ class Panel(QtGui.QWidget):
         self.fill_table_config(6, 0, "Spectroph intergration time")
 
         self.fill_table_config(7, 0, "Ship")
-        self.fill_table_config(7, 1, self.instrument.ship_code)
+
+
+        self.ship_code_combo = QtGui.QComboBox()
+        [self.ship_code_combo.addItem(ship) for ship in ['Standalone', 'NB', 'FA', 'TF']]
+
+        self.tableConfigWidget.setCellWidget(7, 1, self.ship_code_combo )
+
+        index = self.ship_code_combo.findText(str(self.instrument.ship_code), QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            self.ship_code_combo.setCurrentIndex(index)
+
 
         self.specIntTime_combo = QtGui.QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100, 5000, 100)]
@@ -483,8 +495,8 @@ class Panel(QtGui.QWidget):
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 2, 1)
-        self.tab_config.layout.addWidget(self.btn_calibr, 2, 1)
+        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
+        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
         self.tab_config.setLayout(self.tab_config.layout)
 
     def update_spec_int_time_table(self):
@@ -507,6 +519,7 @@ class Panel(QtGui.QWidget):
         self.specIntTime_combo.setEnabled(state)
         self.samplingInt_combo.setEnabled(state)
         self.btn_save_config.setEnabled(state)
+        self.ship_code_combo.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
         logging.info(f"widgets_enabled_change, state is '{state}'")
@@ -539,6 +552,8 @@ class Panel(QtGui.QWidget):
         self.btn_wpump = self.create_button("Water pump", True)
 
         self.btn_liveplot = self.create_button("Live plot", True)
+        self.btn_liveplot.setStyleSheet("background-color: white; color: white; border-color: white")
+
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
 
@@ -556,7 +571,7 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_liveplot.clicked.connect(self.btn_liveplot_clicked)
+        #self.btn_liveplot.clicked.connect(self.btn_liveplot_clicked)
 
         if self.args.co3:
             self.btn_lightsource = self.create_button("light source", True)
@@ -766,6 +781,10 @@ class Panel(QtGui.QWidget):
         self.abs_lines[n_inj].setData(self.wvls, spAbs)
         await asyncio.sleep(0.005)
 
+    def reset_absorp_plot(self):
+        z = np.zeros(len(self.wvls))
+        [self.update_absorbance_plot(n_inj, z) for n_inj in range(self.instrument.ncycles)]
+
     @asyncSlot()
     async def update_spectra_plot(self):
         self.updater.update_spectra_in_progress = True
@@ -782,6 +801,16 @@ class Panel(QtGui.QWidget):
         finally:
             self.updater.update_spectra_in_progress = False
 
+    def update_pH_plot(self):
+        logging.info("in update pH plot")
+        logging.info(f"self.x='{self.x}', self.y='{self.y}'")
+        self.plotwidget2.plot(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None, symbol="o", clear=True)
+        self.plotwidget2.plot(self.x, self.y, pen=None, symbol="o")
+        logging.info("after first plot")
+        logging.info(f"intercept {self.intercept}")
+        self.plotwidget2.plot(self.x, self.intercept + self.slope * self.x)
+
+
     def update_sensors_info(self):
         t = datetime.now().strftime('%Y%M')
         self.t_insitu_live.setText(str(fbox['temperature']))
@@ -792,12 +821,13 @@ class Panel(QtGui.QWidget):
 
         t_lab = round((self.instrument.TempCalCoef[0] * voltage)
                       + self.instrument.TempCalCoef[1], prec["Tdeg"])
-        self.t_lab_live.setText(str(voltage))
-        self.voltage_live.setText(str(t_lab))
 
-    def reset_absorp_plot(self):
-        z = np.zeros(len(self.wvls))
-        [self.update_absorbance_plot(n_inj, z) for n_inj in range(self.instrument.ncycles)]
+        self.t_lab_live.setText(str(t_lab))
+        self.voltage_live.setText(str(voltage))
+
+        if fbox['pumping'] or fbox['pumping'] is None:
+            self.ferrypump_box.setChecked(True)
+
 
     def save_pCO2_data(self, pH=None):
         self.add_pco2_info()
@@ -986,7 +1016,7 @@ class Panel(QtGui.QWidget):
     def get_final_pH(self, timeStamp):
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,) = p
+        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,self.pH_t_corr) = p
 
         self.pH_log_row = pd.DataFrame(
             {
@@ -1024,13 +1054,7 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Save final data in %s" % (folderPath + "pH.log"))
         self.save_logfile_df(folderPath, flnmStr)
 
-    def update_pH_plot(self):
-        logging.info("in update pH plot")
-        logging.info(f"self.x='{self.x}', self.y='{self.y}'")
-        self.plotwidget2.plot(self.x, self.y, pen=None, symbol="o", clear=True)
-        logging.info("after first plot")
-        logging.info(f"intercept {self.intercept}")
-        self.plotwidget2.plot(self.x, self.intercept + self.slope * self.x)
+
 
     def update_table_last_meas(self):
         if not self.args.co3:
@@ -1059,9 +1083,11 @@ class Panel(QtGui.QWidget):
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
 
-        self.btn_liveplot.setEnabled(True)
-        self.btn_liveplot.click()
-        self.btn_liveplot.setEnabled(False)
+        self.updater.start_live_plot()
+        #self.btn_liveplot.setEnabled(True)
+        #self.btn_liveplot.click()
+        #self.btn_liveplot.setEnabled(False)
+
 
         if not self.args.co3:
             logging.info("Starting continuous mode ")
@@ -1070,7 +1096,7 @@ class Panel(QtGui.QWidget):
             self.btn_cont_meas_clicked()
 
         self.textBox.setText("The instrument is ready")
-        self.timerTemp_info.start()
+        self.timerTemp_info.start(500)
         if self.args.pco2:
             # change to config file
             self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
@@ -1494,7 +1520,7 @@ class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
-
+        self.setFixedSize(1920/2, 1080/2)
         try:
             box_id = open("/home/pi/box_id.txt", "r").read()
         except:

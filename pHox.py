@@ -284,6 +284,7 @@ class Common_instrument(object):
 
     async def get_sp_levels(self, pixel):
         self.spectrum = await self.spectrom.get_intensities()
+        await self.update_spectra_plot_manual(self.spectrum)
         return self.spectrum[pixel]
 
 
@@ -637,6 +638,7 @@ class pH_instrument(Common_instrument):
         if self.args.localdev:
             logging.info("ph eval local mode")
             x = evalPar_df["Vol_injected"].values
+            pH_t_corr.values = 0
             y = pH_t_corr.values * 0
             final_slope = 1
             perturbation = 1
@@ -654,7 +656,7 @@ class pH_instrument(Common_instrument):
                     pH_lab = intercept
                     logging.info("r_value **2 > 0.9")
                 else:
-                    logging.info("r_value **2 < 0.9 take two last measurements")
+                    logging.info("r_value **2 < 0.9 take two first measurements")
                     x = x[:-2]
                     y = y[:-2]
                     slope2, intercept, r_value, _, _ = stats.linregress(x, y)
@@ -664,22 +666,14 @@ class pH_instrument(Common_instrument):
                     else:
                         pH_lab = pH_t_corr[0]
 
-            pH_insitu = pH_lab + dpH_dT * (T_lab - self.fb_data["temperature"])
-
+            pH_insitu = round(pH_lab + dpH_dT * (T_lab - self.fb_data["temperature"]), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])
-            pH_insitu = round(pH_insitu, prec["pH"])
             pH_lab = round(pH_lab, prec["pH"])
 
         return (
-            pH_lab,
-            T_lab,
-            perturbation,
-            evalAnir,
-            pH_insitu,
-            x,
-            y,
-            final_slope,
-            intercept,
+            pH_lab,T_lab,
+            perturbation,evalAnir,
+            pH_insitu, x,y,final_slope,intercept,pH_t_corr.values
         )
 
 
