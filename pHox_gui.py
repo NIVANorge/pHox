@@ -1016,7 +1016,7 @@ class Panel(QtGui.QWidget):
     def get_final_pH(self, timeStamp):
         # get final pH
         p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,self.pH_t_corr) = p
+        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept, self.pH_t_corr) = p
 
         self.pH_log_row = pd.DataFrame(
             {
@@ -1520,7 +1520,7 @@ class boxUI(QtGui.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
-        self.setFixedSize(1920/2, 1080/2)
+
         try:
             box_id = open("/home/pi/box_id.txt", "r").read()
         except:
@@ -1549,7 +1549,8 @@ class boxUI(QtGui.QMainWindow):
             self.setWindowTitle("Box Instrument, parameter CO3")
         else:
             self.setWindowTitle("Box Instrument, NIVA - pH")
-
+        if self.args.localdev:
+            self.setFixedSize(1920 / 2, 1080 / 2)
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
@@ -1568,17 +1569,32 @@ class boxUI(QtGui.QMainWindow):
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
 
-            self.main_widget.instrument.spectrom.spec.close()
-            logging.info("timer is stopped")
             self.main_widget.timer_contin_mode.stop()
+            print ('close')
+            '''while self.main_widget.updater.update_spectra_in_progress:
+                print('wait')
+                logging.info('tttt')
+                #await asyncio.sleep(0.05)'''
+
+
+            logging.info("timer is stopped")
+
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():
                 logging.info("UDP server closed")
                 udp.server.join()
+            try:
+                self.main_widget.instrument.spectrom.spec.close()
+            except:
+                logging.info('cannot close spectro')
             self.main_widget.close()
             QtGui.QApplication.quit()
-            sys.exit()
+            try:
+                sys.exit(app.exec_())
+            except:
+                print("Exiting")
+
             event.accept()
 
 

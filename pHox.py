@@ -21,7 +21,7 @@ import udp
 #from asyncqt import QEventLoop, asyncClose, asyncSlot
 from precisions import precision as prec
 #from PyQt5 import QtCore, QtGui
-from scipy import stats
+
 
 try:
     import pigpio
@@ -39,6 +39,11 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
+def get_linregress(x, y):
+    a = np.vstack([x, np.ones(len(x))]).T
+    slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
+    r_value = np.corrcoef(x, y)[0][1]
+    return slope, intercept, r_value
 
 class Spectro_localtest(object):
     def __init__(self):
@@ -388,10 +393,9 @@ class CO3_instrument(Common_instrument):
     def eval_co3(self, co3_eval):
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
-        slope1, intercept, r_value, _, _ = stats.linregress(x, y)
+        slope1, intercept, r_value = get_linregress(x, y)
         print("slope = ", slope1, "  intercept = ", intercept, " r2=", r_value)
         return [slope1, intercept, r_value]
-
 
 class pH_instrument(Common_instrument):
     def __init__(self, panelargs, config_name):
@@ -638,19 +642,20 @@ class pH_instrument(Common_instrument):
         if self.args.localdev:
             logging.info("ph eval local mode")
             x = evalPar_df["Vol_injected"].values
-            pH_t_corr.values = 0
-            y = pH_t_corr.values * 0
+            pH_t_corr = [7.1, 7.2, 7.31, 7.2]
+            y = pH_t_corr
             final_slope = 1
             perturbation = 1
             pH_insitu = 999
             pH_lab = 999
-            intercept = 0
+            slope1, intercept, r_value = get_linregress(x, y)
 
         else:
             if nrows > 1:
                 x = evalPar_df["Vol_injected"].values
                 y = pH_t_corr.values
-                slope1, intercept, r_value, _, _ = stats.linregress(x, y)
+
+                slope1, intercept, r_value = get_linregress(x, y)
                 final_slope = slope1
                 if r_value ** 2 > 0.9:
                     pH_lab = intercept
@@ -659,7 +664,8 @@ class pH_instrument(Common_instrument):
                     logging.info("r_value **2 < 0.9 take two first measurements")
                     x = x[:-2]
                     y = y[:-2]
-                    slope2, intercept, r_value, _, _ = stats.linregress(x, y)
+
+                    slope2, intercept, r_value = get_linregress(x, y)
                     final_slope = slope2
                     if r_value ** 2 > 0.9:
                         pH_lab = intercept
@@ -670,10 +676,11 @@ class pH_instrument(Common_instrument):
             perturbation = round(slope1, prec["perturbation"])
             pH_lab = round(pH_lab, prec["pH"])
 
+        logging.info("leave pH eval")
         return (
-            pH_lab,T_lab,
+            pH_lab, T_lab,
             perturbation,evalAnir,
-            pH_insitu, x,y,final_slope,intercept,pH_t_corr.values
+            pH_insitu, x, y, final_slope, intercept, pH_t_corr
         )
 
 
