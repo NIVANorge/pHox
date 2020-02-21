@@ -45,8 +45,8 @@ QPushButton {
   border-radius: 4px;
   padding: 3px;
   outline: none;
-
 }
+
 
 QPushButton:disabled {
   background-color:  #505F69;
@@ -92,7 +92,7 @@ QGroupBox::title {
     top: -10px;
     left: 10px;}
 
- QLineEdit, QTextEdit {
+ QLineEdit{
   font-size: 10pt;
   background-color: #caedd2;
   padding-top: 0em;
@@ -102,7 +102,16 @@ QGroupBox::title {
   border-style: solid;
   border-radius: 4px;
   color: #19232D;
+  max-width: 50px
 }
+
+QTextEdit{
+  padding-top: 0em;
+  max-height: 50px;
+  background-color: #caedd2;
+  color: #19232D;
+}
+
 
 QLabel {font-size: 10pt;}
 

@@ -3,24 +3,24 @@
 import asyncio
 import json
 import logging
-import os
+#import os
 import random
 import re
-import struct
-import sys
+#import struct
+#import sys
 import time
-import warnings
+#import warnings
 from datetime import datetime, timedelta
 
 import numpy as np
-import usb
-import usb.core
+#import usb
+#import usb.core
 
 import pandas as pd
 import udp
-from asyncqt import QEventLoop, asyncClose, asyncSlot
+#from asyncqt import QEventLoop, asyncClose, asyncSlot
 from precisions import precision as prec
-from PyQt5 import QtCore, QtGui
+#from PyQt5 import QtCore, QtGui
 from scipy import stats
 
 try:

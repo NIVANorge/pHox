@@ -63,7 +63,7 @@ class Panel(QtGui.QWidget):
 
         self.args = panelargs
         self.config_name = config_name
-        self.create_timers()
+
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             self.instrument = CO3_instrument(self.args, self.config_name)
@@ -74,11 +74,16 @@ class Panel(QtGui.QWidget):
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
-
+        self.t_insitu_live = QtGui.QLineEdit()
+        self.s_insitu_live = QtGui.QLineEdit()
+        self.t_lab_live =    QtGui.QLineEdit()
+        self.voltage_live =  QtGui.QLineEdit()
         if self.args.pco2:
             self.CO2_instrument = CO2_instrument(self.config_name)
         self.init_ui()
+        self.create_timers()
         self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
+
 
     def init_ui(self):
         self.tabs = QtGui.QTabWidget()
@@ -139,7 +144,7 @@ class Panel(QtGui.QWidget):
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
         self.timerTemp_info = QtCore.QTimer()
-        self.timerTemp_info.timeout.connect(self.update_T_lab)
+        self.timerTemp_info.timeout.connect(self.update_sensors_info)
 
         self.timerAuto = QtCore.QTimer()
 
@@ -202,44 +207,34 @@ class Panel(QtGui.QWidget):
         # TODO Add more invalidating checks
         if mode_unset == "Manual":
             self.manual_widgets_set_enabled(False)
+
         if mode_unset == "Continuous":
             if "Measuring" not in self.major_modes:
                 self.btn_single_meas.setEnabled(True)
                 self.btn_calibr.setEnabled(True)
                 self.config_widgets_set_state(True)
 
-        if mode_unset == "Measuring":
-            if "Continuous" not in self.major_modes:
-                self.btn_single_meas.setEnabled(True)
-                self.btn_calibr.setEnabled(True)
-                self.config_widgets_set_state(True)
-                self.btn_manual_mode.setEnabled(True)
+        if mode_unset == "Calibration":
+            self.btn_single_meas.setEnabled(True)
+            self.btn_calibr.setEnabled(True)
+            self.config_widgets_set_state(True)
+            self.btn_manual_mode.setEnabled(True)
             self.btn_cont_meas.setEnabled(True)
 
-        #if mode_unset == "Adjusting" and "Measuring" not in self.major_modes:
-        #    self.manual_widgets_set_enabled(True)
-        #    self.config_widgets_set_state(True)
+        if mode_unset == "Measuring":
+            if "Calibration" not in self.major_modes:
+                if "Continuous" not in self.major_modes:
+                    self.btn_single_meas.setEnabled(True)
+                    self.btn_calibr.setEnabled(True)
+                    self.config_widgets_set_state(True)
+                self.btn_manual_mode.setEnabled(True)
+                self.btn_cont_meas.setEnabled(True)
 
-        #if mode_unset == 'Adjusting' and "Measuring" in self.major_modes:
-        if mode_unset == 'Adjusting'  and "Measuring" not in self.major_modes:
-            self.manual_widgets_set_enabled(True)
+        if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
+            if 'Manual' in self.major_modes:
+                self.manual_widgets_set_enabled(True)
             self.config_widgets_set_state(True)
             self.btn_calibr.setEnabled(True)
-        '''if mode_unset == 'Adjusting' and 'Manual' not in self.major_modes and 'Measuring' not in self.major_modes:
-            self.manual_widgets_set_enabled(True)
-            self.config_widgets_set_state(True)
-            self.btn_calibr.setEnabled(True)'''
-        if mode_unset == "Manual" and 'Adjusting' in self.major_modes:
-            self.manual_widgets_set_enabled(False)
-
-
-        if mode_unset == "Measuring":
-            if "Continuous" not in self.major_modes:
-                self.btn_single_meas.setEnabled(True)
-                self.btn_calibr.setEnabled(True)
-                self.config_widgets_set_state(True)
-            self.btn_cont_meas.setEnabled(True)
-
 
         self.major_modes.remove(mode_unset)
         logging.debug(f"New mode:{self.major_modes}")
@@ -329,68 +324,82 @@ class Panel(QtGui.QWidget):
 
         self.tab1.layout = QtGui.QGridLayout()
         self.textBox = QtGui.QTextEdit()
+        self.textBox.setReadOnly(True)
         self.textBox.setOverwriteMode(True)
 
-        self.StatusBox = QtGui.QLineEdit()
+        self.StatusBox = QtGui.QTextEdit()
 
         self.last_measurement_table_groupbox = QtGui.QGroupBox("Last Measurement")
-        self.live_table_groupbox = QtGui.QGroupBox("Live Updates")
-
+        self.live_update_groupbox = QtGui.QGroupBox("Live Updates")
         self.last_measurement_table = QtGui.QTableWidget(5, 2)
-        self.live_updates_table = QtGui.QTableWidget(4, 2)
+        self.last_measurement_table.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.last_measurement_table.verticalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
 
-        for table in [self.last_measurement_table,self.live_updates_table]:
-            table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-            table.verticalHeader().hide()
-            table.horizontalHeader().hide()
-            table.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.last_measurement_table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.last_measurement_table.verticalHeader().hide()
+        self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
             for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
-        [self.fill_live_updates_table(k, 0, v) for k, v in enumerate(["T lab", "Voltage", "T insitu", "S insitu"])]
 
+        self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
+        self.ferrypump_box.setEnabled(False)
+        #self.ferrypump_box.setChecked(True)
 
         self.table_grid = QtGui.QGridLayout()
-        self.table_live_grid = QtGui.QGridLayout()
-        self.table_live_grid.addWidget(self.live_updates_table)
         self.table_grid.addWidget(self.last_measurement_table)
 
-        self.last_measurement_table_groupbox.setLayout(self.table_grid)
-        self.live_table_groupbox.setLayout(self.table_live_grid)
+        self.live_updates_grid = QtGui.QGridLayout()
 
-        self.textBox_LastpH = QtGui.QTextEdit()
-        self.textBox_LastpH.setOverwriteMode(True)
+
+
+        live_widgets = [self.t_insitu_live, self.s_insitu_live, self.t_lab_live, self.voltage_live]
+        [n.setReadOnly(True) for n in live_widgets]
+
+        [self.live_updates_grid.addWidget(v, k, 1) for k, v in enumerate(live_widgets)]
+
+        self.live_updates_grid.addWidget(QtGui.QLabel('T insitu'), 0, 0)
+        self.live_updates_grid.addWidget(self.t_insitu_live,       0, 1)
+
+        self.live_updates_grid.addWidget(QtGui.QLabel('S insitu'), 0, 2)
+        self.live_updates_grid.addWidget(self.s_insitu_live,       0, 3)
+
+        self.live_updates_grid.addWidget(QtGui.QLabel('T lab'), 1, 0)
+        self.live_updates_grid.addWidget(self.t_lab_live,       1, 1)
+
+        self.live_updates_grid.addWidget(QtGui.QLabel('Voltage'), 1, 2)
+        self.live_updates_grid.addWidget(self.voltage_live,       1, 3)
+
+        self.live_updates_grid.addWidget(self.ferrypump_box, 2, 2, 1, 2)
+        self.live_updates_grid.addWidget(self.StatusBox, 3, 0, 2, 4)
+
+        self.live_update_groupbox.setLayout(self.live_updates_grid)
+
+        #self.live_updates_table = QtGui.QTableWidget(4, 2)
+
+        self.last_measurement_table_groupbox.setLayout(self.table_grid)
+
+        #self.textBox_LastpH = QtGui.QTextEdit()
+        #self.textBox_LastpH.setOverwriteMode(True)
         # self.textBox.setText('Last .')
 
         if self.args.debug:
             self.logTextBox.appendPlainText("Starting in debug mode")
         # self.tab_log.layout.addWidget(self.logTextBox)
 
-        self.btn_cont_meas = self.create_button("Continuous measurements", True)
+        self.btn_cont_meas =   self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
-        self.btn_calibr = self.create_button("Make calibration", True)
+        self.btn_calibr =      self.create_button("Make calibration", True)
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         if not self.args.co3:
             self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
-        self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
-        self.ferrypump_box.setEnabled(False)
-        #self.ferrypump_box.setChecked(True)
-
-
-
         self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
-        self.tab1.layout.addWidget(self.live_table_groupbox, 1, 0, 1, 1)
-        self.tab1.layout.addWidget(self.sample_steps_groupBox, 2, 0, 4, 1)
-
-
-
+        self.tab1.layout.addWidget(self.sample_steps_groupBox, 1, 0, 1, 1)
+        self.tab1.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
         self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
         self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
-        self.tab1.layout.addWidget(self.StatusBox, 2, 1, 1, 1)
-
-        self.tab1.layout.addWidget(self.ferrypump_box, 3, 1, 1, 1)
         self.tab1.layout.addWidget(self.btn_calibr, 4, 1)
 
         self.tab1.setLayout(self.tab1.layout)
@@ -769,10 +778,24 @@ class Panel(QtGui.QWidget):
                 if self.args.stability:
                     self.save_stability_test(datay)
                 self.plotSpc.setData(self.wvls, datay)
+                #self.update_sensors_info()
         except Exception as e:
             logging.exception("could not read and set Data")
         finally:
             self.updater.update_spectra_in_progress = False
+
+    def update_sensors_info(self):
+        t = datetime.now().strftime('%Y%M')
+        self.t_insitu_live.setText(str(fbox['temperature']))
+        self.s_insitu_live.setText(str(fbox['salinity']))
+
+        voltage = round(self.instrument.get_Vd(3,
+                        self.instrument.vNTCch), prec["vNTC"])
+
+        t_lab = round((self.instrument.TempCalCoef[0] * voltage)
+                      + self.instrument.TempCalCoef[1], prec["Tdeg"])
+        self.t_lab_live.setText(str(voltage))
+        self.voltage_live.setText(str(t_lab))
 
     def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
@@ -898,7 +921,7 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def btn_calibr_clicked(self):
         #if self.btn_calibr.isChecked():
-        async with self.updater.disable_live_plotting(),self.ongoing_major_mode_contextmanager("Calibration") :
+        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
 
             valve_turned = QtGui.QMessageBox.question(self,"important message!!!",
@@ -1011,20 +1034,13 @@ class Panel(QtGui.QWidget):
         logging.info(f"intercept {self.intercept}")
         self.plotwidget2.plot(self.x, self.intercept + self.slope * self.x)
 
-    def update_T_lab(self):
-        Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
-        Voltage = round(Voltage, prec["vNTC"])
-        T_lab = round((self.instrument.TempCalCoef[0] * Voltage) + self.instrument.TempCalCoef[1], prec["Tdeg"],)
 
-
-        self.fill_live_updates_table(0, 1, str(T_lab))
-        self.fill_live_updates_table(1, 1, str(Voltage))
 
     def update_table_last_meas(self):
         if not self.args.co3:
             [
-                self.fill_table_measurements(k, 1, str(self.pH_log_row[v].values[0]))
-                for k, v in enumerate(["pH_lab", "T_lab", "pH_insitu", "fb_temp", "fb_sal"], 1)
+                self.fill_table_measurement(k, 1, str(self.pH_log_row[v].values[0]))
+                for k, v in enumerate(["pH_lab", "T_lab", "pH_insitu", "fb_temp", "fb_sal"], 0)
             ]
 
         else:
@@ -1058,7 +1074,7 @@ class Panel(QtGui.QWidget):
             self.btn_cont_meas_clicked()
 
         self.textBox.setText("The instrument is ready")
-
+        self.timerTemp_info.start()
         if self.args.pco2:
             # change to config file
             self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
@@ -1450,7 +1466,7 @@ class SensorStateUpdateManager:
         finally:
             self.disable_requests -= 1
             if self.disable_requests == 0:
-                self.live_button.setEnabled(True)
+                #self.live_button.setEnabled(True)
                 self.start_live_plot()
 
     def start_live_plot(self):
