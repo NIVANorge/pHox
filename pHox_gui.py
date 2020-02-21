@@ -859,13 +859,21 @@ class Panel(QtGui.QWidget):
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         return adj
 
+    @asyncSlot()
+    async def update_plot_no_request(self):
+        await self.update_spectra_plot_manual(self.instrument.spectrum)
+
     async def autoAdjust_LED(self):
+        self.timer2 = QtCore.QTimer()
+        self.timer2.start(1000)
+        self.timer2.timeout.connect(self.update_plot_no_request)
         (
             self.instrument.LED1,
             self.instrument.LED2,
             self.instrument.LED3,
             result,
         ) = await self.instrument.auto_adjust()
+        self.timer2.stop()
         led_values = [self.instrument.LED1, self.instrument.LED2, self.instrument.LED3]
         logging.info(f"values after autoadjust: '{led_values}'")
         if result:
@@ -1446,11 +1454,19 @@ class Panel(QtGui.QWidget):
         if not os.path.exists(hour_log_flnm):
             self.pH_log_row.to_csv(hour_log_flnm, index=False, header=True)
         else:
-            self.pH_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=True)
+            self.pH_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
 
         logging.info(f"hour_log_path: {hour_log_path}")
         hour_log_flnm = hour_log_path + flnmStr + ".log"
         logging.info(f"hour_log_flnm: {hour_log_flnm}")
+
+        logfile = os.path.join(folderPath, 'pH.log')
+
+        if os.path.exists(logfile):
+            self.pH_log_row.to_csv(logfile, mode='a', index=False, header=False)
+        else:
+            self.pH_log_row.to_csv(logfile, index=False, header=True)
+
         logging.info("saved log_df")
 
     def send_to_ferrybox(self):

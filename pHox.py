@@ -289,7 +289,6 @@ class Common_instrument(object):
 
     async def get_sp_levels(self, pixel):
         self.spectrum = await self.spectrom.get_intensities()
-        await self.update_spectra_plot_manual(self.spectrum)
         return self.spectrum[pixel]
 
 
@@ -502,7 +501,7 @@ class pH_instrument(Common_instrument):
         self.adj_action = None
         increment_sptint = 200
         n = 0
-        while n < 10:
+        while n < 30:
             n += 1
 
             print("inside call adjust ")
