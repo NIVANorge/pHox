@@ -86,8 +86,8 @@ class Panel(QtGui.QWidget):
         self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
 
         self.until_next_sample = None
-        self.infotimer_step = 15 # seconds
-        self.manual_limit = 60*3 # 3 minutes, time when we turn off manual mode if continuous is clicked
+        self.infotimer_step = 15  # seconds
+        self.manual_limit = 60*3  # 3 minutes, time when we turn off manual mode if continuous is clicked
     def init_ui(self):
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
@@ -216,7 +216,6 @@ class Panel(QtGui.QWidget):
             return False
         # TODO Add more invalidating checks
         if mode_unset == "Manual":
-            print (self.major_modes, self.until_next_sample)
             if 'Continuous' in self.major_modes and self.until_next_sample <= self.manual_limit:
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
@@ -1034,9 +1033,12 @@ class Panel(QtGui.QWidget):
 
     def update_contin_mode_info(self):
 
-        if self.until_next_sample <= self.manual_limit and 'Manual' in self.major_modes:
-            print('unset  manual')
-            self.unset_major_mode('Manual')
+        if self.until_next_sample <= self.manual_limit and self.btn_manual_mode.isEnabled():
+            if 'Manual' in self.major_modes:
+                self.unset_major_mode("Manual")
+            else:
+                self.btn_manual_mode.setChecked(False)
+                self.btn_manual_mode.setEnabled(False)
 
         if self.until_next_sample > 60:
             self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
