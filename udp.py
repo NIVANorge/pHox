@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 import socket
 import threading
@@ -23,7 +24,7 @@ def udp_server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
-    print("UDP server started")
+    logging.info("UDP server started")
     while not UDP_EXIT:
         try:
             (data, addr) = sock.recvfrom(500)

@@ -85,6 +85,9 @@ class Panel(QtGui.QWidget):
         self.create_timers()
         self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
 
+        self.until_next_sample = None
+        self.infotimer_step = 15 # seconds
+        self.manual_limit = 60*3 # 3 minutes, time when we turn off manual mode if continuous is clicked
     def init_ui(self):
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
@@ -140,6 +143,9 @@ class Panel(QtGui.QWidget):
         self.timer_contin_mode = QtCore.QTimer()
         self.timer_contin_mode.timeout.connect(self.continuous_mode_timer_finished)
 
+        self.infotimer_contin_mode = QtCore.QTimer()
+        self.infotimer_contin_mode.timeout.connect(self.update_contin_mode_info)
+
         self.timerSpectra_plot = QtCore.QTimer()
         self.timerSpectra_plot.timeout.connect(self.update_spectra_plot)
 
@@ -170,12 +176,17 @@ class Panel(QtGui.QWidget):
         # TODO Add more invalidating checks
         if mode_set == "Manual":
             self.manual_widgets_set_enabled(True)
+            self.btn_single_meas.setEnabled(False)
+            if 'Continuous' in self.major_modes:
+                self.btn_adjust_leds.setEnabled(False)
 
         if mode_set == "Continuous":
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.manual_widgets_set_enabled(False)
+            if 'Manual' in self.major_modes:
+                self.btn_adjust_leds.setEnabled(False)
 
         if mode_set == 'Calibration':
             self.btn_single_meas.setEnabled(False)
@@ -189,8 +200,7 @@ class Panel(QtGui.QWidget):
 
             if "Continuous" not in self.major_modes:
                 self.btn_cont_meas.setEnabled(False)
-            if 'Manual' not in self.major_modes:
-                self.btn_manual_mode.setEnabled(False)
+
             self.manual_widgets_set_enabled(False)
             self.config_widgets_set_state(False)
 
@@ -206,7 +216,13 @@ class Panel(QtGui.QWidget):
             return False
         # TODO Add more invalidating checks
         if mode_unset == "Manual":
+            print (self.major_modes, self.until_next_sample)
+            if 'Continuous' in self.major_modes and self.until_next_sample <= self.manual_limit:
+                self.btn_manual_mode.setChecked(False)
+                self.btn_manual_mode.setEnabled(False)
+
             self.manual_widgets_set_enabled(False)
+            self.btn_single_meas.setEnabled(True)
 
         if mode_unset == "Continuous":
             if "Measuring" not in self.major_modes:
@@ -323,11 +339,12 @@ class Panel(QtGui.QWidget):
         self.make_steps_groupBox()
 
         self.tab1.layout = QtGui.QGridLayout()
-        self.textBox = QtGui.QTextEdit()
-        self.textBox.setReadOnly(True)
+        #self.textBox = QtGui.QTextEdit()
+        #self.textBox.setReadOnly(True)
         #self.textBox.setOverwriteMode(True)
 
         self.StatusBox = QtGui.QTextEdit()
+        #self.StatusBox.setReadOnly(True)
 
         self.last_measurement_table_groupbox = QtGui.QGroupBox("Last Measurement")
         self.live_update_groupbox = QtGui.QGroupBox("Live Updates")
@@ -861,7 +878,8 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_plot_no_request(self):
-        await self.update_spectra_plot_manual(self.instrument.spectrum)
+        if self.instrument.spectrum:
+            await self.update_spectra_plot_manual(self.instrument.spectrum)
 
     async def autoAdjust_LED(self):
         self.timer2 = QtCore.QTimer()
@@ -947,12 +965,18 @@ class Panel(QtGui.QWidget):
         if self.btn_cont_meas.isChecked():
             self.set_major_mode("Continuous")
             if "Measuring" not in self.major_modes:
-                self.StatusBox.setText("Next sample at {}".format(self.get_next_sample()))
+                self.until_next_sample = self.instrument.samplingInterval
+
             self.timer_contin_mode.start(self.instrument.samplingInterval * 1000)
+
+            #elf.StatusBox.setText("Time until next sample is minutes")
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample / 60} minutes ')
+            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
         else:
             self.unset_major_mode("Continuous")
             self.StatusBox.clear()
             self.timer_contin_mode.stop()
+            self.infotimer_contin_mode.stop()
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
@@ -1008,6 +1032,20 @@ class Panel(QtGui.QWidget):
                 await self.sample(folderPath, flnmStr, timeStamp)
             self.btn_single_meas.setChecked(False)
 
+    def update_contin_mode_info(self):
+
+        if self.until_next_sample <= self.manual_limit and 'Manual' in self.major_modes:
+            print('unset  manual')
+            self.unset_major_mode('Manual')
+
+        if self.until_next_sample > 60:
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
+        else:
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} seconds ')
+
+        self.until_next_sample -= self.infotimer_step
+
+
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
         logging.info("continuous_mode_timer_finished")
@@ -1043,9 +1081,9 @@ class Panel(QtGui.QWidget):
         )
 
     def save_results(self, folderPath, flnmStr):
-        print('saving results')
+        logging.info('saving results')
         if self.args.localdev:
-            print('saving results localdev')
+            logging.debug('saving results localdev')
             folderPath = os.getcwd()
             self.save_logfile_df(folderPath, flnmStr)
             self.send_to_ferrybox()
@@ -1081,7 +1119,7 @@ class Panel(QtGui.QWidget):
 
     def _autostart(self):
         self.append_logbox("Inside _autostart...")
-        self.textBox.setText("Turn on LEDs")
+        self.StatusBox.setText("Turn on LEDs")
         if self.args.co3:
             logging.info("turn on light source")
             self.instrument.turn_on_relay(self.instrument.light_slot)
@@ -1099,11 +1137,11 @@ class Panel(QtGui.QWidget):
 
         if not self.args.co3:
             logging.info("Starting continuous mode ")
-            self.textBox.setText("Starting continuous mode ")
+            self.StatusBox.setText("Starting continuous mode ")
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
-        self.textBox.setText("The instrument is ready")
+        #self.StatusBox.setText("The instrument is ready")
         self.timerTemp_info.start(500)
         if self.args.pco2:
             # change to config file
@@ -1186,17 +1224,17 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Inside continuous_mode...")
         logging.info("start autorun")
         if self.instrument._autostart and self.instrument._automode == "time":
-            self.textBox.setText("Automatic scheduled start enabled")
+            self.StatusBox.setText("Automatic scheduled start enabled")
             self.timerAuto.timeout.connect(self.autostart_time)
             self.timerAuto.start(1000)
 
         elif self.instrument._autostart and self.instrument._automode == "pump":
-            self.textBox.setText("Automatic start at pump enabled")
+            self.StatusBox.setText("Automatic start at pump enabled")
             self.timerAuto.timeout.connect(self.autostart_pump)
             self.timerAuto.start(1000)
 
         elif self.instrument._autostart and self.instrument._automode == "now":
-            self.textBox.setText("Immediate automatic start enabled")
+            self.StatusBoxx.setText("Immediate automatic start enabled")
             self._autostart()
         return
 
@@ -1259,7 +1297,8 @@ class Panel(QtGui.QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
         if "Continuous" in self.major_modes:
-            self.StatusBox.setText("Next sample at {}".format(self.get_next_sample()))
+            self.until_next_sample = self.instrument.samplingInterval
+            self.StatusBox.setText(f"Until next sample at {self.until_next_sample/60} minutes")
 
     def get_folderPath(self):
         if self.args.localdev:
@@ -1471,7 +1510,6 @@ class Panel(QtGui.QWidget):
 
     def send_to_ferrybox(self):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
-        print(row_to_string)
         udp.send_data("$PPHOX," + row_to_string + ",*\n")
 
 
@@ -1586,7 +1624,7 @@ class boxUI(QtGui.QMainWindow):
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
 
             self.main_widget.timer_contin_mode.stop()
-            print ('close')
+            logging.info('close the program')
             '''while self.main_widget.updater.update_spectra_in_progress:
                 print('wait')
                 logging.info('tttt')

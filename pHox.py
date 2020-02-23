@@ -330,11 +330,11 @@ class CO3_instrument(Common_instrument):
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
             if self.specIntTime > 5000:
-                print("Too high spec int time value,break")
+                logging.info("Too high spec int time value,break")
                 break
 
             elif self.specIntTime < 100:
-                print("Something is wrong, specint time is too low,break ")
+                logging.info("Something is wrong, specint time is too low,break ")
                 break
 
             elif pixelLevel < minval:
@@ -360,19 +360,19 @@ class CO3_instrument(Common_instrument):
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
         # volume in ml
         S_corr = round(self.fb_data["salinity"] * dilution, prec["salinity"])
-        print(S_corr)
+        logging.debug(f"S_corr {S_corr}")
         R = A2 / A1
         # coefficients from Patsavas et al. 2015
         e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         e2e3 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
         log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
 
-        print("R", R, "e1", e1, "e2e3", e2e3)
+        logging.debug(f"R {R}e1 {e1} e2e3{e2e3}")
         arg = (R - e1) / (1 - R * e2e3)
-        print(arg)
+        logging.debug(f"arg {arg}")
         # CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
         CO3 = 1.0e6 * (10 ** -(log_beta1_e2 + np.log10(arg)))  # umol/kg
-        print(r"[CO3--] = {} umol/kg, T = {}".format(CO3, Tdeg))
+        logging.debug(f"[CO3--] = {CO3} umol/kg, T = {Tdeg}")
 
         return [
             CO3,
@@ -393,7 +393,7 @@ class CO3_instrument(Common_instrument):
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
         slope1, intercept, r_value = get_linregress(x, y)
-        print("slope = ", slope1, "  intercept = ", intercept, " r2=", r_value)
+        logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
         return [slope1, intercept, r_value]
 
 class pH_instrument(Common_instrument):
@@ -416,10 +416,6 @@ class pH_instrument(Common_instrument):
             j = json.load(json_file)
 
         conf_pH = j["pH"]
-        try:
-            self.textBox.append("Loading pH related config")
-        except:
-            pass
 
         self.dye = conf_pH["Default_DYE"]
         if self.dye == "MCP":
@@ -452,7 +448,7 @@ class pH_instrument(Common_instrument):
         else:
             minval = self.THR * 0.95
 
-        print("led_ind", led_ind)
+        logging.info(f"led_ind {led_ind}")
         step = 0
 
         increment = 50
@@ -460,35 +456,35 @@ class pH_instrument(Common_instrument):
         # Increment is decreased twice in case we change the direction
         # of decrease/increase
         while adj == False:
-            print("step", step, "LED", LED)
+            logging.info(f"step is {step}")
             step += 1
             self.adjust_LED(led_ind, LED)
             await asyncio.sleep(0.1)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[led_ind])
             await asyncio.sleep(0.1)
-            print("pixelLevel", pixelLevel)
+            logging.info(f"pixelLevel {pixelLevel}")
 
             if pixelLevel > maxval and LED > 15:
-                print("case0  Too high pixellevel, decrease LED ")
+                logging.debug("case0  Too high pixellevel, decrease LED ")
                 if self.led_action == "increase":
                     increment = increment / 2
                 LED = max(1, LED - increment)
                 self.led_action = "decrease"
 
             elif pixelLevel < minval and LED < 90:
-                print("case3 Too low pixellevel, increase LED")
+                logging.debug("case3 Too low pixellevel, increase LED")
                 if self.led_action == "decrease":
                     increment = increment / 2
                 LED = min(99, LED + increment)
                 self.led_action = "increase"
 
             elif pixelLevel > maxval and LED <= 15:
-                print("case1 decrease int time")
+                logging.debug("case1 decrease int time")
                 res = "decrease int time"
                 break
 
             elif pixelLevel < minval and LED >= 90:
-                print("case2 Too low pixellevel and high LED")
+                logging.debug("case2 Too low pixellevel and high LED")
                 res = "increase int time"
                 break
             else:
@@ -504,22 +500,22 @@ class pH_instrument(Common_instrument):
         while n < 30:
             n += 1
 
-            print("inside call adjust ")
+            logging.debug("inside call adjust ")
             adj1, adj2, adj3 = False, False, False
             LED1, LED2, LED3 = None, None, None
             res1, res2, res3 = None, None, None
             await self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
-            print("Trying %i ms integration time..." % self.specIntTime)
+            logging.info(f"Trying {self.specIntTime} ms integration time...")
 
             LED1, adj1, res1 = await self.find_LED(led_ind=0, adj=adj1, LED=self.LED1)
 
             if adj1:
-                print("*** adj1 = True")
+                logging.info("*** adj1 = True")
                 LED2, adj2, res2 = await self.find_LED(led_ind=1, adj=adj2, LED=self.LED2)
 
                 if adj2:
-                    print("*** adj2 = True")
+                    logging.info("*** adj2 = True")
                     LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LED3)
 
             if any(t == "decrease int time" for t in [res1, res2, res3]):
@@ -528,7 +524,7 @@ class pH_instrument(Common_instrument):
                 self.adj_action = "decrease"
                 self.specIntTime -= increment_sptint
                 if self.specIntTime < 50:
-                    print("self.specIntTime < 50")
+                    logging.info("self.specIntTime < 50")
                     break
 
             elif any(t == "increase int time" for t in [res1, res2, res3]):
@@ -540,11 +536,11 @@ class pH_instrument(Common_instrument):
                     self.adj_action = "increase"
 
                 else:
-                    print("too high spt")
+                    logging.info("too high spt")
                     break
 
             elif adj1 and adj2 and adj3:
-                print("Levels adjusted")
+                logging.info("Levels adjusted")
                 break
 
         if not adj1 or not adj2 or not adj3:
