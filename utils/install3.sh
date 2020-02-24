@@ -133,7 +133,7 @@ then
     echo 'Type=Application'                                    >> $f
     echo 'NAME=pHox'                                           >> $f
     echo "Exec=sudo bash -c 'cd /home/pi/pHox && /usr/bin/python3 /home/pi/pHox/pHox_gui.py'" >> $f
-    cp $f "home/pi/Desktop"
+    cp $f "/home/pi/Desktop"
     echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
