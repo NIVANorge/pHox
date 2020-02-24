@@ -194,6 +194,7 @@ class Panel(QtGui.QWidget):
             self.btn_manual_mode.setEnabled(False)
 
         if mode_set in ["Measuring", "Adjusting"]:
+            self.btn_manual_mode.setEnabled(False)
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
 
@@ -443,6 +444,8 @@ class Panel(QtGui.QWidget):
         self.dye_combo.addItem("TB")
         self.dye_combo.addItem("MCP")
 
+
+
         index = self.dye_combo.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
         if index >= 0:
             self.dye_combo.setCurrentIndex(index)
@@ -450,69 +453,69 @@ class Panel(QtGui.QWidget):
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
 
         self.tableConfigWidget = QtGui.QTableWidget()
-
+        self.tableConfigWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
         self.tableConfigWidget.horizontalHeader().hide()
-
-        self.tableConfigWidget.setRowCount(8)
+        self.tableConfigWidget.setRowCount(11)
         self.tableConfigWidget.setColumnCount(2)
         self.tableConfigWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
-        # self.tableConfigWidget.horizontalHeader().setStretchLastSection(True)
+
 
         self.fill_table_config(0, 0, "DYE type")
         self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
+
         if not self.args.co3:
-            self.fill_table_config(1, 0, "NIR:")
-            self.fill_table_config(1, 1, str(self.instrument.NIR))
+            [self.fill_table_config(k, 0, v) for k, v in enumerate(["NIR:", "HI-", "I2-"], 1)]
+            [self.fill_table_config(k, 1, str(v)) for k, v in enumerate([self.instrument.NIR,
+                                                                        self.instrument.HI,
+                                                                        self.instrument.I2], 1)]
+        self.fill_table_config(4, 0, "pH sampling interval (min)")
+        self.samplingInt_combo = QtGui.QComboBox()
+        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10']]
+        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval)
+        self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
+        self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
-            self.fill_table_config(2, 0, "HI-")
-            self.fill_table_config(2, 1, str(self.instrument.HI))
-
-            self.fill_table_config(3, 0, "I2-")
-            self.fill_table_config(3, 1, str(self.instrument.I2))
-
-        self.fill_table_config(4, 0, "Temp Sensor is calibrated:")
-        self.fill_table_config(4, 1, str(self.instrument.temp_iscalibrated))
-
-        self.fill_table_config(5, 0, "pH sampling interval (min)")
-
-        self.fill_table_config(6, 0, "Spectroph intergration time")
-
-        self.fill_table_config(7, 0, "Ship")
-
-
-        self.ship_code_combo = QtGui.QComboBox()
-        [self.ship_code_combo.addItem(ship) for ship in ['Standalone', 'NB', 'FA', 'TF']]
-
-        self.tableConfigWidget.setCellWidget(7, 1, self.ship_code_combo )
-
-        index = self.ship_code_combo.findText(str(self.instrument.ship_code), QtCore.Qt.MatchFixedString)
-        if index >= 0:
-            self.ship_code_combo.setCurrentIndex(index)
-
-
+        self.fill_table_config(5, 0, "Spectroph intergration time")
         self.specIntTime_combo = QtGui.QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100, 5000, 100)]
         self.update_spec_int_time_table()
-
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
-        self.tableConfigWidget.setCellWidget(6, 1, self.specIntTime_combo)
+        self.tableConfigWidget.setCellWidget(5, 1, self.specIntTime_combo)
 
-        self.samplingInt_combo = QtGui.QComboBox()
-        self.samplingInt_combo.addItem("5")
-        self.samplingInt_combo.addItem("10")
-        self.tableConfigWidget.setCellWidget(5, 1, self.samplingInt_combo)
+        self.fill_table_config(6, 0, "Ship")
+        self.ship_code_combo = QtGui.QComboBox()
+        [self.ship_code_combo.addItem(t_id) for t_id in ['Standalone', 'NB', 'FA', 'TF']]
+        self.tableConfigWidget.setCellWidget(6, 1, self.ship_code_combo)
+        self.ship_code_combo.currentIndexChanged.connect(self.ship_code_changed)
 
-        index = self.samplingInt_combo.findText(str(self.instrument.samplingInterval), QtCore.Qt.MatchFixedString)
-        if index >= 0:
-            self.samplingInt_combo.setCurrentIndex(index)
+        self.fill_table_config(7, 0, 'Temp probe id')
+        self.temp_id_combo = QtGui.QComboBox()
+        [self.temp_id_combo.addItem(ship) for ship in ["Probe_1", "Probe_2"]]
+        self.set_combo_index(self.temp_id_combo, self.instrument.TempProbe_id)
+        self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_combo)
 
-        self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
+        self.fill_table_config(8, 0, 'Temp probe is calibrated')
+        self.temp_id_is_calibr = QtGui.QCheckBox()
+        self.tableConfigWidget.setCellWidget(8, 1, self.temp_id_is_calibr)
+        self.set_combo_index(self.ship_code_combo, self.instrument.ship_code)
+
+
+       # self.fill_table_config(9, 0, 'Salinity for Manual meas')
+
+        self.fill_table_config(10, 0, 'Calibration check passed')
+        self.calibr_check = QtGui.QCheckBox()
+        self.tableConfigWidget.setCellWidget(10, 1, self.calibr_check)
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
         self.tab_config.setLayout(self.tab_config.layout)
+
+    def set_combo_index(self, combo, text):
+        index = combo.findText(str(text), QtCore.Qt.MatchFixedString)
+        if index >= 0:
+            combo.setCurrentIndex(index)
 
     def update_spec_int_time_table(self):
         index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), QtCore.Qt.MatchFixedString)
@@ -528,6 +531,10 @@ class Panel(QtGui.QWidget):
     async def specIntTime_combo_chngd(self):
         new_int_time = int(self.specIntTime_combo.currentText())
         await self.updater.set_specIntTime(new_int_time)
+
+    def ship_code_changed(self):
+        self.instrument.ship_code = self.ship_code_combo.currentText()
+
 
     def config_widgets_set_state(self, state):
         self.dye_combo.setEnabled(state)
@@ -689,6 +696,9 @@ class Panel(QtGui.QWidget):
             j["pH"]["Default_DYE"] = self.dye_combo.currentText()
 
             j["Operational"]["Spectro_Integration_time"] = self.instrument.specIntTime
+            j["Operational"]["Ship_Code"] = self.instrument.ship_code
+            # add probe id
+            # probe is calibrated or not
 
             minutes = int(self.samplingInt_combo.currentText())
             j["Operational"]["SAMPLING_INTERVAL_SEC"] = minutes * 60
@@ -999,6 +1009,7 @@ class Panel(QtGui.QWidget):
                 QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
                                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             self.btn_calibr.setChecked(False)
+
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
@@ -1590,8 +1601,9 @@ class boxUI(QtGui.QMainWindow):
 
         self.args = parser.parse_args()
 
-        logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
-                            format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        # logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
+        #                     format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
         if self.args.debug:
             for name, logger in logging.root.manager.loggerDict.items():
                 if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
