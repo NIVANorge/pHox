@@ -103,16 +103,16 @@
     },
     "TempProbes": {
         "Probe_1": {
-            "comment": "installed on pHox3 at NIVA now",
-            "is_calibrated": "True",
+            "comment": "installed on pHox3 not sure if calibrated",
+            "is_calibrated": "False",
             "calibr_date": "NaN",
             "Calibr_coef": [
                 70.582,
                 16.213
             ]
         },
-
         "Probe_2": {
+            "comment": "not used yet",
             "is_calibrated": "False",
             "calibr_date": "NaN",
             "Calibr_coef": [
@@ -120,16 +120,68 @@
                 "NaN"
             ]
         },
-
-        "Probe_4": {
-            "comment": "installed on pHox4 at NIVA now",
+        "Probe_3": {
+            "comment": "installed on pHox4, cal by SAM",
             "is_calibrated": "True",
+            "calibr_date": "24/02/2020",
+            "Calibr_coef": [
+                71.756,
+                16.146
+            ]
+        },
+        "Probe_4": {
+            "comment": "installed on pHox2, cal by SAM",
+            "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                72.683,
+                16.22
+            ]
+        },
+        "Probe_5": {
+            "comment": "spare, cal by SAM",
+            "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                71,82,
+                16.188
+            ]
+        },
+        "Probe_6": {
+            "comment": "spare, cal by SAM",
+            "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                71.553,
+                16.36
+            ]
+        },
+        "Probe_7": {
+            "comment": "spare, cal by SAM",
+            "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                72.181,
+                16.323
+            ]
+        },
+        "Probe_8": {
+            "comment": "not used",
+            "is_calibrated": "False",
             "calibr_date": "NaN",
             "Calibr_coef": [
-                70.582,
-                16.213
+                "NaN",
+                "NaN"
+            ]
+        },
+        "Probe_9": {
+            "comment": "installed on pHox1, cal by SAM",
+            "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
             ]
         }
-
     }
 }
