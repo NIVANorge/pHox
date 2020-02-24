@@ -1402,12 +1402,12 @@ class Panel(QtGui.QWidget):
         if self.args.localdev:
             return "IN_LOCALDEV_MODE__NOT_A_FILE"
         if self.args == "co3":
-            if "Calibration" in self.valid_modes:
+            if "Calibration" in self.major_modes:
                 folderPath = "/home/pi/pHox/data_co3_calibr/"
             else:
                 folderPath = "/home/pi/pHox/data_co3/"
         else:
-            if "Calibration" in self.valid_modes:
+            if "Calibration" in self.major_modes:
                 folderPath = "/home/pi/pHox/data_calibr/"
             else:
                 folderPath = "/home/pi/pHox/data/"
