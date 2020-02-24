@@ -1,80 +1,53 @@
+import pyqtgraph as pg
 import sys
-import asyncio
+import os
+import matplotlib.pyplot as plt
 
-import aiohttp
-from asyncqt import QEventLoop, asyncSlot, asyncClose
+import PyQt5
+dirname = os.path.dirname(PyQt5.__file__)
+plugin_path = os.path.join(dirname, 'plugins', 'platforms')
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
 
-# from PySide2.QtWidgets import (
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QLabel,
-    QLineEdit,
-    QTextEdit,
-    QPushButton,
-    QVBoxLayout,
-)
+from PyQt5.QtWidgets import (QApplication, QLabel, QPushButton,
+                               QVBoxLayout, QWidget)
+from PyQt5 import QtGui
 
 
-class MainWindow(QWidget):
-    """Main window."""
-
-    _DEF_URL = "https://jsonplaceholder.typicode.com/todos/1"
-    """str: Default URL."""
-
-    _SESSION_TIMEOUT = 1.0
-    """float: Session timeout."""
-
+class MyWidget(QWidget):
     def __init__(self):
-        super().__init__()
+        QWidget.__init__(self)
 
-        self.setLayout(QVBoxLayout())
+        self.hello = ["Hallo Welt", "你好，世界", "Hei maailma",
+            "Hola Mundo", "Привет мир"]
 
-        self.lblStatus = QLabel("Idle", self)
-        self.layout().addWidget(self.lblStatus)
+        #self.button = QPushButton("Click me!")
+        #self.text = QLabel("Hello World")
+        #self.text.setAlignment(Qt.AlignCenter)
 
-        self.editUrl = QLineEdit(self._DEF_URL, self)
-        self.layout().addWidget(self.editUrl)
+        plotwidget2 = pg.PlotWidget()
+        plotAbs = plotwidget2.plot()
+        plotwidget2.addLine(x=[1, 2, 3], y=None, pen=pg.mkPen(width=1))
+        plt.show()
 
-        self.editResponse = QTextEdit("", self)
-        self.layout().addWidget(self.editResponse)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.text)
+        self.layout.addWidget(self.button)
+        self.setLayout(self.layout)
 
-        self.btnFetch = QPushButton("Fetch", self)
-        self.btnFetch.clicked.connect(self.on_btnFetch_clicked)
-        self.layout().addWidget(self.btnFetch)
+        # Connecting the signal
+        self.button.clicked.connect(self.magic)
 
-        self.session = aiohttp.ClientSession(
-            loop=asyncio.get_event_loop(), timeout=aiohttp.ClientTimeout(total=self._SESSION_TIMEOUT),
-        )
-
-    @asyncClose
-    async def closeEvent(self, event):
-        print("close")
-        await self.session.close()
-
-    @asyncSlot()
-    async def on_btnFetch_clicked(self):
-        self.btnFetch.setEnabled(False)
-        self.lblStatus.setText("Fetching...")
-
-        try:
-            async with self.session.get(self.editUrl.text()) as r:
-                self.editResponse.setText(await r.text())
-        except Exception as exc:
-            self.lblStatus.setText("Error: {}".format(exc))
-        else:
-            self.lblStatus.setText("Finished!")
-        finally:
-            self.btnFetch.setEnabled(True)
-
+    #@Slot()
+    #def magic(self):
+    #    self.text.setText(random.choice(self.hello))
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    loop = QEventLoop(app)
-    asyncio.set_event_loop(loop)
+    app = QtGui.QApplication(sys.argv)
 
-    mainWindow = MainWindow()
-    mainWindow.show()
 
-    with loop:
-        sys.exit(loop.run_forever())
+
+    widget = MyWidget()
+    widget.resize(800, 600)
+    widget.show()
+
+    app.exec_()

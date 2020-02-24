@@ -479,7 +479,7 @@ class Panel(QtGui.QWidget):
         self.tableConfigWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
         self.tableConfigWidget.horizontalHeader().hide()
-        self.tableConfigWidget.setRowCount(11)
+        self.tableConfigWidget.setRowCount(10)
         self.tableConfigWidget.setColumnCount(2)
         self.tableConfigWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
 
@@ -520,15 +520,16 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(8, 0, 'Temp probe is calibrated')
         self.temp_id_is_calibr = QtGui.QCheckBox()
+
+        if self.instrument.temp_iscalibrated:
+            self.temp_id_is_calibr.setChecked(True)
+        self.temp_id_is_calibr.setEnabled(False)
         self.tableConfigWidget.setCellWidget(8, 1, self.temp_id_is_calibr)
         self.set_combo_index(self.ship_code_combo, self.instrument.ship_code)
 
-
-       # self.fill_table_config(9, 0, 'Salinity for Manual meas')
-
         self.fill_table_config(9, 0, 'Calibration check passed')
-        self.calibr_check = QtGui.QCheckBox()
-        self.tableConfigWidget.setCellWidget(9, 1, self.calibr_check)
+        self.fill_table_config(9, 1, "Didn't run calibration yet")
+
 
 
         self.manual_sal_group = QtGui.QGroupBox('Salinity used for manual measurement')
@@ -591,8 +592,6 @@ class Panel(QtGui.QWidget):
         self.btn_save_config.setEnabled(state)
         self.ship_code_combo.setEnabled(state)
         self.temp_id_combo.setEnabled(state)
-        self.temp_id_is_calibr.setEnabled(state)
-        self.calibr_check.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
         logging.info(f"widgets_enabled_change, state is '{state}'")
@@ -651,7 +650,6 @@ class Panel(QtGui.QWidget):
 
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
         self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
-        # self.btn_t_dark.clicked.connect(self.on_dark_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -932,8 +930,10 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def update_plot_no_request(self):
-        if self.instrument.spectrum:
+        try:
             await self.update_spectra_plot_manual(self.instrument.spectrum)
+        except:
+            pass
 
     async def autoAdjust_LED(self):
         self.timer2 = QtCore.QTimer()
@@ -1072,7 +1072,7 @@ class Panel(QtGui.QWidget):
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
-        # if self.btn_calibr.isChecked():
+
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
 
@@ -1088,10 +1088,12 @@ class Panel(QtGui.QWidget):
                 flnmStr, timeStamp = self.get_filename()
                 await self.sample(folderPath, flnmStr, timeStamp)
 
-                QtGui.QMessageBox.question(self, "Manually turn the valve back to ferrybox mode",
+                v = QtGui.QMessageBox.question(self, "important message!!!",
+                                               "Manually turn the valve back to ferrybox mode",
                                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
 
-                QtGui.QMessageBox.question(self, "ARE YOU SURE YOU TURNED THE VALVE???",
+                v = QtGui.QMessageBox.question(self, "important message!!!",
+                                               "ARE YOU SURE YOU TURNED THE VALVE???",
                                            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             self.btn_calibr.setChecked(False)
 
@@ -1112,7 +1114,7 @@ class Panel(QtGui.QWidget):
                 return
 
             flnmStr, timeStamp = self.get_filename()
-            print (self.get_salinity_manual())
+
             text, ok = QtGui.QInputDialog.getText(None, "Enter Sample name", flnmStr)
             if ok:
                 if text != "":
@@ -1385,6 +1387,10 @@ class Panel(QtGui.QWidget):
             self.save_results(folderPath, flnmStr)
             self.update_pH_plot()
             self.update_table_last_meas()
+            if 'Calibration' in self.major_modes:
+
+                dif_pH = self.pH_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
+                self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
         [step.setChecked(False) for step in self.sample_steps]
 
@@ -1514,11 +1520,11 @@ class Panel(QtGui.QWidget):
                 if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
                     manual_salinity = self.get_salinity_manual()
                 elif 'Calibration' in self.major_modes:
-                    #TODO: add reading from the config file
-                    manual_salinity = 999
+                    manual_salinity = self.instrument.buffer_sal
                 else:
                     manual_salinity = None
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC, dilution, vol_injected,manual_salinity)
+                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
+                                                                     dilution, vol_injected, manual_salinity)
         return
 
     async def inject_dye(self, n_inj):
