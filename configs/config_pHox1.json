@@ -101,6 +101,11 @@
         "Default_DYE": "Pb_perchlor"
            
     },
+    "TrisBuffer":{
+        "Comment": "pH of Tris buffer calibration solution at 25deg",
+        "pH_tris_buffer": 8.094,
+        "S_tris_buffer": 35
+    }, 
     "TempProbes": {
         "Probe_1": {
             "comment": "installed on pHox3 not sure if calibrated",
