@@ -1149,6 +1149,7 @@ class Panel(QtGui.QWidget):
     async def continuous_mode_timer_finished(self):
         logging.info("continuous_mode_timer_finished")
         self.append_logbox("continuous_mode_timer_finished")
+        self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
             flnmStr, timeStamp = self.get_filename()
             folderPath = self.get_folderPath()
