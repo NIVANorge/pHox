@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 import socket
 import threading
 import os
@@ -8,6 +8,10 @@ UDP_SEND = 6801
 UDP_RECV = 6802
 UDP_IP = "192.168.0.2"  # Should be the IP of the Ferrybox
 UDP_EXIT = False
+
+SHIP_IP_DICT = {'TF': "192.168.0.1",
+                "RA": "192.168.0.1"}
+
 
 Ferrybox = {
     "salinity": 33.5,
@@ -58,9 +62,10 @@ def udp_server():
     sock.close()
 
 
-def send_data(s):
+def send_data(s, ship_code=None):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(bytes(s, encoding="utf8"), (UDP_IP, UDP_SEND))
+    # my_dict.get(key, default_value) if key is missing 'default_value' is used
+    sock.sendto(bytes(s, encoding="utf8"), (SHIP_IP_DICT.get(ship_code, UDP_IP), UDP_SEND))
     sock.close()
     return
 

@@ -86,6 +86,7 @@ class Panel(QtGui.QWidget):
         self.until_next_sample = None
         self.infotimer_step = 15  # seconds
         self.manual_limit = 60*3  # 3 minutes, time when we turn off manual mode if continuous is clicked
+
     def init_ui(self):
         self.tabs = QtGui.QTabWidget()
         self.tab1 = QtGui.QWidget()
@@ -842,7 +843,6 @@ class Panel(QtGui.QWidget):
         if fbox['pumping'] or fbox['pumping'] is None:
             self.ferrypump_box.setChecked(True)
 
-
     def save_pCO2_data(self, pH=None):
         self.add_pco2_info()
         d = self.CO2_instrument.franatech
@@ -861,7 +861,7 @@ class Panel(QtGui.QWidget):
             if hdr:
                 logFile.write(hdr + "\n")
             logFile.write(s)
-        udp.send_data("PCO2," + s)
+        udp.send_data("PCO2," + s, self.instrument.ship_code)
         return
 
     async def autoAdjust_IntTime(self):
@@ -1510,7 +1510,7 @@ class Panel(QtGui.QWidget):
 
     def send_to_ferrybox(self):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
-        udp.send_data("$PPHOX," + row_to_string + ",*\n")
+        udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
 
 
 class SensorStateUpdateManager:
@@ -1594,7 +1594,7 @@ class boxUI(QtGui.QMainWindow):
                             format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
         if self.args.debug:
             for name, logger in logging.root.manager.loggerDict.items():
-                if 'asyncqt' in name:
+                if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                     logger.level = logging.INFO
 
         if self.args.pco2:
