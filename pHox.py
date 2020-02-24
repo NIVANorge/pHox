@@ -540,7 +540,7 @@ class pH_instrument(Common_instrument):
 
         return LED1, LED2, LED3, result
 
-    def calc_pH(self, absSp, vNTC, dilution, vol_injected):
+    def calc_pH(self, absSp, vNTC, dilution, vol_injected, manual_salinity=None):
 
         vNTC = round(vNTC, prec["vNTC"])
         Tdeg = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["Tdeg"])
@@ -549,8 +549,11 @@ class pH_instrument(Common_instrument):
         A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
         Anir = round(absSp[self.wvlPixels[2]], prec["Anir"])
+        if manual_salinity is None:
+            fb_sal = round(self.fb_data["salinity"], prec["salinity"])
+        else:
+            fb_sal = round(manual_salinity, prec["salinity"])
 
-        fb_sal = round(self.fb_data["salinity"], prec["salinity"])
         S_corr = round(fb_sal * dilution, prec["salinity"])
 
         R = A2 / A1

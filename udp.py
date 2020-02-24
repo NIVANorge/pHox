@@ -15,7 +15,7 @@ SHIP_IP_DICT = {'TF': "192.168.0.1",
 
 Ferrybox = {
     "salinity": 33.5,
-    "temperature": 15.0,
+    "temperature": 25.0,
     "longitude": 0.0,
     "latitude": 0.0,
     "pumping": None,

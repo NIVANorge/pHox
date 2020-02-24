@@ -52,7 +52,6 @@ class AsyncThreadWrapper:
             await asyncio.sleep(0.1)
         return self.result
 
-
 class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
@@ -238,6 +237,9 @@ class Panel(QtGui.QWidget):
                 self.btn_single_meas.setEnabled(True)
                 self.btn_calibr.setEnabled(True)
                 self.config_widgets_set_state(True)
+                if 'Manual' in self.major_modes:
+                    self.btn_adjust_leds.setEnabled(True)
+                    self.btn_checkflow.setEnabled(True)
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -319,14 +321,18 @@ class Panel(QtGui.QWidget):
                 self.plotwidget1.addLine(x=x, y=y, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
 
         self.plotSpc = self.plotwidget1.plot()
-        self.plotAbs = self.plotwidget2.plot()
+
+        self.plot_calc_pH = self.plotwidget2.plot()
+        self.after_calc_pH = self.plotwidget2.plot()
+        self.lin_fit_pH = self.plotwidget2.plot()
 
         if self.args == "co3":
+            self.plotAbs = self.plotwidget2.plot()
             color = ["r", "g", "b", "m", "y"]
             self.abs_lines = []
             for n_inj in range(self.instrument.ncycles):
                 self.abs_lines.append(
-                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]), )
+                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]) )
                 )
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
@@ -336,14 +342,12 @@ class Panel(QtGui.QWidget):
         self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
 
         self.sample_steps = [
-            # QtWidgets.QCheckBox("0. Start new measurement"),
             QtWidgets.QCheckBox("1. Adjusting LEDS"),
             QtWidgets.QCheckBox("2  Measuring dark,blank"),
             QtWidgets.QCheckBox("3. Measurement 1"),
             QtWidgets.QCheckBox("4. Measurement 2"),
             QtWidgets.QCheckBox("5. Measurement 3"),
             QtWidgets.QCheckBox("6. Measurement 4"),
-            # QtWidgets.QCheckBox("7. Save the Data"),
         ]
 
         layout = QtGui.QGridLayout()
@@ -522,14 +526,39 @@ class Panel(QtGui.QWidget):
 
        # self.fill_table_config(9, 0, 'Salinity for Manual meas')
 
-        self.fill_table_config(10, 0, 'Calibration check passed')
+        self.fill_table_config(9, 0, 'Calibration check passed')
         self.calibr_check = QtGui.QCheckBox()
-        self.tableConfigWidget.setCellWidget(10, 1, self.calibr_check)
+        self.tableConfigWidget.setCellWidget(9, 1, self.calibr_check)
+
+
+        self.manual_sal_group = QtGui.QGroupBox('Salinity used for manual measurement')
+        l = QtGui.QHBoxLayout()
+        self.whole_sal = QtGui.QComboBox()
+        self.first_decimal = QtGui.QComboBox()
+        self.second_decimal = QtGui.QComboBox()
+        self.third_decimal = QtGui.QComboBox()
+
+        [self.whole_sal.addItem(str(n)) for n in np.arange(0, 40)]
+        for combo in [self.first_decimal, self.second_decimal, self.third_decimal]:
+            [combo.addItem(str(n)) for n in np.arange(0, 10)]
+        l.addWidget(self.whole_sal)
+        l.addWidget(QtGui.QLabel('.'))
+        l.addWidget(self.first_decimal)
+        l.addWidget(self.second_decimal)
+        l.addWidget(self.third_decimal)
+
+        self.manual_sal_group.setLayout(l)
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
+        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0)
         self.tab_config.setLayout(self.tab_config.layout)
+
+    def get_salinity_manual(self):
+        salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText())/10
+                                + int(self.second_decimal.currentText())/100 + int(self.third_decimal.currentText())/1000)
+        return salinity_manual
 
     def set_combo_index(self, combo, text):
         index = combo.findText(str(text), QtCore.Qt.MatchFixedString)
@@ -561,6 +590,9 @@ class Panel(QtGui.QWidget):
         self.samplingInt_combo.setEnabled(state)
         self.btn_save_config.setEnabled(state)
         self.ship_code_combo.setEnabled(state)
+        self.temp_id_combo.setEnabled(state)
+        self.temp_id_is_calibr.setEnabled(state)
+        self.calibr_check.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
         logging.info(f"widgets_enabled_change, state is '{state}'")
@@ -610,7 +642,7 @@ class Panel(QtGui.QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
+        # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
         if self.args.co3:
             self.btn_lightsource = self.create_button("light source", True)
@@ -842,12 +874,14 @@ class Panel(QtGui.QWidget):
     def update_pH_plot(self):
         logging.info("in update pH plot")
         logging.info(f"self.x='{self.x}', self.y='{self.y}'")
-        self.plotwidget2.plot(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None, symbol="o", clear=True)
-        self.plotwidget2.plot(self.x, self.y, pen=None, symbol="o")
+
+        self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
+                                  symbol="o", clear=True)
+        self.after_calc_pH.setData(self.x, self.y, pen=None, symbol="o", symbolBrush='#30663c')
+
         logging.info("after first plot")
         logging.info(f"intercept {self.intercept}")
-        self.plotwidget2.plot(self.x, self.intercept + self.slope * self.x)
-
+        self.lin_fit_pH.setData(self.x, self.intercept + self.slope * self.x)
 
     def update_sensors_info(self):
         t = datetime.now().strftime('%Y%M')
@@ -1078,6 +1112,7 @@ class Panel(QtGui.QWidget):
                 return
 
             flnmStr, timeStamp = self.get_filename()
+            print (self.get_salinity_manual())
             text, ok = QtGui.QInputDialog.getText(None, "Enter Sample name", flnmStr)
             if ok:
                 if text != "":
@@ -1476,7 +1511,14 @@ class Panel(QtGui.QWidget):
                 self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC, dilution, vol_injected)
                 await self.update_absorbance_plot(n_inj, spAbs_min_blank)
             else:
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC, dilution, vol_injected)
+                if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
+                    manual_salinity = self.get_salinity_manual()
+                elif 'Calibration' in self.major_modes:
+                    #TODO: add reading from the config file
+                    manual_salinity = 999
+                else:
+                    manual_salinity = None
+                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC, dilution, vol_injected,manual_salinity)
         return
 
     async def inject_dye(self, n_inj):
@@ -1649,7 +1691,7 @@ class boxUI(QtGui.QMainWindow):
             self.setWindowTitle("Box Instrument, parameter CO3")
         else:
             self.setWindowTitle("Box Instrument, NIVA - pH")
-        if self.args.localdev:
+        if self.args.localdev and 'ELP' in sys.path[0]:
             self.setFixedSize(1920 / 2, 1080 / 2)
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
