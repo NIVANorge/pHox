@@ -1061,7 +1061,6 @@ class Panel(QtGui.QWidget):
 
             self.timer_contin_mode.start(self.instrument.samplingInterval * 1000)
 
-            #elf.StatusBox.setText("Time until next sample is minutes")
             self.StatusBox.setText(f'Next sample in {self.until_next_sample / 60} minutes ')
             self.infotimer_contin_mode.start(self.infotimer_step * 1000)
         else:
@@ -1394,10 +1393,6 @@ class Panel(QtGui.QWidget):
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
         [step.setChecked(False) for step in self.sample_steps]
-
-        if "Continuous" in self.major_modes:
-            self.until_next_sample = self.instrument.samplingInterval
-            self.StatusBox.setText(f"Until next sample at {self.until_next_sample/60} minutes")
 
     def get_folderPath(self):
         if self.args.localdev:
