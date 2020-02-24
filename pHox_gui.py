@@ -57,7 +57,7 @@ class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
         self.major_modes = set()
-        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration"]
+        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck"]
 
         self.args = panelargs
         self.config_name = config_name
@@ -81,7 +81,7 @@ class Panel(QtGui.QWidget):
             self.CO2_instrument = CO2_instrument(self.config_name)
         self.init_ui()
         self.create_timers()
-        self.updater = SensorStateUpdateManager(self, self.btn_liveplot)
+        self.updater = SensorStateUpdateManager(self)
 
         self.until_next_sample = None
         self.infotimer_step = 15  # seconds
@@ -178,6 +178,7 @@ class Panel(QtGui.QWidget):
             self.btn_single_meas.setEnabled(False)
             if 'Continuous' in self.major_modes:
                 self.btn_adjust_leds.setEnabled(False)
+                self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
             self.btn_single_meas.setEnabled(False)
@@ -186,12 +187,21 @@ class Panel(QtGui.QWidget):
             self.manual_widgets_set_enabled(False)
             if 'Manual' in self.major_modes:
                 self.btn_adjust_leds.setEnabled(False)
+                self.btn_checkflow.setEnabled(False)
 
         if mode_set == 'Calibration':
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.btn_manual_mode.setEnabled(False)
+
+        if mode_set == 'Flowcheck':
+            self.btn_cont_meas.setEnabled(False)
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+            self.config_widgets_set_state(False)
+            self.btn_manual_mode.setEnabled(False)
+            self.manual_widgets_set_enabled(False)
 
         if mode_set in ["Measuring", "Adjusting"]:
             self.btn_manual_mode.setEnabled(False)
@@ -250,6 +260,15 @@ class Panel(QtGui.QWidget):
                 self.manual_widgets_set_enabled(True)
             self.config_widgets_set_state(True)
             self.btn_calibr.setEnabled(True)
+
+        if mode_unset == 'Flowcheck':
+            if 'Manual' in self.major_modes:
+                self.manual_widgets_set_enabled(True)
+            self.btn_cont_meas.setEnabled(True)
+            self.btn_single_meas.setEnabled(True)
+            self.btn_calibr.setEnabled(True)
+            self.config_widgets_set_state(True)
+            self.btn_manual_mode.setEnabled(True)
 
         self.major_modes.remove(mode_unset)
         logging.debug(f"New mode:{self.major_modes}")
@@ -552,7 +571,7 @@ class Panel(QtGui.QWidget):
             self.btn_stirr,
             self.btn_dye_pmp,
             self.btn_wpump,
-            self.btn_liveplot,
+            self.btn_checkflow,
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -573,9 +592,7 @@ class Panel(QtGui.QWidget):
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
 
-        self.btn_liveplot = self.create_button("Live plot", True)
-        self.btn_liveplot.setStyleSheet("background-color: white; color: white; border-color: white")
-
+        self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
 
@@ -586,14 +603,14 @@ class Panel(QtGui.QWidget):
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
-        btn_grid.addWidget(self.btn_liveplot, 4, 1)
+        btn_grid.addWidget(self.btn_checkflow, 4, 1)
         # Define connections Button clicked - Result
         if not self.args.co3:
             self.btn_leds.clicked.connect(self.btn_leds_checked)
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        #self.btn_liveplot.clicked.connect(self.btn_liveplot_clicked)
+        self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
         if self.args.co3:
             self.btn_lightsource = self.create_button("light source", True)
@@ -661,10 +678,6 @@ class Panel(QtGui.QWidget):
             self.instrument.turn_on_relay(self.instrument.wpump_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
-
-    @asyncSlot()
-    async def btn_liveplot_clicked(self):
-        await self.updater.btn_liveplot_clicked_updater()
 
     @asyncSlot()
     async def btn_lightsource_clicked(self):
@@ -915,7 +928,6 @@ class Panel(QtGui.QWidget):
             await self.update_spectra_plot_manual(datay)
         else:
             result = False
-
         return result
 
     @asyncSlot()
@@ -934,6 +946,45 @@ class Panel(QtGui.QWidget):
             finally:
                 self.btn_adjust_leds.setChecked(False)
             return res
+
+    @asyncSlot()
+    async def btn_checkflow_clicked(self):
+        if self.btn_checkflow.isChecked():
+            if not self.args.debug and fbox["pumping"] != 1:
+                logging.info('Not doing flowcheck because the pump is off')
+                self.btn_checkflow.setChecked(False)
+                return
+
+            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Flowcheck"):
+                logging.debug(f'Start flowcheck preparations')
+
+                # Closing the valve
+                await self.instrument.set_Valve(True)
+                # Getting a baseline spectrum
+                baseline_spectrum = await self.instrument.spectrom.get_intensities()
+                # inject die twice (with n shots determined by config), this includes stirring
+                await self.inject_dye(3)
+                await self.inject_dye(3)
+
+                dyed_spectrum = await self.instrument.spectrom.get_intensities()
+                rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum-dyed_spectrum)))
+                logging.debug(f'Initial diff: {rms_spectrum_difference}')
+                # Re-open the valve
+                await self.instrument.set_Valve(False)
+
+                # Start the flow check
+                start = datetime.utcnow()
+                check_succeeded = False
+                while datetime.utcnow()-start < timedelta(seconds=20):
+                    diluted_spectrum = await self.instrument.spectrom.get_intensities()
+                    new_rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - diluted_spectrum)))
+                    logging.debug(f'got another spectrum, new diff: {new_rms_spectrum_difference}')
+                    if rms_spectrum_difference*.2 > new_rms_spectrum_difference:
+                        check_succeeded = True
+                        break
+                logging.debug(f'Final result of check: {check_succeeded}')
+                self.btn_checkflow.setChecked(False)
+                return check_succeeded
 
     def add_pco2_info(self):
         self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_CO2)
@@ -1141,10 +1192,6 @@ class Panel(QtGui.QWidget):
             self.btn_leds_checked()
 
         self.updater.start_live_plot()
-        #self.btn_liveplot.setEnabled(True)
-        #self.btn_liveplot.click()
-        #self.btn_liveplot.setEnabled(False)
-
 
         if not self.args.co3:
             logging.info("Starting continuous mode ")
@@ -1152,7 +1199,6 @@ class Panel(QtGui.QWidget):
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
-        #self.StatusBox.setText("The instrument is ready")
         self.timerTemp_info.start(500)
         if self.args.pco2:
             # change to config file
@@ -1533,12 +1579,11 @@ class SensorStateUpdateManager:
     and the updates have to be called manually.
     """
 
-    def __init__(self, main_qt_panel: Panel, live_button: QtGui.QPushButton):
-        # Number of UI elements that have entered the 'disable_live_plotting' CM
-        self.disable_requests = 0
+    def __init__(self, main_qt_panel: Panel):
         self.main_qt_panel = main_qt_panel
         self.update_spectra_in_progress = False
-        self.live_button = live_button
+        # Number of UI elements that have entered the 'disable_live_plotting' CM
+        self.disable_requests = 0
 
     def get_interval_time(self):
         time_buffer = min(max(self.main_qt_panel.instrument.specIntTime * 2, 200), 1000)
@@ -1547,7 +1592,6 @@ class SensorStateUpdateManager:
     @asynccontextmanager
     async def disable_live_plotting(self):
         self.disable_requests += 1
-        self.live_button.setEnabled(False)
         await self.stop_live_plot()
         try:
             yield None
@@ -1558,22 +1602,12 @@ class SensorStateUpdateManager:
                 self.start_live_plot()
 
     def start_live_plot(self):
-        if not self.live_button.isChecked():
-            self.live_button.setChecked(True)
         self.main_qt_panel.timerSpectra_plot.start(self.get_interval_time())
 
     async def stop_live_plot(self):
-        if self.live_button.isChecked():
-            self.live_button.setChecked(False)
         self.main_qt_panel.timerSpectra_plot.stop()
         while self.update_spectra_in_progress:
             await asyncio.sleep(0.05)
-
-    async def btn_liveplot_clicked_updater(self):
-        if not self.live_button.isChecked():
-            await self.stop_live_plot()
-        else:
-            self.start_live_plot()
 
     async def set_specIntTime(self, new_int_time):
         await self.main_qt_panel.instrument.spectrom.set_integration_time(new_int_time)
