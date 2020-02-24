@@ -6,8 +6,6 @@ from pHox import *
 from pco2 import CO2_instrument
 import os, sys
 
-# os.chdir('/home/pi/pHox')
-# os.system('clear')
 try:
     import warnings, time, RPi.GPIO
     import RPi.GPIO as GPIO

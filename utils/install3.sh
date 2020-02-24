@@ -132,24 +132,12 @@ then
     echo '[Desktop Entry]'                                     >  $f
     echo 'Type=Application'                                    >> $f
     echo 'NAME=pHox'                                           >> $f
-    echo 'Exec=sudo /usr/bin/python3 /home/pi/pHox/pHox_gui.py' >> $f
+    echo "Exec=sudo bash -c 'cd /home/pi/pHox && /usr/bin/python3 /home/pi/pHox/pHox_gui.py'" >> $f
+    cp $f "home/pi/Desktop"
     echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
-#--------------------------------------------------------------------------
-# Install pHox from GIT
-#--------------------------------------------------------------------------
-echo "********* PHOX *********"
-echo "Install PHOX            "
-echo "from GIT                "
-echo "************************"
-echo "                        "
-read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
-then
-    cd
-    git clone git@github.com:NIVANorge/pHox.git
-fi
+
 #--------------------------------------------------------------------------
 # Install static IP on eth0
 #--------------------------------------------------------------------------
