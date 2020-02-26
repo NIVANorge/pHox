@@ -514,9 +514,10 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(7, 0, 'Temp probe id')
         self.temp_id_combo = QtGui.QComboBox()
-        [self.temp_id_combo.addItem(ship) for ship in ["Probe_1", "Probe_2"]]
+        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(10)]
         self.set_combo_index(self.temp_id_combo, self.instrument.TempProbe_id)
         self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_combo)
+        self.temp_id_combo.currentIndexChanged.connect(self.temp_id_combo_changed)
 
         self.fill_table_config(8, 0, 'Temp probe is calibrated')
         self.temp_id_is_calibr = QtGui.QCheckBox()
@@ -529,8 +530,6 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(9, 0, 'Calibration check passed')
         self.fill_table_config(9, 1, "Didn't run calibration yet")
-
-
 
         self.manual_sal_group = QtGui.QGroupBox('Salinity used for manual measurement')
         l = QtGui.QHBoxLayout()
@@ -584,6 +583,11 @@ class Panel(QtGui.QWidget):
     def ship_code_changed(self):
         self.instrument.ship_code = self.ship_code_combo.currentText()
 
+    def temp_id_combo_changed(self):
+        print('combo changed',self.temp_id_combo.currentText())
+        self.instrument.TempProbe_id = self.temp_id_combo.currentText()
+        print(f'new id {self.temp_id_combo.currentText()}')
+        self.instrument.update_temp_probe_coef()
 
     def config_widgets_set_state(self, state):
         self.dye_combo.setEnabled(state)
@@ -717,7 +721,6 @@ class Panel(QtGui.QWidget):
         else:
             self.instrument.turn_off_relay(self.instrument.light_slot)
 
-    # TODO: async
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
         state = self.btn_dye_pmp.isChecked()
@@ -726,7 +729,7 @@ class Panel(QtGui.QWidget):
             await self.instrument.pump_dye(3)
             self.btn_dye_pmp.setChecked(False)
 
-    # TODO: async
+
     @asyncSlot()
     async def btn_valve_clicked(self):
         await self.instrument.set_Valve(self.btn_valve.isChecked())
@@ -740,8 +743,12 @@ class Panel(QtGui.QWidget):
 
             j["Operational"]["Spectro_Integration_time"] = self.instrument.specIntTime
             j["Operational"]["Ship_Code"] = self.instrument.ship_code
-            # add probe id
-            # probe is calibrated or not
+
+            j["Operational"]["TEMP_PROBE_ID"] = self.instument.TempProbe_id
+
+            j["pH"]["LED1"] = self.instrument.LED1
+            j["pH"]["LED3"] = self.instrument.LED2
+            j["pH"]["LED4"] = self.instrument.LED3
 
             minutes = int(self.samplingInt_combo.currentText())
             j["Operational"]["SAMPLING_INTERVAL_SEC"] = minutes * 60
@@ -756,12 +763,12 @@ class Panel(QtGui.QWidget):
             return default
 
     def dye_combo_chngd(self, ind):
-        self.dye = self.dye_combo.currentText()
+        self.instrument.dye = self.dye_combo.currentText()
         default = self.load_config_file()
-        if self.dye == "MCP":
+        if self.instrument.dye == "MCP":
             self.instrument.HI = int(default["MCP_wl_HI"])
             self.instrument.I2 = int(default["MCP_wl_I2"])
-        elif self.dye == "TB":
+        elif self.instrument.dye == "TB":
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
@@ -775,6 +782,7 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(ind, value)
         self.sliders[ind].setValue(value)
         self.spinboxes[ind].setValue(value)
+        self.instrument.LEDS[ind] = value
 
     def led_plus_btn_clicked(self):
         dif = 10
@@ -792,6 +800,7 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(ind, value)
         self.sliders[ind].setValue(value)
         self.btn_leds.setChecked(True)
+        self.instrument.LEDS[ind] = value
 
     def sld_change(self, value):
         source = self.sender()
@@ -799,6 +808,7 @@ class Panel(QtGui.QWidget):
         self.instrument.adjust_LED(ind, value)
         self.spinboxes[ind].setValue(value)
         self.btn_leds.setChecked(True)
+        self.instrument.LEDS[ind] = value
 
     def set_LEDs(self, state):
         for i, slider in enumerate(self.sliders):
@@ -946,8 +956,8 @@ class Panel(QtGui.QWidget):
             result,
         ) = await self.instrument.auto_adjust()
         self.timer2.stop()
-        led_values = [self.instrument.LED1, self.instrument.LED2, self.instrument.LED3]
-        logging.info(f"values after autoadjust: '{led_values}'")
+
+        logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
         if result:
             self.sliders[0].setValue(self.instrument.LED1)
             self.sliders[1].setValue(self.instrument.LED2)
@@ -1446,7 +1456,7 @@ class Panel(QtGui.QWidget):
 
     async def pump_if_needed(self):
         if (
-                self.instrument.deployment == "Standalone" and "Continuous" in self.major_modes
+                self.instrument.ship_code == "Standalone" and "Continuous" in self.major_modes
         ) or "Calibration" in self.major_modes:
             self.append_logbox("pumping")
             await self.instrument.pumping(self.instrument.pumpTime)
@@ -1719,7 +1729,6 @@ class boxUI(QtGui.QMainWindow):
                 print('wait')
                 logging.info('tttt')
                 #await asyncio.sleep(0.05)'''
-
 
             logging.info("timer is stopped")
 

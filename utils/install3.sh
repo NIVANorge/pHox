@@ -1,10 +1,10 @@
-#--------------------------------------------------------------------------
-# I2C
-# SPI
+
 #--------------------------------------------------------------------------
 echo "********* SPI/I2C ******"
 echo "Make sure SPI is enabled"
 echo "Make sure I2C is enabled"
+echo "Make sure VNC is enabled"
+echo "Set up the correct time"
 echo "************************"
 echo "You can start the script to run raspi-config"
 echo "use raspi-config       "
@@ -150,9 +150,9 @@ read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
-    echo 'interface eth0'                 >> $f
-    echo 'static ip_address=192.168.0.9'  >> $f
-    echo 'static routers=192.168.0.1'     >> $f
+    {
+    echo 'interface eth0' 'static ip_address=192.168.0.9/24' 'static routers=192.168.0.1'
+    } >> $f
 fi
 
 

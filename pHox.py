@@ -2,6 +2,7 @@
 import logging
 import asyncio
 import json
+import os
 import random
 import re
 import time
@@ -174,13 +175,19 @@ class Common_instrument(object):
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, False)
 
+    def to_bool(self, var):
+        if var == 'True':
+            return True
+        else:
+            return False
+
     def load_config(self):
 
         with open(self.config_name) as json_file:
             j = json.load(json_file)
 
         conf_operational = j["Operational"]
-        self._autostart = bool(conf_operational["AUTOSTART"])
+        self._autostart = self.to_bool(conf_operational["AUTOSTART"])
         self._automode = conf_operational["AUTOSTART_MODE"]
         self.DURATION = int(conf_operational["DURATION"])
         self.vNTCch = int(conf_operational["T_PROBE_CH"])
@@ -209,23 +216,27 @@ class Common_instrument(object):
 
         self.valve_slots = conf_operational["VALVE_SLOTS"]
         self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
-        temp = j["TempProbes"][self.TempProbe_id]
-        self.temp_iscalibrated = bool(temp["is_calibrated"])
-        if self.temp_iscalibrated:
-            self.TempCalCoef = temp["Calibr_coef"]
-        else:
-            self.TempCalCoef = conf_operational['"DEF_TEMP_CAL_COEF"']
+        self.update_temp_probe_coef()
 
         self.Cuvette_V = conf_operational["CUVETTE_V"]  # ml
         self.dye_vol_inj = conf_operational["DYE_V_INJ"]
         self.specIntTime = conf_operational["Spectro_Integration_time"]
-        self.deployment = conf_operational["Deployment_mode"]
         self.ship_code = conf_operational["Ship_Code"]
 
         if self.spectrom.spectro_type == "FLMT":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])
         elif self.spectrom.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])
+
+    def update_temp_probe_coef(self):
+        path = 'configs/temperature_sensors_config.json'
+        with open(path) as json_file:
+            j = json.load(json_file)
+            self.temp_iscalibrated = j[self.TempProbe_id]["is_calibrated"]
+            if self.temp_iscalibrated == 'True':
+                self.TempCalCoef = j[self.TempProbe_id]["Calibr_coef"]
+            else:
+                self.TempCalCoef = j["Probe_Default"]["Calibr_coef"]
 
     def turn_on_relay(self, line):
         self.rpi.write(line, True)
@@ -425,6 +436,7 @@ class pH_instrument(Common_instrument):
         self.LED1 = conf_pH["LED1"]
         self.LED2 = conf_pH["LED2"]
         self.LED3 = conf_pH["LED3"]
+        self.LEDS = [self.LED1, self.LED2, self.LED3]
 
     def get_wvlPixels(self, wvls):
         self.wvlPixels = []
