@@ -1,6 +1,5 @@
 {
        "Probe_Default": {
-            "comment": "installed on pHox3 not sure if calibrated",
             "is_calibrated": "False",
             "calibr_date": "NaN",
             "Calibr_coef": [

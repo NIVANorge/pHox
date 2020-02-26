@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_4",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,

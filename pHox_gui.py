@@ -234,8 +234,9 @@ class Panel(QtGui.QWidget):
 
         if mode_unset == "Continuous":
             if "Measuring" not in self.major_modes:
-                self.btn_single_meas.setEnabled(True)
-                self.btn_calibr.setEnabled(True)
+                if 'Manual' not in self.major_modes:
+                    self.btn_single_meas.setEnabled(True)
+                    self.btn_calibr.setEnabled(True)
                 self.config_widgets_set_state(True)
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_leds.setEnabled(True)
@@ -258,10 +259,15 @@ class Panel(QtGui.QWidget):
                 self.btn_cont_meas.setEnabled(True)
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
+            print('unset adjusting')
+            print (self.major_modes)
             if 'Manual' in self.major_modes:
+                self.btn_manual_mode.setEnabled(True)
                 self.manual_widgets_set_enabled(True)
             self.config_widgets_set_state(True)
             self.btn_calibr.setEnabled(True)
+            self.btn_single_meas.setEnabled(True)
+            self.btn_cont_meas.setEnabled(True)
 
         if mode_unset == 'Flowcheck':
             if 'Manual' in self.major_modes:
