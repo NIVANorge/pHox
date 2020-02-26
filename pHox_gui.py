@@ -25,6 +25,16 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
+class QTextEditLogger(logging.Handler):
+    def __init__(self, parent):
+        super().__init__()
+        self.widget = QtWidgets.QPlainTextEdit(parent)
+        self.widget.setReadOnly(True)
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)
+
 
 class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
@@ -129,11 +139,16 @@ class Panel(QtGui.QWidget):
 
     def make_tab_log(self):
         self.tab_log.layout = QtGui.QGridLayout()
-        self.logTextBox = QtGui.QPlainTextEdit()
-        self.logTextBox.setReadOnly(True)
+
+        self.logTextBox = QTextEditLogger(self) # QtGui.QPlainTextEdit()
+        # You can format what is printed to text box
+        self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logging.getLogger().addHandler(self.logTextBox)
+        logging.getLogger().setLevel(logging.DEBUG)
+        ##self.logTextBox.setReadOnly(True)
         if self.args.debug:
-            self.logTextBox.appendPlainText("Starting in debug mode")
-        self.tab_log.layout.addWidget(self.logTextBox)
+            logging.info("Starting in debug mode")
+        self.tab_log.layout.addWidget(self.logTextBox.widget)
         self.tab_log.setLayout(self.tab_log.layout)
 
     def create_timers(self):
@@ -417,18 +432,10 @@ class Panel(QtGui.QWidget):
         self.live_updates_grid.addWidget(self.StatusBox, 3, 0, 1, 4)
 
         self.live_update_groupbox.setLayout(self.live_updates_grid)
-
-        # self.live_updates_table = QtGui.QTableWidget(4, 2)
-
         self.last_measurement_table_groupbox.setLayout(self.table_grid)
 
-        # self.textBox_LastpH = QtGui.QTextEdit()
-        # self.textBox_LastpH.setOverwriteMode(True)
-        # self.textBox.setText('Last .')
-
         if self.args.debug:
-            self.logTextBox.appendPlainText("Starting in debug mode")
-        # self.tab_log.layout.addWidget(self.logTextBox)
+            logging.info("Starting in debug mode")
 
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
@@ -445,14 +452,12 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
 
         self.tab1.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
-
-
         self.tab1.setLayout(self.tab1.layout)
 
 
     def append_logbox(self, message):
         t = datetime.now().strftime("%b-%d %H:%M:%S")
-        self.logTextBox.appendPlainText(t + "  " + message)
+        logging.info(t + "  " + message)
 
     def fill_table_measurement(self, x, y, item):
         self.last_measurement_table.setItem(x, y, QtGui.QTableWidgetItem(item))
@@ -730,11 +735,14 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
         state = self.btn_dye_pmp.isChecked()
-        if state:
-            logging.info("in pump dye clicked")
-            await self.instrument.pump_dye(3)
+        if not self.args.nodye:
+            if state:
+                logging.info("in pump dye clicked")
+                await self.instrument.pump_dye(3)
+                self.btn_dye_pmp.setChecked(False)
+        else:
+            logging.info('Trying to pump in no pump mode')
             self.btn_dye_pmp.setChecked(False)
-
 
     @asyncSlot()
     async def btn_valve_clicked(self):
@@ -1152,6 +1160,9 @@ class Panel(QtGui.QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
 
+        elif self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled():
+            self.btn_manual_mode.setEnabled(True)
+
         if self.until_next_sample > 60:
             self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
         else:
@@ -1293,7 +1304,7 @@ class Panel(QtGui.QWidget):
             self.timerAuto.timeout.connect(self.autostart_time)
             dt = self.instrument._autotime - now
             self.timerAuto.start(int(dt.total_seconds() * 1000))
-            self.logTextBox.appendPlainText(
+            logging.info(
                 "Instrument will start at " + self.instrument._autostart.strftime("%Y-%m-%dT%H:%M:%S")
             )
         else:
@@ -1302,7 +1313,7 @@ class Panel(QtGui.QWidget):
             t0 = self.instrument._autotime + self.instrument._autolen
             dt = t0 - now
             self.timerAuto.start(int(dt.total_seconds() * 1000))
-            self.logTextBox.appendPlainText("Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S"))
+            logging.info("Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S"))
             self._autostart()
         return
 
