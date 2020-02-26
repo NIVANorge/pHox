@@ -61,6 +61,7 @@ then
     sudo apt-get -y install python3-pyqtgraph
     sudo pip3 install asyncqt
     sudo pip3 install asyncio
+    sudo pip3 install seabreeze
 fi
 
 #---
@@ -73,7 +74,7 @@ echo "you can use piwheels by placing the following lines in /etc/pip.conf:"
 echo "[global]"
 echo " extra-index-url=https://www.piwheels.org/simple " 
 
-sudo pip3 install seabreeze
+
 
 #--------------------------------------------------------------------------
 # Install ABElectronics package
