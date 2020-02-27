@@ -1155,6 +1155,7 @@ class Panel(QtGui.QWidget):
     def update_contin_mode_info(self):
 
         if self.until_next_sample <= self.manual_limit and self.btn_manual_mode.isEnabled():
+            logging.debug('<= 3 min Until next sample,disable Manual control button ')
             if 'Manual' in self.major_modes:
                 self.unset_major_mode("Manual")
             else:
@@ -1163,12 +1164,14 @@ class Panel(QtGui.QWidget):
 
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
               and "Measurement" not in self.major_modes):
+            logging.debug('> 3 min Until next sample, Reenable Manual control button ')
             self.btn_manual_mode.setEnabled(True)
 
-        if self.until_next_sample > 60:
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
-        else:
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample} seconds ')
+        if 'Measurement' not in self.major_modes:
+            if self.until_next_sample > 60:
+                self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
+            else:
+                self.StatusBox.setText(f'Next sample in {self.until_next_sample} seconds ')
 
         self.until_next_sample -= self.infotimer_step
 
@@ -1189,6 +1192,7 @@ class Panel(QtGui.QWidget):
 
     def get_final_pH(self, timeStamp):
         # get final pH
+        logging.debug(f'get final pH {self.evalPar_df}')
         p = self.instrument.pH_eval(self.evalPar_df)
         (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept, self.pH_t_corr) = p
 
