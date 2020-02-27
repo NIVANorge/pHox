@@ -19,6 +19,7 @@ Ferrybox = {
     "longitude": 0.0,
     "latitude": 0.0,
     "pumping": None,
+    'udp_ok' : False
 }
 
 
@@ -31,11 +32,14 @@ def udp_server():
     logging.info("UDP server started")
     while not UDP_EXIT:
         try:
+            Ferrybox['udp_ok'] = False
             (data, addr) = sock.recvfrom(500)
         except:
             # add time
             pass
         else:
+            Ferrybox['udp_ok'] = True
+            data = data.decode('utf-8')
             print("received: %s" % (data.strip()))
             w = data.split(",")
             if data.startswith("$PFBOX,TIME,"):
