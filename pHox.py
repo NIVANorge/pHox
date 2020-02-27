@@ -633,7 +633,7 @@ class pH_instrument(Common_instrument):
         ]
 
     def pH_eval(self, evalPar_df):
-
+        print ('evalPar_df', evalPar_df)
         dpH_dT = -0.0155
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
         T_lab = evalPar_df["Tdeg"][0]

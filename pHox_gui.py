@@ -255,7 +255,7 @@ class Panel(QtGui.QWidget):
                 self.config_widgets_set_state(True)
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_leds.setEnabled(True)
-                    self.btn_checkflow.setEnabled(True)
+                    #self.btn_checkflow.setEnabled(True)
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -1091,6 +1091,7 @@ class Panel(QtGui.QWidget):
             self.unset_major_mode("Continuous")
             self.StatusBox.clear()
             self.timer_contin_mode.stop()
+            self.until_next_sample = self.instrument.samplingInterval
             self.infotimer_contin_mode.stop()
 
     @asyncSlot()
@@ -1273,7 +1274,6 @@ class Panel(QtGui.QWidget):
     def _autostop(self):
         self.append_logbox("Inside _autostop...")
         time.sleep(10)
-
         self.btn_leds.setChecked(False)
         self.btn_cont_meas.setChecked(False)
         self.btn_cont_meas_clicked()
