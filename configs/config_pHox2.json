@@ -25,7 +25,7 @@
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 1000,
-        "Ship_Code": "Standalone",
+        "Ship_Code": "TF",
         "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
         "LIGHT_THRESHOLD_STS": 15500,            
         "LIGHT_THRESHOLD_FLAME": 60000    

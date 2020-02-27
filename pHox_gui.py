@@ -921,8 +921,9 @@ class Panel(QtGui.QWidget):
 
         if fbox['pumping'] or fbox['pumping'] is None:
             self.ferrypump_box.setChecked(True)
+        else:
+            self.ferrypump_box.setChecked(False)
 
-    def save_pCO2_data(self, pH=None):
         self.add_pco2_info()
         d = self.CO2_instrument.franatech
         t = datetime.now()
@@ -1324,7 +1325,7 @@ class Panel(QtGui.QWidget):
 
     def autostart_pump(self):
         self.append_logbox("Automatic start at pump enabled")
-
+        logging.debug(f"fbox[pumping] is {fbox['pumping']}")
         if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
             self.timerAuto.stop()
             self.timerAuto.timeout.disconnect(self.autostart_pump)
