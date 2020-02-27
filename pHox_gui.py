@@ -1267,6 +1267,9 @@ class Panel(QtGui.QWidget):
         if not self.args.co3:
             logging.info("Starting continuous mode ")
             self.StatusBox.setText("Starting continuous mode ")
+
+        logging.debug(f"fbox[pumping] is {fbox['pumping']}")
+        if fbox["pumping"] == 1 or fbox["pumping"] is None:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
@@ -1325,15 +1328,11 @@ class Panel(QtGui.QWidget):
 
     def autostart_pump(self):
         self.append_logbox("Automatic start at pump enabled")
-        logging.debug(f"fbox[pumping] is {fbox['pumping']}")
-        if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
-            self.timerAuto.stop()
-            self.timerAuto.timeout.disconnect(self.autostart_pump)
-            self.timerAuto.timeout.connect(self.autostop_pump)
-            self.timerAuto.start(10000)
-            self._autostart()
-        else:
-            pass
+        self.timerAuto.stop()
+        self.timerAuto.timeout.disconnect(self.autostart_pump)
+        self.timerAuto.timeout.connect(self.autostop_pump)
+        self.timerAuto.start(10000)
+        self._autostart()
         return
 
     def autostop_pump(self):
