@@ -1160,7 +1160,8 @@ class Panel(QtGui.QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
 
-        elif self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled():
+        elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
+              and "Measurement" not in self.major_modes):
             self.btn_manual_mode.setEnabled(True)
 
         if self.until_next_sample > 60:
@@ -1355,7 +1356,7 @@ class Panel(QtGui.QWidget):
             self.timerAuto.start(1000)
 
         elif self.instrument._autostart and self.instrument._automode == "now":
-            self.StatusBoxx.setText("Immediate automatic start enabled")
+            self.StatusBox.setText("Immediate automatic start enabled")
             self._autostart()
         return
 
