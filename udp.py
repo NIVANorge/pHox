@@ -31,6 +31,7 @@ def udp_server():
         except:
             pass
         else:
+            data = data.decode('utf-8')
             Ferrybox['udp_ok'] = True
             print ('received: %s' % (data.strip()))
             w = data.split(',')
