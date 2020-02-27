@@ -924,6 +924,7 @@ class Panel(QtGui.QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
+    def save_pCO2_data(self, pH=None):
         self.add_pco2_info()
         d = self.CO2_instrument.franatech
         t = datetime.now()
