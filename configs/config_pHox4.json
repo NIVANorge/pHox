@@ -1,10 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_4",
-        "DEF_TEMP_CAL_COEF": [
-            70.469,
-            16.198
-        ],
+        "TEMP_PROBE_ID": "Probe_3",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -29,10 +25,8 @@
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 1200,
-        "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
-        "comment Deployment_mode": "#modes can be Ferry or Standalone ",
-        "Spectro_connected": "Seabreeze",
+        "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
         "LIGHT_THRESHOLD_STS": 15500,            
         "LIGHT_THRESHOLD_FLAME": 60000     
     },
@@ -46,7 +40,6 @@
         "LED1": 39,
         "LED2": 22,
         "LED3": 96,
-        "LED_THRESHOLD": 15500,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -103,35 +96,10 @@
         "Default_DYE": "Pb_perchlor"
            
     },
-    "TempProbes": {
-        "Probe_1": {
-            "comment": "installed on pHox3 at NIVA now",
-            "is_calibrated": "True",
-            "calibr_date": "NaN",
-            "Calibr_coef": [
-                70.582,
-                16.213
-            ]
-        },
-
-        "Probe_2": {
-            "is_calibrated": "False",
-            "calibr_date": "NaN",
-            "Calibr_coef": [
-                "NaN",
-                "NaN"
-            ]
-        },
-
-        "Probe_4": {
-            "comment": "installed on pHox4 at NIVA now",
-            "is_calibrated": "True",
-            "calibr_date": "NaN",
-            "Calibr_coef": [
-                70.582,
-                16.213
-            ]
-        }
-
+    "TrisBuffer":{
+        "Comment": "pH of Tris buffer calibration solution at 25deg",
+        "pH_tris_buffer": 8.094,
+        "S_tris_buffer": 35
     }
 }
+

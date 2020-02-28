@@ -1,6 +1,10 @@
 {
     "Operational": {
         "TEMP_PROBE_ID": "Probe_1",
+        "DEF_TEMP_CAL_COEF": [
+            70.582,
+            16.213
+        ],
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -19,33 +23,36 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_SEC": 300,
-        "pumpTime": 0,
+        "Comment": "all intervals are in seconds",
+        "pumpTime": 15,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 500,
-        "Ship_Code": "NB",
-        "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
-        "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "Spectro_Integration_time": 1000,
+        "Ship_Code": "Standalone",
+        "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
+        "LIGHT_THRESHOLD_STS": 15500,            
+        "LIGHT_THRESHOLD_FLAME": 60000    
     },
     "pH": {
         "LED_SLOTS": [
-            12,
-            13,
             19,
+            13,
+            12,
             16
         ],
-        "LED1": 50,
-        "LED2": 16,
-        "LED3": 60,
+        "LED1": 99,
+        "LED2": 99,
+        "LED3": 99,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "LED4": 70
+        "Tris_Buffer_salinity": 0,
+        "Theoretical_pH": 0
+
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -91,9 +98,12 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
-        "LIGHT_SLOT": 22
+        "LIGHT_SLOT": 22,
+        "comment_co3": "# Pb_perchlor or Pb_chlor",
+        "Default_DYE": "Pb_perchlor"
+           
     },
-    "TrisBuffer": {
+    "TrisBuffer":{
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35

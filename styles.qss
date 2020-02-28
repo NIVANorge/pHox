@@ -39,17 +39,17 @@ QSlider::sub-page {background: #79c98d;}
 
 QPushButton {
   font-size: 10pt;
-  background-color: #505F69;
+  background-color: #32414B;
   border: 1px solid #32414B;
   color: #F0F0F0;
   border-radius: 4px;
   padding: 3px;
   outline: none;
-
 }
 
+
 QPushButton:disabled {
-  background-color: #32414B;
+  background-color:  #505F69;
   border: 1px solid #32414B;
   color: #F0F0F0;
   border-radius: 4px;
@@ -92,7 +92,7 @@ QGroupBox::title {
     top: -10px;
     left: 10px;}
 
- QLineEdit, QTextEdit {
+ QLineEdit{
   font-size: 10pt;
   background-color: #caedd2;
   padding-top: 0em;
@@ -102,7 +102,16 @@ QGroupBox::title {
   border-style: solid;
   border-radius: 4px;
   color: #19232D;
+  max-width: 70px
 }
+
+QTextEdit{
+  padding-top: 0em;
+  max-height: 30px;
+  background-color: #caedd2;
+  color: #19232D;
+}
+
 
 QLabel {font-size: 10pt;}
 

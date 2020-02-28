@@ -1,7 +1,9 @@
 data/
+.vscode/
 *.pyc
 *.log
 *.*~
 *.evl
 *.spt
 config.json
+test_qt_async.py

@@ -1,20 +1,18 @@
-#--------------------------------------------------------------------------
-# I2C
-# SPI
+
+
+
 #--------------------------------------------------------------------------
 echo "********* SPI/I2C ******"
 echo "Make sure SPI is enabled"
 echo "Make sure I2C is enabled"
+echo "Make sure VNC is enabled"
+echo "Set up the correct time"
 echo "************************"
 echo "You can start the script to run raspi-config"
 echo "use raspi-config       "
 echo "then reboot            "
 echo "************************"
-read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
-then 
-    exit 0
-fi
+
 #--------------------------------------------------------------------------
 # SSH-key
 #--------------------------------------------------------------------------
@@ -24,20 +22,10 @@ echo "Leave passphrase blank  "
 echo "************************"
 echo "                        "
 read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
+if [ "$ans" != "N" ]
 then
     ssh-keygen
 fi
-#--------------------------------------------------------------------------
-# GITHUB ssh
-#--------------------------------------------------------------------------
-echo "******** GITHUB ********"
-echo "Upload content of       "
-echo "~/.ssh/id_rsa.pub       " 
-echo "to PHOX repo on GITHUB  "
-echo "************************"
-echo "                        "
-read -p "Press ENTER when done" ans
 #--------------------------------------------------------------------------
 # Elementary packages
 #--------------------------------------------------------------------------
@@ -59,6 +47,9 @@ then
     sudo apt-get -y install python3-pandas
     sudo apt-get -y install python3-usb
     sudo apt-get -y install python3-pyqtgraph
+    sudo pip3 install asyncqt
+    sudo pip3 install asyncio
+    sudo pip3 install seabreeze
 fi
 
 #---
@@ -71,7 +62,7 @@ echo "you can use piwheels by placing the following lines in /etc/pip.conf:"
 echo "[global]"
 echo " extra-index-url=https://www.piwheels.org/simple " 
 
-sudo pip3 install seabreeze
+
 
 #--------------------------------------------------------------------------
 # Install ABElectronics package
@@ -130,39 +121,27 @@ then
     echo '[Desktop Entry]'                                     >  $f
     echo 'Type=Application'                                    >> $f
     echo 'NAME=pHox'                                           >> $f
-    echo 'Exec=sudo /usr/bin/python3 /home/pi/pHox/pHox_gui.py' >> $f
+    echo "Exec=sudo bash -c 'cd /home/pi/pHox && /usr/bin/python3 /home/pi/pHox/pHox_gui.py'" >> $f
+    cp $f "/home/pi/Desktop"
     echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
-#--------------------------------------------------------------------------
-# Install pHox from GIT
-#--------------------------------------------------------------------------
-echo "********* PHOX *********"
-echo "Install PHOX            "
-echo "from GIT                "
-echo "************************"
-echo "                        "
-read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
-then
-    cd
-    git clone git@github.com:NIVANorge/pHox.git
-fi
+
 #--------------------------------------------------------------------------
 # Install static IP on eth0
 #--------------------------------------------------------------------------
 echo "********* ETH0 *********"
 echo "Install ETH0            "
-echo "Static 192.168.0.90     "
+echo "Static 192.168.0.9     "
 echo "************************"
 echo "                        "
 read -p "Skip? Y/[N] " ans
 if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
-    echo 'interface eth0'                 >> $f
-    echo 'static ip_address=192.168.0.9'  >> $f
-    echo 'static routers=192.168.0.1'     >> $f
+    {
+    echo 'interface eth0' 'static ip_address=192.168.0.9/24' 'static routers=192.168.0.1'
+    } >> $f
 fi
 
 

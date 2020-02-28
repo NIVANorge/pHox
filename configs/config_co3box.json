@@ -1,10 +1,6 @@
 {
     "Operational": {
         "TEMP_PROBE_ID": "Probe_1",
-        "DEF_TEMP_CAL_COEF": [
-            70.582,
-            16.213
-        ],
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -29,7 +25,6 @@
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 3000,
-        "Deployment_mode": "Standalone",
         "Ship_Code": "Standalone",
         "comment Deployment_mode": "#modes can be Ferry or Standalone "
     },
@@ -99,23 +94,11 @@
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor"    
     },
-    "TempProbes": {
-        "Probe_1": {
-            "comment": "installed on pHox3 at NIVA now",
-            "is_calibrated": "True",
-            "calibr_date": "NaN",
-            "Calibr_coef": [
-                70.582,
-                16.213
-            ]
-        },
-        "Probe_2": {
-            "is_calibrated": "False",
-            "calibr_date": "NaN",
-            "Calibr_coef": [
-                "NaN",
-                "NaN"
-            ]
-        }
-    }
+    "TrisBuffer":
+      {
+        "Comment": "pH of Tris buffer calibration solution at 25deg",
+        "pH_tris_buffer": 8.094,
+        "S_tris_buffer": 35
+      }
 }
+
