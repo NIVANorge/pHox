@@ -1,4 +1,6 @@
 
+
+
 #--------------------------------------------------------------------------
 echo "********* SPI/I2C ******"
 echo "Make sure SPI is enabled"
@@ -10,11 +12,7 @@ echo "You can start the script to run raspi-config"
 echo "use raspi-config       "
 echo "then reboot            "
 echo "************************"
-read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
-then 
-    exit 0
-fi
+
 #--------------------------------------------------------------------------
 # SSH-key
 #--------------------------------------------------------------------------
@@ -24,20 +22,10 @@ echo "Leave passphrase blank  "
 echo "************************"
 echo "                        "
 read -p "Skip? Y/[N] " ans
-if [ "$ans" != "Y" ]
+if [ "$ans" != "N" ]
 then
     ssh-keygen
 fi
-#--------------------------------------------------------------------------
-# GITHUB ssh
-#--------------------------------------------------------------------------
-echo "******** GITHUB ********"
-echo "Upload content of       "
-echo "~/.ssh/id_rsa.pub       " 
-echo "to PHOX repo on GITHUB  "
-echo "************************"
-echo "                        "
-read -p "Press ENTER when done" ans
 #--------------------------------------------------------------------------
 # Elementary packages
 #--------------------------------------------------------------------------

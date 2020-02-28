@@ -1262,15 +1262,12 @@ class Panel(QtGui.QWidget):
             self.update_LEDs()
             self.btn_leds.setChecked(True)
             self.btn_leds_checked()
-
         self.updater.start_live_plot()
-
-        if not self.args.co3:
-            logging.info("Starting continuous mode ")
-            self.StatusBox.setText("Starting continuous mode ")
 
         logging.debug(f"fbox[pumping] is {fbox['pumping']}")
         if fbox["pumping"] == 1 or fbox["pumping"] is None:
+            logging.info("Starting continuous mode in Autostart")
+            self.StatusBox.setText("Starting continuous mode ")
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
