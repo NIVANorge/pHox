@@ -502,7 +502,7 @@ class pH_instrument(Common_instrument):
         self.adj_action = None
         increment_sptint = 200
         n = 0
-        while n < 30:
+        while n < 15:
             n += 1
 
             logging.debug("inside call adjust ")

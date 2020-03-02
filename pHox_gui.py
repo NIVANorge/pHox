@@ -406,7 +406,7 @@ class Panel(QtGui.QWidget):
         self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
 
-        if fbox['pumping'] or fbox['pumping'] == None:
+        if fbox['pumping']:
             self.ferrypump_box.setChecked(True)
 
         self.table_grid = QtGui.QGridLayout()
@@ -953,6 +953,8 @@ class Panel(QtGui.QWidget):
             self.append_logbox("Finished Autoadjust LEDS")
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
+        else:
+            self.StatusBox.setText('Was not able do auto adjust')
         return adj
 
     @asyncSlot()
@@ -988,7 +990,7 @@ class Panel(QtGui.QWidget):
             datay = await self.instrument.spectrom.get_intensities()
             await self.update_spectra_plot_manual(datay)
         else:
-            result = False
+            self.StatusBox.setText('Was not able do auto adjust')
         return result
 
     @asyncSlot()
@@ -1267,10 +1269,9 @@ class Panel(QtGui.QWidget):
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
 
-        logging.debug(f"fbox[pumping] is {fbox['pumping']}")
-        if fbox["pumping"] == 1 or fbox["pumping"] is None:
             logging.info("Starting continuous mode in Autostart")
             self.StatusBox.setText("Starting continuous mode ")
+
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
@@ -1294,7 +1295,7 @@ class Panel(QtGui.QWidget):
         if 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
             self.unset_major_mode('Autostarted')
             self.timer_contin_mode.stop()
-            self.StatusBox.setText("Pause continuous mode,pump is off ")
+            self.StatusBox.setText("Continuous mode pause")
         elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
@@ -1373,7 +1374,7 @@ class Panel(QtGui.QWidget):
                 self.append_logbox("Opening the valve ...")
                 await self.instrument.set_Valve(False)
 
-        if not self.args.co3:
+        if not self.args.co3 and res:
             self.get_final_pH(timeStamp)
             self.append_logbox("Single measurement is done...")
             self.append_logbox('Saving results')
@@ -1385,6 +1386,7 @@ class Panel(QtGui.QWidget):
                 dif_pH = self.pH_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
+        self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
 
     def get_folderPath(self):
@@ -1685,7 +1687,7 @@ class boxUI(QtGui.QMainWindow):
         elif self.args.co3:
             self.setWindowTitle("Box Instrument, parameter CO3")
         else:
-            self.setWindowTitle("Box Instrument, NIVA - pH")
+            self.setWindowTitle("pH box")
 
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
