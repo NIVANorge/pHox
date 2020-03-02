@@ -1295,7 +1295,10 @@ class Panel(QtGui.QWidget):
     def check_autostop_pump(self):
         logging.debug('checking autostop pump')
         logging.debug(str(self.major_modes))
-        if 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
+        if fbox['pumping'] == 'None':
+            self.StatusBox.setText("No data from UDP")
+            logging.debug('No udp connection')
+        elif 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
             logging.debug('Pause continuous mode, since pump is off')
             self.unset_major_mode('Autostarted')
             self.timer_contin_mode.stop()
@@ -1308,8 +1311,7 @@ class Panel(QtGui.QWidget):
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
             self._autostart(restart=True)
-        elif fbox['pumping'] == 'None':
-            logging.debug('No udp connection')
+
         return
 
     def autorun(self):
