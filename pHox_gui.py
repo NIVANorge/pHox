@@ -920,7 +920,7 @@ class Panel(QtGui.QWidget):
         self.t_lab_live.setText(str(t_lab))
         self.voltage_live.setText(str(voltage))
 
-        if fbox['pumping'] or fbox['pumping'] is None:
+        if fbox['pumping']:
             self.ferrypump_box.setChecked(True)
         else:
             self.ferrypump_box.setChecked(False)
