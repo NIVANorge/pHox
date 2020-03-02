@@ -1294,6 +1294,7 @@ class Panel(QtGui.QWidget):
         if 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
             self.unset_major_mode('Autostarted')
             self.timer_contin_mode.stop()
+            self.StatusBox.setText("Pause continuous mode,pump is off ")
         elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
