@@ -1307,7 +1307,7 @@ class Panel(QtGui.QWidget):
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
-            self._autostart(self, restart=True)
+            self._autostart(restart=True)
         elif fbox['pumping'] == 'None':
             logging.debug('No udp connection')
         return
