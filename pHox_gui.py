@@ -66,7 +66,8 @@ class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
         self.major_modes = set()
-        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck"]
+        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
+                            "Autostarted"]
 
         self.args = panelargs
         self.config_name = config_name
@@ -1251,18 +1252,20 @@ class Panel(QtGui.QWidget):
         self.sliders[1].setValue(self.instrument.LED2)
         self.sliders[2].setValue(self.instrument.LED3)
 
-    def _autostart(self):
+    def _autostart(self, restart=False):
         self.append_logbox("Inside _autostart...")
-        self.StatusBox.setText("Turn on LEDs")
-        if self.args.co3:
-            logging.info("turn on light source")
-            self.instrument.turn_on_relay(self.instrument.light_slot)
-            self.btn_lightsource.setChecked(True)
-        else:
-            self.update_LEDs()
-            self.btn_leds.setChecked(True)
-            self.btn_leds_checked()
-        self.updater.start_live_plot()
+        if not restart:
+            if self.args.co3:
+                logging.info("turn on light source")
+                self.instrument.turn_on_relay(self.instrument.light_slot)
+                self.btn_lightsource.setChecked(True)
+            else:
+                self.StatusBox.setText("Turn on LEDs")
+                self.update_LEDs()
+                self.btn_leds.setChecked(True)
+                self.btn_leds_checked()
+            self.updater.start_live_plot()
+            self.timerTemp_info.start(500)
 
         logging.debug(f"fbox[pumping] is {fbox['pumping']}")
         if fbox["pumping"] == 1 or fbox["pumping"] is None:
@@ -1271,95 +1274,54 @@ class Panel(QtGui.QWidget):
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
-        self.timerTemp_info.start(500)
         if self.args.pco2:
             # change to config file
             self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
-        return
-
-    def _autostop(self):
-        self.append_logbox("Inside _autostop...")
-        time.sleep(10)
-        self.btn_leds.setChecked(False)
-        self.btn_cont_meas.setChecked(False)
-        self.btn_cont_meas_clicked()
-        # self.on_deploy_clicked(False)
-        self.timerSpectra_plot.stop()
-        self.timer_contin_mode.stop()
-        # self.timerSensUpd.stop()
-        # self.timerSave.stop()
-        return
-
-    def autostop_time(self):
-        self.append_logbox("Inside autostop_time...")
-        self.timerAuto.stop()
-        self._autostop()
-        now = datetime.now()
-        dt = now - self.instrument._autotime
-        days = int(dt.total_seconds() / 86400) + 1
-        self.instrument._autotime += timedelta(days=days)
-        self.timerAuto.timeout.disconnect(self.autostop_time)
-        self.timerAuto.timeout.connect(self.autostart_time)
-        self.timerAuto.start(1000)
-        return
-
-    def autostart_time(self):
-        self.append_logbox("Inside _autostart_time...")
-        self.timerAuto.stop()
-        now = datetime.now()
-        if now < self.instrument._autotime:
-            self.timerAuto.timeout.connect(self.autostart_time)
-            dt = self.instrument._autotime - now
-            self.timerAuto.start(int(dt.total_seconds() * 1000))
-            logging.info(
-                "Instrument will start at " + self.instrument._autostart.strftime("%Y-%m-%dT%H:%M:%S")
-            )
-        else:
-            self.timerAuto.timeout.disconnect(self.autostart_time)
-            self.timerAuto.timeout.connect(self.autostop_time)
-            t0 = self.instrument._autotime + self.instrument._autolen
-            dt = t0 - now
-            self.timerAuto.start(int(dt.total_seconds() * 1000))
-            logging.info("Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S"))
-            self._autostart()
+        self.set_major_mode("Autostarted")
         return
 
     def autostart_pump(self):
-        self.append_logbox("Automatic start at pump enabled")
+        self.append_logbox("Initial automatic start at pump enabled")
         self.timerAuto.stop()
         self.timerAuto.timeout.disconnect(self.autostart_pump)
-        self.timerAuto.timeout.connect(self.autostop_pump)
-        self.timerAuto.start(10000)
         self._autostart()
+        # Continuously checking if pump is still working or not
+        self.timerAuto.timeout.connect(self.check_autostop_pump)
+        self.timerAuto.start(10000)
         return
 
-    def autostop_pump(self):
-        if fbox["pumping"] == 0:
-            self.timerAuto.stop()
-            self.timerAuto.timeout.disconnect(self.autostop_pump)
-            self.timerAuto.timeout.connect(self.autostart_pump)
-            self.timerAuto.start(10000)
-            self._autostop()
-        else:
+    def check_autostop_pump(self):
+        if 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
+            self.unset_major_mode('Autostarted')
+            self.timer_contin_mode.stop()
+        elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
+        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
+            pass
+        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
+            self._autostart(self, restart=True)
         return
 
     def autorun(self):
-        self.append_logbox("Inside continuous_mode...")
+        self.append_logbox("Inside autorun func...")
         logging.info("start autorun")
-        if self.instrument._autostart and self.instrument._automode == "time":
-            self.StatusBox.setText("Automatic scheduled start enabled")
-            self.timerAuto.timeout.connect(self.autostart_time)
-            self.timerAuto.start(1000)
+        if self.instrument._autostart:
+            if self.instrument._automode == "time":
+                self.StatusBox.setText("Automatic scheduled start enabled")
+                self.timerAuto.timeout.connect(self.autostart_time)
+                self.timerAuto.start(1000)
 
-        elif self.instrument._autostart and self.instrument._automode == "pump":
-            self.StatusBox.setText("Automatic start at pump enabled")
-            self.timerAuto.timeout.connect(self.autostart_pump)
-            self.timerAuto.start(1000)
+            elif self.instrument._automode == "pump":
+                self.StatusBox.setText("Automatic start at pump enabled")
+                self.timerAuto.timeout.connect(self.autostart_pump)
+                self.timerAuto.start(1000)
 
-        elif self.instrument._autostart and self.instrument._automode == "now":
-            self.StatusBox.setText("Immediate automatic start enabled")
-            self._autostart()
+            elif self.instrument._autostart and self.instrument._automode == "now":
+                self.StatusBox.setText("Immediate automatic start enabled")
+                self._autostart()
+        else:
+            pass
+
         return
 
     @asynccontextmanager
@@ -1532,7 +1494,7 @@ class Panel(QtGui.QWidget):
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
-            dilution = (self.instrument.Cuvette_V) / (vol_injected + self.instrument.Cuvette_V)
+            dilution = self.instrument.Cuvette_V / (vol_injected + self.instrument.Cuvette_V)
 
             vNTC = await self.inject_dye(n_inj)
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
@@ -1723,8 +1685,7 @@ class boxUI(QtGui.QMainWindow):
             self.setWindowTitle("Box Instrument, parameter CO3")
         else:
             self.setWindowTitle("Box Instrument, NIVA - pH")
-        if self.args.localdev and 'ELP' in sys.path[0]:
-            self.setFixedSize(1920 / 2, 1080 / 2)
+
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
