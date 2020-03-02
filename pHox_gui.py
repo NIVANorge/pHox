@@ -1270,9 +1270,10 @@ class Panel(QtGui.QWidget):
             self.timerTemp_info.start(500)
 
             logging.info("Starting continuous mode in Autostart")
-            self.StatusBox.setText("Starting continuous mode ")
-
+            self.StatusBox.setText("Starting continuous mode")
             self.btn_cont_meas.setChecked(True)
+
+        if fbox['pumping'] or fbox['pumping'] is None:
             self.btn_cont_meas_clicked()
 
         if self.args.pco2:
@@ -1293,8 +1294,11 @@ class Panel(QtGui.QWidget):
 
     def check_autostop_pump(self):
         if 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
+            logging.debug('Pause continuous mode, since pump is off')
             self.unset_major_mode('Autostarted')
             self.timer_contin_mode.stop()
+            self.infotimer_contin_mode.stop()
+            self.until_next_sample = self.instrument.samplingInterval
             self.StatusBox.setText("Continuous mode pause")
         elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
