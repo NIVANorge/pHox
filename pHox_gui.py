@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import CO2_instrument
+from pco2 import pco2_instrument,test_pco2_instrument
 import os, sys
 
 try:
@@ -88,7 +88,10 @@ class Panel(QtGui.QWidget):
         self.t_lab_live = QtGui.QLineEdit()
         self.voltage_live = QtGui.QLineEdit()
         if self.args.pco2:
-            self.CO2_instrument = CO2_instrument(self.config_name)
+            if self.args.localdev:
+                self.pco2_instrument = test_pco2_instrument(self.config_name)
+            else:
+                self.pco2_instrument = pco2_instrument(self.config_name)
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -110,6 +113,11 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_log, "Log")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
+
+        if self.args.pco2:
+            self.tab_pco2 = QtGui.QTabWidget()
+            self.tabs.addTab(self.tab_pco2,"pCO2")
+            self.make_tab_pco2()
 
         self.make_tab_log()
         self.make_tab1()
@@ -169,8 +177,8 @@ class Panel(QtGui.QWidget):
         self.timerAuto = QtCore.QTimer()
 
         if self.args.pco2:
-            self.timerSave = QtCore.QTimer()
-            self.timerSave.timeout.connect(self.save_pCO2_data)
+            self.timerSave_pco2 = QtCore.QTimer()
+            self.timerSave_pco2.timeout.connect(self.update_pCO2_data)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -276,7 +284,6 @@ class Panel(QtGui.QWidget):
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
             print('unset adjusting')
-            print (self.major_modes)
             if 'Manual' in self.major_modes:
                 self.btn_manual_mode.setEnabled(True)
                 self.manual_widgets_set_enabled(True)
@@ -469,6 +476,33 @@ class Panel(QtGui.QWidget):
     def fill_table_config(self, x, y, item):
         self.tableConfigWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
 
+    def make_tab_pco2(self):
+        layout2 = QtGui.QGridLayout()
+        groupbox = QtGui.QGroupBox('Updates from pCO2')
+        layout = QtGui.QGridLayout()
+
+        self.Tw_pco2_live= QtGui.QLineEdit()
+        self.flow_pco2_live = QtGui.QLineEdit()
+        self.Pw_pco2_live = QtGui.QLineEdit()
+        self.Ta_pco2_live = QtGui.QLineEdit()
+        self.Pa_pco2_live = QtGui.QLineEdit()
+        self.Leak_pco2_live = QtGui.QLineEdit()
+        self.CO2_pco2_live = QtGui.QLineEdit()
+        self.TCO2_pco2_live = QtGui.QLineEdit()
+
+        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
+                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+                            self.CO2_pco2_live, self.TCO2_pco2_live]
+        self.pco2_labels = ['Tw', 'flow', 'Pw',
+                            'Ta', 'Pa', 'Leak',
+                            'CO2', 'TCO2']
+        [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QtGui.QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+
+        groupbox.setLayout(layout)
+        layout2.addWidget(groupbox)
+        self.tab_pco2.setLayout(layout2)
+
     def make_tab_config(self):
         self.tab_config.layout = QtGui.QGridLayout()
         # Define widgets for config tab
@@ -478,8 +512,6 @@ class Panel(QtGui.QWidget):
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem("TB")
         self.dye_combo.addItem("MCP")
-
-
 
         index = self.dye_combo.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
         if index >= 0:
@@ -596,9 +628,7 @@ class Panel(QtGui.QWidget):
         self.instrument.ship_code = self.ship_code_combo.currentText()
 
     def temp_id_combo_changed(self):
-        print('combo changed',self.temp_id_combo.currentText())
         self.instrument.TempProbe_id = self.temp_id_combo.currentText()
-        print(f'new id {self.temp_id_combo.currentText()}')
         self.instrument.update_temp_probe_coef()
 
     def config_widgets_set_state(self, state):
@@ -925,26 +955,42 @@ class Panel(QtGui.QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
-    def save_pCO2_data(self, pH=None):
-        self.add_pco2_info()
-        d = self.CO2_instrument.franatech
+    @asyncSlot()
+    async def update_pCO2_data(self, pH=None):
+        # update values
+        #print ('update')
+        await self.pco2_instrument.get_pco2_values()
+        d = self.pco2_instrument.franatech
+
+        '''self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
+                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+                            self.CO2_pco2_live, self.TCO2_pco2_live]'''
+
+        [v.setText("{}".format(d[k])) for k, v in enumerate(self.pco2_params)]
+        if not self.args.localdev:
+            self.save_pCO2_data(d)
+        return
+
+    def save_pCO2_data(self, d):
         t = datetime.now()
         label = t.isoformat("_")
         labelSample = label[0:19]
-        logfile = os.path.join(self.instrument.folderPath, "pCO2.log")
+        logfile = os.path.join(self.instrument.folderPath, "data/pCO2.log")
         hdr = ""
         if not os.path.exists(logfile):
             hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
         s = labelSample
         s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
-        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[6], d[7],)
+        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[5], d[6])
         s += "\n"
         with open(logfile, "a") as logFile:
             if hdr:
                 logFile.write(hdr + "\n")
             logFile.write(s)
-        udp.send_data("PCO2," + s, self.instrument.ship_code)
-        return
+        if not self.args.localdev:
+            udp.send_data("PCO2," + s, self.instrument.ship_code)
+
+
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
@@ -1049,29 +1095,7 @@ class Panel(QtGui.QWidget):
                 self.btn_checkflow.setChecked(False)
                 return check_succeeded
 
-    def add_pco2_info(self):
-        self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_CO2)
-        resp = self.CO2_instrument.portSens.read(15)
-        try:
-            value = float(resp[3:])
-            value = self.CO2_instrument.ftCalCoef[6][0] + self.CO2_instrument.ftCalCoef[6][1] * value
-        except ValueError:
-            value = 0
-        self.CO2_instrument.franatech[6] = value
 
-        self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
-        resp = self.CO2_instrument.portSens.read(15)
-        try:
-            self.CO2_instrument.franatech[7] = float(resp[3:])
-        except ValueError:
-            self.CO2_instrument.franatech[7] = 0
-
-        for ch in range(5):
-            V = self.instrument.get_Vd(2, ch + 1)
-            X = 0
-            for i in range(2):
-                X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V, i)
-            self.CO2_instrument.franatech[ch] = X
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1237,8 +1261,6 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Save final data in %s" % (folderPath + "pH.log"))
         self.save_logfile_df(folderPath, flnmStr)
 
-
-
     def update_table_last_meas(self):
         if not self.args.co3:
             [
@@ -1278,7 +1300,7 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             # change to config file
-            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
+            self.timerSave_pco2.start(self.pco2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
         self.set_major_mode("Autostarted")
         return
 
@@ -1719,10 +1741,6 @@ class boxUI(QtGui.QMainWindow):
 
             self.main_widget.timer_contin_mode.stop()
             logging.info('close the program')
-            '''while self.main_widget.updater.update_spectra_in_progress:
-                print('wait')
-                logging.info('tttt')
-                #await asyncio.sleep(0.05)'''
 
             logging.info("timer is stopped")
 

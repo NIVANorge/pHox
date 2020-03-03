@@ -13,7 +13,6 @@ import pandas as pd
 import udp
 from precisions import precision as prec
 
-
 try:
     import pigpio
     import RPi.GPIO as GPIO
@@ -30,15 +29,16 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
+
 def get_linregress(x, y):
     a = np.vstack([x, np.ones(len(x))]).T
     slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
     r_value = np.corrcoef(x, y)[0][1]
     return slope, intercept, r_value
 
+
 class Spectro_localtest(object):
     def __init__(self):
-
         self.spec = "Test"
         self.spectro_type = "FLMT"
 
@@ -397,6 +397,7 @@ class CO3_instrument(Common_instrument):
         logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
         return [slope1, intercept, r_value]
 
+
 class pH_instrument(Common_instrument):
     def __init__(self, panelargs, config_name):
         super().__init__(panelargs, config_name)
@@ -420,7 +421,7 @@ class pH_instrument(Common_instrument):
         calibr = j["TrisBuffer"]
         self.buffer_sal = calibr["S_tris_buffer"]
         self.buffer_pH_value = calibr["pH_tris_buffer"]
-        print (self.buffer_sal, self.buffer_pH_value)
+        print(self.buffer_sal, self.buffer_pH_value)
         self.dye = conf_pH["Default_DYE"]
         if self.dye == "MCP":
             self.HI = int(conf_pH["MCP_wl_HI"])
@@ -433,9 +434,9 @@ class pH_instrument(Common_instrument):
 
         # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
-        self.LED1 = conf_pH["LED1"]
-        self.LED2 = conf_pH["LED2"]
-        self.LED3 = conf_pH["LED3"]
+        self.LED1 = int(conf_pH["LED1"])
+        self.LED2 = int(conf_pH["LED2"])
+        self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [self.LED1, self.LED2, self.LED3]
 
     def get_wvlPixels(self, wvls):
@@ -460,7 +461,7 @@ class pH_instrument(Common_instrument):
         self.led_action = None
         # Increment is decreased twice in case we change the direction
         # of decrease/increase
-        while adj == False:
+        while not adj:
             logging.info(f"step is {step}")
             step += 1
             self.adjust_LED(led_ind, LED)
@@ -586,14 +587,14 @@ class pH_instrument(Common_instrument):
             e2e3 = -0.020813 + ((2.60262 * 10 ** -4) * T) + (1.0436 * 10 ** -4) * (S_corr - 35)
             arg = (R - e1) / (1 - R * e2e3)
             pK = (
-                5.561224
-                - (0.547716 * S_corr ** 0.5)
-                + (0.123791 * S_corr)
-                - (0.0280156 * S_corr ** 1.5)
-                + (0.00344940 * S_corr ** 2)
-                - (0.000167297 * S_corr ** 2.5)
-                + ((52.640726 * S_corr ** 0.5) * T ** -1)
-                + (815.984591 * T ** -1)
+                    5.561224
+                    - (0.547716 * S_corr ** 0.5)
+                    + (0.123791 * S_corr)
+                    - (0.0280156 * S_corr ** 1.5)
+                    + (0.00344940 * S_corr ** 2)
+                    - (0.000167297 * S_corr ** 2.5)
+                    + ((52.640726 * S_corr ** 0.5) * T ** -1)
+                    + (815.984591 * T ** -1)
             )
             if arg > 0:
                 pH = pK + np.log10(arg)
@@ -682,7 +683,7 @@ class pH_instrument(Common_instrument):
         logging.info("leave pH eval")
         return (
             pH_lab, T_lab,
-            perturbation,evalAnir,
+            perturbation, evalAnir,
             pH_insitu, x, y, final_slope, intercept, pH_t_corr
         )
 
@@ -758,7 +759,6 @@ class Test_instrument(pH_instrument):
         V = 0
         for i in range(nAver):
             V += 0.6
-
         return V / nAver
 
     def calc_wavelengths(self):
