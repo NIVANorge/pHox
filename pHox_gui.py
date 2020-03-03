@@ -1311,8 +1311,7 @@ class Panel(QtGui.QWidget):
         return
 
     def check_autostop_pump(self):
-        logging.debug('checking autostop pump')
-        logging.debug(str(self.major_modes))
+
         if fbox['pumping'] == 'None':
             self.StatusBox.setText("No data from UDP")
             logging.debug('No udp connection')
@@ -1328,6 +1327,7 @@ class Panel(QtGui.QWidget):
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
+            logging.debug("Going back to continuous mode, the pump is working now"
             self._autostart(restart=True)
 
         return
