@@ -1,12 +1,8 @@
 import serial
 import serial.tools.list_ports
-
-# from ADCDACPi import ADCDACPi
-# from ADCDifferentialPi import ADCDifferentialPi
 import json
 import numpy as np
-from PyQt5 import QtGui, QtCore
-import time
+
 
 class pco2_instrument(object):
     def __init__(self, config_name):

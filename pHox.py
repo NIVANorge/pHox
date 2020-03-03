@@ -104,7 +104,6 @@ class Spectro_seabreeze(object):
         while self.busy:
             await asyncio.sleep(0.05)
         self.set_integration_time_not_async(time_millisec)
-        # time.sleep(time_millisec/1.e3)
 
     def get_wavelengths(self):
         # wavelengths in (nm) corresponding to each pixel of the spectrom
@@ -664,16 +663,16 @@ class pH_instrument(Common_instrument):
                     pH_lab = intercept
                     logging.info("r_value **2 > 0.9")
                 else:
-                    logging.info("r_value **2 < 0.9 take two first measurements")
-                    x = x[:-2]
-                    y = y[:-2]
+                    logging.info("r_value **2 < 0.9 take three first measurements")
+                    x = x[:-1]
+                    y = y[:-1]
 
                     slope2, intercept, r_value = get_linregress(x, y)
                     final_slope = slope2
                     if r_value ** 2 > 0.9:
                         pH_lab = intercept
                     else:
-                        pH_lab = pH_t_corr[0]
+                        pH_lab = pH_t_corr[1]
 
             pH_insitu = round(pH_lab + dpH_dT * (T_lab - self.fb_data["temperature"]), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])

@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import pco2_instrument,test_pco2_instrument
+from pco2 import pco2_instrument, test_pco2_instrument
 import os, sys
 
 try:
@@ -662,6 +662,7 @@ class Panel(QtGui.QWidget):
         btn_grid = QtGui.QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
+        self.btn_enbable_autoadj = self.create_button("Enable autoadjust", True)
         # self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button("LEDs", True)
         self.btn_valve = self.create_button("Inlet valve", True)
@@ -672,7 +673,7 @@ class Panel(QtGui.QWidget):
         self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-
+        #btn_grid.addWidget(self.btn_enbable_autoadj, 0, 1)
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
