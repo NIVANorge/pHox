@@ -70,7 +70,7 @@ class pco2_instrument(object):
         self.VAR_NAMES = [
             "Water temperature \xB0C",
             "Water flow l/m",
-            "Water pressure ",
+            "Water pressure",
             "Air temperature \xB0C",
             "Air pressure mbar",
             "Water detect",
@@ -105,7 +105,7 @@ class pco2_instrument(object):
             X = 0
             for i in range(2):
                 X += self.ftCalCoef[ch][i] * pow(V, i)
-            self.franatech[ch] = X
+            self.franatech[ch] = round(X, 3)
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):
@@ -126,7 +126,7 @@ class test_pco2_instrument(pco2_instrument):
             X = 0
             for i in range(2):
                 X += self.ftCalCoef[ch][i] * pow(V, i)
-            self.franatech[ch] = X
+            self.franatech[ch] = round(X, 3)
         return self.franatech
 
 

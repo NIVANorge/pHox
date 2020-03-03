@@ -493,9 +493,9 @@ class Panel(QtGui.QWidget):
         self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
                             self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
                             self.CO2_pco2_live, self.TCO2_pco2_live]
-        self.pco2_labels = ['Tw', 'flow', 'Pw',
-                            'Ta', 'Pa', 'Leak',
-                            'CO2', 'TCO2']
+        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
+                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
+                            'C02 ppm', 'T CO2 sensor']
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
         [layout.addWidget(QtGui.QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
 
@@ -962,10 +962,6 @@ class Panel(QtGui.QWidget):
         await self.pco2_instrument.get_pco2_values()
         d = self.pco2_instrument.franatech
 
-        '''self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
-                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
-                            self.CO2_pco2_live, self.TCO2_pco2_live]'''
-
         [v.setText("{}".format(d[k])) for k, v in enumerate(self.pco2_params)]
         if not self.args.localdev:
             self.save_pCO2_data(d)
@@ -1036,7 +1032,7 @@ class Panel(QtGui.QWidget):
             datay = await self.instrument.spectrom.get_intensities()
             await self.update_spectra_plot_manual(datay)
         else:
-            self.StatusBox.setText('Was not able do auto adjust')
+            self.StatusBox.setText('Not able to adjust LEDs automatically')
         return result
 
     @asyncSlot()
@@ -1326,7 +1322,7 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.stop()
             self.infotimer_contin_mode.stop()
             self.until_next_sample = self.instrument.samplingInterval
-            self.StatusBox.setText("Continuous mode pause")
+            self.StatusBox.setText("Continuous mode paused")
         elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
@@ -1390,7 +1386,7 @@ class Panel(QtGui.QWidget):
             res = await self.call_autoAdjust()
             logging.info(f"res after autoadjust: '{res}")
             if res:
-                logging.info("could not adjust leds")
+                #logging.info("could not adjust leds")
 
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
