@@ -13,7 +13,7 @@ class pco2_instrument(object):
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
 
-        print(ports)
+        print('ports',ports)
         for i in range(len(ports)):
             name = ports[i][2]
             port = ports[i][0]

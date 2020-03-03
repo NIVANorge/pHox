@@ -958,7 +958,6 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def update_pCO2_data(self, pH=None):
         # update values
-        #print ('update')
         await self.pco2_instrument.get_pco2_values()
         d = self.pco2_instrument.franatech
 
@@ -1327,7 +1326,7 @@ class Panel(QtGui.QWidget):
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
-            logging.debug("Going back to continuous mode, the pump is working now"
+            logging.debug("Going back to continuous mode, the pump is working now")
             self._autostart(restart=True)
 
         return
