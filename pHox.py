@@ -40,7 +40,7 @@ def get_linregress(x, y):
 class Spectro_localtest(object):
     def __init__(self):
         self.spec = "Test"
-        self.spectro_type = "FLMT"
+        self.spectro_type = "STS"
 
         test_spt = pd.read_csv("data_localtests/20200213_105508.spt")  # .T
         self.wvl = np.array([np.float(n) for n in test_spt.iloc[0].index.values[1:]])
@@ -499,10 +499,12 @@ class pH_instrument(Common_instrument):
         return LED, adj, res
 
     async def precheck_leds_to_adj(self):
+        logging.debug('precheck leds')
         self.spectrum = await self.spectrom.get_intensities()
         led_vals = np.array(self.spectrum)[self.wvlPixels]
         max_cond = all(n < self.maxval for n in led_vals)
-        min_cond = all(led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
+        min_cond = (led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
+        logging.debug(f"precheck result {max_cond,min_cond,led_vals}")
         return (max_cond and min_cond)
 
     async def auto_adjust(self, *args):

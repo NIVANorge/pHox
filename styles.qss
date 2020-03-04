@@ -107,7 +107,7 @@ QGroupBox::title {
 
 QTextEdit{
   padding-top: 0em;
-  max-height: 30px;
+  max-height: 40px;
   background-color: #caedd2;
   color: #19232D;
 }
