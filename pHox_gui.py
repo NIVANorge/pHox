@@ -986,8 +986,6 @@ class Panel(QtGui.QWidget):
         if not self.args.localdev:
             udp.send_data("PCO2," + s, self.instrument.ship_code)
 
-
-
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
         adj, pixelLevel = await self.instrument.auto_adjust()
@@ -1010,29 +1008,34 @@ class Panel(QtGui.QWidget):
         self.timer2 = QtCore.QTimer()
         self.timer2.start(1000)
         self.timer2.timeout.connect(self.update_plot_no_request)
-        (
-            self.instrument.LED1,
-            self.instrument.LED2,
-            self.instrument.LED3,
-            result,
-        ) = await self.instrument.auto_adjust()
-        self.timer2.stop()
 
-        logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-        if result:
-            self.sliders[0].setValue(self.instrument.LED1)
-            self.sliders[1].setValue(self.instrument.LED2)
-            self.sliders[2].setValue(self.instrument.LED3)
-            self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+        check = await self.instrument.precheck_leds_to_adj()
+        if not check:
+            (
+                self.instrument.LED1,
+                self.instrument.LED2,
+                self.instrument.LED3,
+                result,
+            ) = await self.instrument.auto_adjust()
 
-            # self.plot_sp_levels()
-            self.update_spec_int_time_table()
-            self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
+            logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
+            if result:
+                self.sliders[0].setValue(self.instrument.LED1)
+                self.sliders[1].setValue(self.instrument.LED2)
+                self.sliders[2].setValue(self.instrument.LED3)
+                self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+                self.timer2.stop()
+                # self.plot_sp_levels()
+                self.update_spec_int_time_table()
+                self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
 
-            datay = await self.instrument.spectrom.get_intensities()
-            await self.update_spectra_plot_manual(datay)
+                datay = await self.instrument.spectrom.get_intensities()
+                await self.update_spectra_plot_manual(datay)
+            else:
+                self.StatusBox.setText('Not able to adjust LEDs automatically')
         else:
-            self.StatusBox.setText('Not able to adjust LEDs automatically')
+            result = check
+            logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
     @asyncSlot()

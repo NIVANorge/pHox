@@ -403,6 +403,9 @@ class pH_instrument(Common_instrument):
         # self.args = panelargs
         self.load_config_pH()
 
+        self.maxval = self.THR * 1.05
+        self.minval = self.THR * 0.95
+
         # setup PWM and SSR lines
         if not self.args.localdev:
             for pin in range(4):
@@ -446,11 +449,9 @@ class pH_instrument(Common_instrument):
         self.rpi.set_PWM_dutycycle(self.led_slots[led], LED)
 
     async def find_LED(self, led_ind, adj, LED):
-        maxval = self.THR * 1.05
+
         if led_ind == 2:
-            minval = self.THR * 0.90
-        else:
-            minval = self.THR * 0.95
+            self.minval = self.THR * 0.90
 
         logging.info(f"led_ind {led_ind}")
         step = 0
@@ -468,26 +469,26 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.1)
             logging.info(f"pixelLevel {pixelLevel}")
 
-            if pixelLevel > maxval and LED > 15:
+            if pixelLevel > self.maxval and LED > 15:
                 logging.debug("case0  Too high pixellevel, decrease LED ")
                 if self.led_action == "increase":
                     increment = increment / 2
                 LED = max(1, LED - increment)
                 self.led_action = "decrease"
 
-            elif pixelLevel < minval and LED < 90:
+            elif pixelLevel < self.minval and LED < 90:
                 logging.debug("case3 Too low pixellevel, increase LED")
                 if self.led_action == "decrease":
                     increment = increment / 2
                 LED = min(99, LED + increment)
                 self.led_action = "increase"
 
-            elif pixelLevel > maxval and LED <= 15:
+            elif pixelLevel > self.maxval and LED <= 15:
                 logging.debug("case1 decrease int time")
                 res = "decrease int time"
                 break
 
-            elif pixelLevel < minval and LED >= 90:
+            elif pixelLevel < self.minval and LED >= 90:
                 logging.debug("case2 Too low pixellevel and high LED")
                 res = "increase int time"
                 break
@@ -496,6 +497,13 @@ class pH_instrument(Common_instrument):
                 res = "adjusted"
 
         return LED, adj, res
+
+    async def precheck_leds_to_adj(self):
+        self.spectrum = await self.spectrom.get_intensities()
+        led_vals = np.array(self.spectrum)[self.wvlPixels]
+        max_cond = all(n < self.maxval for n in led_vals)
+        min_cond = all(led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
+        return (max_cond and min_cond)
 
     async def auto_adjust(self, *args):
         self.adj_action = None
