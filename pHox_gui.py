@@ -790,7 +790,7 @@ class Panel(QtGui.QWidget):
             j["Operational"]["Spectro_Integration_time"] = self.instrument.specIntTime
             j["Operational"]["Ship_Code"] = self.instrument.ship_code
 
-            j["Operational"]["TEMP_PROBE_ID"] = self.instument.TempProbe_id
+            j["Operational"]["TEMP_PROBE_ID"] = self.instrument.TempProbe_id
 
             j["pH"]["LED1"] = self.instrument.LED1
             j["pH"]["LED3"] = self.instrument.LED2
