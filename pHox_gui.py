@@ -538,8 +538,8 @@ class Panel(QtGui.QWidget):
                                                                         self.instrument.I2], 1)]
         self.fill_table_config(4, 0, "pH sampling interval (min)")
         self.samplingInt_combo = QtGui.QComboBox()
-        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10']]
-        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval)
+        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '20', '30', '60']]
+        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval/60)
         self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
