@@ -79,7 +79,7 @@ class pco2_instrument(object):
             V += self.adc.read_voltage(channel)
         return V / nAver
 
-    def update_pco2_values(self):
+    async def get_pco2_values(self):
         self.portSens.write(self.QUERY_CO2)
         resp = self.portSens.read(15)
         try:
