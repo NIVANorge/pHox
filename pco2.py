@@ -8,7 +8,7 @@ class pco2_instrument(object):
     def __init__(self, config_name):
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
-
+        self.portSens = None
         print('ports',ports)
         for i in range(len(ports)):
             name = ports[i][2]
@@ -80,21 +80,22 @@ class pco2_instrument(object):
         return V / nAver
 
     async def get_pco2_values(self):
-        self.portSens.write(self.QUERY_CO2)
-        resp = self.portSens.read(15)
-        try:
-            value = float(resp[3:])
-            value = self.ftCalCoef[6][0] + self.ftCalCoef[6][1] * value
-        except ValueError:
-            value = 0
-        self.franatech[6] = value
+        if self.portSens:
+            self.portSens.write(self.QUERY_CO2)
+            resp = self.portSens.read(15)
+            try:
+                value = float(resp[3:])
+                value = self.ftCalCoef[6][0] + self.ftCalCoef[6][1] * value
+            except ValueError:
+                value = 0
+            self.franatech[6] = value
 
-        self.portSens.write(self.pco2_instrument.QUERY_T)
-        resp = self.portSens.read(15)
-        try:
-            self.franatech[7] = float(resp[3:])
-        except ValueError:
-            self.franatech[7] = 0
+            self.portSens.write(self.pco2_instrument.QUERY_T)
+            resp = self.portSens.read(15)
+            try:
+                self.franatech[7] = float(resp[3:])
+            except ValueError:
+                self.franatech[7] = 0
 
         for ch in range(5):
             V = self.get_Vd(2, ch + 1)
