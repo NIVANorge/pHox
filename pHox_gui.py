@@ -583,6 +583,7 @@ class Panel(QtGui.QWidget):
         self.third_decimal = QtGui.QComboBox()
 
         [self.whole_sal.addItem(str(n)) for n in np.arange(0, 40)]
+        self.whole_sal.setCurrentIndex(self.whole_sal.findText('35', QtCore.Qt.MatchFixedString))
         for combo in [self.first_decimal, self.second_decimal, self.third_decimal]:
             [combo.addItem(str(n)) for n in np.arange(0, 10)]
         l.addWidget(self.whole_sal)
