@@ -558,7 +558,7 @@ class Panel(QtGui.QWidget):
 
         self.fill_table_config(7, 0, 'Temp probe id')
         self.temp_id_combo = QtGui.QComboBox()
-        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(10)]
+        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(1,10)]
         self.set_combo_index(self.temp_id_combo, self.instrument.TempProbe_id)
         self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_combo)
         self.temp_id_combo.currentIndexChanged.connect(self.temp_id_combo_changed)
