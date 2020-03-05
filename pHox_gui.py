@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import CO2_instrument
+from pco2 import pco2_instrument, test_pco2_instrument
 import os, sys
 
 try:
@@ -66,7 +66,8 @@ class Panel(QtGui.QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QtGui.QWidget, self).__init__(parent)
         self.major_modes = set()
-        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck"]
+        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
+                            "Autostarted"]
 
         self.args = panelargs
         self.config_name = config_name
@@ -87,7 +88,10 @@ class Panel(QtGui.QWidget):
         self.t_lab_live = QtGui.QLineEdit()
         self.voltage_live = QtGui.QLineEdit()
         if self.args.pco2:
-            self.CO2_instrument = CO2_instrument(self.config_name)
+            if self.args.localdev:
+                self.pco2_instrument = test_pco2_instrument(self.config_name)
+            else:
+                self.pco2_instrument = pco2_instrument(self.config_name)
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -109,6 +113,11 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_log, "Log")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
+
+        if self.args.pco2:
+            self.tab_pco2 = QtGui.QTabWidget()
+            self.tabs.addTab(self.tab_pco2,"pCO2")
+            self.make_tab_pco2()
 
         self.make_tab_log()
         self.make_tab1()
@@ -168,8 +177,8 @@ class Panel(QtGui.QWidget):
         self.timerAuto = QtCore.QTimer()
 
         if self.args.pco2:
-            self.timerSave = QtCore.QTimer()
-            self.timerSave.timeout.connect(self.save_pCO2_data)
+            self.timerSave_pco2 = QtCore.QTimer()
+            self.timerSave_pco2.timeout.connect(self.update_pCO2_data)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -275,7 +284,6 @@ class Panel(QtGui.QWidget):
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
             print('unset adjusting')
-            print (self.major_modes)
             if 'Manual' in self.major_modes:
                 self.btn_manual_mode.setEnabled(True)
                 self.manual_widgets_set_enabled(True)
@@ -405,7 +413,7 @@ class Panel(QtGui.QWidget):
         self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
 
-        if fbox['pumping'] or fbox['pumping'] == None:
+        if fbox['pumping']:
             self.ferrypump_box.setChecked(True)
 
         self.table_grid = QtGui.QGridLayout()
@@ -468,6 +476,33 @@ class Panel(QtGui.QWidget):
     def fill_table_config(self, x, y, item):
         self.tableConfigWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
 
+    def make_tab_pco2(self):
+        layout2 = QtGui.QGridLayout()
+        groupbox = QtGui.QGroupBox('Updates from pCO2')
+        layout = QtGui.QGridLayout()
+
+        self.Tw_pco2_live= QtGui.QLineEdit()
+        self.flow_pco2_live = QtGui.QLineEdit()
+        self.Pw_pco2_live = QtGui.QLineEdit()
+        self.Ta_pco2_live = QtGui.QLineEdit()
+        self.Pa_pco2_live = QtGui.QLineEdit()
+        self.Leak_pco2_live = QtGui.QLineEdit()
+        self.CO2_pco2_live = QtGui.QLineEdit()
+        self.TCO2_pco2_live = QtGui.QLineEdit()
+
+        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
+                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+                            self.CO2_pco2_live, self.TCO2_pco2_live]
+        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
+                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
+                            'C02 ppm', 'T CO2 sensor']
+        [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QtGui.QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+
+        groupbox.setLayout(layout)
+        layout2.addWidget(groupbox)
+        self.tab_pco2.setLayout(layout2)
+
     def make_tab_config(self):
         self.tab_config.layout = QtGui.QGridLayout()
         # Define widgets for config tab
@@ -477,8 +512,6 @@ class Panel(QtGui.QWidget):
         self.dye_combo = QtGui.QComboBox()
         self.dye_combo.addItem("TB")
         self.dye_combo.addItem("MCP")
-
-
 
         index = self.dye_combo.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
         if index >= 0:
@@ -595,9 +628,7 @@ class Panel(QtGui.QWidget):
         self.instrument.ship_code = self.ship_code_combo.currentText()
 
     def temp_id_combo_changed(self):
-        print('combo changed',self.temp_id_combo.currentText())
         self.instrument.TempProbe_id = self.temp_id_combo.currentText()
-        print(f'new id {self.temp_id_combo.currentText()}')
         self.instrument.update_temp_probe_coef()
 
     def config_widgets_set_state(self, state):
@@ -631,6 +662,7 @@ class Panel(QtGui.QWidget):
         btn_grid = QtGui.QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
+        self.btn_enbable_autoadj = self.create_button("Enable autoadjust", True)
         # self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button("LEDs", True)
         self.btn_valve = self.create_button("Inlet valve", True)
@@ -641,7 +673,7 @@ class Panel(QtGui.QWidget):
         self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-
+        #btn_grid.addWidget(self.btn_enbable_autoadj, 0, 1)
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
@@ -758,7 +790,7 @@ class Panel(QtGui.QWidget):
             j["Operational"]["Spectro_Integration_time"] = self.instrument.specIntTime
             j["Operational"]["Ship_Code"] = self.instrument.ship_code
 
-            j["Operational"]["TEMP_PROBE_ID"] = self.instument.TempProbe_id
+            j["Operational"]["TEMP_PROBE_ID"] = self.instrument.TempProbe_id
 
             j["pH"]["LED1"] = self.instrument.LED1
             j["pH"]["LED3"] = self.instrument.LED2
@@ -919,31 +951,40 @@ class Panel(QtGui.QWidget):
         self.t_lab_live.setText(str(t_lab))
         self.voltage_live.setText(str(voltage))
 
-        if fbox['pumping'] or fbox['pumping'] is None:
+        if fbox['pumping']:
             self.ferrypump_box.setChecked(True)
         else:
             self.ferrypump_box.setChecked(False)
 
-    def save_pCO2_data(self, pH=None):
-        self.add_pco2_info()
-        d = self.CO2_instrument.franatech
+    @asyncSlot()
+    async def update_pCO2_data(self, pH=None):
+        # update values
+        await self.pco2_instrument.get_pco2_values()
+        d = self.pco2_instrument.franatech
+
+        [v.setText("{}".format(d[k])) for k, v in enumerate(self.pco2_params)]
+        if not self.args.localdev:
+            self.save_pCO2_data(d)
+        return
+
+    def save_pCO2_data(self, d):
         t = datetime.now()
         label = t.isoformat("_")
         labelSample = label[0:19]
-        logfile = os.path.join(self.instrument.folderPath, "pCO2.log")
+        logfile = os.path.join(self.instrument.folderPath, "data/pCO2.log")
         hdr = ""
         if not os.path.exists(logfile):
             hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
         s = labelSample
         s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
-        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[6], d[7],)
+        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[5], d[6])
         s += "\n"
         with open(logfile, "a") as logFile:
             if hdr:
                 logFile.write(hdr + "\n")
             logFile.write(s)
-        udp.send_data("PCO2," + s, self.instrument.ship_code)
-        return
+        if not self.args.localdev:
+            udp.send_data("PCO2," + s, self.instrument.ship_code)
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
@@ -952,6 +993,8 @@ class Panel(QtGui.QWidget):
             self.append_logbox("Finished Autoadjust LEDS")
             self.update_spec_int_time_table()
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
+        else:
+            self.StatusBox.setText('Was not able do auto adjust')
         return adj
 
     @asyncSlot()
@@ -965,29 +1008,34 @@ class Panel(QtGui.QWidget):
         self.timer2 = QtCore.QTimer()
         self.timer2.start(1000)
         self.timer2.timeout.connect(self.update_plot_no_request)
-        (
-            self.instrument.LED1,
-            self.instrument.LED2,
-            self.instrument.LED3,
-            result,
-        ) = await self.instrument.auto_adjust()
-        self.timer2.stop()
 
-        logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-        if result:
-            self.sliders[0].setValue(self.instrument.LED1)
-            self.sliders[1].setValue(self.instrument.LED2)
-            self.sliders[2].setValue(self.instrument.LED3)
-            self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+        check = await self.instrument.precheck_leds_to_adj()
+        if not check:
+            (
+                self.instrument.LED1,
+                self.instrument.LED2,
+                self.instrument.LED3,
+                result,
+            ) = await self.instrument.auto_adjust()
 
-            # self.plot_sp_levels()
-            self.update_spec_int_time_table()
-            self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
+            logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
+            if result:
+                self.sliders[0].setValue(self.instrument.LED1)
+                self.sliders[1].setValue(self.instrument.LED2)
+                self.sliders[2].setValue(self.instrument.LED3)
+                self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+                self.timer2.stop()
+                # self.plot_sp_levels()
+                self.update_spec_int_time_table()
+                self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
 
-            datay = await self.instrument.spectrom.get_intensities()
-            await self.update_spectra_plot_manual(datay)
+                datay = await self.instrument.spectrom.get_intensities()
+                await self.update_spectra_plot_manual(datay)
+            else:
+                self.StatusBox.setText('Not able to adjust LEDs automatically')
         else:
-            result = False
+            result = check
+            logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
     @asyncSlot()
@@ -1046,29 +1094,7 @@ class Panel(QtGui.QWidget):
                 self.btn_checkflow.setChecked(False)
                 return check_succeeded
 
-    def add_pco2_info(self):
-        self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_CO2)
-        resp = self.CO2_instrument.portSens.read(15)
-        try:
-            value = float(resp[3:])
-            value = self.CO2_instrument.ftCalCoef[6][0] + self.CO2_instrument.ftCalCoef[6][1] * value
-        except ValueError:
-            value = 0
-        self.CO2_instrument.franatech[6] = value
 
-        self.CO2_instrument.portSens.write(self.CO2_instrument.QUERY_T)
-        resp = self.CO2_instrument.portSens.read(15)
-        try:
-            self.CO2_instrument.franatech[7] = float(resp[3:])
-        except ValueError:
-            self.CO2_instrument.franatech[7] = 0
-
-        for ch in range(5):
-            V = self.instrument.get_Vd(2, ch + 1)
-            X = 0
-            for i in range(2):
-                X += self.CO2_instrument.ftCalCoef[ch][i] * pow(V, i)
-            self.CO2_instrument.franatech[ch] = X
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1234,8 +1260,6 @@ class Panel(QtGui.QWidget):
         self.append_logbox("Save final data in %s" % (folderPath + "pH.log"))
         self.save_logfile_df(folderPath, flnmStr)
 
-
-
     def update_table_last_meas(self):
         if not self.args.co3:
             [
@@ -1251,115 +1275,86 @@ class Panel(QtGui.QWidget):
         self.sliders[1].setValue(self.instrument.LED2)
         self.sliders[2].setValue(self.instrument.LED3)
 
-    def _autostart(self):
+    def _autostart(self, restart=False):
         self.append_logbox("Inside _autostart...")
-        self.StatusBox.setText("Turn on LEDs")
-        if self.args.co3:
-            logging.info("turn on light source")
-            self.instrument.turn_on_relay(self.instrument.light_slot)
-            self.btn_lightsource.setChecked(True)
-        else:
-            self.update_LEDs()
-            self.btn_leds.setChecked(True)
-            self.btn_leds_checked()
-        self.updater.start_live_plot()
+        if not restart:
+            if self.args.co3:
+                logging.info("turn on light source")
+                self.instrument.turn_on_relay(self.instrument.light_slot)
+                self.btn_lightsource.setChecked(True)
+            else:
+                self.StatusBox.setText("Turn on LEDs")
+                self.update_LEDs()
+                self.btn_leds.setChecked(True)
+                self.btn_leds_checked()
+            self.updater.start_live_plot()
+            self.timerTemp_info.start(500)
 
-        logging.debug(f"fbox[pumping] is {fbox['pumping']}")
-        if fbox["pumping"] == 1 or fbox["pumping"] is None:
             logging.info("Starting continuous mode in Autostart")
-            self.StatusBox.setText("Starting continuous mode ")
+            self.StatusBox.setText("Starting continuous mode")
             self.btn_cont_meas.setChecked(True)
+
+        if fbox['pumping'] or fbox['pumping'] is None:
             self.btn_cont_meas_clicked()
 
-        self.timerTemp_info.start(500)
         if self.args.pco2:
             # change to config file
-            self.timerSave.start(self.CO2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
-        return
-
-    def _autostop(self):
-        self.append_logbox("Inside _autostop...")
-        time.sleep(10)
-        self.btn_leds.setChecked(False)
-        self.btn_cont_meas.setChecked(False)
-        self.btn_cont_meas_clicked()
-        # self.on_deploy_clicked(False)
-        self.timerSpectra_plot.stop()
-        self.timer_contin_mode.stop()
-        # self.timerSensUpd.stop()
-        # self.timerSave.stop()
-        return
-
-    def autostop_time(self):
-        self.append_logbox("Inside autostop_time...")
-        self.timerAuto.stop()
-        self._autostop()
-        now = datetime.now()
-        dt = now - self.instrument._autotime
-        days = int(dt.total_seconds() / 86400) + 1
-        self.instrument._autotime += timedelta(days=days)
-        self.timerAuto.timeout.disconnect(self.autostop_time)
-        self.timerAuto.timeout.connect(self.autostart_time)
-        self.timerAuto.start(1000)
-        return
-
-    def autostart_time(self):
-        self.append_logbox("Inside _autostart_time...")
-        self.timerAuto.stop()
-        now = datetime.now()
-        if now < self.instrument._autotime:
-            self.timerAuto.timeout.connect(self.autostart_time)
-            dt = self.instrument._autotime - now
-            self.timerAuto.start(int(dt.total_seconds() * 1000))
-            logging.info(
-                "Instrument will start at " + self.instrument._autostart.strftime("%Y-%m-%dT%H:%M:%S")
-            )
-        else:
-            self.timerAuto.timeout.disconnect(self.autostart_time)
-            self.timerAuto.timeout.connect(self.autostop_time)
-            t0 = self.instrument._autotime + self.instrument._autolen
-            dt = t0 - now
-            self.timerAuto.start(int(dt.total_seconds() * 1000))
-            logging.info("Instrument will stop at " + t0.strftime("%Y-%m:%dT%H:%M:%S"))
-            self._autostart()
+            self.timerSave_pco2.start(self.pco2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
+        self.set_major_mode("Autostarted")
         return
 
     def autostart_pump(self):
-        self.append_logbox("Automatic start at pump enabled")
+        self.append_logbox("Initial automatic start at pump enabled")
         self.timerAuto.stop()
         self.timerAuto.timeout.disconnect(self.autostart_pump)
-        self.timerAuto.timeout.connect(self.autostop_pump)
-        self.timerAuto.start(10000)
         self._autostart()
+        # Continuously checking if pump is still working or not
+        self.timerAuto.timeout.connect(self.check_autostop_pump)
+        self.timerAuto.start(10000)
         return
 
-    def autostop_pump(self):
-        if fbox["pumping"] == 0:
-            self.timerAuto.stop()
-            self.timerAuto.timeout.disconnect(self.autostop_pump)
-            self.timerAuto.timeout.connect(self.autostart_pump)
-            self.timerAuto.start(10000)
-            self._autostop()
-        else:
+    def check_autostop_pump(self):
+
+        if fbox['pumping'] == 'None':
+            self.StatusBox.setText("No data from UDP")
+            logging.debug('No udp connection')
+        elif 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
+            logging.debug('Pause continuous mode, since pump is off')
+            self.unset_major_mode('Autostarted')
+            self.timer_contin_mode.stop()
+            self.infotimer_contin_mode.stop()
+            self.until_next_sample = self.instrument.samplingInterval
+            self.StatusBox.setText("Continuous mode paused")
+        elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
             pass
+        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
+            pass
+        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
+            logging.debug("Going back to continuous mode, the pump is working now")
+            self._autostart(restart=True)
+
         return
 
     def autorun(self):
-        self.append_logbox("Inside continuous_mode...")
+        self.append_logbox("Inside autorun func...")
         logging.info("start autorun")
-        if self.instrument._autostart and self.instrument._automode == "time":
-            self.StatusBox.setText("Automatic scheduled start enabled")
-            self.timerAuto.timeout.connect(self.autostart_time)
-            self.timerAuto.start(1000)
+        if self.instrument._autostart:
+            if self.instrument._automode == "time":
+                self.StatusBox.setText("Automatic scheduled start enabled")
+                self.timerAuto.timeout.connect(self.autostart_time)
+                self.timerAuto.start(1000)
 
-        elif self.instrument._autostart and self.instrument._automode == "pump":
-            self.StatusBox.setText("Automatic start at pump enabled")
-            self.timerAuto.timeout.connect(self.autostart_pump)
-            self.timerAuto.start(1000)
+            elif self.instrument._automode == "pump":
+                self.StatusBox.setText("Automatic start at pump enabled")
+                self.timerAuto.timeout.connect(self.autostart_pump)
+                self.timerAuto.start(1000)
 
-        elif self.instrument._autostart and self.instrument._automode == "now":
-            self.StatusBox.setText("Immediate automatic start enabled")
-            self._autostart()
+            elif self.instrument._autostart and self.instrument._automode == "now":
+                self.StatusBox.setText("Immediate automatic start enabled")
+                self._autostart()
+        else:
+            pass
+
         return
 
     @asynccontextmanager
@@ -1394,7 +1389,7 @@ class Panel(QtGui.QWidget):
             res = await self.call_autoAdjust()
             logging.info(f"res after autoadjust: '{res}")
             if res:
-                logging.info("could not adjust leds")
+                #logging.info("could not adjust leds")
 
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
@@ -1410,7 +1405,7 @@ class Panel(QtGui.QWidget):
                 self.append_logbox("Opening the valve ...")
                 await self.instrument.set_Valve(False)
 
-        if not self.args.co3:
+        if not self.args.co3 and res:
             self.get_final_pH(timeStamp)
             self.append_logbox("Single measurement is done...")
             self.append_logbox('Saving results')
@@ -1422,6 +1417,7 @@ class Panel(QtGui.QWidget):
                 dif_pH = self.pH_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
+        self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
 
     def get_folderPath(self):
@@ -1532,7 +1528,7 @@ class Panel(QtGui.QWidget):
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
-            dilution = (self.instrument.Cuvette_V) / (vol_injected + self.instrument.Cuvette_V)
+            dilution = self.instrument.Cuvette_V / (vol_injected + self.instrument.Cuvette_V)
 
             vNTC = await self.inject_dye(n_inj)
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
@@ -1722,9 +1718,8 @@ class boxUI(QtGui.QMainWindow):
         elif self.args.co3:
             self.setWindowTitle("Box Instrument, parameter CO3")
         else:
-            self.setWindowTitle("Box Instrument, NIVA - pH")
-        if self.args.localdev and 'ELP' in sys.path[0]:
-            self.setFixedSize(1920 / 2, 1080 / 2)
+            self.setWindowTitle("pH box")
+
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
@@ -1745,10 +1740,6 @@ class boxUI(QtGui.QMainWindow):
 
             self.main_widget.timer_contin_mode.stop()
             logging.info('close the program')
-            '''while self.main_widget.updater.update_spectra_in_progress:
-                print('wait')
-                logging.info('tttt')
-                #await asyncio.sleep(0.05)'''
 
             logging.info("timer is stopped")
 

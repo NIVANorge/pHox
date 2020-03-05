@@ -102,12 +102,12 @@ QGroupBox::title {
   border-style: solid;
   border-radius: 4px;
   color: #19232D;
-  max-width: 70px
+  max-width: 90px
 }
 
 QTextEdit{
   padding-top: 0em;
-  max-height: 30px;
+  max-height: 40px;
   background-color: #caedd2;
   color: #19232D;
 }

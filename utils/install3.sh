@@ -13,19 +13,7 @@ echo "use raspi-config       "
 echo "then reboot            "
 echo "************************"
 
-#--------------------------------------------------------------------------
-# SSH-key
-#--------------------------------------------------------------------------
-echo "******** KEYGEN ********"
-echo "Accept all defauts      "
-echo "Leave passphrase blank  "
-echo "************************"
-echo "                        "
-read -p "Skip? Y/[N] " ans
-if [ "$ans" != "N" ]
-then
-    ssh-keygen
-fi
+
 #--------------------------------------------------------------------------
 # Elementary packages
 #--------------------------------------------------------------------------
@@ -38,12 +26,10 @@ if [ "$ans" != "Y" ]
 then
     sudo apt-get -y install synaptic
     sudo apt-get -y install jed
-    sudo apt-get -y install geany       
+    sudo apt-get -y install geany
     sudo apt-get -y install ipython 
     sudo apt-get -y install pigpio
-
-    sudo apt-get -y install python3-pyqt5 
-    sudo apt-get -y install python3-pigpio
+    sudo apt-get -y install python3-pyqt5
     sudo apt-get -y install python3-pandas
     sudo apt-get -y install python3-usb
     sudo apt-get -y install python3-pyqtgraph

@@ -13,7 +13,6 @@ import pandas as pd
 import udp
 from precisions import precision as prec
 
-
 try:
     import pigpio
     import RPi.GPIO as GPIO
@@ -30,17 +29,18 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
+
 def get_linregress(x, y):
     a = np.vstack([x, np.ones(len(x))]).T
     slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
     r_value = np.corrcoef(x, y)[0][1]
     return slope, intercept, r_value
 
+
 class Spectro_localtest(object):
     def __init__(self):
-
         self.spec = "Test"
-        self.spectro_type = "FLMT"
+        self.spectro_type = "STS"
 
         test_spt = pd.read_csv("data_localtests/20200213_105508.spt")  # .T
         self.wvl = np.array([np.float(n) for n in test_spt.iloc[0].index.values[1:]])
@@ -104,7 +104,6 @@ class Spectro_seabreeze(object):
         while self.busy:
             await asyncio.sleep(0.05)
         self.set_integration_time_not_async(time_millisec)
-        # time.sleep(time_millisec/1.e3)
 
     def get_wavelengths(self):
         # wavelengths in (nm) corresponding to each pixel of the spectrom
@@ -397,11 +396,15 @@ class CO3_instrument(Common_instrument):
         logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
         return [slope1, intercept, r_value]
 
+
 class pH_instrument(Common_instrument):
     def __init__(self, panelargs, config_name):
         super().__init__(panelargs, config_name)
         # self.args = panelargs
         self.load_config_pH()
+
+        self.maxval = self.THR * 1.05
+        self.minval = self.THR * 0.95
 
         # setup PWM and SSR lines
         if not self.args.localdev:
@@ -420,7 +423,6 @@ class pH_instrument(Common_instrument):
         calibr = j["TrisBuffer"]
         self.buffer_sal = calibr["S_tris_buffer"]
         self.buffer_pH_value = calibr["pH_tris_buffer"]
-        print (self.buffer_sal, self.buffer_pH_value)
         self.dye = conf_pH["Default_DYE"]
         if self.dye == "MCP":
             self.HI = int(conf_pH["MCP_wl_HI"])
@@ -433,9 +435,9 @@ class pH_instrument(Common_instrument):
 
         # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
-        self.LED1 = conf_pH["LED1"]
-        self.LED2 = conf_pH["LED2"]
-        self.LED3 = conf_pH["LED3"]
+        self.LED1 = int(conf_pH["LED1"])
+        self.LED2 = int(conf_pH["LED2"])
+        self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [self.LED1, self.LED2, self.LED3]
 
     def get_wvlPixels(self, wvls):
@@ -447,11 +449,9 @@ class pH_instrument(Common_instrument):
         self.rpi.set_PWM_dutycycle(self.led_slots[led], LED)
 
     async def find_LED(self, led_ind, adj, LED):
-        maxval = self.THR * 1.05
+
         if led_ind == 2:
-            minval = self.THR * 0.90
-        else:
-            minval = self.THR * 0.95
+            self.minval = self.THR * 0.90
 
         logging.info(f"led_ind {led_ind}")
         step = 0
@@ -460,7 +460,7 @@ class pH_instrument(Common_instrument):
         self.led_action = None
         # Increment is decreased twice in case we change the direction
         # of decrease/increase
-        while adj == False:
+        while not adj:
             logging.info(f"step is {step}")
             step += 1
             self.adjust_LED(led_ind, LED)
@@ -469,26 +469,26 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.1)
             logging.info(f"pixelLevel {pixelLevel}")
 
-            if pixelLevel > maxval and LED > 15:
+            if pixelLevel > self.maxval and LED > 15:
                 logging.debug("case0  Too high pixellevel, decrease LED ")
                 if self.led_action == "increase":
                     increment = increment / 2
                 LED = max(1, LED - increment)
                 self.led_action = "decrease"
 
-            elif pixelLevel < minval and LED < 90:
+            elif pixelLevel < self.minval and LED < 90:
                 logging.debug("case3 Too low pixellevel, increase LED")
                 if self.led_action == "decrease":
                     increment = increment / 2
                 LED = min(99, LED + increment)
                 self.led_action = "increase"
 
-            elif pixelLevel > maxval and LED <= 15:
+            elif pixelLevel > self.maxval and LED <= 15:
                 logging.debug("case1 decrease int time")
                 res = "decrease int time"
                 break
 
-            elif pixelLevel < minval and LED >= 90:
+            elif pixelLevel < self.minval and LED >= 90:
                 logging.debug("case2 Too low pixellevel and high LED")
                 res = "increase int time"
                 break
@@ -498,11 +498,20 @@ class pH_instrument(Common_instrument):
 
         return LED, adj, res
 
+    async def precheck_leds_to_adj(self):
+        logging.debug('precheck leds')
+        self.spectrum = await self.spectrom.get_intensities()
+        led_vals = np.array(self.spectrum)[self.wvlPixels]
+        max_cond = all(n < self.maxval for n in led_vals)
+        min_cond = (led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
+        logging.debug(f"precheck result {max_cond,min_cond,led_vals}")
+        return (max_cond and min_cond)
+
     async def auto_adjust(self, *args):
         self.adj_action = None
         increment_sptint = 200
         n = 0
-        while n < 30:
+        while n < 15:
             n += 1
 
             logging.debug("inside call adjust ")
@@ -586,14 +595,14 @@ class pH_instrument(Common_instrument):
             e2e3 = -0.020813 + ((2.60262 * 10 ** -4) * T) + (1.0436 * 10 ** -4) * (S_corr - 35)
             arg = (R - e1) / (1 - R * e2e3)
             pK = (
-                5.561224
-                - (0.547716 * S_corr ** 0.5)
-                + (0.123791 * S_corr)
-                - (0.0280156 * S_corr ** 1.5)
-                + (0.00344940 * S_corr ** 2)
-                - (0.000167297 * S_corr ** 2.5)
-                + ((52.640726 * S_corr ** 0.5) * T ** -1)
-                + (815.984591 * T ** -1)
+                    5.561224
+                    - (0.547716 * S_corr ** 0.5)
+                    + (0.123791 * S_corr)
+                    - (0.0280156 * S_corr ** 1.5)
+                    + (0.00344940 * S_corr ** 2)
+                    - (0.000167297 * S_corr ** 2.5)
+                    + ((52.640726 * S_corr ** 0.5) * T ** -1)
+                    + (815.984591 * T ** -1)
             )
             if arg > 0:
                 pH = pK + np.log10(arg)
@@ -664,16 +673,16 @@ class pH_instrument(Common_instrument):
                     pH_lab = intercept
                     logging.info("r_value **2 > 0.9")
                 else:
-                    logging.info("r_value **2 < 0.9 take two first measurements")
-                    x = x[:-2]
-                    y = y[:-2]
+                    logging.info("r_value **2 < 0.9 take three first measurements")
+                    x = x[:-1]
+                    y = y[:-1]
 
                     slope2, intercept, r_value = get_linregress(x, y)
                     final_slope = slope2
                     if r_value ** 2 > 0.9:
                         pH_lab = intercept
                     else:
-                        pH_lab = pH_t_corr[0]
+                        pH_lab = pH_t_corr[1]
 
             pH_insitu = round(pH_lab + dpH_dT * (T_lab - self.fb_data["temperature"]), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])
@@ -682,7 +691,7 @@ class pH_instrument(Common_instrument):
         logging.info("leave pH eval")
         return (
             pH_lab, T_lab,
-            perturbation,evalAnir,
+            perturbation, evalAnir,
             pH_insitu, x, y, final_slope, intercept, pH_t_corr
         )
 
@@ -758,7 +767,6 @@ class Test_instrument(pH_instrument):
         V = 0
         for i in range(nAver):
             V += 0.6
-
         return V / nAver
 
     def calc_wavelengths(self):
