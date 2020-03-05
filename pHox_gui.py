@@ -981,16 +981,20 @@ class Panel(QtGui.QWidget):
         labelSample = label[0:19]
         logfile = os.path.join("/home/pi/pHox/data/", "pCO2.log")
         hdr = ""
-        if not os.path.exists(logfile):
-            hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
         s = labelSample
         s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
         s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[5], d[6])
         s += "\n"
-        with open(logfile, "a") as logFile:
-            if hdr:
+
+        if not os.path.exists(logfile):
+            hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
+            with open(logfile, "w") as logFile:
                 logFile.write(hdr + "\n")
-            logFile.write(s)
+                logFile.write(s)
+        else:
+            with open(logfile, "a") as logFile:
+                logFile.write(s)
+
         if not self.args.localdev:
             udp.send_data("PCO2," + s, self.instrument.ship_code)
 
