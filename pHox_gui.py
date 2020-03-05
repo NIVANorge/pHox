@@ -961,7 +961,7 @@ class Panel(QtGui.QWidget):
     async def update_pCO2_data(self, pH=None):
         # update values
         for ch in range(5):
-            V = self.get_Vd(2, ch + 1)
+            V = self.instrument.get_Vd(2, ch + 1)
             X = 0
             for i in range(2):
                 X += self.pco2_instrument.ftCalCoef[ch][i] * pow(V, i)
@@ -979,7 +979,7 @@ class Panel(QtGui.QWidget):
         t = datetime.now()
         label = t.isoformat("_")
         labelSample = label[0:19]
-        logfile = os.path.join(self.instrument.folderPath, "data/pCO2.log")
+        logfile = os.path.join("/home/pi/pHox/data/", "pCO2.log")
         hdr = ""
         if not os.path.exists(logfile):
             hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
