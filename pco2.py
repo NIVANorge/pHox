@@ -5,7 +5,7 @@ import numpy as np
 
 
 class pco2_instrument(object):
-    def __init__(self, config_name):
+    def __init__(self,parent, config_name):
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
         self.portSens = None
@@ -73,11 +73,7 @@ class pco2_instrument(object):
             "C02 ppm",
             "T CO2 sensor \xB0C",
         ]
-    def get_Vd(self, nAver, channel):
-        V = 0.0000
-        for i in range(nAver):
-            V += self.adc.read_voltage(channel)
-        return V / nAver
+
 
     async def get_pco2_values(self):
         if self.portSens:
@@ -97,12 +93,7 @@ class pco2_instrument(object):
             except ValueError:
                 self.franatech[7] = 0
 
-        for ch in range(5):
-            V = self.get_Vd(2, ch + 1)
-            X = 0
-            for i in range(2):
-                X += self.ftCalCoef[ch][i] * pow(V, i)
-            self.franatech[ch] = round(X, 3)
+
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):

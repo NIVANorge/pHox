@@ -91,7 +91,7 @@ class Panel(QtGui.QWidget):
             if self.args.localdev:
                 self.pco2_instrument = test_pco2_instrument(self.config_name)
             else:
-                self.pco2_instrument = pco2_instrument(self.config_name)
+                self.pco2_instrument = pco2_instrument(self, self.config_name)
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -960,6 +960,13 @@ class Panel(QtGui.QWidget):
     @asyncSlot()
     async def update_pCO2_data(self, pH=None):
         # update values
+        for ch in range(5):
+            V = self.get_Vd(2, ch + 1)
+            X = 0
+            for i in range(2):
+                X += self.pco2_instrument.ftCalCoef[ch][i] * pow(V, i)
+            self.pco2_instrument.franatech[ch] = round(X, 3)
+
         await self.pco2_instrument.get_pco2_values()
         d = self.pco2_instrument.franatech
 
