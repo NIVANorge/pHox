@@ -5,7 +5,7 @@ import numpy as np
 
 
 class pco2_instrument(object):
-    def __init__(self,parent, config_name):
+    def __init__(self, config_name):
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
         self.portSens = None

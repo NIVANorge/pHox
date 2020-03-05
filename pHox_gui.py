@@ -91,7 +91,7 @@ class Panel(QtGui.QWidget):
             if self.args.localdev:
                 self.pco2_instrument = test_pco2_instrument(self.config_name)
             else:
-                self.pco2_instrument = pco2_instrument(self, self.config_name)
+                self.pco2_instrument = pco2_instrument(self.config_name)
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -987,13 +987,10 @@ class Panel(QtGui.QWidget):
         s += "\n"
 
         if not os.path.exists(logfile):
-            hdr = "Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"
-            with open(logfile, "w") as logFile:
-                logFile.write(hdr + "\n")
-                logFile.write(s)
+            self.pco2_df = pd.DataFrame(pd.DataFrame(d, columns="Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"))
+
         else:
-            with open(logfile, "a") as logFile:
-                logFile.write(s)
+            self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
 
         if not self.args.localdev:
             udp.send_data("PCO2," + s, self.instrument.ship_code)
