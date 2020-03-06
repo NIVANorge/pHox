@@ -11,8 +11,12 @@ class pco2_instrument(object):
         self.portSens = None
         print('ports',ports)
         for i in range(len(ports)):
+            print (ports[i])
             name = ports[i][2]
             port = ports[i][0]
+            print('name', name)
+            print ('index 1', ports[i][1])
+            print('port',port)
             # USB-RS485 CO2 sensor
             # Delete condition or not?
             if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3':
@@ -92,7 +96,7 @@ class pco2_instrument(object):
                 self.franatech[7] = float(resp[3:])
             except ValueError:
                 self.franatech[7] = 0
-
+            print
 
 
 class test_pco2_instrument(pco2_instrument):
