@@ -19,7 +19,8 @@ class pco2_instrument(object):
             print('port',port)
             # USB-RS485 CO2 sensor
             # Delete condition or not?
-            if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3':
+            if name == "USB VID:PID=0403:6001 SER=FTZ1SAJ3 LOCATION=1-1.3":
+                #if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3':
                 self.portSens = serial.Serial(port,
                                               baudrate=9600,
                                               parity=serial.PARITY_NONE,
@@ -30,8 +31,8 @@ class pco2_instrument(object):
                                               rtscts=False,
                                               dsrdtr=False,
                                               xonxoff=False)
-
-            if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ':  # USB-RS232 host
+            if name == 'USB VID:PID=0403:6001 SER=FTZ0GOLZ LOCATION=1-1.4':
+                #if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ':  # USB-RS232 host
                 self.host = serial.Serial(port,
                                           baudrate=9600,
                                           parity=serial.PARITY_NONE,
@@ -62,8 +63,8 @@ class pco2_instrument(object):
         self.ftCalCoef[5] = f["WAT_DETECT"]
         self.ftCalCoef[6] = f["CO2_FRAC_CAL"]
 
-        self.QUERY_CO2 = "\x2A\x4D\x31\x0A\x0D"
-        self.QUERY_T = "\x2A\x41\x32\x0A\x0D"
+        self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
+        self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
         self.UDP_SEND = 6801
         self.UDP_RECV = 6802
         self.UDP_IP = "192.168.0.1"
@@ -83,6 +84,7 @@ class pco2_instrument(object):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
             resp = self.portSens.read(15)
+            print (resp)
             try:
                 value = float(resp[3:])
                 value = self.ftCalCoef[6][0] + self.ftCalCoef[6][1] * value
@@ -90,14 +92,13 @@ class pco2_instrument(object):
                 value = 0
             self.franatech[6] = value
 
-            self.portSens.write(self.pco2_instrument.QUERY_T)
+            self.portSens.write(self.QUERY_T)
             resp = self.portSens.read(15)
+            print (resp)
             try:
                 self.franatech[7] = float(resp[3:])
             except ValueError:
                 self.franatech[7] = 0
-            print
-
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):
