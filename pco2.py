@@ -85,7 +85,7 @@ class pco2_instrument(object):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
             response_co2 = self.portSens.read(15)
-            print(response_co2)
+            print('response_co2', response_co2)
             try:
                 value = float(response_co2[3:])
                 value = self.ftCalCoef[6][0] + self.ftCalCoef[6][1] * value
@@ -95,7 +95,7 @@ class pco2_instrument(object):
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
-            print(response_t)
+            print('response_t', response_t)
             try:
                 self.franatech[7] = float(response_t[3:])
             except ValueError:

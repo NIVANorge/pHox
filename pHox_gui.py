@@ -991,11 +991,12 @@ class Panel(QtGui.QWidget):
         s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[5], d[6])
         s += "\n"
 
-        if not os.path.exists(logfile):
-            self.pco2_df = pd.DataFrame(columns=["Time","Lon","Lat","fbT","fbS",
-                                                 "Tw","Flow","Pw","Ta","Pa","Leak","CO2","TCO2"])
+        d = [labelSample, fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"]] + d
 
-            print (d)
+        if not os.path.exists(logfile):
+            self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fbT", "fbS",
+                                                 "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+            self.pco2_df.loc[0] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
