@@ -54,7 +54,7 @@ class pco2_instrument(object):
 
 
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
-        self.ftCalCoef[0] = f["WAT_TEMP_CAL"]
+        self.ftCalCoef[0] = f["water_temperature"]["WAT_TEMP_CAL"]
         self.ftCalCoef[1] = f["WAT_FLOW_CAL"]
         self.ftCalCoef[2] = f["WAT_PRES_CAL"]
         self.ftCalCoef[3] = f["AIR_TEMP_CAL"]
