@@ -982,7 +982,7 @@ class Panel(QtGui.QWidget):
         self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
         self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
         self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
-        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.wat_temp_cal)
+        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.air_temp_cal)
         self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
 
         await self.pco2_instrument.get_pco2_values()
