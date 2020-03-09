@@ -1328,16 +1328,18 @@ class Panel(QtGui.QWidget):
         if fbox['pumping'] == 'None':
             self.StatusBox.setText("No data from UDP")
             logging.debug('No udp connection')
-        elif 'Autostarted' in self.major_modes and fbox['pumping'] == 0:
+
+        elif fbox['pumping'] == 0:
+            if self.timer_contin_modeisActive():
+                self.timer_contin_mode.stop()
+            if 'Autostarted' in self.major_modes:
+                self.unset_major_mode('Autostarted')
             logging.debug('Pause continuous mode, since pump is off')
-            self.unset_major_mode('Autostarted')
-            self.timer_contin_mode.stop()
             self.infotimer_contin_mode.stop()
             self.until_next_sample = self.instrument.samplingInterval
             self.StatusBox.setText("Continuous mode paused")
+
         elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
-            pass
-        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 0:
             pass
         elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
             logging.debug("Going back to continuous mode, the pump is working now")
