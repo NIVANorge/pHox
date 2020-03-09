@@ -178,6 +178,8 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             self.timerSave_pco2 = QtCore.QTimer()
+            self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fbT", "fbS",
+                                                 "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
             self.timerSave_pco2.timeout.connect(self.update_pCO2_data)
 
     def btn_manual_mode_clicked(self):
@@ -994,8 +996,7 @@ class Panel(QtGui.QWidget):
         d = [labelSample, fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"]] + d
 
         if not os.path.exists(logfile):
-            self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fbT", "fbS",
-                                                 "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+
             self.pco2_df.loc[0] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
