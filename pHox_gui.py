@@ -1325,28 +1325,29 @@ class Panel(QtGui.QWidget):
         return
 
     def check_autostop_pump(self):
+        if self.btn_cont_meas.isChecked():
 
-        if fbox['pumping'] is None:
-            self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
-            logging.debug('No udp connection')
+            if fbox['pumping'] is None:
+                self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
+                logging.debug('No udp connection')
 
-        elif fbox['pumping'] == 0:
-            if 'Paused' not in self.major_modes:
-                self.timer_contin_mode.stop()
-                self.set_major_mode('Paused')
-                logging.debug('Pause continuous mode, since pump is off')
-                self.infotimer_contin_mode.stop()
-                self.until_next_sample = self.instrument.samplingInterval
-                self.StatusBox.setText("Continuous mode paused")
-            else:
-                pass
-        elif fbox['pumping'] == 1:
-            if 'Paused' in self.major_modes:
-                logging.debug("Going back to continuous mode, the pump is working now")
-                self.unset_major_mode('Paused')
-                self._autostart(restart=True)
-            else:
-                pass
+            elif fbox['pumping'] == 0:
+                if 'Paused' not in self.major_modes:
+                    self.timer_contin_mode.stop()
+                    self.set_major_mode('Paused')
+                    logging.debug('Pause continuous mode, since pump is off')
+                    self.infotimer_contin_mode.stop()
+                    self.until_next_sample = self.instrument.samplingInterval
+                    self.StatusBox.setText("Continuous mode paused")
+                else:
+                    pass
+            elif fbox['pumping'] == 1:
+                if 'Paused' in self.major_modes:
+                    logging.debug("Going back to continuous mode, the pump is working now")
+                    self.unset_major_mode('Paused')
+                    self._autostart(restart=True)
+                else:
+                    pass
 
         return
 
