@@ -970,32 +970,32 @@ class Panel(QtGui.QWidget):
 
 
     @asyncSlot()
-    async def update_pCO2_data(self, pH=None):
-        # update values
-        for ch in range(5):
-            V = self.instrument.get_Vd(2, ch + 1)
-            X = 0
-            for i in range(2):
-                X += self.pco2_instrument.ftCalCoef[ch][i] * pow(V, i)
-            self.pco2_instrument.franatech[ch] = round(X, 3)
+    async def update_pCO2_data(self):
 
+        # UPDATE VALUES
         self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
         self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
         self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
         self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.air_temp_cal)
         self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
-
+        self.leak_detect = 999
         await self.pco2_instrument.get_pco2_values()
-        print('NEW', self.wat_temp, self.wat_flow, self.wat_pres, self.air_temp, self.air_pres)
-        print(self.pco2_instrument.co2,self.pco2_instrument.co2_temp)
-        d = self.pco2_instrument.franatech
-        print ('OLD', d)
-        [v.setText("{}".format(d[k])) for k, v in enumerate(self.pco2_params)]
+
+        # UPDATE PLOT WIDGETS
+        self.Tw_pco2_live.setText(str(self.wat_temp))
+        self.flow_pco2_live.setText(str(self.wat_flow))
+        self.Pw_pco2_live.setText(str(self.wat_pres))
+        self.Ta_pco2_live.setText(str(self.air_temp))
+        self.Pa_pco2_live.setText(str(self.air_pres))
+        #self.Leak_pco2_live.setText()
+        self.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
+        self.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
+
         if not self.args.localdev:
-            self.save_pCO2_data(d)
+            self.save_pCO2_data()
         return
 
-    def save_pCO2_data(self, d):
+    def save_pCO2_data(self):
         t = datetime.now()
         label = t.isoformat("_")
         labelSample = label[0:19]
@@ -1005,13 +1005,11 @@ class Panel(QtGui.QWidget):
             os.mkdir(path)
         logfile = os.path.join(path, "pCO2.log")
 
-        hdr = ""
-        s = labelSample
-        s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
-        s += ",%.2f,%.1f,%.1f,%.2f,%d,%.1f,%d" % (d[0], d[1], d[2], d[3], d[4], d[5], d[6])
-        s += "\n"
-
-        d = [labelSample, fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"]] + d
+        d = [labelSample, fbox["longitude"], fbox["latitude"],
+             fbox["temperature"], fbox["salinity"],
+             self.wat_temp, self.wat_flow, self.wat_pres,
+             self.air_temp, self.air_pres, self.leak_detect,
+             self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
 
         if not os.path.exists(logfile):
             self.pco2_df.loc[0] = d
@@ -1019,8 +1017,11 @@ class Panel(QtGui.QWidget):
         else:
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
+
         if not self.args.localdev:
-            udp.send_data("PCO2," + s, self.instrument.ship_code)
+            d.to_csv(index=False, header=True).rstrip()
+            print (d)
+            udp.send_data("PCO2," + d )
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds

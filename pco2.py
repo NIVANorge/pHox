@@ -49,18 +49,17 @@ class pco2_instrument(object):
             j = json.load(json_file)
         f = j["pCO2"]
         # Why do we need 10 row here?
-        self.ftCalCoef = np.zeros((10, 2))
-        self.franatech = [0] * 8
-
+        #self.ftCalCoef = np.zeros((10, 2))
+        #self.franatech = [0] * 8
 
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
-        self.ftCalCoef[0] = f["water_temperature"]["WAT_TEMP_CAL"]
+        '''self.ftCalCoef[0] = f["water_temperature"]["WAT_TEMP_CAL"]
         self.ftCalCoef[1] = f["WAT_FLOW_CAL"]
         self.ftCalCoef[2] = f["WAT_PRES_CAL"]
         self.ftCalCoef[3] = f["AIR_TEMP_CAL"]
         self.ftCalCoef[4] = f["AIR_PRES_CAL"]
         self.ftCalCoef[5] = f["WAT_DETECT"]
-        self.ftCalCoef[6] = f["CO2_FRAC_CAL"]
+        self.ftCalCoef[6] = f["CO2_FRAC_CAL"]'''
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
         self.wat_flow_cal = f["WAT_FLOW_CAL"]
@@ -68,7 +67,6 @@ class pco2_instrument(object):
         self.air_temp_cal = f["AIR_TEMP_CAL"]
         self.air_pres_cal = f["AIR_PRES_CAL"]
         self.water_detect = f["WAT_DETECT"]
-
         self.Co2_CalCoef = f["CO2_FRAC_CAL"]
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
