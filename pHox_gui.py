@@ -959,6 +959,16 @@ class Panel(QtGui.QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
+    def get_value_pco2(self,channel,coef):
+
+        V = self.instrument.get_Vd(2, channel)
+        X = 0
+        for i in range(2):
+            X += coef[i] * pow(V, i)
+        X = round(X, 3)
+        return X
+
+
     @asyncSlot()
     async def update_pCO2_data(self, pH=None):
         # update values
@@ -969,9 +979,17 @@ class Panel(QtGui.QWidget):
                 X += self.pco2_instrument.ftCalCoef[ch][i] * pow(V, i)
             self.pco2_instrument.franatech[ch] = round(X, 3)
 
-        await self.pco2_instrument.get_pco2_values()
-        d = self.pco2_instrument.franatech
+        self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
+        self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
+        self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
+        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.wat_temp_cal)
+        self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
 
+        await self.pco2_instrument.get_pco2_values()
+        print('NEW', self.wat_temp, self.wat_flow, self.wat_pres, self.air_temp, self.air_pres)
+        print(self.pco2_instrument.co2,self.pco2_instrument.co2_temp)
+        d = self.pco2_instrument.franatech
+        print ('OLD', d)
         [v.setText("{}".format(d[k])) for k, v in enumerate(self.pco2_params)]
         if not self.args.localdev:
             self.save_pCO2_data(d)
@@ -996,12 +1014,11 @@ class Panel(QtGui.QWidget):
         d = [labelSample, fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"]] + d
 
         if not os.path.exists(logfile):
-
             self.pco2_df.loc[0] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
-            self.pco2_df.to_csv(logfile, index=False, header=False)
+            self.pco2_df.to_csv(logfile, index=False, header=True)
         if not self.args.localdev:
             udp.send_data("PCO2," + s, self.instrument.ship_code)
 

@@ -66,8 +66,8 @@
             "is_calibrated": "True",
             "calibr_date": "20/02/2020",
             "Calibr_coef": [
-                -69.248,
-                16.607
+                72.181,
+                16.323
             ]
         },
         "Probe_8": {
