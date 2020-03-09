@@ -1710,6 +1710,7 @@ class boxUI(QtGui.QMainWindow):
             box_id = open("/home/pi/box_id.txt", "r").read()
         except:
             box_id = "template"
+        box_id = box_id.strip('\n')
         config_name = "configs/config_" + box_id + ".json"
 
         parser.add_argument("--nodye", action="store_true")

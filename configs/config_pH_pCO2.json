@@ -1,7 +1,11 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
-        "T_PROBE_CH": 8,
+        "TEMP_PROBE_ID": "Probe_7",
+        "DEF_TEMP_CAL_COEF": [
+            70.582,
+            16.213
+        ],
+        "T_PROBE_CH": 7,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
         "STIRR_SLOT": 27,
@@ -48,11 +52,15 @@
         "LED4": 70
     },
     "pCO2": {
-        "comment0": "# Water temperature calibration coefficients :",
-        "WAT_TEMP_CAL": [
+        "water_temperature":
+        {
+            "WAT_TEMP_CAL": [
             -25.779,
             29.84
         ],
+            "WAT_TEMP_CH": 1
+        }
+,
         "comment1": "# Water flow calibration coefficients :",
         "WAT_FLOW_CAL": [
             -1.25,

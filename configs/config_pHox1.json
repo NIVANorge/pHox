@@ -93,7 +93,7 @@
         "QUERY_CO2": "\\x2A\\x4D\\x31\\x0A\\x0D",
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# use to be SAVE_PCO2_SEC",
-        "pCO2_Sampeling_interval": 60
+        "pCO2_Sampling_interval": 60
     },
     "CO3": {
         "WL_1": 234,

@@ -48,8 +48,7 @@
             "is_calibrated": "True",
             "calibr_date": "20/02/2020",
             "Calibr_coef": [
-                71,
-                82,
+                71.82,
                 16.188
             ]
         },
@@ -63,12 +62,12 @@
             ]
         },
         "Probe_7": {
-            "comment": "spare, cal by SAM",
+            "comment": "on pCO2_pH, cal by SAM",
             "is_calibrated": "True",
             "calibr_date": "20/02/2020",
             "Calibr_coef": [
-                72.181,
-                16.323
+                -0.0144,
+                0.2397
             ]
         },
         "Probe_8": {
