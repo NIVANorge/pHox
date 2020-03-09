@@ -1325,7 +1325,6 @@ class Panel(QtGui.QWidget):
     def check_autostop_pump(self):
 
         if fbox['pumping'] is None:
-            print ('non')
             self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
             logging.debug('No udp connection')
 
