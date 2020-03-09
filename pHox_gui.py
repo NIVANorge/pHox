@@ -67,7 +67,7 @@ class Panel(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
-                            "Autostarted"]
+                            "Paused"]
 
         self.args = panelargs
         self.config_name = config_name
@@ -1310,7 +1310,6 @@ class Panel(QtGui.QWidget):
         if self.args.pco2:
             # change to config file
             self.timerSave_pco2.start(self.pco2_instrument.save_pco2_interv * 1.0e3)  # milliseconds
-        self.set_major_mode("Autostarted")
         return
 
     def autostart_pump(self):
@@ -1325,25 +1324,28 @@ class Panel(QtGui.QWidget):
 
     def check_autostop_pump(self):
 
-        if fbox['pumping'] == 'None':
-            self.StatusBox.setText("No data from UDP")
+        if fbox['pumping'] is None:
+            print ('non')
+            self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
             logging.debug('No udp connection')
 
         elif fbox['pumping'] == 0:
-            if self.timer_contin_modeisActive():
+            if 'Paused' not in self.major_modes:
                 self.timer_contin_mode.stop()
-            if 'Autostarted' in self.major_modes:
-                self.unset_major_mode('Autostarted')
-            logging.debug('Pause continuous mode, since pump is off')
-            self.infotimer_contin_mode.stop()
-            self.until_next_sample = self.instrument.samplingInterval
-            self.StatusBox.setText("Continuous mode paused")
-
-        elif "Autostarted" in self.major_modes and fbox['pumping'] == 1:
-            pass
-        elif "Autostarted" not in self.major_modes and fbox['pumping'] == 1:
-            logging.debug("Going back to continuous mode, the pump is working now")
-            self._autostart(restart=True)
+                self.set_major_mode('Paused on pump')
+                logging.debug('Pause continuous mode, since pump is off')
+                self.infotimer_contin_mode.stop()
+                self.until_next_sample = self.instrument.samplingInterval
+                self.StatusBox.setText("Continuous mode paused")
+            else:
+                pass
+        elif fbox['pumping'] == 1:
+            if 'Paused' in self.major_modes:
+                logging.debug("Going back to continuous mode, the pump is working now")
+                self.unset_major_mode('Paused')
+                self._autostart(restart=True)
+            else:
+                pass
 
         return
 
