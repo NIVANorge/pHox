@@ -9,13 +9,12 @@ class pco2_instrument(object):
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
         self.portSens = None
-        print('ports',ports)
         for i in range(len(ports)):
             print (ports[i])
             name = ports[i][2]
             port = ports[i][0]
             print('name', name)
-            print ('index 1', ports[i][1])
+            print('index 1', ports[i][1])
             print('port',port)
             # USB-RS485 CO2 sensor
             # Delete condition or not?
@@ -31,7 +30,7 @@ class pco2_instrument(object):
                                               rtscts=False,
                                               dsrdtr=False,
                                               xonxoff=False)
-            if name == 'USB VID:PID=0403:6001 SER=FTZ0GOLZ LOCATION=1-1.4':
+            '''if name == 'USB VID:PID=0403:6001 SER=FTZ0GOLZ LOCATION=1-1.4':
                 #if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ':  # USB-RS232 host
                 self.host = serial.Serial(port,
                                           baudrate=9600,
@@ -42,9 +41,9 @@ class pco2_instrument(object):
                                           timeout=0.25,
                                           rtscts=False,
                                           dsrdtr=False,
-                                          xonxoff=False)
-        HOST_EXIST = True
-        SENS_EXIST = True
+                                          xonxoff=False)'''
+        #HOST_EXIST = True
+        #SENS_EXIST = True
 
         with open(self.config_name) as json_file:
             j = json.load(json_file)
@@ -61,7 +60,9 @@ class pco2_instrument(object):
         self.ftCalCoef[3] = f["AIR_TEMP_CAL"]
         self.ftCalCoef[4] = f["AIR_PRES_CAL"]
         self.ftCalCoef[5] = f["WAT_DETECT"]
+
         self.ftCalCoef[6] = f["CO2_FRAC_CAL"]
+        self.Co2_CalCoef = f["CO2_FRAC_CAL"]
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
         self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
@@ -83,20 +84,20 @@ class pco2_instrument(object):
     async def get_pco2_values(self):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
-            resp = self.portSens.read(15)
-            print (resp)
+            response_co2 = self.portSens.read(15)
+            print(response_co2)
             try:
-                value = float(resp[3:])
+                value = float(response_co2[3:])
                 value = self.ftCalCoef[6][0] + self.ftCalCoef[6][1] * value
             except ValueError:
                 value = 0
             self.franatech[6] = value
 
             self.portSens.write(self.QUERY_T)
-            resp = self.portSens.read(15)
-            print (resp)
+            response_t = self.portSens.read(15)
+            print(response_t)
             try:
-                self.franatech[7] = float(resp[3:])
+                self.franatech[7] = float(response_t[3:])
             except ValueError:
                 self.franatech[7] = 0
 
@@ -122,9 +123,8 @@ class test_pco2_instrument(pco2_instrument):
             self.franatech[ch] = round(X, 3)
         return self.franatech
 
-
     def get_Vd(self, nAver, channel):
-        V = 0
+        v = 0
         for i in range(nAver):
-            V += 0.6
-        return V / nAver
+            v += 0.6
+        return v / nAver
