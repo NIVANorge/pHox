@@ -979,7 +979,12 @@ class Panel(QtGui.QWidget):
         t = datetime.now()
         label = t.isoformat("_")
         labelSample = label[0:19]
-        logfile = os.path.join("/home/pi/pHox/data/", "pCO2.log")
+
+        path = "/home/pi/pHox/data/"
+        if not os.path.exists(path):
+            os.mkdir(path)
+        logfile = os.path.join(path, "pCO2.log")
+
         hdr = ""
         s = labelSample
         s += ",%.6f,%.6f,%.3f,%.3f" % (fbox["longitude"], fbox["latitude"], fbox["temperature"], fbox["salinity"],)
@@ -988,10 +993,10 @@ class Panel(QtGui.QWidget):
 
         if not os.path.exists(logfile):
             self.pco2_df = pd.DataFrame(pd.DataFrame(d, columns=["Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"]))
-
+            self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
-
+            self.pco2_df.to_csv(logfile, index=False, header=False)
         if not self.args.localdev:
             udp.send_data("PCO2," + s, self.instrument.ship_code)
 
