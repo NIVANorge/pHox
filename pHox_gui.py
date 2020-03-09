@@ -1749,23 +1749,21 @@ class boxUI(QtGui.QMainWindow):
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
 
             self.main_widget.timer_contin_mode.stop()
-            logging.info('close the program')
-
-            logging.info("timer is stopped")
+            self.main_widget.timerSpectra_plot.stop()
+            logging.info("timers are stopped")
 
             udp.UDP_EXIT = True
             udp.server.join()
             if not udp.server.is_alive():
                 logging.info("UDP server closed")
-                udp.server.join()
             try:
                 self.main_widget.instrument.spectrom.spec.close()
             except:
-                logging.info('cannot close spectro')
+                logging.info('Erroe while closing spectro')
             self.main_widget.close()
             QtGui.QApplication.quit()
             try:
-                sys.exit(app.exec_())
+                sys.exit()
             except:
                 print("Exiting")
 
