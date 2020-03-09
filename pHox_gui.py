@@ -538,7 +538,7 @@ class Panel(QtGui.QWidget):
                                                                         self.instrument.I2], 1)]
         self.fill_table_config(4, 0, "pH sampling interval (min)")
         self.samplingInt_combo = QtGui.QComboBox()
-        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '20', '30', '60']]
+        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10','15', '20', '30', '60']]
         self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval/60)
         self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
@@ -1042,6 +1042,7 @@ class Panel(QtGui.QWidget):
                 await self.update_spectra_plot_manual(datay)
             else:
                 self.StatusBox.setText('Not able to adjust LEDs automatically')
+            self.timer2.stop()
         else:
             result = check
             logging.debug('LED values are within the range, no need to call auto adjust')
