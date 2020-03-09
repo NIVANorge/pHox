@@ -992,9 +992,10 @@ class Panel(QtGui.QWidget):
         s += "\n"
 
         if not os.path.exists(logfile):
-            print ('logfile not exist', logfile)
-            self.pco2_df = pd.DataFrame(
-                pd.DataFrame(d, columns=["Time,Lon,Lat,fbT,fbS,Tw,Flow,Pw,Ta,Pa,Leak,CO2,TCO2"]))
+            self.pco2_df = pd.DataFrame(columns=["Time","Lon","Lat","fbT","fbS",
+                                                 "Tw","Flow","Pw","Ta","Pa","Leak","CO2","TCO2"])
+
+            print (d)
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
