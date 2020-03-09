@@ -1131,6 +1131,8 @@ class Panel(QtGui.QWidget):
             self.timer_contin_mode.stop()
             self.until_next_sample = self.instrument.samplingInterval
             self.infotimer_contin_mode.stop()
+            if "Paused" in self.major_modes:
+                self.unset_major_mode('Paused')
 
     @asyncSlot()
     async def btn_calibr_clicked(self):
@@ -1331,7 +1333,7 @@ class Panel(QtGui.QWidget):
         elif fbox['pumping'] == 0:
             if 'Paused' not in self.major_modes:
                 self.timer_contin_mode.stop()
-                self.set_major_mode('Paused on pump')
+                self.set_major_mode('Paused')
                 logging.debug('Pause continuous mode, since pump is off')
                 self.infotimer_contin_mode.stop()
                 self.until_next_sample = self.instrument.samplingInterval
