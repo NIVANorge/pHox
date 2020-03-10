@@ -178,8 +178,7 @@ class Panel(QtGui.QWidget):
 
         if self.args.pco2:
             self.timerSave_pco2 = QtCore.QTimer()
-            self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fbT", "fbS",
-                                                 "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+
             self.timerSave_pco2.timeout.connect(self.update_pCO2_data)
 
     def btn_manual_mode_clicked(self):
@@ -996,27 +995,36 @@ class Panel(QtGui.QWidget):
         return
 
     def save_pCO2_data(self):
-        t = datetime.now()
-        label = t.isoformat("_")
-        labelSample = label[0:19]
+
+        labelSample = datetime.now().isoformat("_")[0:19]
 
         path = "/home/pi/pHox/data/"
         if not os.path.exists(path):
             os.mkdir(path)
         logfile = os.path.join(path, "pCO2.log")
 
-        d = [labelSample, fbox["longitude"], fbox["latitude"],
-             fbox["temperature"], fbox["salinity"],
-             self.wat_temp, self.wat_flow, self.wat_pres,
-             self.air_temp, self.air_pres, self.leak_detect,
-             self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+        self.pCO2_df = pd.DataFrame(
+            {
+                "Time": [labelSample],
+                "Lon": [fbox["longitude"]],
+                "Lat": [fbox["latitude"]],
+                "fb_temp": [fbox["temperature"]],
+                "fb_sal": [fbox["salinity"]],
+
+                "Tw": [self.wat_temp],
+                "Flow": [self.wat_flow],
+                "Pw": [self.wat_pres],
+                "Ta": [self.air_temp],
+                "Pa": [self.air_pres],
+                "Leak": [self.leak_detect],
+                "CO2": [self.pco2_instrument.co2],
+                "TCO2": [self.pco2_instrument.co2_temp]
+            })
 
         if not os.path.exists(logfile):
-            self.pco2_df.loc[0] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
-            self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
-            self.pco2_df.to_csv(logfile, index=False, header=True)
+            self.pco2_df.to_csv(logfile, mode='a', index=False, header=True)
 
         '''if not self.args.localdev:
             udp.send_data("PCO2," + d )'''
