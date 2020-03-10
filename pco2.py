@@ -30,20 +30,8 @@ class pco2_instrument(object):
                                               rtscts=False,
                                               dsrdtr=False,
                                               xonxoff=False)
-            '''if name == 'USB VID:PID=0403:6001 SER=FTZ0GOLZ LOCATION=1-1.4':
-                #if name == 'USB VID:PID=0403:6001 SNR=FTZ0GOLZ':  # USB-RS232 host
-                self.host = serial.Serial(port,
-                                          baudrate=9600,
-                                          parity=serial.PARITY_NONE,
-                                          stopbits=serial.STOPBITS_ONE,
-                                          bytesize=serial.EIGHTBITS,
-                                          writeTimeout=0,
-                                          timeout=0.25,
-                                          rtscts=False,
-                                          dsrdtr=False,
-                                          xonxoff=False)'''
-        #HOST_EXIST = True
-        #SENS_EXIST = True
+
+
 
         with open(self.config_name) as json_file:
             j = json.load(json_file)
@@ -53,13 +41,6 @@ class pco2_instrument(object):
         #self.franatech = [0] * 8
 
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
-        '''self.ftCalCoef[0] = f["water_temperature"]["WAT_TEMP_CAL"]
-        self.ftCalCoef[1] = f["WAT_FLOW_CAL"]
-        self.ftCalCoef[2] = f["WAT_PRES_CAL"]
-        self.ftCalCoef[3] = f["AIR_TEMP_CAL"]
-        self.ftCalCoef[4] = f["AIR_PRES_CAL"]
-        self.ftCalCoef[5] = f["WAT_DETECT"]
-        self.ftCalCoef[6] = f["CO2_FRAC_CAL"]'''
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
         self.wat_flow_cal = f["WAT_FLOW_CAL"]

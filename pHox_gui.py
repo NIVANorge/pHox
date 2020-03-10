@@ -1026,8 +1026,9 @@ class Panel(QtGui.QWidget):
         else:
             self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
 
-        '''if not self.args.localdev:
-            udp.send_data("PCO2," + d )'''
+        if not self.args.localdev:
+            row_to_string = self.pco2_df.to_csv(index=False, header=True).rstrip()
+            udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
@@ -1362,7 +1363,7 @@ class Panel(QtGui.QWidget):
         if self.btn_cont_meas.isChecked():
 
             if fbox['pumping'] is None:
-                self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
+                #self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
                 logging.debug('No udp connection')
 
             elif fbox['pumping'] == 0:
