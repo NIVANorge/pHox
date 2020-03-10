@@ -1024,7 +1024,7 @@ class Panel(QtGui.QWidget):
         if not os.path.exists(logfile):
             self.pco2_df.to_csv(logfile, index=False, header=True)
         else:
-            self.pco2_df.to_csv(logfile, mode='a', index=False, header=True)
+            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
 
         '''if not self.args.localdev:
             udp.send_data("PCO2," + d )'''
