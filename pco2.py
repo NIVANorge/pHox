@@ -12,7 +12,8 @@ class pco2_instrument(object):
         connection_types = [port[1] for port in ports]
         try:
             ind = connection_types.index('USB-RS485 Cable')
-            port = ports[ind]
+            port = ports[ind][0]
+            print (port)
             self.portSens = serial.Serial(port,
                                       baudrate=9600,
                                       parity=serial.PARITY_NONE,
@@ -23,8 +24,10 @@ class pco2_instrument(object):
                                       rtscts=False,
                                       dsrdtr=False,
                                       xonxoff=False)
+            print (self.portSens)
         except:
             self.portSens = None
+            print (self.portSens)
 
         with open(self.config_name) as json_file:
             j = json.load(json_file)
