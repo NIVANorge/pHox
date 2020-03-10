@@ -1061,21 +1061,20 @@ class Panel(QWidget):
             ) = await self.instrument.auto_adjust()
 
             logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
+            self.update_spec_int_time_table()
+            self.timer2.stop()
             if result:
+                self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
                 self.sliders[0].setValue(self.instrument.LED1)
                 self.sliders[1].setValue(self.instrument.LED2)
                 self.sliders[2].setValue(self.instrument.LED3)
-                self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
-                self.timer2.stop()
                 # self.plot_sp_levels()
-                self.update_spec_int_time_table()
                 self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
-
                 datay = await self.instrument.spectrom.get_intensities()
                 await self.update_spectra_plot_manual(datay)
             else:
                 self.StatusBox.setText('Not able to adjust LEDs automatically')
-            self.timer2.stop()
+
         else:
             result = check
             logging.debug('LED values are within the range, no need to call auto adjust')
