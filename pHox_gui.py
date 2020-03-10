@@ -1003,7 +1003,7 @@ class Panel(QtGui.QWidget):
             os.mkdir(path)
         logfile = os.path.join(path, "pCO2.log")
 
-        self.pCO2_df = pd.DataFrame(
+        self.pco2_df = pd.DataFrame(
             {
                 "Time": [labelSample],
                 "Lon": [fbox["longitude"]],
