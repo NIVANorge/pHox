@@ -98,17 +98,17 @@ class pco2_instrument(object):
             except ValueError:
                 value = 0
             self.co2 = value
-            self.franatech[6] = value
+            #self.franatech[6] = value
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
             print('response_t', response_t)
             try:
                 self.co2_temp = float(response_t[3:])
-                self.franatech[7] = float(response_t[3:])
+                #self.franatech[7] = float(response_t[3:])
             except ValueError:
                 self.co2_temp = 0
-                self.franatech[7] = 0
+                #self.franatech[7] = 0
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):
@@ -117,20 +117,20 @@ class test_pco2_instrument(pco2_instrument):
         self.config_name = config_name
 
     async def get_pco2_values(self):
-
+        pass
         #CO2
-        self.franatech[5] = np.random.randint(1, 10)
+        #self.franatech[5] = np.random.randint(1, 10)
         #TEMP
-        self.franatech[6] = np.random.randint(1, 10)
+        #self.franatech[6] = np.random.randint(1, 10)
 
         # 0,1,2,3,4
-        for ch in range(5):
+        '''for ch in range(5):
             V = self.get_Vd(2, ch + 1)
             X = 0
             for i in range(2):
                 X += self.ftCalCoef[ch][i] * pow(V, i)
             self.franatech[ch] = round(X, 3)
-        return self.franatech
+        return self.franatech'''
 
     def get_Vd(self, nAver, channel):
         v = 0

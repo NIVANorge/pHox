@@ -1018,10 +1018,8 @@ class Panel(QtGui.QWidget):
             self.pco2_df.loc[self.pco2_df.index.max() + 1] = d
             self.pco2_df.to_csv(logfile, index=False, header=True)
 
-        if not self.args.localdev:
-            d.to_csv(index=False, header=True).rstrip()
-            print (d)
-            udp.send_data("PCO2," + d )
+        '''if not self.args.localdev:
+            udp.send_data("PCO2," + d )'''
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
