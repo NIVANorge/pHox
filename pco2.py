@@ -6,39 +6,29 @@ import numpy as np
 
 class pco2_instrument(object):
     def __init__(self, config_name):
+
         self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
-        self.portSens = None
-        for i in range(len(ports)):
-            print (ports[i])
-            name = ports[i][2]
-            port = ports[i][0]
-            print('name', name)
-            print('index 1', ports[i][1])
-            print('port',port)
-            # USB-RS485 CO2 sensor
-            # Delete condition or not?
-            if name == "USB VID:PID=0403:6001 SER=FTZ1SAJ3 LOCATION=1-1.3":
-                #if name == 'USB VID:PID=0403:6001 SNR=FTZ1SAJ3':
-                self.portSens = serial.Serial(port,
-                                              baudrate=9600,
-                                              parity=serial.PARITY_NONE,
-                                              stopbits=serial.STOPBITS_ONE,
-                                              bytesize=serial.EIGHTBITS,
-                                              writeTimeout=0,
-                                              timeout=0.5,
-                                              rtscts=False,
-                                              dsrdtr=False,
-                                              xonxoff=False)
-
-
+        connection_types = [port[1] for port in ports]
+        try:
+            ind = connection_types.index('USB-RS485 Cable')
+            port = ports[ind]
+            self.portSens = serial.Serial(port,
+                                      baudrate=9600,
+                                      parity=serial.PARITY_NONE,
+                                      stopbits=serial.STOPBITS_ONE,
+                                      bytesize=serial.EIGHTBITS,
+                                      writeTimeout=0,
+                                      timeout=0.5,
+                                      rtscts=False,
+                                      dsrdtr=False,
+                                      xonxoff=False)
+        except:
+            self.portSens = None
 
         with open(self.config_name) as json_file:
             j = json.load(json_file)
         f = j["pCO2"]
-        # Why do we need 10 row here?
-        #self.ftCalCoef = np.zeros((10, 2))
-        #self.franatech = [0] * 8
 
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
@@ -67,7 +57,6 @@ class pco2_instrument(object):
             "T CO2 sensor \xB0C",
         ]
 
-
     async def get_pco2_values(self):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
@@ -79,17 +68,15 @@ class pco2_instrument(object):
             except ValueError:
                 value = 0
             self.co2 = value
-            #self.franatech[6] = value
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
             print('response_t', response_t)
             try:
                 self.co2_temp = float(response_t[3:])
-                #self.franatech[7] = float(response_t[3:])
             except ValueError:
                 self.co2_temp = 0
-                #self.franatech[7] = 0
+
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):
@@ -98,20 +85,8 @@ class test_pco2_instrument(pco2_instrument):
         self.config_name = config_name
 
     async def get_pco2_values(self):
-        pass
-        #CO2
         self.co2 = np.random.randint(1, 10)
-        #TEMP
         self.co2_temp = np.random.randint(1, 10)
-
-        # 0,1,2,3,4
-        '''for ch in range(5):
-            V = self.get_Vd(2, ch + 1)
-            X = 0
-            for i in range(2):
-                X += self.ftCalCoef[ch][i] * pow(V, i)
-            self.franatech[ch] = round(X, 3)
-        return self.franatech'''
 
     def get_Vd(self, nAver, channel):
         v = 0

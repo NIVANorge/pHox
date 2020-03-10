@@ -14,6 +14,10 @@ except:
 
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit, QFileDialog
+from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout,
+                             QTableWidget, QHeaderView, QComboBox, QCheckBox,
+                             QSlider, QInputDialog, QApplication, QMainWindow)
 import numpy as np
 import pyqtgraph as pg
 import argparse, socket
@@ -25,10 +29,11 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
+
 class QTextEditLogger(logging.Handler):
     def __init__(self, parent):
         super().__init__()
-        self.widget = QtWidgets.QPlainTextEdit(parent)
+        self.widget = QPlainTextEdit(parent)
         self.widget.setReadOnly(True)
 
     def emit(self, record):
@@ -62,9 +67,10 @@ class AsyncThreadWrapper:
             await asyncio.sleep(0.1)
         return self.result
 
-class Panel(QtGui.QWidget):
+
+class Panel(QWidget):
     def __init__(self, parent, panelargs, config_name):
-        super(QtGui.QWidget, self).__init__(parent)
+        super(QWidget, self).__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
                             "Paused"]
@@ -82,11 +88,11 @@ class Panel(QtGui.QWidget):
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
-        self.t_insitu_live = QtGui.QLineEdit()
-        self.s_insitu_live = QtGui.QLineEdit()
+        self.t_insitu_live = QLineEdit()
+        self.s_insitu_live = QLineEdit()
 
-        self.t_lab_live = QtGui.QLineEdit()
-        self.voltage_live = QtGui.QLineEdit()
+        self.t_lab_live = QLineEdit()
+        self.voltage_live = QLineEdit()
         if self.args.pco2:
             if self.args.localdev:
                 self.pco2_instrument = test_pco2_instrument(self.config_name)
@@ -98,15 +104,15 @@ class Panel(QtGui.QWidget):
 
         self.until_next_sample = None
         self.infotimer_step = 15  # seconds
-        self.manual_limit = 60*3  # 3 minutes, time when we turn off manual mode if continuous is clicked
+        self.manual_limit = 60 * 3  # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
-        self.tabs = QtGui.QTabWidget()
-        self.tab1 = QtGui.QWidget()
-        self.tab_manual = QtGui.QWidget()
-        self.tab_log = QtGui.QWidget()
-        self.tab_config = QtGui.QWidget()
-        self.plots = QtGui.QWidget()
+        self.tabs = QTabWidget()
+        self.tab1 = QWidget()
+        self.tab_manual = QWidget()
+        self.tab_log = QWidget()
+        self.tab_config = QWidget()
+        self.plots = QWidget()
 
         # Add tabs
         self.tabs.addTab(self.tab1, "Home")
@@ -115,8 +121,8 @@ class Panel(QtGui.QWidget):
         self.tabs.addTab(self.tab_config, "Config")
 
         if self.args.pco2:
-            self.tab_pco2 = QtGui.QTabWidget()
-            self.tabs.addTab(self.tab_pco2,"pCO2")
+            self.tab_pco2 = QTabWidget()
+            self.tabs.addTab(self.tab_pco2, "pCO2")
             self.make_tab_pco2()
 
         self.make_tab_log()
@@ -136,7 +142,7 @@ class Panel(QtGui.QWidget):
         self.setLayout(hboxPanel)
 
     def make_tab_manual(self):
-        self.tab_manual.layout = QtGui.QGridLayout()
+        self.tab_manual.layout = QGridLayout()
         self.btn_manual_mode = self.create_button("Manual Control", True)
         self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
         self.make_btngroupbox()
@@ -147,14 +153,14 @@ class Panel(QtGui.QWidget):
         self.tab_manual.setLayout(self.tab_manual.layout)
 
     def make_tab_log(self):
-        self.tab_log.layout = QtGui.QGridLayout()
+        self.tab_log.layout = QGridLayout()
 
-        self.logTextBox = QTextEditLogger(self) # QtGui.QPlainTextEdit()
+        self.logTextBox = QTextEditLogger(self)
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logging.getLogger().addHandler(self.logTextBox)
         logging.getLogger().setLevel(logging.DEBUG)
-        ##self.logTextBox.setReadOnly(True)
+
         if self.args.debug:
             logging.info("Starting in debug mode")
         self.tab_log.layout.addWidget(self.logTextBox.widget)
@@ -265,7 +271,7 @@ class Panel(QtGui.QWidget):
                 self.config_widgets_set_state(True)
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_leds.setEnabled(True)
-                    #self.btn_checkflow.setEnabled(True)
+                    # self.btn_checkflow.setEnabled(True)
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -308,7 +314,7 @@ class Panel(QtGui.QWidget):
 
     def make_plotwidgets(self):
         # create plotwidgets
-        self.plotwdigets_groupbox = QtGui.QGroupBox()
+        self.plotwdigets_groupbox = QGroupBox()
 
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget2 = pg.PlotWidget()
@@ -316,7 +322,6 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.setYRange(1000, self.instrument.THR * 1.05)
 
         if self.args.co3:
-            # self.plotwidget1.setYRange(1000,67000)
             self.plotwidget2.setYRange(0, 1)
             self.plotwidget1.setXRange(220, 260)
             self.plotwidget2.setXRange(220, 260)
@@ -326,7 +331,6 @@ class Panel(QtGui.QWidget):
         self.plotwidget1.setTitle("LEDs intensities")
 
         # self.plotwidget2.setYRange(0,1.3)
-
         # self.plotwidget2.setXRange(410,610)
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground("#19232D")
@@ -362,25 +366,25 @@ class Panel(QtGui.QWidget):
             self.abs_lines = []
             for n_inj in range(self.instrument.ncycles):
                 self.abs_lines.append(
-                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]) )
+                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
                 )
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
     def make_steps_groupBox(self):
 
-        self.sample_steps_groupBox = QtWidgets.QGroupBox("Measuring Progress")
+        self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
         self.sample_steps = [
-            QtWidgets.QCheckBox("1. Adjusting LEDS"),
-            QtWidgets.QCheckBox("2  Measuring dark,blank"),
-            QtWidgets.QCheckBox("3. Measurement 1"),
-            QtWidgets.QCheckBox("4. Measurement 2"),
-            QtWidgets.QCheckBox("5. Measurement 3"),
-            QtWidgets.QCheckBox("6. Measurement 4"),
+            QCheckBox("1. Adjusting LEDS"),
+            QCheckBox("2  Measuring dark,blank"),
+            QCheckBox("3. Measurement 1"),
+            QCheckBox("4. Measurement 2"),
+            QCheckBox("5. Measurement 3"),
+            QCheckBox("6. Measurement 4"),
         ]
 
-        layout = QtGui.QGridLayout()
+        layout = QGridLayout()
 
         [step.setEnabled(False) for step in self.sample_steps]
         [layout.addWidget(step) for step in self.sample_steps]
@@ -390,51 +394,46 @@ class Panel(QtGui.QWidget):
 
         self.make_steps_groupBox()
 
-        self.tab1.layout = QtGui.QGridLayout()
-        #self.textBox = QtGui.QTextEdit()
-        #self.textBox.setReadOnly(True)
-        #self.textBox.setOverwriteMode(True)
+        self.tab1.layout = QGridLayout()
 
         self.StatusBox = QtGui.QTextEdit()
-        #self.StatusBox.setReadOnly(True)
+        self.StatusBox.setReadOnly(True)
 
-        self.last_measurement_table_groupbox = QtGui.QGroupBox("Last Measurement")
-        self.live_update_groupbox = QtGui.QGroupBox("Live Updates")
-        self.last_measurement_table = QtGui.QTableWidget(5, 2)
-        self.last_measurement_table.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
-        self.last_measurement_table.verticalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.last_measurement_table_groupbox = QGroupBox("Last Measurement")
+        self.live_update_groupbox = QGroupBox("Live Updates")
+        self.last_measurement_table = QTableWidget(5, 2)
+        self.last_measurement_table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.last_measurement_table.verticalHeader().setResizeMode(QHeaderView.Stretch)
 
-        self.last_measurement_table.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.last_measurement_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.last_measurement_table.verticalHeader().hide()
         self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
          for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
 
-        self.ferrypump_box = QtWidgets.QCheckBox("Ferrybox pump is on")
+        self.ferrypump_box = QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
 
         if fbox['pumping']:
             self.ferrypump_box.setChecked(True)
 
-        self.table_grid = QtGui.QGridLayout()
+        self.table_grid = QGridLayout()
         self.table_grid.addWidget(self.last_measurement_table)
 
-        self.live_updates_grid = QtGui.QGridLayout()
+        self.live_updates_grid = QGridLayout()
 
         live_widgets = [self.t_insitu_live, self.s_insitu_live, self.t_lab_live, self.voltage_live]
         [n.setReadOnly(True) for n in live_widgets]
 
-        #[self.live_updates_grid.addWidget(v, k, 1) for k, v in enumerate(live_widgets)]
-
-        self.live_updates_grid.addWidget(QtGui.QLabel('T insitu'), 0, 0)
+        self.live_updates_grid.addWidget(QLabel('T insitu'), 0, 0)
         self.live_updates_grid.addWidget(self.t_insitu_live, 0, 1)
-        self.live_updates_grid.addWidget(QtGui.QLabel('S insitu'), 0, 2)
+        self.live_updates_grid.addWidget(QLabel('S insitu'), 0, 2)
         self.live_updates_grid.addWidget(self.s_insitu_live, 0, 3)
 
-        self.live_updates_grid.addWidget(QtGui.QLabel('T lab'), 1, 0)
+        self.live_updates_grid.addWidget(QLabel('T lab'), 1, 0)
         self.live_updates_grid.addWidget(self.t_lab_live, 1, 1)
-        self.live_updates_grid.addWidget(QtGui.QLabel('Voltage'), 1, 2)
+        self.live_updates_grid.addWidget(QLabel('Voltage'), 1, 2)
         self.live_updates_grid.addWidget(self.voltage_live, 1, 3)
 
         self.live_updates_grid.addWidget(self.ferrypump_box, 2, 2, 1, 2)
@@ -463,33 +462,32 @@ class Panel(QtGui.QWidget):
         self.tab1.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
         self.tab1.setLayout(self.tab1.layout)
 
-
     def append_logbox(self, message):
         t = datetime.now().strftime("%b-%d %H:%M:%S")
         logging.info(t + "  " + message)
 
     def fill_table_measurement(self, x, y, item):
-        self.last_measurement_table.setItem(x, y, QtGui.QTableWidgetItem(item))
+        self.last_measurement_table.setItem(x, y, QTableWidgetItem(item))
 
     def fill_live_updates_table(self, x, y, item):
-        self.live_updates_table.setItem(x, y, QtGui.QTableWidgetItem(item))
+        self.live_updates_table.setItem(x, y, QTableWidgetItem(item))
 
     def fill_table_config(self, x, y, item):
-        self.tableConfigWidget.setItem(x, y, QtGui.QTableWidgetItem(item))
+        self.tableConfigWidget.setItem(x, y, QTableWidgetItem(item))
 
     def make_tab_pco2(self):
-        layout2 = QtGui.QGridLayout()
-        groupbox = QtGui.QGroupBox('Updates from pCO2')
-        layout = QtGui.QGridLayout()
+        layout2 = QGridLayout()
+        groupbox = QGroupBox('Updates from pCO2')
+        layout = QGridLayout()
 
-        self.Tw_pco2_live= QtGui.QLineEdit()
-        self.flow_pco2_live = QtGui.QLineEdit()
-        self.Pw_pco2_live = QtGui.QLineEdit()
-        self.Ta_pco2_live = QtGui.QLineEdit()
-        self.Pa_pco2_live = QtGui.QLineEdit()
-        self.Leak_pco2_live = QtGui.QLineEdit()
-        self.CO2_pco2_live = QtGui.QLineEdit()
-        self.TCO2_pco2_live = QtGui.QLineEdit()
+        self.Tw_pco2_live = QLineEdit()
+        self.flow_pco2_live = QLineEdit()
+        self.Pw_pco2_live = QLineEdit()
+        self.Ta_pco2_live = QLineEdit()
+        self.Pa_pco2_live = QLineEdit()
+        self.Leak_pco2_live = QLineEdit()
+        self.CO2_pco2_live = QLineEdit()
+        self.TCO2_pco2_live = QLineEdit()
 
         self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
                             self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
@@ -498,19 +496,19 @@ class Panel(QtGui.QWidget):
                             'Air temperature', 'Air pressure mbar', 'Leak Water detect',
                             'C02 ppm', 'T CO2 sensor']
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
-        [layout.addWidget(QtGui.QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
 
         groupbox.setLayout(layout)
         layout2.addWidget(groupbox)
         self.tab_pco2.setLayout(layout2)
 
     def make_tab_config(self):
-        self.tab_config.layout = QtGui.QGridLayout()
+        self.tab_config.layout = QGridLayout()
         # Define widgets for config tab
         self.btn_save_config = self.create_button("Save config", False)
         self.btn_save_config.clicked.connect(self.btn_save_config_clicked)
 
-        self.dye_combo = QtGui.QComboBox()
+        self.dye_combo = QComboBox()
         self.dye_combo.addItem("TB")
         self.dye_combo.addItem("MCP")
 
@@ -520,14 +518,13 @@ class Panel(QtGui.QWidget):
 
         self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
 
-        self.tableConfigWidget = QtGui.QTableWidget()
-        self.tableConfigWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.tableConfigWidget = QTableWidget()
+        self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
         self.tableConfigWidget.horizontalHeader().hide()
         self.tableConfigWidget.setRowCount(10)
         self.tableConfigWidget.setColumnCount(2)
-        self.tableConfigWidget.horizontalHeader().setResizeMode(QtWidgets.QHeaderView.Stretch)
-
+        self.tableConfigWidget.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         self.fill_table_config(0, 0, "DYE type")
         self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
@@ -535,31 +532,31 @@ class Panel(QtGui.QWidget):
         if not self.args.co3:
             [self.fill_table_config(k, 0, v) for k, v in enumerate(["NIR:", "HI-", "I2-"], 1)]
             [self.fill_table_config(k, 1, str(v)) for k, v in enumerate([self.instrument.NIR,
-                                                                        self.instrument.HI,
-                                                                        self.instrument.I2], 1)]
+                                                                         self.instrument.HI,
+                                                                         self.instrument.I2], 1)]
         self.fill_table_config(4, 0, "pH sampling interval (min)")
-        self.samplingInt_combo = QtGui.QComboBox()
-        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10','15', '20', '30', '60']]
-        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval/60)
+        self.samplingInt_combo = QComboBox()
+        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '15', '20', '30', '60']]
+        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval / 60)
         self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
         self.fill_table_config(5, 0, "Spectroph intergration time")
-        self.specIntTime_combo = QtGui.QComboBox()
+        self.specIntTime_combo = QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100, 5000, 100)]
         self.update_spec_int_time_table()
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
         self.tableConfigWidget.setCellWidget(5, 1, self.specIntTime_combo)
 
         self.fill_table_config(6, 0, "Ship")
-        self.ship_code_combo = QtGui.QComboBox()
+        self.ship_code_combo = QComboBox()
         [self.ship_code_combo.addItem(t_id) for t_id in ['Standalone', 'NB', 'FA', 'TF']]
         self.tableConfigWidget.setCellWidget(6, 1, self.ship_code_combo)
         self.ship_code_combo.currentIndexChanged.connect(self.ship_code_changed)
 
         self.fill_table_config(7, 0, 'Temp probe id')
-        self.temp_id_combo = QtGui.QComboBox()
-        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(1,10)]
+        self.temp_id_combo = QComboBox()
+        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(1, 10)]
         self.set_combo_index(self.temp_id_combo, self.instrument.TempProbe_id)
         self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_combo)
         self.temp_id_combo.currentIndexChanged.connect(self.temp_id_combo_changed)
@@ -576,19 +573,19 @@ class Panel(QtGui.QWidget):
         self.fill_table_config(9, 0, 'Calibration check passed')
         self.fill_table_config(9, 1, "Didn't run calibration yet")
 
-        self.manual_sal_group = QtGui.QGroupBox('Salinity used for manual measurement')
+        self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
         l = QtGui.QHBoxLayout()
-        self.whole_sal = QtGui.QComboBox()
-        self.first_decimal = QtGui.QComboBox()
-        self.second_decimal = QtGui.QComboBox()
-        self.third_decimal = QtGui.QComboBox()
+        self.whole_sal = QComboBox()
+        self.first_decimal = QComboBox()
+        self.second_decimal = QComboBox()
+        self.third_decimal = QComboBox()
 
         [self.whole_sal.addItem(str(n)) for n in np.arange(0, 40)]
         self.whole_sal.setCurrentIndex(self.whole_sal.findText('35', QtCore.Qt.MatchFixedString))
         for combo in [self.first_decimal, self.second_decimal, self.third_decimal]:
             [combo.addItem(str(n)) for n in np.arange(0, 10)]
         l.addWidget(self.whole_sal)
-        l.addWidget(QtGui.QLabel('.'))
+        l.addWidget(QLabel('.'))
         l.addWidget(self.first_decimal)
         l.addWidget(self.second_decimal)
         l.addWidget(self.third_decimal)
@@ -602,8 +599,9 @@ class Panel(QtGui.QWidget):
         self.tab_config.setLayout(self.tab_config.layout)
 
     def get_salinity_manual(self):
-        salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText())/10
-                                + int(self.second_decimal.currentText())/100 + int(self.third_decimal.currentText())/1000)
+        salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
+                           + int(self.second_decimal.currentText()) / 100 +
+                           int(self.third_decimal.currentText()) / 1000)
         return salinity_manual
 
     def set_combo_index(self, combo, text):
@@ -660,8 +658,8 @@ class Panel(QtGui.QWidget):
     def make_btngroupbox(self):
         # Define widgets for main tab
         # Create checkabple buttons
-        self.buttons_groupBox = QtGui.QGroupBox("Buttons GroupBox")
-        btn_grid = QtGui.QGridLayout()
+        self.buttons_groupBox = QGroupBox("Buttons GroupBox")
+        btn_grid = QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
         self.btn_enbable_autoadj = self.create_button("Enable autoadjust", True)
@@ -675,7 +673,7 @@ class Panel(QtGui.QWidget):
         self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-        #btn_grid.addWidget(self.btn_enbable_autoadj, 0, 1)
+        # btn_grid.addWidget(self.btn_enbable_autoadj, 0, 1)
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
@@ -684,6 +682,7 @@ class Panel(QtGui.QWidget):
 
         btn_grid.addWidget(self.btn_wpump, 4, 0)
         btn_grid.addWidget(self.btn_checkflow, 4, 1)
+
         # Define connections Button clicked - Result
         if not self.args.co3:
             self.btn_leds.clicked.connect(self.btn_leds_checked)
@@ -704,7 +703,7 @@ class Panel(QtGui.QWidget):
         self.buttons_groupBox.setLayout(btn_grid)
 
     def make_slidergroupbox(self):
-        self.sliders_groupBox = QtGui.QGroupBox("LED values")
+        self.sliders_groupBox = QGroupBox("LED values")
 
         sldNames = ["Blue", "Orange", "Red"]
         self.sliders = []
@@ -712,11 +711,11 @@ class Panel(QtGui.QWidget):
         self.plus_btns, self.minus_btns = [], []
 
         for ind in range(3):
-            self.plus_btns.append(QtGui.QPushButton("+"))
-            self.minus_btns.append(QtGui.QPushButton(" - "))
+            self.plus_btns.append(QPushButton("+"))
+            self.minus_btns.append(QPushButton(" - "))
             self.plus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
             self.minus_btns[ind].clicked.connect(self.led_minus_btn_clicked)
-            self.sliders.append(QtGui.QSlider(QtCore.Qt.Horizontal))
+            self.sliders.append(QSlider(QtCore.Qt.Horizontal))
             self.sliders[ind].setFocusPolicy(QtCore.Qt.NoFocus)
             self.sliders[ind].setTracking(True)
             self.spinboxes.append(QtGui.QSpinBox())
@@ -725,11 +724,11 @@ class Panel(QtGui.QWidget):
                 self.sliders[ind].valueChanged[int].connect(self.sld_change)
                 self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
 
-        grid = QtGui.QGridLayout()
+        grid = QGridLayout()
 
-        grid.addWidget(QtGui.QLabel("Blue:"), 0, 0)
-        grid.addWidget(QtGui.QLabel("Orange:"), 1, 0)
-        grid.addWidget(QtGui.QLabel("Red:"), 2, 0)
+        grid.addWidget(QLabel("Blue:"), 0, 0)
+        grid.addWidget(QLabel("Orange:"), 1, 0)
+        grid.addWidget(QLabel("Red:"), 2, 0)
 
         for n in range(3):
             grid.addWidget(self.sliders[n], n, 1)
@@ -740,7 +739,7 @@ class Panel(QtGui.QWidget):
         self.sliders_groupBox.setLayout(grid)
 
     def create_button(self, name, check):
-        Btn = QtGui.QPushButton(name)
+        Btn = QPushButton(name)
         Btn.setObjectName(name)
         if check:
             Btn.setCheckable(True)
@@ -820,8 +819,8 @@ class Panel(QtGui.QWidget):
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
-        self.tableConfigWidget.setItem(2, 1, QtGui.QTableWidgetItem(str(self.instrument.HI)))
-        self.tableConfigWidget.setItem(3, 1, QtGui.QTableWidgetItem(str(self.instrument.I2)))
+        self.tableConfigWidget.setItem(2, 1, QTableWidgetItem(str(self.instrument.HI)))
+        self.tableConfigWidget.setItem(3, 1, QTableWidgetItem(str(self.instrument.I2)))
 
     def change_plus_minus_butn(self, ind, dif):
         value = self.spinboxes[ind].value() + dif
@@ -868,9 +867,9 @@ class Panel(QtGui.QWidget):
         self.set_LEDs(state)
 
     def on_selFolderBtn_released(self):
-        self.folderDialog = QtGui.QFileDialog()
+        self.folderDialog = QFileDialog()
         folder = self.folderDialog.getExistingDirectory(self, "Select directory")
-        self.instrument.folderPath = folder + "/"
+        self.instrument.folderpath = folder + "/"
 
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
@@ -958,7 +957,7 @@ class Panel(QtGui.QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
-    def get_value_pco2(self,channel,coef):
+    def get_value_pco2(self, channel, coef):
 
         V = self.instrument.get_Vd(2, channel)
         X = 0
@@ -966,7 +965,6 @@ class Panel(QtGui.QWidget):
             X += coef[i] * pow(V, i)
         X = round(X, 3)
         return X
-
 
     @asyncSlot()
     async def update_pCO2_data(self):
@@ -986,7 +984,7 @@ class Panel(QtGui.QWidget):
         self.Pw_pco2_live.setText(str(self.wat_pres))
         self.Ta_pco2_live.setText(str(self.air_temp))
         self.Pa_pco2_live.setText(str(self.air_pres))
-        #self.Leak_pco2_live.setText()
+        self.Leak_pco2_live.setText(str(self.leak_detect))
         self.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
         self.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
 
@@ -1120,7 +1118,7 @@ class Panel(QtGui.QWidget):
                 await self.inject_dye(3)
 
                 dyed_spectrum = await self.instrument.spectrom.get_intensities()
-                rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum-dyed_spectrum)))
+                rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - dyed_spectrum)))
                 logging.debug(f'Initial diff: {rms_spectrum_difference}')
                 # Re-open the valve
                 await self.instrument.set_Valve(False)
@@ -1128,18 +1126,16 @@ class Panel(QtGui.QWidget):
                 # Start the flow check
                 start = datetime.utcnow()
                 check_succeeded = False
-                while datetime.utcnow()-start < timedelta(seconds=20):
+                while datetime.utcnow() - start < timedelta(seconds=20):
                     diluted_spectrum = await self.instrument.spectrom.get_intensities()
                     new_rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - diluted_spectrum)))
                     logging.debug(f'got another spectrum, new diff: {new_rms_spectrum_difference}')
-                    if rms_spectrum_difference*.2 > new_rms_spectrum_difference:
+                    if rms_spectrum_difference * .2 > new_rms_spectrum_difference:
                         check_succeeded = True
                         break
                 logging.debug(f'Final result of check: {check_succeeded}')
                 self.btn_checkflow.setChecked(False)
                 return check_succeeded
-
-
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1175,56 +1171,55 @@ class Panel(QtGui.QWidget):
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
 
-            valve_turned = QtGui.QMessageBox.question(self, "important message!!!",
-                                                      "Manually turn the valve to calibration mode",
-                                                      QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-            valve_turned_confirm = QtGui.QMessageBox.question(self, "important message!!!",
-                                                              "ARE YOU SURE YOU TURNED THE VALVE???",
-                                                              QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+            valve_turned = QMessageBox.question(self, "important message!!!",
+                                                "Manually turn the valve to calibration mode",
+                                                QMessageBox.Yes | QMessageBox.No)
+            valve_turned_confirm = QMessageBox.question(self, "important message!!!",
+                                                        "ARE YOU SURE YOU TURNED THE VALVE???",
+                                                        QMessageBox.Yes | QMessageBox.No)
 
-            if valve_turned == QtGui.QMessageBox.Yes and valve_turned_confirm == QtGui.QMessageBox.Yes:
-                folderPath = self.get_folderPath()
+            if valve_turned == QMessageBox.Yes and valve_turned_confirm == QMessageBox.Yes:
+                folderpath = self.get_folderpath()
                 flnmStr, timeStamp = self.get_filename()
-                await self.sample(folderPath, flnmStr, timeStamp)
+                await self.sample(folderpath, flnmStr, timeStamp)
 
-                v = QtGui.QMessageBox.question(self, "important message!!!",
-                                               "Manually turn the valve back to ferrybox mode",
-                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                v = QMessageBox.question(self, "important message!!!",
+                                         "Manually turn the valve back to ferrybox mode",
+                                         QMessageBox.Yes | QMessageBox.No)
 
-                v = QtGui.QMessageBox.question(self, "important message!!!",
-                                               "ARE YOU SURE YOU TURNED THE VALVE???",
-                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+                v = QMessageBox.question(self, "important message!!!",
+                                         "ARE YOU SURE YOU TURNED THE VALVE???",
+                                         QMessageBox.Yes | QMessageBox.No)
             self.btn_calibr.setChecked(False)
-
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
         async with self.updater.disable_live_plotting():
             # Start single sampling process
             logging.info("clicked single meas ")
-            message = QtGui.QMessageBox.question(
+            message = QMessageBox.question(
                 self,
                 "important message!!!",
                 "Did you pump to flush the sampling chamber?",
-                QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+                QMessageBox.Yes | QMessageBox.No,
             )
-            if message == QtGui.QMessageBox.No:
+            if message == QMessageBox.No:
                 self.btn_single_meas.setChecked(False)
                 return
 
             flnmStr, timeStamp = self.get_filename()
 
-            text, ok = QtGui.QInputDialog.getText(None, "Enter Sample name", flnmStr)
+            text, ok = QInputDialog.getText(None, "Enter Sample name", flnmStr)
             if ok:
                 if text != "":
                     flnmStr = text
-                folderPath = self.get_folderPath()
+                folderpath = self.get_folderpath()
                 # disable all btns in manual tab (There are way more buttons now)
                 self.btn_cont_meas.setEnabled(False)
                 self.btn_single_meas.setEnabled(False)
                 self.btn_calibr.setEnabled(False)  # what does calibration do?
 
-                await self.sample(folderPath, flnmStr, timeStamp)
+                await self.sample(folderpath, flnmStr, timeStamp)
             self.btn_single_meas.setChecked(False)
 
     def update_contin_mode_info(self):
@@ -1244,23 +1239,21 @@ class Panel(QtGui.QWidget):
 
         if 'Measurement' not in self.major_modes:
             if self.until_next_sample > 60:
-                self.StatusBox.setText(f'Next sample in {self.until_next_sample/60} minutes ')
+                self.StatusBox.setText(f'Next sample in {self.until_next_sample / 60} minutes ')
             else:
                 self.StatusBox.setText(f'Next sample in {self.until_next_sample} seconds ')
 
         self.until_next_sample -= self.infotimer_step
 
-
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
-        logging.info("continuous_mode_timer_finished")
         self.append_logbox("continuous_mode_timer_finished")
         self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
             flnmStr, timeStamp = self.get_filename()
-            folderPath = self.get_folderPath()
+            folderpath = self.get_folderpath()
             if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
-                await self.sample(folderPath, flnmStr, timeStamp)
+                await self.sample(folderpath, flnmStr, timeStamp)
         else:
             logging.info("Skipped a sample because the previous measurement is still ongoing")
             pass  # TODO Increase interval
@@ -1269,7 +1262,8 @@ class Panel(QtGui.QWidget):
         # get final pH
         logging.debug(f'get final pH {self.evalPar_df}')
         p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept, self.pH_t_corr) = p
+        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+         self.pH_t_corr) = p
 
         self.pH_log_row = pd.DataFrame(
             {
@@ -1287,25 +1281,25 @@ class Panel(QtGui.QWidget):
             }
         )
 
-    def save_results(self, folderPath, flnmStr):
+    def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
         if self.args.localdev:
             logging.debug('saving results localdev')
-            folderPath = os.getcwd()
-            self.save_logfile_df(folderPath, flnmStr)
+            folderpath = os.getcwd()
+            self.save_logfile_df(folderpath, flnmStr)
             self.send_to_ferrybox()
             return
         # self.sample_steps[7].setChecked(True)
         self.append_logbox("Save spectrum data to file")
-        self.save_spt(folderPath, flnmStr)
+        self.save_spt(folderpath, flnmStr)
         self.append_logbox("Save evl data to file")
-        self.save_evl(folderPath, flnmStr)
+        self.save_evl(folderpath, flnmStr)
         logging.info("Send data to ferrybox")
         self.append_logbox("Send data to ferrybox")
         self.send_to_ferrybox()
 
-        self.append_logbox("Save final data in %s" % (folderPath + "pH.log"))
-        self.save_logfile_df(folderPath, flnmStr)
+        self.append_logbox("Save final data in %s" % (folderpath + "pH.log"))
+        self.save_logfile_df(folderpath, flnmStr)
 
     def update_table_last_meas(self):
         if not self.args.co3:
@@ -1363,7 +1357,6 @@ class Panel(QtGui.QWidget):
         if self.btn_cont_meas.isChecked():
 
             if fbox['pumping'] is None:
-                #self.StatusBox.setText("No data from UDP fbox['pumping'] is None")
                 logging.debug('No udp connection')
 
             elif fbox['pumping'] == 0:
@@ -1416,7 +1409,7 @@ class Panel(QtGui.QWidget):
         finally:
             self.unset_major_mode(mode)
 
-    async def sample(self, folderPath, flnmStr, timeStamp):
+    async def sample(self, folderpath, flnmStr, timeStamp):
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
             # Step 0. Start measurement, create new df,
             # reset Absorption plot
@@ -1440,7 +1433,6 @@ class Panel(QtGui.QWidget):
             res = await self.call_autoAdjust()
             logging.info(f"res after autoadjust: '{res}")
             if res:
-                #logging.info("could not adjust leds")
 
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
@@ -1459,35 +1451,35 @@ class Panel(QtGui.QWidget):
         if not self.args.co3 and res:
             self.get_final_pH(timeStamp)
             self.append_logbox("Single measurement is done...")
+            self.save_results(folderpath, flnmStr)
+
             self.append_logbox('Saving results')
-            self.save_results(folderPath, flnmStr)
             self.update_pH_plot()
             self.update_table_last_meas()
             if 'Calibration' in self.major_modes:
-
                 dif_pH = self.pH_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
 
-    def get_folderPath(self):
+    def get_folderpath(self):
         if self.args.localdev:
             return "IN_LOCALDEV_MODE__NOT_A_FILE"
         if self.args == "co3":
             if "Calibration" in self.major_modes:
-                folderPath = "/home/pi/pHox/data_co3_calibr/"
+                folderpath = "/home/pi/pHox/data_co3_calibr/"
             else:
-                folderPath = "/home/pi/pHox/data_co3/"
+                folderpath = "/home/pi/pHox/data_co3/"
         else:
             if "Calibration" in self.major_modes:
-                folderPath = "/home/pi/pHox/data_calibr/"
+                folderpath = "/home/pi/pHox/data_calibr/"
             else:
-                folderPath = "/home/pi/pHox/data/"
+                folderpath = "/home/pi/pHox/data/"
 
-        if not os.path.exists(folderPath):
-            os.makedirs(folderPath)
-        return folderPath
+        if not os.path.exists(folderpath):
+            os.makedirs(folderpath)
+        return folderpath
 
     def create_new_df(self):
 
@@ -1500,25 +1492,10 @@ class Panel(QtGui.QWidget):
         else:
             self.evalPar_df = pd.DataFrame(
                 columns=[
-                    "pH",
-                    "pK",
-                    "e1",
-                    "e2",
-                    "e3",
-                    "vNTC",
-                    "salinity",
-                    "A1",
-                    "A2",
-                    "Tdeg",
-                    "S_corr",
-                    "Anir",
-                    "Vol_injected",
-                    "TempProbe_id",
-                    "Probe_iscalibr",
-                    "TempCalCoef1",
-                    "TempCalCoef2",
-                    "DYE",
-                ]
+                    "pH", "pK", "e1", "e2", "e3",
+                    "vNTC","salinity", "A1", "A2", "Tdeg", "S_corr", "Anir",
+                    "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
+                    "TempCalCoef2", "DYE" ]
             )
 
     async def pump_if_needed(self):
@@ -1583,7 +1560,6 @@ class Panel(QtGui.QWidget):
 
             vNTC = await self.inject_dye(n_inj)
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
-            # self.append_logbox('Calculate init pH')
             logging.info("Calculate init pH")
 
             if self.args == "co3":
@@ -1645,8 +1621,8 @@ class Panel(QtGui.QWidget):
         self.spCounts_df[str(n_inj)] = postinj_spec
         return spAbs_min_blank
 
-    def save_evl(self, folderPath, flnmStr):
-        evlpath = folderPath + "evl/"
+    def save_evl(self, folderpath, flnmStr):
+        evlpath = folderpath + "evl/"
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
@@ -1655,15 +1631,15 @@ class Panel(QtGui.QWidget):
         else:
             self.evalPar_df.to_csv(flnm, index=False, header=True)
 
-    def save_spt(self, folderPath, flnmStr):
-        sptpath = folderPath + "spt/"
+    def save_spt(self, folderpath, flnmStr):
+        sptpath = folderpath + "spt/"
         if not os.path.exists(sptpath):
             os.makedirs(sptpath)
         self.spCounts_df.T.to_csv(sptpath + flnmStr + ".spt", index=True, header=False)
 
-    def save_logfile_df(self, folderPath, flnmStr):
+    def save_logfile_df(self, folderpath, flnmStr):
         logging.info("save log file df")
-        hour_log_path = folderPath + "/logs/"
+        hour_log_path = folderpath + "/logs/"
         if not os.path.exists(hour_log_path):
             os.makedirs(hour_log_path)
 
@@ -1677,7 +1653,7 @@ class Panel(QtGui.QWidget):
         hour_log_flnm = hour_log_path + flnmStr + ".log"
         logging.info(f"hour_log_flnm: {hour_log_flnm}")
 
-        logfile = os.path.join(folderPath, 'pH.log')
+        logfile = os.path.join(folderpath, 'pH.log')
 
         if os.path.exists(logfile):
             self.pH_log_row.to_csv(logfile, mode='a', index=False, header=False)
@@ -1736,16 +1712,16 @@ class SensorStateUpdateManager:
         self.main_qt_panel.timerSpectra_plot.setInterval(self.get_interval_time())
 
 
-class boxUI(QtGui.QMainWindow):
+class boxUI(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
 
         try:
-            box_id = open("/home/pi/box_id.txt", "r").read()
+            box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
         except:
             box_id = "template"
-        box_id = box_id.strip('\n')
+
         config_name = "configs/config_" + box_id + ".json"
 
         parser.add_argument("--nodye", action="store_true")
@@ -1766,11 +1742,11 @@ class boxUI(QtGui.QMainWindow):
                     logger.level = logging.INFO
 
         if self.args.pco2:
-            self.setWindowTitle("pH Box Instrument, parameters pH and pCO2")
+            self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
-            self.setWindowTitle("Box Instrument, parameter CO3")
+            self.setWindowTitle(f"{box_id}, parameter CO3")
         else:
-            self.setWindowTitle("pH box")
+            self.setWindowTitle(f"{box_id}")
 
         self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
@@ -1781,12 +1757,12 @@ class boxUI(QtGui.QMainWindow):
             sys.exit(loop.run_forever())
 
     def closeEvent(self, event):
-        result = QtGui.QMessageBox.question(
-            self, "Confirm Exit...", "Are you sure you want to exit ?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
+        result = QMessageBox.question(
+            self, "Confirm Exit...", "Are you sure you want to exit ?", QMessageBox.Yes | QMessageBox.No,
         )
         event.ignore()
 
-        if result == QtGui.QMessageBox.Yes:
+        if result == QMessageBox.Yes:
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
 
@@ -1803,7 +1779,7 @@ class boxUI(QtGui.QMainWindow):
             except:
                 logging.info('Erroe while closing spectro')
             self.main_widget.close()
-            QtGui.QApplication.quit()
+            QApplication.quit()
             try:
                 sys.exit()
             except:
@@ -1815,7 +1791,7 @@ class boxUI(QtGui.QMainWindow):
 # loop has to be declared for testing to work
 loop = None
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     d = os.getcwd()
     qss_file = open("styles.qss").read()
     app.setStyleSheet(qss_file)
