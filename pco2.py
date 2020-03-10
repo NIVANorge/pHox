@@ -119,9 +119,9 @@ class test_pco2_instrument(pco2_instrument):
     async def get_pco2_values(self):
         pass
         #CO2
-        #self.franatech[5] = np.random.randint(1, 10)
+        self.co2 = np.random.randint(1, 10)
         #TEMP
-        #self.franatech[6] = np.random.randint(1, 10)
+        self.co2_temp = np.random.randint(1, 10)
 
         # 0,1,2,3,4
         '''for ch in range(5):
