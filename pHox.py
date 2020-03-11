@@ -516,7 +516,7 @@ class pH_instrument(Common_instrument):
 
             logging.debug("inside call adjust ")
             adj1, adj2, adj3 = False, False, False
-            LED1, LED2, LED3 = None, None, None
+            #LED1, LED2, LED3 = None, None, None
             res1, res2, res3 = None, None, None
             await self.spectrom.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)

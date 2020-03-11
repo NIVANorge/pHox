@@ -649,6 +649,7 @@ class Panel(QWidget):
             self.btn_dye_pmp,
             self.btn_wpump,
             self.btn_checkflow,
+            self.btn_disable_autoadj
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -662,7 +663,7 @@ class Panel(QWidget):
         btn_grid = QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
-        self.btn_enbable_autoadj = self.create_button("Enable autoadjust", True)
+        self.btn_disable_autoadj = self.create_button("Disable autoadjust", True)
         # self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button("LEDs", True)
         self.btn_valve = self.create_button("Inlet valve", True)
@@ -673,7 +674,7 @@ class Panel(QWidget):
         self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-        # btn_grid.addWidget(self.btn_enbable_autoadj, 0, 1)
+        btn_grid.addWidget(self.btn_disable_autoadj, 0, 1)
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
@@ -1232,7 +1233,7 @@ class Panel(QWidget):
                 self.btn_manual_mode.setEnabled(False)
 
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
-              and "Measurement" not in self.major_modes):
+              and "Measuring" not in self.major_modes):
             logging.debug('> 3 min Until next sample, Reenable Manual control button ')
             self.btn_manual_mode.setEnabled(True)
 
@@ -1427,10 +1428,14 @@ class Panel(QWidget):
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
-            self.sample_steps[0].setChecked(True)
-            self.append_logbox("Autoadjust LEDS")
-            res = await self.call_autoAdjust()
-            logging.info(f"res after autoadjust: '{res}")
+            if not self.btn_disable_autoadj.isChecked():
+                self.sample_steps[0].setChecked(True)
+                self.append_logbox("Autoadjust LEDS")
+                res = await self.call_autoAdjust()
+                logging.info(f"res after autoadjust: '{res}")
+            else:
+                res = True
+                logging.info("Make sample without autoadjust")
             if res:
 
                 # Step 2. Take dark and blank
