@@ -1447,10 +1447,10 @@ class Panel(QWidget):
                 # Steps 3,4,5,6 Measurement cycle
                 await self.measurement_cycle(blank_min_dark, dark)
 
-                # Step 7 Open valve
-                logging.info("Opening the valve ...")
-                self.append_logbox("Opening the valve ...")
-                await self.instrument.set_Valve(False)
+            # Step 7 Open valve
+            logging.info("Opening the valve ...")
+            self.append_logbox("Opening the valve ...")
+            await self.instrument.set_Valve(False)
 
         if not self.args.co3 and res:
             self.get_final_pH(timeStamp)
