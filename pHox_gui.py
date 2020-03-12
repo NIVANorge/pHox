@@ -1149,7 +1149,8 @@ class Panel(QWidget):
 
     def btn_cont_meas_clicked(self):
         if self.btn_cont_meas.isChecked():
-            self.set_major_mode("Continuous")
+            if 'Continuous' not in self.major_modes:
+                self.set_major_mode("Continuous")
             if "Measuring" not in self.major_modes:
                 self.until_next_sample = self.instrument.samplingInterval
 
