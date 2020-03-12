@@ -1063,7 +1063,7 @@ class Panel(QWidget):
 
             logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
             self.update_spec_int_time_table()
-            self.timer2.stop()
+
             if result:
                 self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
                 self.sliders[0].setValue(self.instrument.LED1)
@@ -1079,6 +1079,7 @@ class Panel(QWidget):
         else:
             result = check
             logging.debug('LED values are within the range, no need to call auto adjust')
+        self.timer2.stop()
         return result
 
     @asyncSlot()

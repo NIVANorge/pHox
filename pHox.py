@@ -674,8 +674,8 @@ class pH_instrument(Common_instrument):
                     logging.info("r_value **2 > 0.9")
                 else:
                     logging.info("r_value **2 < 0.9 take three first measurements")
-                    x = x[:-1]
-                    y = y[:-1]
+                    x = x[1:]
+                    y = y[1:]
 
                     slope2, intercept, r_value = get_linregress(x, y)
                     final_slope = slope2
