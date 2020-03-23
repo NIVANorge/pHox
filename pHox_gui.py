@@ -608,7 +608,8 @@ class Panel(QWidget):
         index = combo.findText(str(text), QtCore.Qt.MatchFixedString)
         if index >= 0:
             combo.setCurrentIndex(index)
-
+        else:
+            logging.debug('was not able to set the sampling interval from the config file')
     def update_spec_int_time_table(self):
         index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), QtCore.Qt.MatchFixedString)
 
