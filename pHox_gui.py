@@ -40,6 +40,10 @@ class QTextEditLogger(logging.Handler):
         msg = self.format(record)
         self.widget.appendPlainText(msg)
 
+class TimeAxisItem(pg.AxisItem):
+    def tickStrings(self, values, scale, spacing):
+        return [datetime.fromtimestamp(value) for value in values]
+
 
 class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
@@ -121,9 +125,26 @@ class Panel(QWidget):
         self.tabs.addTab(self.tab_config, "Config")
 
         if self.args.pco2:
-            self.tab_pco2 = tab_pco2_class() #QTabWidget()
+            self.tab_pco2 = tab_pco2_class() #
             self.tabs.addTab(self.tab_pco2, "pCO2")
             self.tab_pco2.setLayout(self.tab_pco2.layout2)
+            self.tab_pco2_plot = QTabWidget()
+            self.tabs.addTab(self.tab_pco2_plot, "pCO2 plot")
+            v = QtGui.QVBoxLayout()
+            date_axis = TimeAxisItem(orientation='bottom')
+            self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
+            v.addWidget(self.plotwidget_pco2)
+            self.tab_pco2_plot.setLayout(v)
+            self.pco2_list = []
+            self.pco2_times = []
+
+            self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
+
+            self.plotwidget_pco2.setBackground("#19232D")
+            self.plotwidget_pco2.showGrid(x=True, y=True)
+            self.plotwidget_pco2.setTitle("pCO2 value time series")
+            #[datetime.now().timestamp(),
+            #                    (datetime.now()+timedelta(seconds=10)).timestamp()], [0, 0])
 
         self.make_tab_log()
         self.make_tab1()
@@ -964,6 +985,15 @@ class Panel(QWidget):
         self.tab_pco2.Leak_pco2_live.setText(str(self.leak_detect))
         self.tab_pco2.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
         self.tab_pco2.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
+
+        if len(self.pco2_times) > 25:
+            self.pco2_times = self.pco2_times[1:]
+            self.pco2_list = self.pco2_list[1:]
+
+        self.pco2_times.append(datetime.now().timestamp())
+        self.pco2_list.append(self.pco2_instrument.co2)
+        self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
+
 
         if not self.args.localdev:
             self.save_pCO2_data()
