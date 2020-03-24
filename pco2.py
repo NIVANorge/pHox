@@ -2,7 +2,36 @@ import serial
 import serial.tools.list_ports
 import json
 import numpy as np
+from PyQt5.QtWidgets import QLineEdit, QWidget
+from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
 
+class tab_pco2_class(QWidget):
+    def __init__(self):
+        super(QWidget, self).__init__()
+        self.layout2 = QGridLayout()
+        groupbox = QGroupBox('Updates from pCO2')
+        layout = QGridLayout()
+
+        self.Tw_pco2_live = QLineEdit()
+        self.flow_pco2_live = QLineEdit()
+        self.Pw_pco2_live = QLineEdit()
+        self.Ta_pco2_live = QLineEdit()
+        self.Pa_pco2_live = QLineEdit()
+        self.Leak_pco2_live = QLineEdit()
+        self.CO2_pco2_live = QLineEdit()
+        self.TCO2_pco2_live = QLineEdit()
+
+        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
+                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+                            self.CO2_pco2_live, self.TCO2_pco2_live]
+        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
+                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
+                            'C02 ppm', 'T CO2 sensor']
+        [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+
+        groupbox.setLayout(layout)
+        self.layout2.addWidget(groupbox)
 
 class pco2_instrument(object):
     def __init__(self, config_name):

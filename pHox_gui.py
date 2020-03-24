@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import pco2_instrument, test_pco2_instrument
+from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class
 import os, sys
 
 try:
@@ -121,9 +121,9 @@ class Panel(QWidget):
         self.tabs.addTab(self.tab_config, "Config")
 
         if self.args.pco2:
-            self.tab_pco2 = QTabWidget()
+            self.tab_pco2 = tab_pco2_class() #QTabWidget()
             self.tabs.addTab(self.tab_pco2, "pCO2")
-            self.make_tab_pco2()
+            self.tab_pco2.setLayout(self.tab_pco2.layout2)
 
         self.make_tab_log()
         self.make_tab1()
@@ -185,7 +185,7 @@ class Panel(QWidget):
         if self.args.pco2:
             self.timerSave_pco2 = QtCore.QTimer()
 
-            self.timerSave_pco2.timeout.connect(self.update_pCO2_data)
+            self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -474,33 +474,6 @@ class Panel(QWidget):
 
     def fill_table_config(self, x, y, item):
         self.tableConfigWidget.setItem(x, y, QTableWidgetItem(item))
-
-    def make_tab_pco2(self):
-        layout2 = QGridLayout()
-        groupbox = QGroupBox('Updates from pCO2')
-        layout = QGridLayout()
-
-        self.Tw_pco2_live = QLineEdit()
-        self.flow_pco2_live = QLineEdit()
-        self.Pw_pco2_live = QLineEdit()
-        self.Ta_pco2_live = QLineEdit()
-        self.Pa_pco2_live = QLineEdit()
-        self.Leak_pco2_live = QLineEdit()
-        self.CO2_pco2_live = QLineEdit()
-        self.TCO2_pco2_live = QLineEdit()
-
-        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
-                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
-                            self.CO2_pco2_live, self.TCO2_pco2_live]
-        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
-                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
-                            'C02 ppm', 'T CO2 sensor']
-        [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
-        [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
-
-        groupbox.setLayout(layout)
-        layout2.addWidget(groupbox)
-        self.tab_pco2.setLayout(layout2)
 
     def make_tab_config(self):
         self.tab_config.layout = QGridLayout()
@@ -960,16 +933,18 @@ class Panel(QWidget):
             self.ferrypump_box.setChecked(False)
 
     def get_value_pco2(self, channel, coef):
-
-        V = self.instrument.get_Vd(2, channel)
-        X = 0
-        for i in range(2):
-            X += coef[i] * pow(V, i)
-        X = round(X, 3)
+        if self.args.localdev:
+            X = np.random.randint(0,100)
+        else:
+            V = self.instrument.get_Vd(2, channel)
+            X = 0
+            for i in range(2):
+                X += coef[i] * pow(V, i)
+            X = round(X, 3)
         return X
 
     @asyncSlot()
-    async def update_pCO2_data(self):
+    async def update_pco2_data(self):
 
         # UPDATE VALUES
         self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
@@ -981,14 +956,14 @@ class Panel(QWidget):
         await self.pco2_instrument.get_pco2_values()
 
         # UPDATE PLOT WIDGETS
-        self.Tw_pco2_live.setText(str(self.wat_temp))
-        self.flow_pco2_live.setText(str(self.wat_flow))
-        self.Pw_pco2_live.setText(str(self.wat_pres))
-        self.Ta_pco2_live.setText(str(self.air_temp))
-        self.Pa_pco2_live.setText(str(self.air_pres))
-        self.Leak_pco2_live.setText(str(self.leak_detect))
-        self.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
-        self.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
+        self.tab_pco2.Tw_pco2_live.setText(str(self.wat_temp))
+        self.tab_pco2.flow_pco2_live.setText(str(self.wat_flow))
+        self.tab_pco2.Pw_pco2_live.setText(str(self.wat_pres))
+        self.tab_pco2.Ta_pco2_live.setText(str(self.air_temp))
+        self.tab_pco2.Pa_pco2_live.setText(str(self.air_pres))
+        self.tab_pco2.Leak_pco2_live.setText(str(self.leak_detect))
+        self.tab_pco2.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
+        self.tab_pco2.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
 
         if not self.args.localdev:
             self.save_pCO2_data()
