@@ -129,6 +129,10 @@ class Spectro_seabreeze(object):
 
 
 class Common_instrument(object):
+    """ This class is a parent class for pH instrument and CO3 instrument
+        since both of these classes use spectrometers. Class for pure pCO2 version
+        will be separate since there are too many differences
+    """
     def __init__(self, panelargs, config_name):
         self.args = panelargs
         self.config_name = config_name

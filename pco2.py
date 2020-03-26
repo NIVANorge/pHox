@@ -5,6 +5,14 @@ import numpy as np
 from PyQt5.QtWidgets import QLineEdit, QWidget
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
 
+try:
+    import pigpio
+    import RPi.GPIO as GPIO
+    from ADCDACPi import ADCDACPi
+    from ADCDifferentialPi import ADCDifferentialPi
+except:
+    pass
+
 class tab_pco2_class(QWidget):
     def __init__(self):
         super(QWidget, self).__init__()
@@ -32,6 +40,10 @@ class tab_pco2_class(QWidget):
 
         groupbox.setLayout(layout)
         self.layout2.addWidget(groupbox)
+
+    async def update_tab_values(self, values):
+        [self.pco2_params[n].setText(str(values[n])) for n in range(len(values))]
+
 
 class pco2_instrument(object):
     def __init__(self, config_name):
@@ -61,7 +73,7 @@ class pco2_instrument(object):
         with open(self.config_name) as json_file:
             j = json.load(json_file)
         f = j["pCO2"]
-
+        self.shipcode = j['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
@@ -110,6 +122,21 @@ class pco2_instrument(object):
             except ValueError:
                 self.co2_temp = 0
 
+
+class onlyPco2instrument(pco2_instrument):
+    def __init__(self, config_name):
+        super().__init__(config_name)
+
+        if not self.args.localdev:
+            self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+            self.adc.set_pga(1)
+            self.adcdac = ADCDACPi()
+
+    def get_Vd(self, nAver, channel):
+        V = 0.0000
+        for i in range(nAver):
+            V += self.adc.read_voltage(channel)
+        return V / nAver
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):

@@ -3,7 +3,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class
+from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, onlyPco2instrument
 import os, sys
 
 try:
@@ -71,6 +71,135 @@ class AsyncThreadWrapper:
             await asyncio.sleep(0.1)
         return self.result
 
+class panelPco2(QWidget):
+    def __init__(self, parent, panelargs, config_name):
+        super(QWidget, self).__init__(parent)
+        self.args = panelargs
+        self.config_name = config_name
+        if self.args.localdev:
+            self.pco2_instrument = test_pco2_instrument(self.config_name)
+        else:
+            self.pco2_instrument = onlyPco2instrument(self.config_name)
+
+        self.tabs = QTabWidget()
+        self.tab_pco2 = tab_pco2_class()  #
+        self.tabs.addTab(self.tab_pco2, "pCO2")
+        self.pco2_list = []
+        self.pco2_times = []
+        self.tab_pco2_calibration = QTabWidget()
+        self.tabs.addTab(self.tab_pco2_calibration , "Calibration")
+        #v = QtGui.QVBoxLayout()
+        date_axis = TimeAxisItem(orientation='bottom')
+        self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
+        #v.addWidget(self.plotwidget_pco2)
+        #self.tab_pco2_plot.setLayout(v)
+
+
+        self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
+        #self.tab_pco2.layout2.addWidget(self.plotwidget_pco2, 0, 2)
+        self.tab_pco2.setLayout(self.tab_pco2.layout2)
+        self.plotwidget_pco2.setBackground("#19232D")
+        self.plotwidget_pco2.showGrid(x=True, y=True)
+        self.plotwidget_pco2.setTitle("pCO2 value time series")
+        hboxPanel = QtGui.QHBoxLayout()
+
+        hboxPanel.addWidget(self.plotwidget_pco2)
+        hboxPanel.addWidget(self.tabs)
+
+        self.setLayout(hboxPanel)
+
+        self.timerSave_pco2 = QtCore.QTimer()
+        self.timerSave_pco2.timeout.connect(self.update_pco2_data)
+        self.timerSave_pco2.start(1000)
+        self.make_tab_pco2_calibration()
+    def make_tab_pco2_calibration(self):
+        l = QGridLayout()
+        self.btns = [QPushButton('Point 1'), QPushButton('Point 2'),
+                     QPushButton('Point 3'), QPushButton('Point 4')]
+
+        [l.addWidget(v,k,0) for k,v in enumerate(self.btns)]
+
+        self.tab_pco2_calibration.setLayout(l)
+    def get_value_pco2(self, channel, coef):
+        if self.args.localdev:
+            X = np.random.randint(0,100)
+        else:
+            V = self.instrument.get_Vd(2, channel)
+            X = 0
+            for i in range(2):
+                X += coef[i] * pow(V, i)
+            X = round(X, 3)
+        return X
+
+    @asyncSlot()
+    async def update_pco2_data(self):
+
+        # UPDATE VALUES
+        self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
+        self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
+        self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
+        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.air_temp_cal)
+        self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
+        self.leak_detect = 999
+        await self.pco2_instrument.get_pco2_values()
+
+        values = [self.wat_temp, self.wat_flow, self.wat_pres,
+                  self.air_temp, self.air_pres, self.leak_detect,
+                  self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+        await self.tab_pco2.update_tab_values(values)
+        await self.update_pco2_plot()
+        if not self.args.localdev:
+            self.save_pCO2_data()
+        return
+
+    async def update_pco2_plot(self):
+        # UPDATE PLOT WIDGETS
+        if len(self.pco2_times) > 25:
+            self.pco2_times = self.pco2_times[1:]
+            self.pco2_list = self.pco2_list[1:]
+
+        self.pco2_times.append(datetime.now().timestamp())
+        self.pco2_list.append(self.pco2_instrument.co2)
+        self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
+
+    def save_pCO2_data(self):
+
+        labelSample = datetime.now().isoformat("_")[0:19]
+
+        path = "/home/pi/pHox/data/"
+        if not os.path.exists(path):
+            os.mkdir(path)
+        logfile = os.path.join(path, "pCO2.log")
+
+        self.pco2_df = pd.DataFrame(
+            {
+                "Time": [labelSample],
+                "Lon": [fbox["longitude"]],
+                "Lat": [fbox["latitude"]],
+                "fb_temp": [fbox["temperature"]],
+                "fb_sal": [fbox["salinity"]],
+
+                "Tw": [self.wat_temp],
+                "Flow": [self.wat_flow],
+                "Pw": [self.wat_pres],
+                "Ta": [self.air_temp],
+                "Pa": [self.air_pres],
+                "Leak": [self.leak_detect],
+                "CO2": [self.pco2_instrument.co2],
+                "TCO2": [self.pco2_instrument.co2_temp]
+            })
+
+        if not os.path.exists(logfile):
+            self.pco2_df.to_csv(logfile, index=False, header=True)
+        else:
+            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
+
+        if not self.args.localdev:
+            row_to_string = self.pco2_df.to_csv(index=False, header=True).rstrip()
+            udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
+
+    def autorun(self):
+        pass
 
 class Panel(QWidget):
     def __init__(self, parent, panelargs, config_name):
@@ -137,7 +266,6 @@ class Panel(QWidget):
             self.tab_pco2_plot.setLayout(v)
             self.pco2_list = []
             self.pco2_times = []
-
             self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
 
             self.plotwidget_pco2.setBackground("#19232D")
@@ -351,8 +479,6 @@ class Panel(QWidget):
         self.plotwidget1.showGrid(x=True, y=True)
         self.plotwidget1.setTitle("LEDs intensities")
 
-        # self.plotwidget2.setYRange(0,1.3)
-        # self.plotwidget2.setXRange(410,610)
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setBackground("#19232D")
         self.plotwidget2.setTitle("Last pH measurement")
@@ -396,15 +522,18 @@ class Panel(QWidget):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
-        self.sample_steps = [
+        '''self.sample_steps = [
             QCheckBox("1. Adjusting LEDS"),
             QCheckBox("2  Measuring dark,blank"),
             QCheckBox("3. Measurement 1"),
             QCheckBox("4. Measurement 2"),
             QCheckBox("5. Measurement 3"),
             QCheckBox("6. Measurement 4"),
-        ]
-
+        ]'''
+        self.sample_steps = [QCheckBox(f) for f in [
+            "1. Adjusting LEDS", "2  Measuring dark,blank",
+            "3. Measurement 1", "4. Measurement 2",
+             "5. Measurement 3", "6. Measurement 4"]]
         layout = QGridLayout()
 
         [step.setEnabled(False) for step in self.sample_steps]
@@ -976,15 +1105,10 @@ class Panel(QWidget):
         self.leak_detect = 999
         await self.pco2_instrument.get_pco2_values()
 
-        # UPDATE PLOT WIDGETS
-        self.tab_pco2.Tw_pco2_live.setText(str(self.wat_temp))
-        self.tab_pco2.flow_pco2_live.setText(str(self.wat_flow))
-        self.tab_pco2.Pw_pco2_live.setText(str(self.wat_pres))
-        self.tab_pco2.Ta_pco2_live.setText(str(self.air_temp))
-        self.tab_pco2.Pa_pco2_live.setText(str(self.air_pres))
-        self.tab_pco2.Leak_pco2_live.setText(str(self.leak_detect))
-        self.tab_pco2.CO2_pco2_live.setText(str(self.pco2_instrument.co2))
-        self.tab_pco2.TCO2_pco2_live.setText(str(self.pco2_instrument.co2_temp))
+        values = [self.wat_temp, self.wat_flow, self.wat_pres,
+                  self.air_temp, self.air_pres, self.leak_detect,
+                  self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+        await self.tab_pco2.update_tab_values(values)
 
         if len(self.pco2_times) > 25:
             self.pco2_times = self.pco2_times[1:]
@@ -996,10 +1120,10 @@ class Panel(QWidget):
 
 
         if not self.args.localdev:
-            self.save_pCO2_data()
+            await self.save_pCO2_data()
         return
 
-    def save_pCO2_data(self):
+    async def save_pCO2_data(self):
 
         labelSample = datetime.now().isoformat("_")[0:19]
 
@@ -1742,7 +1866,7 @@ class boxUI(QMainWindow):
         parser.add_argument("--debug", action="store_true")
         parser.add_argument("--localdev", action="store_true")
         parser.add_argument("--stability", action="store_true")
-
+        parser.add_argument("--onlypco2", action="store_true")
         self.args = parser.parse_args()
 
         # logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
@@ -1759,8 +1883,10 @@ class boxUI(QMainWindow):
             self.setWindowTitle(f"{box_id}, parameter CO3")
         else:
             self.setWindowTitle(f"{box_id}")
-
-        self.main_widget = Panel(self, self.args, config_name)
+        if self.args.onlypco2:
+            self.main_widget = panelPco2(self, self.args, config_name)
+        else:
+            self.main_widget = Panel(self, self.args, config_name)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
         self.main_widget.autorun()
@@ -1777,10 +1903,10 @@ class boxUI(QMainWindow):
         if result == QMessageBox.Yes:
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
-
-            self.main_widget.timer_contin_mode.stop()
-            self.main_widget.timerSpectra_plot.stop()
-            logging.info("timers are stopped")
+            if not self.args.onlypco2:
+                self.main_widget.timer_contin_mode.stop()
+                self.main_widget.timerSpectra_plot.stop()
+                logging.info("timers are stopped")
 
             udp.UDP_EXIT = True
             udp.server.join()
@@ -1789,7 +1915,7 @@ class boxUI(QMainWindow):
             try:
                 self.main_widget.instrument.spectrom.spec.close()
             except:
-                logging.info('Erroe while closing spectro')
+                logging.info('Error while closing spectro')
             self.main_widget.close()
             QApplication.quit()
             try:
