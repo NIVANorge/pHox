@@ -40,6 +40,7 @@ class QTextEditLogger(logging.Handler):
         msg = self.format(record)
         self.widget.appendPlainText(msg)
 
+
 class TimeAxisItem(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         return [datetime.fromtimestamp(value) for value in values]
@@ -71,6 +72,7 @@ class AsyncThreadWrapper:
             await asyncio.sleep(0.1)
         return self.result
 
+
 class panelPco2(QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QWidget, self).__init__(parent)
@@ -87,16 +89,15 @@ class panelPco2(QWidget):
         self.pco2_list = []
         self.pco2_times = []
         self.tab_pco2_calibration = QTabWidget()
-        self.tabs.addTab(self.tab_pco2_calibration , "Calibration")
-        #v = QtGui.QVBoxLayout()
+        self.tabs.addTab(self.tab_pco2_calibration, "Calibration")
+        # v = QtGui.QVBoxLayout()
         date_axis = TimeAxisItem(orientation='bottom')
         self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
-        #v.addWidget(self.plotwidget_pco2)
-        #self.tab_pco2_plot.setLayout(v)
-
+        # v.addWidget(self.plotwidget_pco2)
+        # self.tab_pco2_plot.setLayout(v)
 
         self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
-        #self.tab_pco2.layout2.addWidget(self.plotwidget_pco2, 0, 2)
+        # self.tab_pco2.layout2.addWidget(self.plotwidget_pco2, 0, 2)
         self.tab_pco2.setLayout(self.tab_pco2.layout2)
         self.plotwidget_pco2.setBackground("#19232D")
         self.plotwidget_pco2.showGrid(x=True, y=True)
@@ -112,17 +113,19 @@ class panelPco2(QWidget):
         self.timerSave_pco2.timeout.connect(self.update_pco2_data)
         self.timerSave_pco2.start(1000)
         self.make_tab_pco2_calibration()
+
     def make_tab_pco2_calibration(self):
         l = QGridLayout()
         self.btns = [QPushButton('Point 1'), QPushButton('Point 2'),
                      QPushButton('Point 3'), QPushButton('Point 4')]
 
-        [l.addWidget(v,k,0) for k,v in enumerate(self.btns)]
+        [l.addWidget(v, k, 0) for k, v in enumerate(self.btns)]
 
         self.tab_pco2_calibration.setLayout(l)
+
     def get_value_pco2(self, channel, coef):
         if self.args.localdev:
-            X = np.random.randint(0,100)
+            X = np.random.randint(0, 100)
         else:
             V = self.instrument.get_Vd(2, channel)
             X = 0
@@ -201,6 +204,7 @@ class panelPco2(QWidget):
     def autorun(self):
         pass
 
+
 class Panel(QWidget):
     def __init__(self, parent, panelargs, config_name):
         super(QWidget, self).__init__(parent)
@@ -213,17 +217,20 @@ class Panel(QWidget):
 
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
-            self.instrument = CO3_instrument(self.args, self.config_name)
-        elif self.args.localdev:
-            self.instrument = Test_instrument(self.args, self.config_name)
+            if self.args.localdev:
+                self.instrument = Test_CO3_instrument(self.args, self.config_name)
+            else:
+                self.instrument = CO3_instrument(self.args, self.config_name)
         else:
-            self.instrument = pH_instrument(self.args, self.config_name)
+            if self.args.localdev:
+                self.instrument = Test_instrument(self.args, self.config_name)
+            else:
+                self.instrument = pH_instrument(self.args, self.config_name)
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
         self.t_insitu_live = QLineEdit()
         self.s_insitu_live = QLineEdit()
-
         self.t_lab_live = QLineEdit()
         self.voltage_live = QLineEdit()
         if self.args.pco2:
@@ -241,14 +248,14 @@ class Panel(QWidget):
 
     def init_ui(self):
         self.tabs = QTabWidget()
-        self.tab1 = QWidget()
+        self.tab_home = QWidget()
         self.tab_manual = QWidget()
         self.tab_log = QWidget()
         self.tab_config = QWidget()
         self.plots = QWidget()
 
         # Add tabs
-        self.tabs.addTab(self.tab1, "Home")
+        self.tabs.addTab(self.tab_home, "Home")
         self.tabs.addTab(self.tab_log, "Log")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
@@ -272,10 +279,10 @@ class Panel(QWidget):
             self.plotwidget_pco2.showGrid(x=True, y=True)
             self.plotwidget_pco2.setTitle("pCO2 value time series")
 
-
         self.make_tab_log()
         self.make_tab1()
         self.make_tab_manual()
+
         self.make_tab_config()
         self.make_plotwidgets()
         # disable all manual control buttons
@@ -506,7 +513,7 @@ class Panel(QWidget):
         self.after_calc_pH = self.plotwidget2.plot()
         self.lin_fit_pH = self.plotwidget2.plot()
 
-        if self.args == "co3":
+        if self.args.co3:
             self.plotAbs = self.plotwidget2.plot()
             color = ["r", "g", "b", "m", "y"]
             self.abs_lines = []
@@ -535,7 +542,7 @@ class Panel(QWidget):
 
         self.make_steps_groupBox()
 
-        self.tab1.layout = QGridLayout()
+        self.tab_home.layout = QGridLayout()
 
         self.StatusBox = QtGui.QTextEdit()
         self.StatusBox.setReadOnly(True)
@@ -591,17 +598,16 @@ class Panel(QWidget):
         self.btn_calibr = self.create_button("Make calibration", True)
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
-        if not self.args.co3:
-            self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
+        self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
 
-        self.tab1.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
-        self.tab1.layout.addWidget(self.btn_single_meas, 0, 1)
+        self.tab_home.layout.addWidget(self.btn_cont_meas, 0, 0, 1, 1)
+        self.tab_home.layout.addWidget(self.btn_single_meas, 0, 1)
 
-        self.tab1.layout.addWidget(self.sample_steps_groupBox, 1, 0, 1, 1)
-        self.tab1.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
+        self.tab_home.layout.addWidget(self.sample_steps_groupBox, 1, 0, 1, 1)
+        self.tab_home.layout.addWidget(self.last_measurement_table_groupbox, 1, 1, 1, 1)
 
-        self.tab1.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
-        self.tab1.setLayout(self.tab1.layout)
+        self.tab_home.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
+        self.tab_home.setLayout(self.tab_home.layout)
 
     def append_logbox(self, message):
         t = datetime.now().strftime("%b-%d %H:%M:%S")
@@ -1070,7 +1076,7 @@ class Panel(QWidget):
 
     def get_value_pco2(self, channel, coef):
         if self.args.localdev:
-            X = np.random.randint(0,100)
+            X = np.random.randint(0, 100)
         else:
             V = self.instrument.get_Vd(2, channel)
             X = 0
@@ -1104,41 +1110,32 @@ class Panel(QWidget):
         self.pco2_list.append(self.pco2_instrument.co2)
         self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
 
-        if not self.args.localdev:
-            await self.save_pCO2_data()
+        # if not self.args.localdev:
+        await self.save_pCO2_data(values)
         return
 
-    async def save_pCO2_data(self):
+    async def save_pCO2_data(self, values):
 
         labelSample = datetime.now().isoformat("_")[0:19]
 
         path = "/home/pi/pHox/data/"
-        if not os.path.exists(path):
-            os.mkdir(path)
+        if not self.args.localdev:
+            if not os.path.exists(path):
+                os.mkdir(path)
         logfile = os.path.join(path, "pCO2.log")
+        pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
+                    fbox["temperature"], fbox["salinity"]] + values
+        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
+                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
 
-        self.pco2_df = pd.DataFrame(
-            {
-                "Time": [labelSample],
-                "Lon": [fbox["longitude"]],
-                "Lat": [fbox["latitude"]],
-                "fb_temp": [fbox["temperature"]],
-                "fb_sal": [fbox["salinity"]],
-
-                "Tw": [self.wat_temp],
-                "Flow": [self.wat_flow],
-                "Pw": [self.wat_pres],
-                "Ta": [self.air_temp],
-                "Pa": [self.air_pres],
-                "Leak": [self.leak_detect],
-                "CO2": [self.pco2_instrument.co2],
-                "TCO2": [self.pco2_instrument.co2_temp]
-            })
-
-        if not os.path.exists(logfile):
-            self.pco2_df.to_csv(logfile, index=False, header=True)
-        else:
-            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
+        self.pco2_df.loc[0] = pco2_row
+        print('pco2 row')
+        print(self.pco2_df)
+        if not self.args.localdev:
+            if not os.path.exists(logfile):
+                self.pco2_df.to_csv(logfile, index=False, header=True)
+            else:
+                self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
 
         if not self.args.localdev:
             row_to_string = self.pco2_df.to_csv(index=False, header=True).rstrip()
@@ -1540,7 +1537,7 @@ class Panel(QWidget):
 
             self.create_new_df()
 
-            if self.args == "co3":
+            if self.args.co3:
                 self.reset_absorp_plot()
 
             await self.pump_if_needed()
@@ -1558,7 +1555,6 @@ class Panel(QWidget):
                 res = True
                 logging.info("Make sample without autoadjust")
             if res:
-
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
                 await asyncio.sleep(0.05)
@@ -1591,7 +1587,7 @@ class Panel(QWidget):
     def get_folderpath(self):
         if self.args.localdev:
             return "IN_LOCALDEV_MODE__NOT_A_FILE"
-        if self.args == "co3":
+        if self.args.co3:
             if "Calibration" in self.major_modes:
                 folderpath = "/home/pi/pHox/data_co3_calibr/"
             else:
@@ -1610,7 +1606,7 @@ class Panel(QWidget):
 
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
-        if self.args == "co3":
+        if self.args.co3:
             self.CO3_eval = pd.DataFrame(
                 columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", " S_corr", ]
             )
@@ -1618,9 +1614,9 @@ class Panel(QWidget):
             self.evalPar_df = pd.DataFrame(
                 columns=[
                     "pH", "pK", "e1", "e2", "e3",
-                    "vNTC","salinity", "A1", "A2", "Tdeg", "S_corr", "Anir",
+                    "vNTC", "salinity", "A1", "A2", "Tdeg", "S_corr", "Anir",
                     "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
-                    "TempCalCoef2", "DYE" ]
+                    "TempCalCoef2", "DYE"]
             )
 
     async def pump_if_needed(self):
@@ -1687,7 +1683,7 @@ class Panel(QWidget):
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
             logging.info("Calculate init pH")
 
-            if self.args == "co3":
+            if self.args.co3:
                 self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC, dilution, vol_injected)
                 await self.update_absorbance_plot(n_inj, spAbs_min_blank)
             else:

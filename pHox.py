@@ -697,15 +697,53 @@ class pH_instrument(Common_instrument):
         )
 
 
-class Test_instrument(pH_instrument):
+class Test_CO3_instrument(CO3_instrument):
     def __init__(self, panelargs, config_name):
         super().__init__(panelargs, config_name)
         pass
 
-    def get_wvlPixels(self, wvls):
-        self.wvlPixels = []
-        for wl in (self.HI, self.I2, self.NIR):
-            self.wvlPixels.append(self.find_nearest(wvls, wl))
+    async def auto_adjust(self, *args):
+        adjusted = True
+        pixelLevel = 500
+        return adjusted, pixelLevel
+
+    def calc_CO3(self, absSp, vNTC, dilution, vol_injected):
+        return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    def reset_lines(self):
+        pass
+
+    async def set_Valve(self, status):
+        pass
+        if status:
+            logging.info("Closing the valve ...")
+        await asyncio.sleep(0.3)
+
+    def turn_on_relay(self, line):
+        pass
+
+    def turn_off_relay(self, line):
+        pass
+
+    async def pumping(self, pumpTime):
+        self.turn_on_relay(self.wpump_slot)  # start the instrument pump
+        self.turn_on_relay(self.stirrer_slot)  # start the stirrer
+        await asyncio.sleep(pumpTime)
+        self.turn_off_relay(self.stirrer_slot)  # turn off the pump
+        self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
+        return
+
+    def get_Vd(self, nAver, channel):
+        v = 0
+        for i in range(nAver):
+            v += 0.6
+        return v / nAver
+
+
+class Test_instrument(pH_instrument):
+    def __init__(self, panelargs, config_name):
+        super().__init__(panelargs, config_name)
+        pass
 
     def adjust_LED(self, led, LED):
         pass
