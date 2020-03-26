@@ -254,7 +254,7 @@ class Panel(QWidget):
         self.tabs.addTab(self.tab_config, "Config")
 
         if self.args.pco2:
-            self.tab_pco2 = tab_pco2_class() #
+            self.tab_pco2 = tab_pco2_class()
             self.tabs.addTab(self.tab_pco2, "pCO2")
             self.tab_pco2.setLayout(self.tab_pco2.layout2)
             self.tab_pco2_plot = QTabWidget()
@@ -271,8 +271,7 @@ class Panel(QWidget):
             self.plotwidget_pco2.setBackground("#19232D")
             self.plotwidget_pco2.showGrid(x=True, y=True)
             self.plotwidget_pco2.setTitle("pCO2 value time series")
-            #[datetime.now().timestamp(),
-            #                    (datetime.now()+timedelta(seconds=10)).timestamp()], [0, 0])
+
 
         self.make_tab_log()
         self.make_tab1()
@@ -522,18 +521,10 @@ class Panel(QWidget):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
-        '''self.sample_steps = [
-            QCheckBox("1. Adjusting LEDS"),
-            QCheckBox("2  Measuring dark,blank"),
-            QCheckBox("3. Measurement 1"),
-            QCheckBox("4. Measurement 2"),
-            QCheckBox("5. Measurement 3"),
-            QCheckBox("6. Measurement 4"),
-        ]'''
         self.sample_steps = [QCheckBox(f) for f in [
             "1. Adjusting LEDS", "2  Measuring dark,blank",
             "3. Measurement 1", "4. Measurement 2",
-             "5. Measurement 3", "6. Measurement 4"]]
+            "5. Measurement 3", "6. Measurement 4"]]
         layout = QGridLayout()
 
         [step.setEnabled(False) for step in self.sample_steps]
@@ -667,7 +658,7 @@ class Panel(QWidget):
         self.fill_table_config(5, 0, "Spectroph intergration time")
         self.specIntTime_combo = QComboBox()
         [self.specIntTime_combo.addItem(str(n)) for n in range(100, 5000, 100)]
-        self.update_spec_int_time_table()
+        self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
         self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
         self.tableConfigWidget.setCellWidget(5, 1, self.specIntTime_combo)
 
@@ -733,11 +724,6 @@ class Panel(QWidget):
             combo.setCurrentIndex(index)
         else:
             logging.debug('was not able to set the sampling interval from the config file')
-    def update_spec_int_time_table(self):
-        index = self.specIntTime_combo.findText(str(self.instrument.specIntTime), QtCore.Qt.MatchFixedString)
-
-        if index >= 0:
-            self.specIntTime_combo.setCurrentIndex(index)
 
     def sampling_int_chngd(self, ind):
         minutes = int(self.samplingInt_combo.currentText())
@@ -1118,7 +1104,6 @@ class Panel(QWidget):
         self.pco2_list.append(self.pco2_instrument.co2)
         self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
 
-
         if not self.args.localdev:
             await self.save_pCO2_data()
         return
@@ -1164,7 +1149,7 @@ class Panel(QWidget):
         adj, pixelLevel = await self.instrument.auto_adjust()
         if adj:
             self.append_logbox("Finished Autoadjust LEDS")
-            self.update_spec_int_time_table()
+            self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         else:
             self.StatusBox.setText('Was not able do auto adjust')
@@ -1192,7 +1177,7 @@ class Panel(QWidget):
             ) = await self.instrument.auto_adjust()
 
             logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-            self.update_spec_int_time_table()
+            self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
 
             if result:
                 self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
@@ -1327,6 +1312,8 @@ class Panel(QWidget):
     @asyncSlot()
     async def btn_single_meas_clicked(self):
         async with self.updater.disable_live_plotting():
+            if self.args.pco2:
+                self.timerSave_pco2.stop()
             # Start single sampling process
             logging.info("clicked single meas ")
             message = QMessageBox.question(
@@ -1342,6 +1329,8 @@ class Panel(QWidget):
             flnmStr, timeStamp = self.get_filename()
 
             text, ok = QInputDialog.getText(None, "Enter Sample name", flnmStr)
+            if self.args.pco2:
+                self.timerSave_pco2.start()
             if ok:
                 if text != "":
                     flnmStr = text
