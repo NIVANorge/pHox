@@ -316,8 +316,8 @@ class Panel(QWidget):
         logging.getLogger().addHandler(self.logTextBox)
         logging.getLogger().setLevel(logging.DEBUG)
 
-        if self.args.debug:
-            logging.info("Starting in debug mode")
+        if self.args.localdev:
+            logging.info("Starting in local debug mode")
         self.tab_log.layout.addWidget(self.logTextBox.widget)
         self.tab_log.setLayout(self.tab_log.layout)
 
@@ -1131,7 +1131,7 @@ class Panel(QWidget):
 
         self.pco2_df.loc[0] = pco2_row
         print('pco2 row')
-        print(self.pco2_df)
+
         if not self.args.localdev:
             if not os.path.exists(logfile):
                 self.pco2_df.to_csv(logfile, index=False, header=True)
@@ -1463,7 +1463,8 @@ class Panel(QWidget):
         return
 
     def autostart_pump(self):
-        self.append_logbox("Initial automatic start at pump enabled")
+        logging.info("Initial automatic start at pump enabled")
+        #self.append_logbox("Initial automatic start at pump enabled")
         self.timerAuto.stop()
         self.timerAuto.timeout.disconnect(self.autostart_pump)
         self._autostart()
@@ -1858,10 +1859,10 @@ class boxUI(QMainWindow):
         # logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
         #                     format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
-        if self.args.debug:
-            for name, logger in logging.root.manager.loggerDict.items():
-                if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
-                    logger.level = logging.INFO
+
+        for name, logger in logging.root.manager.loggerDict.items():
+            if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
+                logger.level = logging.INFO
 
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
