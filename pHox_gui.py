@@ -1058,8 +1058,8 @@ class Panel(QWidget):
 
     def update_sensors_info(self):
         t = datetime.now().strftime('%Y%M')
-        self.t_insitu_live.setText(str(fbox['temperature']))
-        self.s_insitu_live.setText(str(fbox['salinity']))
+        self.t_insitu_live.setText(str(round(fbox['temperature'], prec["Tdeg"])))
+        self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
         voltage = round(self.instrument.get_Vd(3,
                                                self.instrument.vNTCch), prec["vNTC"])
@@ -1387,10 +1387,10 @@ class Panel(QWidget):
         self.pH_log_row = pd.DataFrame(
             {
                 "Time": [timeStamp[0:16]],
-                "Lon": [fbox["longitude"]],
-                "Lat": [fbox["latitude"]],
-                "fb_temp": [fbox["temperature"]],
-                "fb_sal": [fbox["salinity"]],
+                "Lon": [round(fbox["longitude"], prec["longitude"])],
+                "Lat": [round(fbox["latitude"], prec["latitude"])],
+                "fb_temp": [round(fbox["temperature"], prec["Tdeg"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
                 "pH_lab": [pH_lab],
                 "T_lab": [T_lab],

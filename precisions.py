@@ -18,4 +18,5 @@ precision = {
     "T_lab": 3,
     "perturbation": 3,
     "evalAnir": 3,
+    "pCO2": 4
 }

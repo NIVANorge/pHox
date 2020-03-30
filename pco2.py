@@ -4,7 +4,7 @@ import json
 import numpy as np
 from PyQt5.QtWidgets import QLineEdit, QWidget
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
-
+import precisions as prec
 try:
     import pigpio
     import RPi.GPIO as GPIO
@@ -112,13 +112,13 @@ class pco2_instrument(object):
                 value = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * value
             except ValueError:
                 value = 0
-            self.co2 = value
+            self.co2 = round(value, prec['pCO2'])
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
             print('response_t', response_t)
             try:
-                self.co2_temp = float(response_t[3:])
+                self.co2_temp = round(float(response_t[3:]), prec['Tdeg'])
             except ValueError:
                 self.co2_temp = 0
 
@@ -145,7 +145,7 @@ class test_pco2_instrument(pco2_instrument):
         self.config_name = config_name
 
     async def get_pco2_values(self):
-        self.co2 = np.random.randint(1, 10)
+        self.co2 = np.random.randint(400, 600)
         self.co2_temp = np.random.randint(1, 10)
 
     def get_Vd(self, nAver, channel):
