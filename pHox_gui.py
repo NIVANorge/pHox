@@ -1003,6 +1003,7 @@ class Panel(QWidget):
         elif self.args.co3:
             stabfile_df = pd.DataFrame(
                 {
+                    "datetime": [datetime.now().strftime(self.fformat)],
                     "wvl1": [datay[self.instrument.wvlPixels[0]]],
                     "wvl2": [datay[self.instrument.wvlPixels[1]]],
                     "specint": [self.instrument.specIntTime],
