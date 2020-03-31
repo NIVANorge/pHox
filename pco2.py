@@ -2,6 +2,47 @@ import serial
 import serial.tools.list_ports
 import json
 import numpy as np
+from PyQt5.QtWidgets import QLineEdit, QWidget
+from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
+import precisions as prec
+try:
+    import pigpio
+    import RPi.GPIO as GPIO
+    from ADCDACPi import ADCDACPi
+    from ADCDifferentialPi import ADCDifferentialPi
+except:
+    pass
+
+class tab_pco2_class(QWidget):
+    def __init__(self):
+        super(QWidget, self).__init__()
+        self.layout2 = QGridLayout()
+        groupbox = QGroupBox('Updates from pCO2')
+        layout = QGridLayout()
+
+        self.Tw_pco2_live = QLineEdit()
+        self.flow_pco2_live = QLineEdit()
+        self.Pw_pco2_live = QLineEdit()
+        self.Ta_pco2_live = QLineEdit()
+        self.Pa_pco2_live = QLineEdit()
+        self.Leak_pco2_live = QLineEdit()
+        self.CO2_pco2_live = QLineEdit()
+        self.TCO2_pco2_live = QLineEdit()
+
+        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
+                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+                            self.CO2_pco2_live, self.TCO2_pco2_live]
+        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
+                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
+                            'C02 ppm', 'T CO2 sensor']
+        [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+
+        groupbox.setLayout(layout)
+        self.layout2.addWidget(groupbox)
+
+    async def update_tab_values(self, values):
+        [self.pco2_params[n].setText(str(values[n])) for n in range(len(values))]
 
 
 class pco2_instrument(object):
@@ -32,7 +73,7 @@ class pco2_instrument(object):
         with open(self.config_name) as json_file:
             j = json.load(json_file)
         f = j["pCO2"]
-
+        self.shipcode = j['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
@@ -71,16 +112,31 @@ class pco2_instrument(object):
                 value = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * value
             except ValueError:
                 value = 0
-            self.co2 = value
+            self.co2 = round(value, prec['pCO2'])
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
             print('response_t', response_t)
             try:
-                self.co2_temp = float(response_t[3:])
+                self.co2_temp = round(float(response_t[3:]), prec['Tdeg'])
             except ValueError:
                 self.co2_temp = 0
 
+
+class onlyPco2instrument(pco2_instrument):
+    def __init__(self, config_name):
+        super().__init__(config_name)
+
+        if not self.args.localdev:
+            self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+            self.adc.set_pga(1)
+            self.adcdac = ADCDACPi()
+
+    def get_Vd(self, nAver, channel):
+        V = 0.0000
+        for i in range(nAver):
+            V += self.adc.read_voltage(channel)
+        return V / nAver
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self, config_name):
@@ -89,7 +145,7 @@ class test_pco2_instrument(pco2_instrument):
         self.config_name = config_name
 
     async def get_pco2_values(self):
-        self.co2 = np.random.randint(1, 10)
+        self.co2 = np.random.randint(400, 600)
         self.co2_temp = np.random.randint(1, 10)
 
     def get_Vd(self, nAver, channel):
