@@ -1860,6 +1860,13 @@ class boxUI(QMainWindow):
         #                     format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
 
+        logger = logging.getLogger()
+        fh = logging.FileHandler('errors.log')
+        fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
+        logging.info('/n Run the Gui')
+
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
