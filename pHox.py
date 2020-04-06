@@ -532,6 +532,10 @@ class pH_instrument(Common_instrument):
                 if adj2:
                     logging.info("*** adj2 = True")
                     LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LED3)
+                else:
+                    LED3 = 50
+            else:
+                LED2 = 50
 
             if any(t == "decrease int time" for t in [res1, res2, res3]):
                 if self.adj_action == "increase":
