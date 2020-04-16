@@ -49,10 +49,12 @@ class TimeAxisItem(pg.AxisItem):
 class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
 
+
     def __init__(self, slow_function, callback):
         super(SimpleThread, self).__init__()
         self.caller = slow_function
         self.finished.connect(callback)
+        logging.debug('Simple thread')
 
     def run(self):
         self.finished.emit(self.caller())
@@ -63,6 +65,7 @@ class AsyncThreadWrapper:
         self.callback_returned, self.result = False, None
         self.thread = SimpleThread(slow_function, self.result_setter)
         self.thread.start()
+
 
     def result_setter(self, res):
         self.result, self.callback_returned = res, True
@@ -445,7 +448,7 @@ class Panel(QWidget):
                 self.btn_cont_meas.setEnabled(True)
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
-            print('unset adjusting')
+            logging.debug('unset mode adjusting')
             if 'Manual' in self.major_modes:
                 self.btn_manual_mode.setEnabled(True)
                 self.manual_widgets_set_enabled(True)
@@ -508,7 +511,6 @@ class Panel(QWidget):
                 self.plotwidget1.addLine(x=x, y=y, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
 
         self.plotSpc = self.plotwidget1.plot()
-
         self.plot_calc_pH = self.plotwidget2.plot()
         self.after_calc_pH = self.plotwidget2.plot()
         self.lin_fit_pH = self.plotwidget2.plot()
@@ -729,7 +731,7 @@ class Panel(QWidget):
         if index >= 0:
             combo.setCurrentIndex(index)
         else:
-            logging.debug('was not able to set the sampling interval from the config file')
+            logging.error('was not able to set the sampling interval from the config file')
 
     def sampling_int_chngd(self, ind):
         minutes = int(self.samplingInt_combo.currentText())
@@ -896,6 +898,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def btn_valve_clicked(self):
+        logging.debug('Valve button clicked')
         await self.instrument.set_Valve(self.btn_valve.isChecked())
 
     def btn_save_config_clicked(self):
@@ -1130,8 +1133,7 @@ class Panel(QWidget):
                                              "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
 
         self.pco2_df.loc[0] = pco2_row
-        print('pco2 row')
-
+        logging.debug('Saving pco2 data')
         if not self.args.localdev:
             if not os.path.exists(logfile):
                 self.pco2_df.to_csv(logfile, index=False, header=True)
@@ -1158,6 +1160,7 @@ class Panel(QWidget):
         try:
             await self.update_spectra_plot_manual(self.instrument.spectrum)
         except:
+            logging.error('Could not plot data in update_plot_no_request')
             pass
 
     async def autoAdjust_LED(self):
@@ -1436,7 +1439,9 @@ class Panel(QWidget):
         self.sliders[2].setValue(self.instrument.LED3)
 
     def _autostart(self, restart=False):
-        self.append_logbox("Inside _autostart...")
+        logging.info("Inside _autostart...")
+        self.instrument.set_Valve_sync(False)
+        self.btn_valve.setChecked(False)
         if not restart:
             if self.args.co3:
                 logging.info("turn on light source")
@@ -1447,6 +1452,7 @@ class Panel(QWidget):
                 self.update_LEDs()
                 self.btn_leds.setChecked(True)
                 self.btn_leds_checked()
+
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
 
@@ -1840,13 +1846,6 @@ class boxUI(QMainWindow):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
 
-        try:
-            box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
-        except:
-            box_id = "template"
-
-        config_name = "configs/config_" + box_id + ".json"
-
         parser.add_argument("--nodye", action="store_true")
         parser.add_argument("--pco2", action="store_true")
         parser.add_argument("--co3", action="store_true")
@@ -1870,6 +1869,11 @@ class boxUI(QMainWindow):
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
+        try:
+            box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
+        except:
+            logging.error('No box id found')
+            box_id = "template"
 
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
@@ -1895,6 +1899,7 @@ class boxUI(QMainWindow):
         event.ignore()
 
         if result == QMessageBox.Yes:
+
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
             if not self.args.onlypco2:
@@ -1912,11 +1917,16 @@ class boxUI(QMainWindow):
                 logging.info('Error while closing spectro')
             self.main_widget.close()
             QApplication.quit()
+
             try:
                 sys.exit()
             except:
-                print("Exiting")
+                logging.error("Error when running sys.exit()")
 
+            handlers = self.logger.handlers[:]
+            for handler in handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
             event.accept()
 
 

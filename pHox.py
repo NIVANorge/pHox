@@ -134,6 +134,8 @@ class Common_instrument(object):
         will be separate since there are too many differences
     """
     def __init__(self, panelargs, config_name):
+        logging.getLogger()
+
         self.args = panelargs
         self.config_name = config_name
         self.spectrom = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
@@ -165,12 +167,30 @@ class Common_instrument(object):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
-            logging.info("Closing the valve ...")
+            logging.info("Closing the valve")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
+        else:
+            logging.info("Opening the valve")
         self.rpi.write(ch1, True)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, True)
         await asyncio.sleep(0.3)
+        self.rpi.write(ch1, False)
+        self.rpi.write(ch2, False)
+        self.rpi.write(chEn, False)
+
+    def set_Valve_sync(self, status):
+        chEn = self.valve_slots[0]
+        ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
+        if status:
+            logging.info("Closing the valve")
+            ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
+        else:
+            logging.info("Opening the valve")
+        self.rpi.write(ch1, True)
+        self.rpi.write(ch2, False)
+        self.rpi.write(chEn, True)
+        time.sleep(0.3)
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, False)
@@ -536,6 +556,7 @@ class pH_instrument(Common_instrument):
                     LED3 = 50
             else:
                 LED2 = 50
+                LED3 = 50
 
             if any(t == "decrease int time" for t in [res1, res2, res3]):
                 if self.adj_action == "increase":
@@ -723,6 +744,13 @@ class Test_CO3_instrument(CO3_instrument):
             logging.info("Closing the valve ...")
         await asyncio.sleep(0.3)
 
+    def set_Valve_sync(self, status):
+        if status:
+            logging.info("Closing the valve")
+        else:
+            logging.info("Opening the valve")
+        time.sleep(0.3)
+
     def turn_on_relay(self, line):
         pass
 
@@ -772,6 +800,13 @@ class Test_instrument(pH_instrument):
         if status:
             logging.info("Closing the valve ...")
         await asyncio.sleep(0.3)
+
+    def set_Valve_sync(self, status):
+        if status:
+            logging.info("Closing the valve")
+        else:
+            logging.info("Opening the valve")
+        time.sleep(0.3)
 
     def turn_on_relay(self, line):
         pass
