@@ -217,7 +217,7 @@ class Panel(QWidget):
 
         self.args = panelargs
         self.config_name = config_name
-
+        self.starttime = datetime.now()
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             if self.args.localdev:
@@ -1033,6 +1033,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
+        logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
         self.updater.update_spectra_in_progress = True
         try:
             # I don't think this if statement is required
@@ -1855,16 +1856,14 @@ class boxUI(QMainWindow):
         parser.add_argument("--onlypco2", action="store_true")
         self.args = parser.parse_args()
 
-        # logging.basicConfig(level=logging.DEBUG if self.args.debug else logging.INFO,
-        #                     format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s")
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
+        self.logger = logging.getLogger('general_logger')
 
-        logger = logging.getLogger()
         fh = logging.FileHandler('errors.log')
         fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-        logging.info('/n Run the Gui')
+        self.logger.addHandler(fh)
+
 
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
@@ -1875,6 +1874,7 @@ class boxUI(QMainWindow):
             logging.error('No box id found')
             box_id = "template"
 
+        config_name = "configs/config_" + box_id + ".json"
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
