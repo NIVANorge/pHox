@@ -659,7 +659,7 @@ class Panel(QWidget):
         self.fill_table_config(4, 0, "pH sampling interval (min)")
         self.samplingInt_combo = QComboBox()
         [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '15', '20', '30', '60']]
-        self.set_combo_index(self.samplingInt_combo, self.instrument.samplingInterval / 60)
+        self.set_combo_index(self.samplingInt_combo, int(self.instrument.samplingInterval / 60))
         self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
         self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
 
@@ -731,7 +731,7 @@ class Panel(QWidget):
         if index >= 0:
             combo.setCurrentIndex(index)
         else:
-            logging.error('was not able to set value from the config file, value is {}'.format(str(text)))
+            logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(combo,str(text)))
 
     def sampling_int_chngd(self, ind):
         minutes = int(self.samplingInt_combo.currentText())
@@ -1908,7 +1908,6 @@ class boxUI(QMainWindow):
                 logging.info("timers are stopped")
 
             udp.UDP_EXIT = True
-            udp.sock.close()
             while udp.socket_is_opened:
                 time.sleep(1)
             udp.server.join()
