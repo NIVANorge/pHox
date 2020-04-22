@@ -8,7 +8,7 @@ import shutil
 
 path_archive = '/home/pi/pHox/data/archive/'
 if not os.path.exists(path_archive):
-	os.mkdir(files_archive)
+	os.mkdir(path_archive)
 if not os.path.exists(path_archive+'/evl/'):
 	os.mkdir(path_archive+'/evl/')
 if not os.path.exists(path_archive+'/spt/'):
