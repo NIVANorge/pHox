@@ -12,6 +12,8 @@ try:
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
+from util import config_file
+
 
 class tab_pco2_class(QWidget):
     def __init__(self):
@@ -46,9 +48,8 @@ class tab_pco2_class(QWidget):
 
 
 class pco2_instrument(object):
-    def __init__(self, config_name):
+    def __init__(self):
 
-        self.config_name = config_name
         ports = list(serial.tools.list_ports.comports())
         connection_types = [port[1] for port in ports]
         try:
@@ -68,12 +69,11 @@ class pco2_instrument(object):
             print (self.portSens)
         except:
             self.portSens = None
-            print (self.portSens)
+            print(self.portSens)
 
-        with open(self.config_name) as json_file:
-            j = json.load(json_file)
-        f = j["pCO2"]
-        self.shipcode = j['Operational']["Ship_Code"]
+        f = config_file["pCO2"]
+
+        self.shipcode = config_file['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
@@ -124,8 +124,8 @@ class pco2_instrument(object):
 
 
 class onlyPco2instrument(pco2_instrument):
-    def __init__(self, config_name):
-        super().__init__(config_name)
+    def __init__(self):
+        super().__init__()
 
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
@@ -139,10 +139,9 @@ class onlyPco2instrument(pco2_instrument):
         return V / nAver
 
 class test_pco2_instrument(pco2_instrument):
-    def __init__(self, config_name):
-        super().__init__(config_name)
+    def __init__(self):
+        super().__init__()
         self.save_pco2_interv = 2
-        self.config_name = config_name
 
     async def get_pco2_values(self):
         self.co2 = np.random.randint(400, 600)

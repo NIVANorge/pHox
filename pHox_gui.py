@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from pHox import *
 from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, onlyPco2instrument
 import os, sys
+from util import box_id, config_name
 
 try:
     import warnings, time, RPi.GPIO
@@ -78,14 +79,14 @@ class AsyncThreadWrapper:
 
 
 class panelPco2(QWidget):
-    def __init__(self, parent, panelargs, config_name):
+    def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
-        self.config_name = config_name
+
         if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument(self.config_name)
+            self.pco2_instrument = test_pco2_instrument()
         else:
-            self.pco2_instrument = onlyPco2instrument(self.config_name)
+            self.pco2_instrument = onlyPco2instrument()
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()  #
@@ -210,26 +211,26 @@ class panelPco2(QWidget):
 
 
 class Panel(QWidget):
-    def __init__(self, parent, panelargs, config_name):
+    def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
                             "Paused"]
 
         self.args = panelargs
-        self.config_name = config_name
+
         self.starttime = datetime.now()
         self.fformat = "%Y%m%d_%H%M%S"
         if self.args.co3:
             if self.args.localdev:
-                self.instrument = Test_CO3_instrument(self.args, self.config_name)
+                self.instrument = Test_CO3_instrument(self.args)
             else:
-                self.instrument = CO3_instrument(self.args, self.config_name)
+                self.instrument = CO3_instrument(self.args)
         else:
             if self.args.localdev:
-                self.instrument = Test_instrument(self.args, self.config_name)
+                self.instrument = Test_instrument(self.args)
             else:
-                self.instrument = pH_instrument(self.args, self.config_name)
+                self.instrument = pH_instrument(self.args)
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
@@ -239,9 +240,9 @@ class Panel(QWidget):
         self.voltage_live = QLineEdit()
         if self.args.pco2:
             if self.args.localdev:
-                self.pco2_instrument = test_pco2_instrument(self.config_name)
+                self.pco2_instrument = test_pco2_instrument()
             else:
-                self.pco2_instrument = pco2_instrument(self.config_name)
+                self.pco2_instrument = pco2_instrument()
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -732,7 +733,8 @@ class Panel(QWidget):
         if index >= 0:
             combo.setCurrentIndex(index)
         else:
-            logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(combo,str(text)))
+            logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(
+                combo, str(text)))
 
     def sampling_int_chngd(self, ind):
         minutes = int(self.samplingInt_combo.currentText())
@@ -904,7 +906,7 @@ class Panel(QWidget):
 
     def btn_save_config_clicked(self):
 
-        with open(self.config_name, "r+") as json_file:
+        with open(config_name, "r+") as json_file:
             j = json.load(json_file)
 
             j["pH"]["Default_DYE"] = self.dye_combo.currentText()
@@ -925,7 +927,7 @@ class Panel(QWidget):
             json_file.truncate()
 
     def load_config_file(self):
-        with open(self.config_name) as json_file:
+        with open(config_name) as json_file:
             j = json.load(json_file)
             default = j["pH"]
             return default
@@ -1039,7 +1041,7 @@ class Panel(QWidget):
         try:
             # I don't think this if statement is required
             if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
-                datay = await self.instrument.spectrom.get_intensities()
+                datay = await self.instrument.spectrometer_cls.get_intensities()
                 if self.args.stability:
                     self.save_stability_test(datay)
                 self.plotSpc.setData(self.wvls, datay)
@@ -1189,7 +1191,7 @@ class Panel(QWidget):
                 self.sliders[2].setValue(self.instrument.LED3)
                 # self.plot_sp_levels()
                 self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
-                datay = await self.instrument.spectrom.get_intensities()
+                datay = await self.instrument.spectrometer_cls.get_intensities()
                 await self.update_spectra_plot_manual(datay)
             else:
                 self.StatusBox.setText('Not able to adjust LEDs automatically')
@@ -1231,12 +1233,12 @@ class Panel(QWidget):
                 # Closing the valve
                 await self.instrument.set_Valve(True)
                 # Getting a baseline spectrum
-                baseline_spectrum = await self.instrument.spectrom.get_intensities()
+                baseline_spectrum = await self.instrument.spectrometer_cls.get_intensities()
                 # inject die twice (with n shots determined by config), this includes stirring
                 await self.inject_dye(3)
                 await self.inject_dye(3)
 
-                dyed_spectrum = await self.instrument.spectrom.get_intensities()
+                dyed_spectrum = await self.instrument.spectrometer_cls.get_intensities()
                 rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - dyed_spectrum)))
                 logging.debug(f'Initial diff: {rms_spectrum_difference}')
                 # Re-open the valve
@@ -1246,7 +1248,7 @@ class Panel(QWidget):
                 start = datetime.utcnow()
                 check_succeeded = False
                 while datetime.utcnow() - start < timedelta(seconds=20):
-                    diluted_spectrum = await self.instrument.spectrom.get_intensities()
+                    diluted_spectrum = await self.instrument.spectrometer_cls.get_intensities()
                     new_rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - diluted_spectrum)))
                     logging.debug(f'got another spectrum, new diff: {new_rms_spectrum_difference}')
                     if rms_spectrum_difference * .2 > new_rms_spectrum_difference:
@@ -1648,7 +1650,7 @@ class Panel(QWidget):
             self.set_LEDs(False)
 
         # grab spectrum
-        dark = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
+        dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
         if self.args.co3:
             # Turn on the light source
@@ -1671,7 +1673,7 @@ class Panel(QWidget):
         logging.info("Measuring blank...")
         self.append_logbox("Measuring blank...")
 
-        blank = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
+        blank = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
         blank_min_dark = blank - dark
 
         self.instrument.spectrum = blank
@@ -1736,12 +1738,12 @@ class Panel(QWidget):
         # Write spectrum to the file
         if self.args.localdev:
             logging.info("in debug")
-            postinj_spec = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
+            postinj_spec = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
             postinj_spec_min_dark = postinj_spec  # - dark
             spAbs_min_blank = postinj_spec_min_dark
             await self.update_spectra_plot_manual(postinj_spec)
         else:
-            postinj_spec = await self.instrument.spectrom.get_intensities(self.instrument.specAvScans, correct=True)
+            postinj_spec = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
             self.instrument.spectrum = postinj_spec
             await self.update_spectra_plot_manual(postinj_spec)
 
@@ -1838,7 +1840,7 @@ class SensorStateUpdateManager:
             await asyncio.sleep(0.05)
 
     async def set_specIntTime(self, new_int_time):
-        await self.main_qt_panel.instrument.spectrom.set_integration_time(new_int_time)
+        await self.main_qt_panel.instrument.spectrometer_cls.set_integration_time(new_int_time)
         self.main_qt_panel.instrument.specIntTime = new_int_time
         self.main_qt_panel.timerSpectra_plot.setInterval(self.get_interval_time())
 
@@ -1869,13 +1871,9 @@ class boxUI(QMainWindow):
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
-        try:
-            box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
-        except:
-            logging.error('No box id found')
-            box_id = "template"
 
-        config_name = "configs/config_" + box_id + ".json"
+
+
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
@@ -1883,9 +1881,9 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
-            self.main_widget = panelPco2(self, self.args, config_name)
+            self.main_widget = panelPco2(self, self.args)
         else:
-            self.main_widget = Panel(self, self.args, config_name)
+            self.main_widget = Panel(self, self.args)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
         self.main_widget.autorun()
@@ -1915,16 +1913,12 @@ class boxUI(QMainWindow):
             if not udp.server.is_alive():
                 logging.info("UDP server closed")
             try:
-                self.main_widget.instrument.spectrom.spec.close()
+                self.main_widget.instrument.spectrometer_cls.spec.close()
             except:
                 logging.info('Error while closing spectro')
             self.main_widget.close()
             QApplication.quit()
-
-            try:
-                sys.exit()
-            except:
-                logging.error("Error when running sys.exit()")
+            sys.exit()
 
             handlers = self.logger.handlers[:]
             for handler in handlers:

@@ -1,4 +1,4 @@
-import logging
+
 from datetime import datetime
 import socket
 import threading
@@ -22,9 +22,8 @@ Ferrybox = {
     "longitude": 0.0,
     "latitude": 0.0,
     "pumping": None,
-    'udp_ok' : False
+    'udp_ok': False
 }
-
 
 def udp_server():
     logging.debug('in udp server')
@@ -34,7 +33,7 @@ def udp_server():
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
     logging.info("UDP server started")
-    socket_is_opened = True
+
     while not UDP_EXIT:
         try:
             Ferrybox['udp_ok'] = False
@@ -69,7 +68,7 @@ def udp_server():
                 v = float(w[2])
                 Ferrybox["longitude"] = v
     sock.close()
-    socket_is_opened = False
+
 
 def send_data(s, ship_code=None):
     logging.debug('send udp data')
