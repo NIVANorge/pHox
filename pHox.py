@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import udp
 from precisions import precision as prec
-
+from util import config_file
 try:
     import pigpio
     import RPi.GPIO as GPIO
@@ -33,10 +33,13 @@ def get_linregress(x, y):
     r_value = np.corrcoef(x, y)[0][1]
     return slope, intercept, r_value
 
+class Spectrometer_localtest(object):
+    def close(self):
+        pass
 
 class Spectro_localtest(object):
     def __init__(self):
-        self.spec = "Test"
+        self.spec = Spectrometer_localtest()
         self.spectro_type = "STS"
 
         test_spt = pd.read_csv("data_localtests/20200213_105508.spt")  # .T
@@ -133,10 +136,11 @@ class Common_instrument(object):
         since both of these classes use spectrometers. Class for pure pCO2 version
         will be separate since there are too many differences
     """
-    def __init__(self, panelargs, config_name):
+    def __init__(self, panelargs):
+        logging.getLogger()
+
         self.args = panelargs
-        self.config_name = config_name
-        self.spectrom = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
+        self.spectrometer_cls = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
 
         # initialize PWM lines
         if not self.args.localdev:
@@ -145,7 +149,7 @@ class Common_instrument(object):
         self.fb_data = udp.Ferrybox
 
         self.load_config()
-        self.spectrom.set_integration_time_not_async(self.specIntTime)
+        self.spectrometer_cls.set_integration_time_not_async(self.specIntTime)
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
@@ -165,12 +169,30 @@ class Common_instrument(object):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
-            logging.info("Closing the valve ...")
+            logging.info("Closing the valve")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
+        else:
+            logging.info("Opening the valve")
         self.rpi.write(ch1, True)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, True)
         await asyncio.sleep(0.3)
+        self.rpi.write(ch1, False)
+        self.rpi.write(ch2, False)
+        self.rpi.write(chEn, False)
+
+    def set_Valve_sync(self, status):
+        chEn = self.valve_slots[0]
+        ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
+        if status:
+            logging.info("Closing the valve")
+            ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
+        else:
+            logging.info("Opening the valve")
+        self.rpi.write(ch1, True)
+        self.rpi.write(ch2, False)
+        self.rpi.write(chEn, True)
+        time.sleep(0.3)
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
         self.rpi.write(chEn, False)
@@ -182,11 +204,7 @@ class Common_instrument(object):
             return False
 
     def load_config(self):
-
-        with open(self.config_name) as json_file:
-            j = json.load(json_file)
-
-        conf_operational = j["Operational"]
+        conf_operational = config_file["Operational"]
         self._autostart = self.to_bool(conf_operational["AUTOSTART"])
         self._automode = conf_operational["AUTOSTART_MODE"]
         self.DURATION = int(conf_operational["DURATION"])
@@ -223,9 +241,9 @@ class Common_instrument(object):
         self.specIntTime = conf_operational["Spectro_Integration_time"]
         self.ship_code = conf_operational["Ship_Code"]
 
-        if self.spectrom.spectro_type == "FLMT":
+        if self.spectrometer_cls.spectro_type == "FLMT":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])
-        elif self.spectrom.spectro_type == "STS":
+        elif self.spectrometer_cls.spectro_type == "STS":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])
 
     def update_temp_probe_coef(self):
@@ -281,7 +299,7 @@ class Common_instrument(object):
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
         """
-        wvls = self.spectrom.get_wavelengths()
+        wvls = self.spectrometer_cls.get_wavelengths()
         return wvls
 
     def find_nearest(self, items, value):
@@ -289,21 +307,17 @@ class Common_instrument(object):
         return idx
 
     async def get_sp_levels(self, pixel):
-        self.spectrum = await self.spectrom.get_intensities()
+        self.spectrum = await self.spectrometer_cls.get_intensities()
         return self.spectrum[pixel]
 
 
 class CO3_instrument(Common_instrument):
-    def __init__(self, panelargs, config_name):
-        super().__init__(panelargs, config_name)
+    def __init__(self, panelargs):
+        super().__init__(panelargs)
         self.load_config_co3()
 
     def load_config_co3(self):
-        with open(self.config_name) as json_file:
-            j = json.load(json_file)
-
-        conf = j["CO3"]
-
+        conf = config_file["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
         self.light_slot = conf["LIGHT_SLOT"]
@@ -326,7 +340,7 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False:
 
-            await self.spectrom.set_integration_time(self.specIntTime)
+            await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime * 1.0e-3)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
@@ -399,8 +413,8 @@ class CO3_instrument(Common_instrument):
 
 
 class pH_instrument(Common_instrument):
-    def __init__(self, panelargs, config_name):
-        super().__init__(panelargs, config_name)
+    def __init__(self, panelargs):
+        super().__init__(panelargs)
         # self.args = panelargs
         self.load_config_pH()
 
@@ -417,11 +431,9 @@ class pH_instrument(Common_instrument):
             self.reset_lines()
 
     def load_config_pH(self):
-        with open(self.config_name) as json_file:
-            j = json.load(json_file)
 
-        conf_pH = j["pH"]
-        calibr = j["TrisBuffer"]
+        conf_pH = config_file["pH"]
+        calibr = config_file["TrisBuffer"]
         self.buffer_sal = calibr["S_tris_buffer"]
         self.buffer_pH_value = calibr["pH_tris_buffer"]
         self.dye = conf_pH["Default_DYE"]
@@ -501,7 +513,7 @@ class pH_instrument(Common_instrument):
 
     async def precheck_leds_to_adj(self):
         logging.debug('precheck leds')
-        self.spectrum = await self.spectrom.get_intensities()
+        self.spectrum = await self.spectrometer_cls.get_intensities()
         led_vals = np.array(self.spectrum)[self.wvlPixels]
         max_cond = all(n < self.maxval for n in led_vals)
         min_cond = (led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
@@ -519,7 +531,7 @@ class pH_instrument(Common_instrument):
             adj1, adj2, adj3 = False, False, False
             #LED1, LED2, LED3 = None, None, None
             res1, res2, res3 = None, None, None
-            await self.spectrom.set_integration_time(self.specIntTime)
+            await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
             logging.info(f"Trying {self.specIntTime} ms integration time...")
 
@@ -532,6 +544,11 @@ class pH_instrument(Common_instrument):
                 if adj2:
                     logging.info("*** adj2 = True")
                     LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LED3)
+                else:
+                    LED3 = 50
+            else:
+                LED2 = 50
+                LED3 = 50
 
             if any(t == "decrease int time" for t in [res1, res2, res3]):
                 if self.adj_action == "increase":
@@ -698,8 +715,8 @@ class pH_instrument(Common_instrument):
 
 
 class Test_CO3_instrument(CO3_instrument):
-    def __init__(self, panelargs, config_name):
-        super().__init__(panelargs, config_name)
+    def __init__(self, panelargs):
+        super().__init__(panelargs)
         pass
 
     async def auto_adjust(self, *args):
@@ -718,6 +735,13 @@ class Test_CO3_instrument(CO3_instrument):
         if status:
             logging.info("Closing the valve ...")
         await asyncio.sleep(0.3)
+
+    def set_Valve_sync(self, status):
+        if status:
+            logging.info("Closing the valve")
+        else:
+            logging.info("Opening the valve")
+        time.sleep(0.3)
 
     def turn_on_relay(self, line):
         pass
@@ -741,8 +765,8 @@ class Test_CO3_instrument(CO3_instrument):
 
 
 class Test_instrument(pH_instrument):
-    def __init__(self, panelargs, config_name):
-        super().__init__(panelargs, config_name)
+    def __init__(self, panelargs):
+        super().__init__(panelargs)
         pass
 
     def adjust_LED(self, led, LED):
@@ -768,6 +792,13 @@ class Test_instrument(pH_instrument):
         if status:
             logging.info("Closing the valve ...")
         await asyncio.sleep(0.3)
+
+    def set_Valve_sync(self, status):
+        if status:
+            logging.info("Closing the valve")
+        else:
+            logging.info("Opening the valve")
+        time.sleep(0.3)
 
     def turn_on_relay(self, line):
         pass
@@ -813,10 +844,10 @@ class Test_instrument(pH_instrument):
         assign wavelengths to pixels 
         and find pixel number of reference wavelengths
         """
-        wvls = self.spectrom.get_wavelengths()
+        wvls = self.spectrometer_cls.get_wavelengths()
 
         return wvls
 
     def get_sp_levels(self, pixel):
-        self.spectrum = self.spectrom.get_intensities()
+        self.spectrum = self.spectrometer_cls.get_intensities()
         return self.spectrum[pixel]
