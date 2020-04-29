@@ -49,7 +49,6 @@ class TimeAxisItem(pg.AxisItem):
 class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
 
-
     def __init__(self, slow_function, callback):
         super(SimpleThread, self).__init__()
         self.caller = slow_function
@@ -73,6 +72,8 @@ class AsyncThreadWrapper:
     async def result_returner(self):
         while not self.callback_returned:
             await asyncio.sleep(0.1)
+            self.thread.quit()
+            self.thread.wait()
         return self.result
 
 
