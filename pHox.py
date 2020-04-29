@@ -369,8 +369,8 @@ class CO3_instrument(Common_instrument):
 
         vNTC = round(vNTC, prec["vNTC"])
 
-        Tdeg = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["Tdeg"])
-        # T = 273.15 + Tdeg
+        T_cuvette = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["fb_temperature"])
+        # T = 273.15 + T_cuvette
         A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
         # volume in ml
@@ -387,7 +387,7 @@ class CO3_instrument(Common_instrument):
         logging.debug(f"arg {arg}")
         # CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
         CO3 = 1.0e6 * (10 ** -(log_beta1_e2 + np.log10(arg)))  # umol/kg
-        logging.debug(f"[CO3--] = {CO3} umol/kg, T = {Tdeg}")
+        logging.debug(f"[CO3--] = {CO3} umol/kg, T = {T_cuvette}")
 
         return [
             CO3,
@@ -399,7 +399,7 @@ class CO3_instrument(Common_instrument):
             A1,
             A2,
             R,
-            Tdeg,
+            T_cuvette,
             vol_injected,
             S_corr,
         ]
@@ -585,9 +585,9 @@ class pH_instrument(Common_instrument):
     def calc_pH(self, absSp, vNTC, dilution, vol_injected, manual_salinity=None):
 
         vNTC = round(vNTC, prec["vNTC"])
-        Tdeg = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["Tdeg"])
+        T_cuvette = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["T_cuvette"])
 
-        T = 273.15 + Tdeg
+        T = 273.15 + T_cuvette
         A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
         Anir = round(absSp[self.wvlPixels[2]], prec["Anir"])
@@ -648,7 +648,7 @@ class pH_instrument(Common_instrument):
             fb_sal,
             A1,
             A2,
-            Tdeg,
+            T_cuvette,
             S_corr,
             Anir,
             vol_injected,
@@ -660,12 +660,12 @@ class pH_instrument(Common_instrument):
         ]
 
     def pH_eval(self, evalPar_df):
-        logging.debug(f'evalPar_df["Tdeg"] {evalPar_df["Tdeg"]}')
+        logging.debug(f'evalPar_df["T_cuvette"] {evalPar_df["T_cuvette"]}')
         dpH_dT = -0.0155
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
-        T_lab = evalPar_df["Tdeg"][0]
+        t_cuvette = evalPar_df["T_cuvette"][0]
         pH_lab = evalPar_df["pH"][0]
-        pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["Tdeg"] - T_lab)
+        pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["T_cuvette"] - t_cuvette)
 
         nrows = evalPar_df.shape[0]
 
@@ -702,13 +702,13 @@ class pH_instrument(Common_instrument):
                     else:
                         pH_lab = pH_t_corr[1]
 
-            pH_insitu = round(pH_lab + dpH_dT * (T_lab - self.fb_data["temperature"]), prec["pH"])
+            pH_insitu = round(pH_lab + dpH_dT * (t_cuvette - self.fb_data["temperature"]), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])
             pH_lab = round(pH_lab, prec["pH"])
 
         logging.info("leave pH eval")
         return (
-            pH_lab, T_lab,
+            pH_lab, t_cuvette,
             perturbation, evalAnir,
             pH_insitu, x, y, final_slope, intercept, pH_t_corr
         )

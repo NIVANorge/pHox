@@ -1,6 +1,6 @@
 import serial
 import serial.tools.list_ports
-import json
+import logging
 import numpy as np
 from PyQt5.QtWidgets import QLineEdit, QWidget
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
@@ -13,7 +13,7 @@ try:
 except:
     pass
 from util import config_file
-
+logging.getLogger()
 
 class tab_pco2_class(QWidget):
     def __init__(self):
@@ -55,7 +55,7 @@ class pco2_instrument(object):
         try:
             ind = connection_types.index('USB-RS485 Cable')
             port = ports[ind][0]
-            print (port)
+            logging.debug(f'Connected port is {port}')
             self.portSens = serial.Serial(port,
                                       baudrate=9600,
                                       parity=serial.PARITY_NONE,
@@ -66,10 +66,10 @@ class pco2_instrument(object):
                                       rtscts=False,
                                       dsrdtr=False,
                                       xonxoff=False)
-            print (self.portSens)
+            logging.debug(self.portSens)
         except:
+            logging.debug('Was not able to find connection to the instrument')
             self.portSens = None
-            print(self.portSens)
 
         f = config_file["pCO2"]
 
@@ -106,7 +106,7 @@ class pco2_instrument(object):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
             response_co2 = self.portSens.read(15)
-            print('full response_co2', response_co2)
+            logging.debug(f'full response_co2 {response_co2}')
             try:
                 value = float(response_co2[3:])
                 value = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * value
@@ -116,7 +116,7 @@ class pco2_instrument(object):
 
             self.portSens.write(self.QUERY_T)
             response_t = self.portSens.read(15)
-            print('response_t', response_t)
+            logging.debug('response_t {response_t}')
             try:
                 self.co2_temp = round(float(response_t[3:]), prec['Tdeg'])
             except ValueError:
@@ -137,6 +137,7 @@ class onlyPco2instrument(pco2_instrument):
         for i in range(nAver):
             V += self.adc.read_voltage(channel)
         return V / nAver
+
 
 class test_pco2_instrument(pco2_instrument):
     def __init__(self):

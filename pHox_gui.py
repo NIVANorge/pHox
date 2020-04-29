@@ -54,7 +54,7 @@ class SimpleThread(QtCore.QThread):
         super(SimpleThread, self).__init__()
         self.caller = slow_function
         self.finished.connect(callback)
-        logging.debug('create Simple thread,slow function is {}'.format(slow_function))
+        #logging.debug('create Simple thread,slow function is {}'.format(slow_function))
 
     def run(self):
         self.finished.emit(self.caller())
@@ -236,7 +236,7 @@ class Panel(QWidget):
         self.instrument.get_wvlPixels(self.wvls)
         self.t_insitu_live = QLineEdit()
         self.s_insitu_live = QLineEdit()
-        self.t_lab_live = QLineEdit()
+        self.t_cuvette_live = QLineEdit()
         self.voltage_live = QLineEdit()
         if self.args.pco2:
             if self.args.localdev:
@@ -575,7 +575,7 @@ class Panel(QWidget):
 
         self.live_updates_grid = QGridLayout()
 
-        live_widgets = [self.t_insitu_live, self.s_insitu_live, self.t_lab_live, self.voltage_live]
+        live_widgets = [self.t_insitu_live, self.s_insitu_live, self.t_cuvette_live, self.voltage_live]
         [n.setReadOnly(True) for n in live_widgets]
 
         self.live_updates_grid.addWidget(QLabel('T insitu'), 0, 0)
@@ -583,8 +583,8 @@ class Panel(QWidget):
         self.live_updates_grid.addWidget(QLabel('S insitu'), 0, 2)
         self.live_updates_grid.addWidget(self.s_insitu_live, 0, 3)
 
-        self.live_updates_grid.addWidget(QLabel('T lab'), 1, 0)
-        self.live_updates_grid.addWidget(self.t_lab_live, 1, 1)
+        self.live_updates_grid.addWidget(QLabel('T cuvette'), 1, 0)
+        self.live_updates_grid.addWidget(self.t_cuvette_live, 1, 1)
         self.live_updates_grid.addWidget(QLabel('Voltage'), 1, 2)
         self.live_updates_grid.addWidget(self.voltage_live, 1, 3)
 
@@ -1036,7 +1036,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_spectra_plot(self):
-        logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
+        #logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
         self.updater.update_spectra_in_progress = True
         try:
             # I don't think this if statement is required
@@ -1065,16 +1065,16 @@ class Panel(QWidget):
 
     def update_sensors_info(self):
         t = datetime.now().strftime('%Y%M')
-        self.t_insitu_live.setText(str(round(fbox['temperature'], prec["Tdeg"])))
+        self.t_insitu_live.setText(str(round(fbox['temperature'], prec["T_cuvette"])))
         self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
         voltage = round(self.instrument.get_Vd(3,
                                                self.instrument.vNTCch), prec["vNTC"])
 
-        t_lab = round((self.instrument.TempCalCoef[0] * voltage)
-                      + self.instrument.TempCalCoef[1], prec["Tdeg"])
+        t_cuvette = round((self.instrument.TempCalCoef[0] * voltage)
+                          + self.instrument.TempCalCoef[1], prec["T_cuvette"])
 
-        self.t_lab_live.setText(str(t_lab))
+        self.t_cuvette_live.setText(str(t_cuvette))
         self.voltage_live.setText(str(voltage))
 
         if fbox['pumping']:
@@ -1137,7 +1137,7 @@ class Panel(QWidget):
                                              "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
 
         self.pco2_df.loc[0] = pco2_row
-        logging.debug('Saving pco2 data')
+        #logging.debug('Saving pco2 data')
         if not self.args.localdev:
             if not os.path.exists(logfile):
                 self.pco2_df.to_csv(logfile, index=False, header=True)
@@ -1388,7 +1388,7 @@ class Panel(QWidget):
         # get final pH
         logging.debug(f'get final pH {self.evalPar_df}')
         p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, T_lab, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+        (pH_lab, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
          self.pH_t_corr) = p
 
         self.pH_log_row = pd.DataFrame(
@@ -1396,11 +1396,11 @@ class Panel(QWidget):
                 "Time": [timeStamp[0:16]],
                 "Lon": [round(fbox["longitude"], prec["longitude"])],
                 "Lat": [round(fbox["latitude"], prec["latitude"])],
-                "fb_temp": [round(fbox["temperature"], prec["Tdeg"])],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
                 "pH_lab": [pH_lab],
-                "T_lab": [T_lab],
+                "T_cuvette": [t_cuvette],
                 "perturbation": [perturbation],
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
@@ -1431,7 +1431,7 @@ class Panel(QWidget):
         if not self.args.co3:
             [
                 self.fill_table_measurement(k, 1, str(self.pH_log_row[v].values[0]))
-                for k, v in enumerate(["pH_lab", "T_lab", "pH_insitu", "fb_temp", "fb_sal"], 0)
+                for k, v in enumerate(["pH_lab", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
             ]
 
         else:
@@ -1620,13 +1620,13 @@ class Panel(QWidget):
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         if self.args.co3:
             self.CO3_eval = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "Tdeg", "Vinj", " S_corr", ]
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "T_cuvette", "Vinj", " S_corr", ]
             )
         else:
             self.evalPar_df = pd.DataFrame(
                 columns=[
                     "pH", "pK", "e1", "e2", "e3",
-                    "vNTC", "salinity", "A1", "A2", "Tdeg", "S_corr", "Anir",
+                    "vNTC", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
                     "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
                     "TempCalCoef2", "DYE"]
             )
@@ -1907,8 +1907,6 @@ class boxUI(QMainWindow):
                 logging.info("timers are stopped")
 
             udp.UDP_EXIT = True
-            while udp.socket_is_opened:
-                time.sleep(1)
             udp.server.join()
             if not udp.server.is_alive():
                 logging.info("UDP server closed")
