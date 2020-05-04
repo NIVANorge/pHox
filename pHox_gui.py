@@ -931,8 +931,8 @@ class Panel(QWidget):
             j["Operational"]["TEMP_PROBE_ID"] = self.instrument.TempProbe_id
 
             j["pH"]["LED1"] = self.instrument.LED1
-            j["pH"]["LED3"] = self.instrument.LED2
-            j["pH"]["LED4"] = self.instrument.LED3
+            j["pH"]["LED2"] = self.instrument.LED2
+            j["pH"]["LED3"] = self.instrument.LED3
 
             minutes = int(self.samplingInt_combo.currentText())
             j["Operational"]["SAMPLING_INTERVAL_SEC"] = minutes * 60

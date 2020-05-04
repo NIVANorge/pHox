@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_9",
         "DEF_TEMP_CAL_COEF": [
             70.582,
             16.213
@@ -22,17 +22,17 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_SEC": 300,
+        "SAMPLING_INTERVAL_SEC": 1800,
         "Comment": "all intervals are in seconds",
         "pumpTime": 15,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 1000,
-        "Ship_Code": "Standalone",
+        "Ship_Code": "NB",
         "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
-        "LIGHT_THRESHOLD_STS": 15500,            
-        "LIGHT_THRESHOLD_FLAME": 60000    
+        "LIGHT_THRESHOLD_STS": 15500,
+        "LIGHT_THRESHOLD_FLAME": 60000
     },
     "pH": {
         "LED_SLOTS": [
@@ -52,7 +52,6 @@
         "TB_wl_I2": 596,
         "Tris_Buffer_salinity": 0,
         "Theoretical_pH": 0
-
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -101,9 +100,8 @@
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor"
-           
     },
-    "TrisBuffer":{
+    "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35
