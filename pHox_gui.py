@@ -1418,6 +1418,7 @@ class Panel(QWidget):
                 "perturbation": [perturbation],
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
+                "box_id": [box_id]
             }
         )
 
