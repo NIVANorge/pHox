@@ -21,14 +21,28 @@ from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, Q
                              QSlider, QInputDialog, QApplication, QMainWindow)
 import numpy as np
 import pyqtgraph as pg
-import argparse, socket
+import argparse
 import pandas as pd
-import time
+
 import udp  # Ferrybox data
 from udp import Ferrybox as fbox
 from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
+
+
+class TimerManager:
+    def __init__(self, input_timer):
+        self.input_timer = input_timer
+        print('init method called')
+
+    def __enter__(self):
+        self.input_timer.start(1000)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.input_timer.stop()
+        print('exit method called')
 
 
 class QTextEditLogger(logging.Handler):
@@ -54,7 +68,6 @@ class SimpleThread(QtCore.QThread):
         super(SimpleThread, self).__init__()
         self.caller = slow_function
         self.finished.connect(callback)
-        #logging.debug('create Simple thread,slow function is {}'.format(slow_function))
 
     def run(self):
         self.finished.emit(self.caller())
@@ -341,7 +354,8 @@ class Panel(QWidget):
         self.timerTemp_info.timeout.connect(self.update_sensors_info)
 
         self.timerAuto = QtCore.QTimer()
-
+        self.timer2 = QtCore.QTimer()
+        self.timer2.timeout.connect(self.update_plot_no_request)
         if self.args.pco2:
             self.timerSave_pco2 = QtCore.QTimer()
 
@@ -1161,6 +1175,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_plot_no_request(self):
+        logging.debug('update plot no request')
         try:
             await self.update_spectra_plot_manual(self.instrument.spectrum)
         except:
@@ -1168,38 +1183,37 @@ class Panel(QWidget):
             pass
 
     async def autoAdjust_LED(self):
-        self.timer2 = QtCore.QTimer()
-        self.timer2.start(1000)
-        self.timer2.timeout.connect(self.update_plot_no_request)
 
-        check = await self.instrument.precheck_leds_to_adj()
-        if not check:
-            (
-                self.instrument.LED1,
-                self.instrument.LED2,
-                self.instrument.LED3,
-                result,
-            ) = await self.instrument.auto_adjust()
+        #self.timer2.start(1000)
+        #self.timer2.timeout.connect(self.update_plot_no_request)
+        with TimerManager(self.timer2):
+            check = await self.instrument.precheck_leds_to_adj()
+            if not check:
+                (
+                    self.instrument.LED1,
+                    self.instrument.LED2,
+                    self.instrument.LED3,
+                    result,
+                ) = await self.instrument.auto_adjust()
 
-            logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-            self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
+                logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
+                self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
 
-            if result:
-                self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
-                self.sliders[0].setValue(self.instrument.LED1)
-                self.sliders[1].setValue(self.instrument.LED2)
-                self.sliders[2].setValue(self.instrument.LED3)
-                # self.plot_sp_levels()
-                self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
-                datay = await self.instrument.spectrometer_cls.get_intensities()
-                await self.update_spectra_plot_manual(datay)
+                if result:
+                    self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+                    self.sliders[0].setValue(self.instrument.LED1)
+                    self.sliders[1].setValue(self.instrument.LED2)
+                    self.sliders[2].setValue(self.instrument.LED3)
+                    # self.plot_sp_levels()
+                    self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
+                    datay = await self.instrument.spectrometer_cls.get_intensities()
+                    await self.update_spectra_plot_manual(datay)
+                else:
+                    self.StatusBox.setText('Not able to adjust LEDs automatically')
+
             else:
-                self.StatusBox.setText('Not able to adjust LEDs automatically')
-
-        else:
-            result = check
-            logging.debug('LED values are within the range, no need to call auto adjust')
-        self.timer2.stop()
+                result = check
+                logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
     @asyncSlot()
