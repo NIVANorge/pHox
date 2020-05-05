@@ -668,10 +668,11 @@ class Panel(QWidget):
         self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
 
         if not self.args.co3:
-            [self.fill_table_config(k, 0, v) for k, v in enumerate(["NIR:", "HI-", "I2-"], 1)]
-            [self.fill_table_config(k, 1, str(v)) for k, v in enumerate([self.instrument.NIR,
-                                                                         self.instrument.HI,
-                                                                         self.instrument.I2], 1)]
+            self.fill_table_config(1, 0, str("NIR, "+"HI-, "+"I2-"))
+            self.fill_table_config(1, 1, str(self.instrument.NIR) + ',' +  str(self.instrument.HI)+ ',' + str(self.instrument.I2))
+
+        self.fill_table_config(2, 0, 'Pumping time (seconds)')
+        self.fill_table_config(2, 1, str(self.instrument.pumpTime))
         self.fill_table_config(4, 0, "pH sampling interval (min)")
         self.samplingInt_combo = QComboBox()
         [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '15', '20', '30', '60']]
@@ -956,8 +957,10 @@ class Panel(QWidget):
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
-        self.tableConfigWidget.setItem(2, 1, QTableWidgetItem(str(self.instrument.HI)))
-        self.tableConfigWidget.setItem(3, 1, QTableWidgetItem(str(self.instrument.I2)))
+        self.fill_table_config(1, 1,
+                               str(self.instrument.NIR) + ',' +
+                               str(self.instrument.HI) + ',' +
+                               str(self.instrument.I2))
 
     def change_plus_minus_butn(self, ind, dif):
         value = self.spinboxes[ind].value() + dif
@@ -1430,7 +1433,7 @@ class Panel(QWidget):
             self.save_logfile_df(folderpath, flnmStr)
             self.send_to_ferrybox()
             return
-        # self.sample_steps[7].setChecked(True)
+
         self.append_logbox("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
         self.append_logbox("Save evl data to file")
@@ -1489,7 +1492,7 @@ class Panel(QWidget):
 
     def autostart_pump(self):
         logging.info("Initial automatic start at pump enabled")
-        #self.append_logbox("Initial automatic start at pump enabled")
+
         self.timerAuto.stop()
         self.timerAuto.timeout.disconnect(self.autostart_pump)
         self._autostart()

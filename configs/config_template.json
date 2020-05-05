@@ -19,7 +19,7 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_SEC": 300,
-        "pumpTime": 0,
+        "pumpTime": 1,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
