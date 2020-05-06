@@ -143,14 +143,14 @@ class panelPco2(QWidget):
 
     def get_value_pco2(self, channel, coef):
         if self.args.localdev:
-            X = np.random.randint(0, 100)
+            x = np.random.randint(0, 100)
         else:
-            V = self.instrument.get_Vd(2, channel)
-            X = 0
+            v = self.instrument.get_Vd(2, channel)
+            x = 0
             for i in range(2):
-                X += coef[i] * pow(V, i)
-            X = round(X, 3)
-        return X
+                x += coef[i] * pow(v, i)
+            x = round(x, 3)
+        return x
 
     @asyncSlot()
     async def update_pco2_data(self):
@@ -246,6 +246,7 @@ class Panel(QWidget):
                 self.instrument = pH_instrument(self.args)
 
         self.wvls = self.instrument.calc_wavelengths()
+
         self.instrument.get_wvlPixels(self.wvls)
         self.t_insitu_live = QLineEdit()
         self.s_insitu_live = QLineEdit()
@@ -298,7 +299,7 @@ class Panel(QWidget):
             self.plotwidget_pco2.setTitle("pCO2 value time series")
 
         self.make_tab_log()
-        self.make_tab1()
+        self.make_tab_home()
         self.make_tab_manual()
 
         self.make_tab_config()
@@ -489,7 +490,7 @@ class Panel(QWidget):
     def make_plotwidgets(self):
         # create plotwidgets
         self.plotwdigets_groupbox = QGroupBox()
-
+        pg.setConfigOptions(background="#19232D", crashWarning=True)
         self.plotwidget1 = pg.PlotWidget()
         self.plotwidget2 = pg.PlotWidget()
 
@@ -500,13 +501,13 @@ class Panel(QWidget):
             self.plotwidget1.setXRange(220, 260)
             self.plotwidget2.setXRange(220, 260)
 
-        self.plotwidget1.setBackground("#19232D")
+
         self.plotwidget1.showGrid(x=True, y=True)
         self.plotwidget1.setTitle("LEDs intensities")
 
         self.plotwidget2.showGrid(x=True, y=True)
-        self.plotwidget2.setBackground("#19232D")
-        self.plotwidget2.setTitle("Last pH measurement")
+        if not self.args.co3:
+            self.plotwidget2.setTitle("Last pH measurement")
 
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
@@ -556,7 +557,7 @@ class Panel(QWidget):
         [layout.addWidget(step) for step in self.sample_steps]
         self.sample_steps_groupBox.setLayout(layout)
 
-    def make_tab1(self):
+    def make_tab_home(self):
 
         self.make_steps_groupBox()
 
@@ -1178,6 +1179,8 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_plot_no_request(self):
+        # During autoadjustment and measurements, the plots are updated with spectrums
+        # from the "buffer" to avoid crashing of the software
         logging.debug('update plot no request')
         try:
             await self.update_spectra_plot_manual(self.instrument.spectrum)
@@ -1186,9 +1189,6 @@ class Panel(QWidget):
             pass
 
     async def autoAdjust_LED(self):
-
-        #self.timer2.start(1000)
-        #self.timer2.timeout.connect(self.update_plot_no_request)
         with TimerManager(self.timer2):
             check = await self.instrument.precheck_leds_to_adj()
             if not check:
@@ -1207,7 +1207,6 @@ class Panel(QWidget):
                     self.sliders[0].setValue(self.instrument.LED1)
                     self.sliders[1].setValue(self.instrument.LED2)
                     self.sliders[2].setValue(self.instrument.LED3)
-                    # self.plot_sp_levels()
                     self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
                     datay = await self.instrument.spectrometer_cls.get_intensities()
                     await self.update_spectra_plot_manual(datay)
@@ -1561,7 +1560,7 @@ class Panel(QWidget):
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
             # Step 0. Start measurement, create new df,
             # reset Absorption plot
-            # pump if single, close the valve
+
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
 
@@ -1569,7 +1568,7 @@ class Panel(QWidget):
 
             if self.args.co3:
                 self.reset_absorp_plot()
-
+            # pump if single, close the valve
             await self.pump_if_needed()
 
             self.append_logbox("Closing the valve ...")
@@ -1638,7 +1637,8 @@ class Panel(QWidget):
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         if self.args.co3:
             self.CO3_eval = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2", "R", "T_cuvette", "Vinj", " S_corr", ]
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
+                         "R", "T_cuvette", "Vinj", " S_corr", 'A350']
             )
         else:
             self.evalPar_df = pd.DataFrame(
@@ -1662,22 +1662,24 @@ class Panel(QWidget):
         # turn off light and LED
         if self.args.co3:
             self.instrument.turn_off_relay(self.instrument.light_slot)
-            logging.info("turn of the light source")
+            logging.info("turn off the light source to measure dark")
             await asyncio.sleep(1)
         else:
+            logging.info("turn off LEDS to measure dark")
             self.set_LEDs(False)
 
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
         if self.args.co3:
-            # Turn on the light source
             self.instrument.turn_on_relay(self.instrument.light_slot)
             logging.info("turn on the light source")
             await asyncio.sleep(2)
         else:
             # Turn on LEDs after taking dark
             self.set_LEDs(True)
+            logging.info("turn on LEDs")
+
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
         await self.update_spectra_plot_manual(dark)

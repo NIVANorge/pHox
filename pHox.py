@@ -285,6 +285,12 @@ class Common_instrument(object):
             await asyncio.sleep(0.3)
         return
 
+    # COMMON
+    def get_wvlPixels(self, wvls_spectrum):
+        self.wvlPixels = []
+        for wl in self.wvl_needed:
+            self.wvlPixels.append(self.find_nearest(wvls_spectrum, wl))
+
     def print_Com(self, port, txtData):
         port.write(txtData)
 
@@ -320,13 +326,10 @@ class CO3_instrument(Common_instrument):
         conf = config_file["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
+
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"]
-
-    def get_wvlPixels(self, wvls):
-        self.wvlPixels = []
-        for wl in (self.wvl1, self.wvl2):
-            self.wvlPixels.append(self.find_nearest(wvls, wl))
+        self.wvl_needed = (self.wvl1, self.wvl2, 350)
 
     async def auto_adjust(self, *args):
 
@@ -373,6 +376,7 @@ class CO3_instrument(Common_instrument):
         # T = 273.15 + T_cuvette
         A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
+        A_350 = round(absSp[self.wvlPixels[2]], prec["A2"])
         # volume in ml
         S_corr = round(self.fb_data["salinity"] * dilution, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
@@ -402,6 +406,7 @@ class CO3_instrument(Common_instrument):
             T_cuvette,
             vol_injected,
             S_corr,
+            A_350
         ]
 
     def eval_co3(self, co3_eval):
@@ -445,6 +450,7 @@ class pH_instrument(Common_instrument):
             self.I2 = int(conf_pH["TB_wl_I2"])
 
         self.NIR = int(conf_pH["wl_NIR-"])
+        self.wvl_needed = (self.HI, self.I2, self.NIR)
 
         # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
@@ -453,10 +459,10 @@ class pH_instrument(Common_instrument):
         self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [self.LED1, self.LED2, self.LED3]
 
-    def get_wvlPixels(self, wvls):
+    '''def get_wvlPixels(self, wvls):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):
-            self.wvlPixels.append(self.find_nearest(wvls, wl))
+            self.wvlPixels.append(self.find_nearest(wvls, wl))'''
 
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led], LED)
