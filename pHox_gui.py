@@ -943,10 +943,6 @@ class Panel(QWidget):
         state = self.btn_leds.isChecked()
         self.set_LEDs(state)
 
-    def on_selFolderBtn_released(self):
-        self.folderDialog = QFileDialog()
-        folder = self.folderDialog.getExistingDirectory(self, "Select directory")
-        self.instrument.folderpath = folder + "/"
 
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
@@ -967,12 +963,17 @@ class Panel(QWidget):
             stabfile_df.to_csv(stabfile, index=False, header=True)
 
     async def update_absorbance_plot(self, n_inj, spAbs):
+        print('update_absorbance_plot')
+        print (spAbs)
+
         self.abs_lines[n_inj].setData(self.wvls, spAbs)
         await asyncio.sleep(0.005)
 
-    def reset_absorp_plot(self):
+    async def reset_absorp_plot(self):
         z = np.zeros(len(self.wvls))
-        [self.update_absorbance_plot(n_inj, z) for n_inj in range(self.instrument.ncycles)]
+
+        for n_inj in range(self.instrument.ncycles):
+            await self.update_absorbance_plot(n_inj, z)
 
     @asyncSlot()
     async def update_spectra_plot(self):
@@ -1318,59 +1319,28 @@ class Panel(QWidget):
             logging.info("Skipped a sample because the previous measurement is still ongoing")
             pass  # TODO Increase interval
 
-    def get_final_pH(self, timeStamp):
-        # get final pH
-        logging.debug(f'get final pH {self.evalPar_df}')
-        p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
-         self.pH_t_corr) = p
 
-        self.pH_log_row = pd.DataFrame(
-            {
-                "Time": [timeStamp[0:16]],
-                "Lon": [round(fbox["longitude"], prec["longitude"])],
-                "Lat": [round(fbox["latitude"], prec["latitude"])],
-                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
-                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
-                "SHIP": [self.instrument.ship_code],
-                "pH_lab": [pH_lab],
-                "T_cuvette": [t_cuvette],
-                "perturbation": [perturbation],
-                "evalAnir": [evalAnir],
-                "pH_insitu": [pH_insitu],
-                "box_id": [box_id]
-            }
-        )
 
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
         if self.args.localdev:
             logging.debug('saving results localdev')
             folderpath = os.getcwd()
-            self.save_logfile_df(folderpath, flnmStr)
-            self.send_to_ferrybox()
-            return
+            #return
 
         self.append_logbox("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
         self.append_logbox("Save evl data to file")
         self.save_evl(folderpath, flnmStr)
         logging.info("Send data to ferrybox")
+
         self.append_logbox("Send data to ferrybox")
         self.send_to_ferrybox()
 
         self.append_logbox("Save final data in %s" % (folderpath + "pH.log"))
         self.save_logfile_df(folderpath, flnmStr)
 
-    def update_table_last_meas(self):
-        if not self.args.co3:
-            [
-                self.fill_table_measurement(k, 1, str(self.pH_log_row[v].values[0]))
-                for k, v in enumerate(["pH_lab", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
-            ]
 
-        else:
-            logging.info("to be filled with data")
 
     def update_LEDs(self):
         self.sliders[0].setValue(self.instrument.LED1)
@@ -1481,11 +1451,11 @@ class Panel(QWidget):
 
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
-
+            print ('call get new df')
             self.create_new_df()
 
             if self.args.co3:
-                self.reset_absorp_plot()
+                await self.reset_absorp_plot()
             # pump if single, close the valve
             await self.pump_if_needed()
 
@@ -1511,21 +1481,24 @@ class Panel(QWidget):
                 # Steps 3,4,5,6 Measurement cycle
                 await self.measurement_cycle(blank_min_dark, dark)
 
+                self.get_final_value(timeStamp)
+                self.append_logbox("Single measurement is done...")
+
+
             # Step 7 Open valve
             logging.info("Opening the valve ...")
-            self.append_logbox("Opening the valve ...")
             await self.instrument.set_Valve(False)
 
-        if not self.args.co3 and res:
-            self.get_final_pH(timeStamp)
-            self.append_logbox("Single measurement is done...")
+        if res:
             self.save_results(folderpath, flnmStr)
+            logging.debug('Saving results')
 
-            self.append_logbox('Saving results')
+        if not self.args.co3 and res:
+
             self.update_pH_plot()
             self.update_table_last_meas()
             if 'Calibration' in self.major_modes:
-                dif_pH = self.pH_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
+                dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
         self.StatusBox.setText('Finished the measurement')
@@ -1554,6 +1527,7 @@ class Panel(QWidget):
                 "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
                 "TempCalCoef2", "DYE"]
         )
+
 
     async def pump_if_needed(self):
         if (
@@ -1618,13 +1592,10 @@ class Panel(QWidget):
             else:
                 manual_salinity = None
 
+            self.update_evl_file(spAbs_min_blank, vNTC, dilution, vol_injected, manual_salinity, n_inj)
             if self.args.co3:
-                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
-                                                                    dilution, vol_injected,manual_salinity)
                 await self.update_absorbance_plot(n_inj, spAbs_min_blank)
-            else:
-                self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
-                                                                     dilution, vol_injected, manual_salinity)
+
         return
 
     async def inject_dye(self, n_inj):
@@ -1672,6 +1643,13 @@ class Panel(QWidget):
         self.spCounts_df[str(n_inj)] = postinj_spec
         return spAbs_min_blank
 
+
+    def save_spt(self, folderpath, flnmStr):
+        sptpath = folderpath + "spt/"
+        if not os.path.exists(sptpath):
+            os.makedirs(sptpath)
+        self.spCounts_df.T.to_csv(sptpath + flnmStr + ".spt", index=True, header=False)
+
     def save_evl(self, folderpath, flnmStr):
         evlpath = folderpath + "evl/"
         if not os.path.exists(evlpath):
@@ -1679,11 +1657,6 @@ class Panel(QWidget):
         flnm = evlpath + flnmStr + ".evl"
         self.evalPar_df.to_csv(flnm, index=False, header=True)
 
-    def save_spt(self, folderpath, flnmStr):
-        sptpath = folderpath + "spt/"
-        if not os.path.exists(sptpath):
-            os.makedirs(sptpath)
-        self.spCounts_df.T.to_csv(sptpath + flnmStr + ".spt", index=True, header=False)
 
     def save_logfile_df(self, folderpath, flnmStr):
         logging.info("save log file df")
@@ -1693,9 +1666,9 @@ class Panel(QWidget):
 
         hour_log_flnm = os.path.join(hour_log_path, datetime.now().strftime("%Y%m%d_%H")) + '.log'
         if not os.path.exists(hour_log_flnm):
-            self.pH_log_row.to_csv(hour_log_flnm, index=False, header=True)
+            self.data_log_row.to_csv(hour_log_flnm, index=False, header=True)
         else:
-            self.pH_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
+            self.data_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
 
         logging.info(f"hour_log_path: {hour_log_path}")
         hour_log_flnm = hour_log_path + flnmStr + ".log"
@@ -1704,14 +1677,14 @@ class Panel(QWidget):
         logfile = os.path.join(folderpath, 'pH.log')
 
         if os.path.exists(logfile):
-            self.pH_log_row.to_csv(logfile, mode='a', index=False, header=False)
+            self.data_log_row.to_csv(logfile, mode='a', index=False, header=False)
         else:
-            self.pH_log_row.to_csv(logfile, index=False, header=True)
+            self.data_log_row.to_csv(logfile, index=False, header=True)
 
         logging.info("saved log_df")
 
     def send_to_ferrybox(self):
-        row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
+        row_to_string = self.data_log_row.to_csv(index=False, header=True).rstrip()
         udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
 
 
@@ -1759,6 +1732,43 @@ class Panel_pH(Panel):
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
         self.tab_manual.setLayout(self.tab_manual.layout)
 
+    def update_table_last_meas(self):
+
+        [
+            self.fill_table_measurement(k, 1, str(self.data_log_row[v].values[0]))
+            for k, v in enumerate(["pH_lab", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
+        ]
+
+    def get_final_value(self, timeStamp):
+        # get final pH
+        logging.debug(f'get final pH {self.evalPar_df}')
+        p = self.instrument.pH_eval(self.evalPar_df)
+        (pH_lab, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+         self.pH_t_corr) = p
+
+        self.data_log_row = pd.DataFrame(
+            {
+                "Time": [timeStamp[0:16]],
+                "Lon": [round(fbox["longitude"], prec["longitude"])],
+                "Lat": [round(fbox["latitude"], prec["latitude"])],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
+                "SHIP": [self.instrument.ship_code],
+                "pH_lab": [pH_lab],
+                "T_cuvette": [t_cuvette],
+                "perturbation": [perturbation],
+                "evalAnir": [evalAnir],
+                "pH_insitu": [pH_insitu],
+                "box_id": [box_id]
+            }
+        )
+
+
+    def update_evl_file(self,spAbs_min_blank, vNTC,dilution, vol_injected,manual_salinity,n_inj):
+        self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
+                                                                 dilution, vol_injected, manual_salinity)
+
+
 class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
         super().__init__(parent, panelargs)
@@ -1790,10 +1800,11 @@ class Panel_CO3(Panel):
 
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
-        self.CO3_eval = pd.DataFrame(
+        self.evalPar_df = pd.DataFrame(
                 columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
-                         "R", "T_cuvette", "Vinj", " S_corr", 'A350']
+                         "R", "T_cuvette", "Vol_injected", " S_corr", 'A350']
             )
+
 
     def make_tab_manual(self):
         self.tab_manual.layout = QGridLayout()
@@ -1819,13 +1830,7 @@ class Panel_CO3(Panel):
             os.makedirs(folderpath)
         return folderpath
 
-    def save_evl(self, folderpath, flnmStr):
-        evlpath = folderpath + "evl/"
-        if not os.path.exists(evlpath):
-            os.makedirs(evlpath)
-        flnm = evlpath + flnmStr + ".evl"
 
-        self.CO3_eval.to_csv(flnm, index=False, header=True)
 
     async def measure_dark(self):
         # turn off light and LED
@@ -1874,8 +1879,42 @@ class Panel_CO3(Panel):
         self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
-         for k, v in enumerate(["CO3 lab", "T lab", "CO3 insitu", "T insitu", "S insitu"])]
+         for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "T insitu", "S insitu"])]
 
+    def update_evl_file(self, spAbs_min_blank, vNTC, dilution, vol_injected, manual_salinity, n_inj):
+        self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
+                                                         dilution, vol_injected, manual_salinity)
+
+    def get_final_value(self, timeStamp):
+        # This function should
+        # create a dataframe from CO3 log file
+        # and call the function for getting final CO3 values
+
+        logging.debug(f'get final CO3')
+        p = self.instrument.calc_final_co3(self.evalPar_df)
+        (slope1, intercept, r_value) = p
+
+        self.data_log_row = pd.DataFrame(
+            {
+                "Time": [timeStamp[0:16]],
+                "Lon": [round(fbox["longitude"], prec["longitude"])],
+                "Lat": [round(fbox["latitude"], prec["latitude"])],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
+                "SHIP": [self.instrument.ship_code],
+                "co3_slope": [slope1],
+                'co3_intercept': [intercept],
+                'co3_rvalue': [r_value],
+                "box_id": [box_id]
+            }
+        )
+
+    def update_table_last_meas(self):
+
+        [
+            self.fill_table_measurement(k, 1, str(self.data_log_row[v].values[0]))
+            for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "fb_temp", "fb_sal"], 0)
+        ]
 class SensorStateUpdateManager:
     """
     This class should control reading values from sensors and if new values have been fetched, it is responsible for

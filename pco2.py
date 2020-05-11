@@ -4,7 +4,7 @@ import logging
 import numpy as np
 from PyQt5.QtWidgets import QLineEdit, QWidget
 from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
-import precisions as prec
+from precisions import precision as prec
 try:
     import pigpio
     import RPi.GPIO as GPIO

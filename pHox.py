@@ -71,7 +71,7 @@ class Spectro_localtest(object):
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
             time.sleep(self.integration_time)
-            sp = self.test_df["0"].values + random.randrange(-1500, 1500, 1)
+            sp = self.test_df["0"].values + random.randrange(-100, 100, 1)
             return sp
 
         async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
@@ -416,11 +416,16 @@ class CO3_instrument(Common_instrument):
             A_350,
         ]
 
-    def eval_co3(self, co3_eval):
+    def calc_final_co3(self, co3_eval):
+        print (co3_eval)
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
-        slope1, intercept, r_value = get_linregress(x, y)
-        logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
+        try:
+            slope1, intercept, r_value = get_linregress(x, y)
+            logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
+        except:
+            logging.error('could not find CO3 intercept, FIX')
+        (slope1, intercept, r_value) = 999, 999, 999
         return [slope1, intercept, r_value]
 
 
