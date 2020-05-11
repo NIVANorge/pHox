@@ -368,7 +368,7 @@ class CO3_instrument(Common_instrument):
 
         return adjusted, pixelLevel
 
-    def calc_CO3(self, absSp, vNTC, dilution, vol_injected):
+    def calc_CO3(self, absSp, vNTC, dilution, vol_injected, manual_salinity):
 
         vNTC = round(vNTC, prec["vNTC"])
 
@@ -377,8 +377,15 @@ class CO3_instrument(Common_instrument):
         A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
         A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
         A_350 = round(absSp[self.wvlPixels[2]], prec["A2"])
+        print ('A350', A_350)
         # volume in ml
-        S_corr = round(self.fb_data["salinity"] * dilution, prec["salinity"])
+
+        if manual_salinity is None:
+            sal = round(self.fb_data["salinity"], prec["salinity"])
+        else:
+            sal = round(manual_salinity, prec["salinity"])
+
+        S_corr = round(sal * dilution, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
         R = A2 / A1
         # coefficients from Patsavas et al. 2015
@@ -406,7 +413,7 @@ class CO3_instrument(Common_instrument):
             T_cuvette,
             vol_injected,
             S_corr,
-            A_350
+            A_350,
         ]
 
     def eval_co3(self, co3_eval):
@@ -730,8 +737,8 @@ class Test_CO3_instrument(CO3_instrument):
         pixelLevel = 500
         return adjusted, pixelLevel
 
-    def calc_CO3(self, absSp, vNTC, dilution, vol_injected):
-        return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    def calc_CO3(self, absSp, vNTC, dilution, vol_injected,manual_salinity):
+        return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def reset_lines(self):
         pass

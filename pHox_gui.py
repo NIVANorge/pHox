@@ -96,10 +96,6 @@ class panelPco2(QWidget):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
 
-        if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument()
-        else:
-            self.pco2_instrument = onlyPco2instrument()
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()  #
@@ -222,7 +218,6 @@ class panelPco2(QWidget):
     def autorun(self):
         pass
 
-
 class Panel(QWidget):
     def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
@@ -234,29 +229,22 @@ class Panel(QWidget):
 
         self.starttime = datetime.now()
         self.fformat = "%Y%m%d_%H%M%S"
-        if self.args.co3:
-            if self.args.localdev:
-                self.instrument = Test_CO3_instrument(self.args)
-            else:
-                self.instrument = CO3_instrument(self.args)
-        else:
-            if self.args.localdev:
-                self.instrument = Test_instrument(self.args)
-            else:
-                self.instrument = pH_instrument(self.args)
+        self.init_instrument()
 
         self.wvls = self.instrument.calc_wavelengths()
-
         self.instrument.get_wvlPixels(self.wvls)
+
         self.t_insitu_live = QLineEdit()
         self.s_insitu_live = QLineEdit()
         self.t_cuvette_live = QLineEdit()
         self.voltage_live = QLineEdit()
+
         if self.args.pco2:
             if self.args.localdev:
                 self.pco2_instrument = test_pco2_instrument()
             else:
                 self.pco2_instrument = pco2_instrument()
+
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
@@ -314,17 +302,6 @@ class Panel(QWidget):
         # Disable all manual buttons in the Automatic mode
         self.manual_widgets_set_enabled(False)
         self.setLayout(hboxPanel)
-
-    def make_tab_manual(self):
-        self.tab_manual.layout = QGridLayout()
-        self.btn_manual_mode = self.create_button("Manual Control", True)
-        self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
-        self.make_btngroupbox()
-        self.make_slidergroupbox()
-        self.tab_manual.layout.addWidget(self.btn_manual_mode)
-        self.tab_manual.layout.addWidget(self.sliders_groupBox)
-        self.tab_manual.layout.addWidget(self.buttons_groupBox)
-        self.tab_manual.setLayout(self.tab_manual.layout)
 
     def make_tab_log(self):
         self.tab_log.layout = QGridLayout()
@@ -496,50 +473,22 @@ class Panel(QWidget):
 
         self.plotwidget1.setYRange(1000, self.instrument.THR * 1.05)
 
-        if self.args.co3:
-            self.plotwidget2.setYRange(0, 1)
-            self.plotwidget1.setXRange(220, 260)
-            self.plotwidget2.setXRange(220, 260)
-
-
         self.plotwidget1.showGrid(x=True, y=True)
         self.plotwidget1.setTitle("LEDs intensities")
 
         self.plotwidget2.showGrid(x=True, y=True)
-        if not self.args.co3:
-            self.plotwidget2.setTitle("Last pH measurement")
+        self.plotwidget2.setTitle("Last pH measurement")
 
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-        if self.args.co3:
-            for widget in [self.plotwidget1, self.plotwidget2]:
-                for instrument, color in [[self.instrument.wvl1, "b"], [self.instrument.wvl2, "#eb8934"]]:
-                    widget.addLine(x=instrument, y=None, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
-        else:
-            # Format for line spec is [x, y, color]
-            line_specs = [
-                [None, self.instrument.THR, "w"],
-                [self.instrument.HI, None, "b"],
-                [self.instrument.I2, None, "#eb8934"],
-                [self.instrument.NIR, None, "r"],
-            ]
-            for x, y, color in line_specs:
-                self.plotwidget1.addLine(x=x, y=y, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
+
+
 
         self.plotSpc = self.plotwidget1.plot()
         self.plot_calc_pH = self.plotwidget2.plot()
         self.after_calc_pH = self.plotwidget2.plot()
         self.lin_fit_pH = self.plotwidget2.plot()
-
-        if self.args.co3:
-            self.plotAbs = self.plotwidget2.plot()
-            color = ["r", "g", "b", "m", "y"]
-            self.abs_lines = []
-            for n_inj in range(self.instrument.ncycles):
-                self.abs_lines.append(
-                    self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
-                )
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
@@ -560,24 +509,11 @@ class Panel(QWidget):
     def make_tab_home(self):
 
         self.make_steps_groupBox()
-
+        self.make_last_measurement_table()
         self.tab_home.layout = QGridLayout()
 
         self.StatusBox = QtGui.QTextEdit()
         self.StatusBox.setReadOnly(True)
-
-        self.last_measurement_table_groupbox = QGroupBox("Last Measurement")
-        self.live_update_groupbox = QGroupBox("Live Updates")
-        self.last_measurement_table = QTableWidget(5, 2)
-        self.last_measurement_table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.last_measurement_table.verticalHeader().setResizeMode(QHeaderView.Stretch)
-
-        self.last_measurement_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.last_measurement_table.verticalHeader().hide()
-        self.last_measurement_table.horizontalHeader().hide()
-
-        [self.fill_table_measurement(k, 0, v)
-         for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
 
         self.ferrypump_box = QCheckBox("Ferrybox pump is on")
         self.ferrypump_box.setEnabled(False)
@@ -1014,34 +950,20 @@ class Panel(QWidget):
 
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
-        if not self.args.co3:
-            stabfile_df = pd.DataFrame(
-                {
-                    "datetime": [datetime.now().strftime(self.fformat)],
-                    "led0": [datay[self.instrument.wvlPixels[0]]],
-                    "led1": [datay[self.instrument.wvlPixels[1]]],
-                    "led2": [datay[self.instrument.wvlPixels[2]]],
-                    "specint": [self.instrument.specIntTime],
-                }
-            )
-        elif self.args.co3:
-            stabfile_df = pd.DataFrame(
-                {
-                    "datetime": [datetime.now().strftime(self.fformat)],
-                    "wvl1": [datay[self.instrument.wvlPixels[0]]],
-                    "wvl2": [datay[self.instrument.wvlPixels[1]]],
-                    "specint": [self.instrument.specIntTime],
-                }
-            )
+
+        stabfile_df = pd.DataFrame(
+            {
+                "datetime": [datetime.now().strftime(self.fformat)],
+                "led0": [datay[self.instrument.wvlPixels[0]]],
+                "led1": [datay[self.instrument.wvlPixels[1]]],
+                "led2": [datay[self.instrument.wvlPixels[2]]],
+                "specint": [self.instrument.specIntTime],
+            }
+        )
 
         if os.path.exists(stabfile):
             stabfile_df.to_csv(stabfile, mode="a", index=False, header=False)
         else:
-            if not self.args.co3:
-                stabfile_df = pd.DataFrame(columns=["datetime", "led0", "led1", "led2", "specint"])
-            else:
-                stabfile_df = pd.DataFrame(columns=["datetime", "wvl1", "wvl2", "specint"])
-
             stabfile_df.to_csv(stabfile, index=False, header=True)
 
     async def update_absorbance_plot(self, n_inj, spAbs):
@@ -1070,19 +992,15 @@ class Panel(QWidget):
             self.updater.update_spectra_in_progress = False
 
     def update_pH_plot(self):
-        logging.info("in update pH plot")
-        logging.info(f"self.x='{self.x}', self.y='{self.y}'")
+        logging.info("update pH plot")
 
         self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
                                   symbol="o", clear=True)
         self.after_calc_pH.setData(self.x, self.y, pen=None, symbol="o", symbolBrush='#30663c')
 
-        logging.info("after first plot")
-        logging.info(f"intercept {self.intercept}")
         self.lin_fit_pH.setData(self.x, self.intercept + self.slope * self.x)
 
     def update_sensors_info(self):
-        t = datetime.now().strftime('%Y%M')
         self.t_insitu_live.setText(str(round(fbox['temperature'], prec["T_cuvette"])))
         self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
@@ -1102,14 +1020,14 @@ class Panel(QWidget):
 
     def get_value_pco2(self, channel, coef):
         if self.args.localdev:
-            X = np.random.randint(0, 100)
+            x = np.random.randint(0, 100)
         else:
-            V = self.instrument.get_Vd(2, channel)
-            X = 0
+            v = self.instrument.get_Vd(2, channel)
+            x = 0
             for i in range(2):
-                X += coef[i] * pow(V, i)
-            X = round(X, 3)
-        return X
+                x += coef[i] * pow(v, i)
+            x = round(x, 3)
+        return x
 
     @asyncSlot()
     async def update_pco2_data(self):
@@ -1179,7 +1097,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_plot_no_request(self):
-        # During autoadjustment and measurements, the plots are updated with spectrums
+        # During auto adjustment and measurements, the plots are updated with spectrums
         # from the "buffer" to avoid crashing of the software
         logging.debug('update plot no request')
         try:
@@ -1616,38 +1534,26 @@ class Panel(QWidget):
     def get_folderpath(self):
         if self.args.localdev:
             return "IN_LOCALDEV_MODE__NOT_A_FILE"
-        if self.args.co3:
-            if "Calibration" in self.major_modes:
-                folderpath = "/home/pi/pHox/data_co3_calibr/"
-            else:
-                folderpath = "/home/pi/pHox/data_co3/"
+
+        if "Calibration" in self.major_modes:
+            folderpath = "/home/pi/pHox/data_calibr/"
         else:
-            if "Calibration" in self.major_modes:
-                folderpath = "/home/pi/pHox/data_calibr/"
-            else:
-                folderpath = "/home/pi/pHox/data/"
+            folderpath = "/home/pi/pHox/data/"
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
         return folderpath
 
     def create_new_df(self):
-
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
-        if self.args.co3:
-            self.CO3_eval = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
-                         "R", "T_cuvette", "Vinj", " S_corr", 'A350']
-            )
-        else:
-            self.evalPar_df = pd.DataFrame(
-                columns=[
-                    "pH", "pK", "e1", "e2", "e3",
-                    "vNTC", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
-                    "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
-                    "TempCalCoef2", "DYE"]
-            )
+        self.evalPar_df = pd.DataFrame(
+            columns=[
+                "pH", "pK", "e1", "e2", "e3",
+                "vNTC", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
+                "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
+                "TempCalCoef2", "DYE"]
+        )
 
     async def pump_if_needed(self):
         if (
@@ -1659,26 +1565,16 @@ class Panel(QWidget):
             self.append_logbox("pumping is not needed ")
 
     async def measure_dark(self):
-        # turn off light and LED
-        if self.args.co3:
-            self.instrument.turn_off_relay(self.instrument.light_slot)
-            logging.info("turn off the light source to measure dark")
-            await asyncio.sleep(1)
-        else:
-            logging.info("turn off LEDS to measure dark")
-            self.set_LEDs(False)
+
+        logging.info("turn off LEDS to measure dark")
+        self.set_LEDs(False)
 
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
-        if self.args.co3:
-            self.instrument.turn_on_relay(self.instrument.light_slot)
-            logging.info("turn on the light source")
-            await asyncio.sleep(2)
-        else:
-            # Turn on LEDs after taking dark
-            self.set_LEDs(True)
-            logging.info("turn on LEDs")
+        # Turn on LEDs after taking dark
+        self.set_LEDs(True)
+        logging.info("turn on LEDs")
 
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
@@ -1715,16 +1611,18 @@ class Panel(QWidget):
             spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
             logging.info("Calculate init pH")
 
+            if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
+                manual_salinity = self.get_salinity_manual()
+            elif 'Calibration' in self.major_modes:
+                manual_salinity = self.instrument.buffer_sal
+            else:
+                manual_salinity = None
+
             if self.args.co3:
-                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC, dilution, vol_injected)
+                self.CO3_eval.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
+                                                                    dilution, vol_injected,manual_salinity)
                 await self.update_absorbance_plot(n_inj, spAbs_min_blank)
             else:
-                if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
-                    manual_salinity = self.get_salinity_manual()
-                elif 'Calibration' in self.major_modes:
-                    manual_salinity = self.instrument.buffer_sal
-                else:
-                    manual_salinity = None
                 self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
                                                                      dilution, vol_injected, manual_salinity)
         return
@@ -1779,10 +1677,7 @@ class Panel(QWidget):
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
-        if self.args.co3:
-            self.CO3_eval.to_csv(flnm, index=False, header=True)
-        else:
-            self.evalPar_df.to_csv(flnm, index=False, header=True)
+        self.evalPar_df.to_csv(flnm, index=False, header=True)
 
     def save_spt(self, folderpath, flnmStr):
         sptpath = folderpath + "spt/"
@@ -1819,6 +1714,167 @@ class Panel(QWidget):
         row_to_string = self.pH_log_row.to_csv(index=False, header=True).rstrip()
         udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
 
+
+class Panel_pH(Panel):
+    def __init__(self, parent, panelargs):
+        super().__init__(parent, panelargs)
+
+        line_specs = [
+            [None, self.instrument.THR, "w"],
+            [self.instrument.HI, None, "b"],
+            [self.instrument.I2, None, "#eb8934"],
+            [self.instrument.NIR, None, "r"],
+        ]
+        for x, y, color in line_specs:
+            self.plotwidget1.addLine(x=x, y=y, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
+
+    def init_instrument(self):
+        if self.args.localdev:
+            self.instrument = Test_instrument(self.args)
+        else:
+            self.instrument = pH_instrument(self.args)
+
+    def make_last_measurement_table(self):
+        self.last_measurement_table_groupbox = QGroupBox("Last Measurement")
+        self.live_update_groupbox = QGroupBox("Live Updates")
+        self.last_measurement_table = QTableWidget(5, 2)
+        self.last_measurement_table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.last_measurement_table.verticalHeader().setResizeMode(QHeaderView.Stretch)
+
+        self.last_measurement_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.last_measurement_table.verticalHeader().hide()
+        self.last_measurement_table.horizontalHeader().hide()
+
+        [self.fill_table_measurement(k, 0, v)
+         for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
+
+    def make_tab_manual(self):
+        self.tab_manual.layout = QGridLayout()
+        self.btn_manual_mode = self.create_button("Manual Control", True)
+        self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
+        self.make_btngroupbox()
+        self.make_slidergroupbox()
+        self.tab_manual.layout.addWidget(self.btn_manual_mode)
+        self.tab_manual.layout.addWidget(self.sliders_groupBox)
+        self.tab_manual.layout.addWidget(self.buttons_groupBox)
+        self.tab_manual.setLayout(self.tab_manual.layout)
+
+class Panel_CO3(Panel):
+    def __init__(self, parent, panelargs):
+        super().__init__(parent, panelargs)
+
+        self.plotwidget2.setYRange(0, 1)
+        self.plotwidget1.setXRange(220, 260)
+        self.plotwidget2.setXRange(220, 260)
+        self.plotwidget2.setTitle("Last CO3 measurement")
+
+        for widget in [self.plotwidget1, self.plotwidget2]:
+            for instrument, color in [[self.instrument.wvl1, "b"], [
+                                    self.instrument.wvl2, "#eb8934"]]:
+                widget.addLine(x=instrument, y=None, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
+
+        self.plotAbs = self.plotwidget2.plot()
+        color = ["r", "g", "b", "m", "y"]
+        self.abs_lines = []
+        for n_inj in range(self.instrument.ncycles):
+            self.abs_lines.append(
+                self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
+            )
+    def init_instrument(self):
+        if self.args.localdev:
+            self.instrument = Test_CO3_instrument(self.args)
+        else:
+            self.instrument = CO3_instrument(self.args)
+
+    def create_new_df(self):
+
+        self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
+        self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
+        self.CO3_eval = pd.DataFrame(
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
+                         "R", "T_cuvette", "Vinj", " S_corr", 'A350']
+            )
+
+    def make_tab_manual(self):
+        self.tab_manual.layout = QGridLayout()
+        self.btn_manual_mode = self.create_button("Manual Control", True)
+        self.btn_manual_mode.clicked.connect(self.btn_manual_mode_clicked)
+        self.make_btngroupbox()
+        self.make_slidergroupbox()
+        self.tab_manual.layout.addWidget(self.btn_manual_mode)
+        self.tab_manual.layout.addWidget(self.buttons_groupBox)
+        self.tab_manual.setLayout(self.tab_manual.layout)
+
+
+    def get_folderpath(self):
+        if self.args.localdev:
+            return "IN_LOCALDEV_MODE__NOT_A_FILE"
+
+        if "Calibration" in self.major_modes:
+            folderpath = "/home/pi/pHox/data_co3_calibr/"
+        else:
+            folderpath = "/home/pi/pHox/data_co3/"
+
+        if not os.path.exists(folderpath):
+            os.makedirs(folderpath)
+        return folderpath
+
+    def save_evl(self, folderpath, flnmStr):
+        evlpath = folderpath + "evl/"
+        if not os.path.exists(evlpath):
+            os.makedirs(evlpath)
+        flnm = evlpath + flnmStr + ".evl"
+
+        self.CO3_eval.to_csv(flnm, index=False, header=True)
+
+    async def measure_dark(self):
+        # turn off light and LED
+        self.instrument.turn_off_relay(self.instrument.light_slot)
+        logging.info("turn off the light source to measure dark")
+        await asyncio.sleep(1)
+
+        # grab spectrum
+        dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
+
+        self.instrument.turn_on_relay(self.instrument.light_slot)
+        logging.info("turn on the light source")
+        await asyncio.sleep(2)
+
+        self.instrument.spectrum = dark
+        self.spCounts_df["dark"] = dark
+        await self.update_spectra_plot_manual(dark)
+        return dark
+
+    def save_stability_test(self, datay):
+        stabfile = os.path.join("/home/pi/pHox/data_co3/sp_stability.log")
+
+        stabfile_df = pd.DataFrame(
+                {
+                    "datetime": [datetime.now().strftime(self.fformat)],
+                    "wvl1": [datay[self.instrument.wvlPixels[0]]],
+                    "wvl2": [datay[self.instrument.wvlPixels[1]]],
+                    "specint": [self.instrument.specIntTime],
+                }
+            )
+
+        if os.path.exists(stabfile):
+            stabfile_df.to_csv(stabfile, mode="a", index=False, header=False)
+        else:
+            stabfile_df.to_csv(stabfile, index=False, header=True)
+
+    def make_last_measurement_table(self):
+        self.last_measurement_table_groupbox = QGroupBox("Last Measurement")
+        self.live_update_groupbox = QGroupBox("Live Updates")
+        self.last_measurement_table = QTableWidget(5, 2)
+        self.last_measurement_table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.last_measurement_table.verticalHeader().setResizeMode(QHeaderView.Stretch)
+
+        self.last_measurement_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.last_measurement_table.verticalHeader().hide()
+        self.last_measurement_table.horizontalHeader().hide()
+
+        [self.fill_table_measurement(k, 0, v)
+         for k, v in enumerate(["CO3 lab", "T lab", "CO3 insitu", "T insitu", "S insitu"])]
 
 class SensorStateUpdateManager:
     """
@@ -1902,8 +1958,11 @@ class boxUI(QMainWindow):
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
             self.main_widget = panelPco2(self, self.args)
+        elif self.args.co3:
+            self.main_widget = Panel_CO3(self, self.args)
         else:
-            self.main_widget = Panel(self, self.args)
+            self.main_widget = Panel_pH(self, self.args)
+            #self.main_widget = Panel_Spec_instruments(self, self.args)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
         self.main_widget.autorun()
