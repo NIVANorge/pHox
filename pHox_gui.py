@@ -30,7 +30,7 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
-base_folderpath = "/home/pi/pHox/"
+base_folderpath = "/home/pi/pHox/data"
 
 class TimerManager:
     def __init__(self, input_timer):
@@ -97,6 +97,10 @@ class panelPco2(QWidget):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
 
+        if self.args.localdev:
+            self.pco2_instrument = test_pco2_instrument()
+        else:
+            self.pco2_instrument = onlyPco2instrument()
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()  #
@@ -184,7 +188,10 @@ class panelPco2(QWidget):
 
         labelSample = datetime.now().isoformat("_")[0:19]
 
-        path = "/home/pi/pHox/data/"
+        path = base_folderpath + "/data/"
+        if self.args.localdev:
+            base_folderpath = os.getcwd() + '/data/'
+
         if not os.path.exists(path):
             os.mkdir(path)
         logfile = os.path.join(path, "pCO2.log")
@@ -1499,7 +1506,7 @@ class Panel(QWidget):
 
     def get_folderpath(self):
         if self.args.localdev:
-            base_folderpath = os.getcwd()
+            base_folderpath = os.getcwd() + '/data/'
 
         if "Calibration" in self.major_modes:
             folderpath = base_folderpath + "/data_pH_calibr/"
@@ -1819,7 +1826,7 @@ class Panel_CO3(Panel):
     def get_folderpath(self):
 
         if self.args.localdev:
-            base_folderpath = os.getcwd()
+            base_folderpath = os.getcwd() + '/data/'
 
         if "Calibration" in self.major_modes:
             folderpath = base_folderpath + "/data_co3_calibr/"
