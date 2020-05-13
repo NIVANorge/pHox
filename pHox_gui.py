@@ -30,6 +30,7 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
+base_folderpath = "/home/pi/pHox/"
 
 class TimerManager:
     def __init__(self, input_timer):
@@ -564,10 +565,6 @@ class Panel(QWidget):
         self.tab_home.layout.addWidget(self.live_update_groupbox, 2, 0, 1, 2)
         self.tab_home.setLayout(self.tab_home.layout)
 
-    def append_logbox(self, message):
-        t = datetime.now().strftime("%b-%d %H:%M:%S")
-        logging.info(t + "  " + message)
-
     def fill_table_measurement(self, x, y, item):
         self.last_measurement_table.setItem(x, y, QTableWidgetItem(item))
 
@@ -937,7 +934,7 @@ class Panel(QWidget):
     def set_LEDs(self, state):
         for i, slider in enumerate(self.sliders):
             self.instrument.adjust_LED(i, state * slider.value())
-        self.append_logbox("Leds {}".format(str(state)))
+        logging.info("Leds {}".format(str(state)))
 
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
@@ -1063,7 +1060,7 @@ class Panel(QWidget):
 
         labelSample = datetime.now().isoformat("_")[0:19]
 
-        path = "/home/pi/pHox/data/"
+        path = "/home/pi/pHox/data_pCO2/"
         if not self.args.localdev:
             if not os.path.exists(path):
                 os.mkdir(path)
@@ -1089,7 +1086,7 @@ class Panel(QWidget):
         # Function calls autoadjust without leds
         adj, pixelLevel = await self.instrument.auto_adjust()
         if adj:
-            self.append_logbox("Finished Autoadjust LEDS")
+            logging.info("Finished Autoadjust LEDS")
             self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         else:
@@ -1126,7 +1123,7 @@ class Panel(QWidget):
                     self.sliders[0].setValue(self.instrument.LED1)
                     self.sliders[1].setValue(self.instrument.LED2)
                     self.sliders[2].setValue(self.instrument.LED3)
-                    self.append_logbox("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
+                    logging.info("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
                     datay = await self.instrument.spectrometer_cls.get_intensities()
                     await self.update_spectra_plot_manual(datay)
                 else:
@@ -1308,7 +1305,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
-        self.append_logbox("continuous_mode_timer_finished")
+        logging.info("continuous_mode_timer_finished")
         self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
             flnmStr, timeStamp = self.get_filename()
@@ -1323,21 +1320,17 @@ class Panel(QWidget):
 
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
-        if self.args.localdev:
-            logging.debug('saving results localdev')
-            folderpath = os.getcwd()
-            #return
 
-        self.append_logbox("Save spectrum data to file")
+        logging.info("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
-        self.append_logbox("Save evl data to file")
+        logging.info("Save evl data to file")
         self.save_evl(folderpath, flnmStr)
         logging.info("Send data to ferrybox")
 
-        self.append_logbox("Send data to ferrybox")
+        logging.info("Send data to ferrybox")
         self.send_to_ferrybox()
 
-        self.append_logbox("Save final data in %s" % (folderpath + "pH.log"))
+
         self.save_logfile_df(folderpath, flnmStr)
 
 
@@ -1415,7 +1408,6 @@ class Panel(QWidget):
         return
 
     def autorun(self):
-        self.append_logbox("Inside autorun func...")
         logging.info("start autorun")
         if self.instrument._autostart:
             if self.instrument._automode == "time":
@@ -1459,13 +1451,13 @@ class Panel(QWidget):
             # pump if single, close the valve
             await self.pump_if_needed()
 
-            self.append_logbox("Closing the valve ...")
+            logging.info("Closing the valve ...")
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
             if not self.btn_disable_autoadj.isChecked():
                 self.sample_steps[0].setChecked(True)
-                self.append_logbox("Autoadjust LEDS")
+                logging.info("Autoadjust LEDS")
                 res = await self.call_autoAdjust()
                 logging.info(f"res after autoadjust: '{res}")
             else:
@@ -1482,7 +1474,7 @@ class Panel(QWidget):
                 await self.measurement_cycle(blank_min_dark, dark)
 
                 self.get_final_value(timeStamp)
-                self.append_logbox("Single measurement is done...")
+                logging.info("Single measurement is done...")
 
 
             # Step 7 Open valve
@@ -1492,12 +1484,13 @@ class Panel(QWidget):
         if res:
             self.save_results(folderpath, flnmStr)
             logging.debug('Saving results')
+            self.update_table_last_meas()
 
         if not self.args.co3 and res:
-
             self.update_pH_plot()
-            self.update_table_last_meas()
+
             if 'Calibration' in self.major_modes:
+                self.get_calibration_results()
                 dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
                 self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
@@ -1506,12 +1499,12 @@ class Panel(QWidget):
 
     def get_folderpath(self):
         if self.args.localdev:
-            return "IN_LOCALDEV_MODE__NOT_A_FILE"
+            base_folderpath = os.getcwd()
 
         if "Calibration" in self.major_modes:
-            folderpath = "/home/pi/pHox/data_calibr/"
+            folderpath = base_folderpath + "/data_pH_calibr/"
         else:
-            folderpath = "/home/pi/pHox/data/"
+            folderpath = base_folderpath + "/data_pH/"
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
@@ -1533,10 +1526,10 @@ class Panel(QWidget):
         if (
                 self.instrument.ship_code == "Standalone" and "Continuous" in self.major_modes
         ) or "Calibration" in self.major_modes:
-            self.append_logbox("pumping")
+            logging.info("pumping")
             await self.instrument.pumping(self.instrument.pumpTime)
         else:
-            self.append_logbox("pumping is not needed ")
+            logging.info("pumping is not needed ")
 
     async def measure_dark(self):
 
@@ -1561,7 +1554,6 @@ class Panel(QWidget):
 
     async def measure_blank(self, dark):
         logging.info("Measuring blank...")
-        self.append_logbox("Measuring blank...")
 
         blank = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
         blank_min_dark = blank - dark
@@ -1601,20 +1593,20 @@ class Panel(QWidget):
     async def inject_dye(self, n_inj):
         # create dataframe and store
 
-        self.append_logbox("Start stirrer")
+        logging.info("Start stirrer")
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
-        self.append_logbox("Dye Injection %d:" % (n_inj + 1))
+        logging.info("Dye Injection %d:" % (n_inj + 1))
 
         if not self.args.nodye:
             await self.instrument.pump_dye(self.instrument.nshots)
 
-        self.append_logbox("Mixing")
+        logging.info("Mixing")
         await asyncio.sleep(self.instrument.mixT)
 
-        self.append_logbox("Stop stirrer")
+        logging.info("Stop stirrer")
         self.instrument.turn_off_relay(self.instrument.stirrer_slot)
 
-        self.append_logbox("Wait")
+        logging.info("Wait")
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
@@ -1622,7 +1614,7 @@ class Panel(QWidget):
         return vNTC
 
     async def calc_spectrum(self, n_inj, blank_min_dark, dark):
-        self.append_logbox("Get spectrum")
+        logging.info("Get spectrum")
         # measure spectrum after injecting nshots of dye
         # Write spectrum to the file
         if self.args.localdev:
@@ -1645,13 +1637,13 @@ class Panel(QWidget):
 
 
     def save_spt(self, folderpath, flnmStr):
-        sptpath = folderpath + "spt/"
+        sptpath = folderpath + "/spt/"
         if not os.path.exists(sptpath):
             os.makedirs(sptpath)
         self.spCounts_df.T.to_csv(sptpath + flnmStr + ".spt", index=True, header=False)
 
     def save_evl(self, folderpath, flnmStr):
-        evlpath = folderpath + "evl/"
+        evlpath = folderpath + "/evl/"
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
@@ -1674,7 +1666,7 @@ class Panel(QWidget):
         hour_log_flnm = hour_log_path + flnmStr + ".log"
         logging.info(f"hour_log_flnm: {hour_log_flnm}")
 
-        logfile = os.path.join(folderpath, 'pH.log')
+        logfile = self.get_logfile_name(folderpath)
 
         if os.path.exists(logfile):
             self.data_log_row.to_csv(logfile, mode='a', index=False, header=False)
@@ -1768,12 +1760,19 @@ class Panel_pH(Panel):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
                                                                  dilution, vol_injected, manual_salinity)
 
+    def get_logfile_name(self,folderpath):
+        return (os.path.join(folderpath, 'pH.log'))
+
+
+    def get_calibration_results(self):
+        dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
+        self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
 class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
         super().__init__(parent, panelargs)
 
-        self.plotwidget2.setYRange(0, 1)
+
         self.plotwidget1.setXRange(220, 260)
         self.plotwidget2.setXRange(220, 260)
         self.plotwidget2.setTitle("Last CO3 measurement")
@@ -1818,18 +1817,18 @@ class Panel_CO3(Panel):
 
 
     def get_folderpath(self):
+
         if self.args.localdev:
-            return "IN_LOCALDEV_MODE__NOT_A_FILE"
+            base_folderpath = os.getcwd()
 
         if "Calibration" in self.major_modes:
-            folderpath = "/home/pi/pHox/data_co3_calibr/"
+            folderpath = base_folderpath + "/data_co3_calibr/"
         else:
-            folderpath = "/home/pi/pHox/data_co3/"
+            folderpath = base_folderpath + "/data_co3/"
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
         return folderpath
-
 
 
     async def measure_dark(self):
@@ -1915,6 +1914,15 @@ class Panel_CO3(Panel):
             self.fill_table_measurement(k, 1, str(self.data_log_row[v].values[0]))
             for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "fb_temp", "fb_sal"], 0)
         ]
+
+    def get_logfile_name(self,folderpath):
+        return (os.path.join(folderpath, 'CO3.log'))
+
+    def get_calibration_results(self):
+        logging.info('Calibration dif for CO3 is not impplemented yet ')
+        #dif_CO3 = self.data_log_row['CO3_insitu'].values - #reference value
+        self.fill_table_config(9, 1, "None")
+
 class SensorStateUpdateManager:
     """
     This class should control reading values from sensors and if new values have been fetched, it is responsible for

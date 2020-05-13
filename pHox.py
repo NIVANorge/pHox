@@ -38,13 +38,17 @@ class Spectrometer_localtest(object):
         pass
 
 class Spectro_localtest(object):
-    def __init__(self):
+    def __init__(self,panelargs):
+        self.args = panelargs
         self.spec = Spectrometer_localtest()
-        self.spectro_type = "STS"
+        if self.args.co3:
+            self.spectro_type = "FLMT"
+            self.test_spt = pd.read_csv("data_localtests/co3.spt")
+        else:
+            self.spectro_type = "STS"
+            self.test_spt = pd.read_csv("data_localtests/20200213_105508.spt")
 
-        test_spt = pd.read_csv("data_localtests/20200213_105508.spt")  # .T
-        self.wvl = np.array([np.float(n) for n in test_spt.iloc[0].index.values[1:]])
-        x = test_spt.T
+        x = self.test_spt.T
         x.columns = x.iloc[0]
         self.test_df = x[1:]
         self.integration_time = 100 / 1000
@@ -65,13 +69,14 @@ class Spectro_localtest(object):
         pass
 
     def get_wavelengths(self):
+        self.wvl = np.array([np.float(n) for n in self.test_spt.iloc[0].index.values[1:]])
         # wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
             time.sleep(self.integration_time)
-            sp = self.test_df["0"].values + random.randrange(-100, 100, 1)
+            sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
             return sp
 
         async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
@@ -140,7 +145,7 @@ class Common_instrument(object):
         logging.getLogger()
 
         self.args = panelargs
-        self.spectrometer_cls = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest()
+        self.spectrometer_cls = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest(panelargs)
 
         # initialize PWM lines
         if not self.args.localdev:
