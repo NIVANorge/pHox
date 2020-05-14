@@ -1,7 +1,6 @@
 # pHox
-Software for operating box instruments developed in NIVA.
-
-* automated spectrophotometric measurements (pH and CO3)
+Software for operating box instruments for automated spectrophotometric measurements (pH and CO3) developed in NIVA.
+It also supports pCO2 instrument (TODO: description). 
 
 #### supported box configurations:
 * pH 
@@ -30,7 +29,6 @@ Append the command line argument with parameters if you want to change the mode:
  to update the plot, this spectrum is also saved into sp_stability.log (**only for testing**)
 
 
-
 ### How to install the code when using the new box 
 1. pull this repository
 ``` git pull origin https://github.com/NIVANorge/pHox.git ```
@@ -43,4 +41,32 @@ create it.
 
 ### Folder structure  
  ![](utils/folder_structure.png)
+ 
+#### Code  description
+
+###### Versions and libraries
+
+The code is written on Python and should be used with versions >= python3.7 
+For the GUI development we used PyQT library
+
+#### TODO: Subthemes: 
+* Communication with the Raspberry pi
+* Communication with the spectrometer
+* Live plotting 
+* Configuration files 
+* Local testing 
+* Measurement algorythm 
+* Light source or LED, auto adjustment 
+* Autostart and autostop 
+* spt,evl and log files description 
+* udp and ferrybox data 
+* precisions
+* asynchronous parts
+* qss styles 
+* Logic and modes 
+    * Continuous mode 
+    * Single measurement mode
+    * Calibration mode 
+
+
  

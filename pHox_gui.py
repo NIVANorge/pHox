@@ -2002,8 +2002,6 @@ class boxUI(QMainWindow):
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
-
-
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
