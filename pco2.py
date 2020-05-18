@@ -12,6 +12,12 @@ try:
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
+
+import os
+import pandas as pd
+
+from datetime import datetime
+
 from util import config_file
 logging.getLogger()
 
@@ -48,8 +54,8 @@ class tab_pco2_class(QWidget):
 
 
 class pco2_instrument(object):
-    def __init__(self):
-
+    def __init__(self, base_folderpath):
+        self.base_folderpath = base_folderpath
         ports = list(serial.tools.list_ports.comports())
         connection_types = [port[1] for port in ports]
         try:
@@ -73,7 +79,7 @@ class pco2_instrument(object):
 
         f = config_file["pCO2"]
 
-        self.shipcode = config_file['Operational']["Ship_Code"]
+        self.ship_code = config_file['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
         self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
@@ -86,10 +92,6 @@ class pco2_instrument(object):
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
         self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
-
-        self.UDP_SEND = 6801
-        self.UDP_RECV = 6802
-        self.UDP_IP = "192.168.0.1"
 
         self.VAR_NAMES = [
             "Water temperature \xB0C",
@@ -123,10 +125,37 @@ class pco2_instrument(object):
                 self.co2_temp = 0
 
 
-class onlyPco2instrument(pco2_instrument):
-    def __init__(self):
-        super().__init__()
+    async def save_pCO2_data(self, values, fbox):
 
+        labelSample = datetime.now().isoformat("_")[0:19]
+        path = self.base_folderpath + "/data_pCO2/"
+
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        logfile = os.path.join(path, "pCO2.log")
+
+        pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
+                    fbox["temperature"], fbox["salinity"]] + values
+        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
+                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+        self.pco2_df.loc[0] = pco2_row
+        logging.debug('Saving pco2 data')
+
+        if not os.path.exists(logfile):
+            self.pco2_df.to_csv(logfile, index=False, header=True)
+        else:
+            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
+
+        return self.pco2_df
+
+
+
+class onlyPco2instrument(pco2_instrument):
+    # Class for communication with Raspberry PI for the only pco2 case
+    def __init__(self,base_folderpath):
+        super().__init__()
+        self.base_folderpath = base_folderpath
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
@@ -140,8 +169,8 @@ class onlyPco2instrument(pco2_instrument):
 
 
 class test_pco2_instrument(pco2_instrument):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, base_folderpath):
+        super().__init__(base_folderpath)
         self.save_pco2_interv = 2
 
     async def get_pco2_values(self):
@@ -153,3 +182,29 @@ class test_pco2_instrument(pco2_instrument):
         for i in range(nAver):
             v += 0.6
         return v / nAver
+
+    async def save_pCO2_data(self, values, fbox):
+
+        labelSample = datetime.now().isoformat("_")[0:19]
+        self.base_folderpath = os.getcwd() + '/data/'
+
+        path = self.base_folderpath + "/data_pCO2/"
+
+        if not os.path.exists(path):
+            os.mkdir(path)
+        logfile = os.path.join(path, "pCO2.log")
+
+        pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
+                    fbox["temperature"], fbox["salinity"]] + values
+
+        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
+                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+        self.pco2_df.loc[0] = pco2_row
+        logging.debug('Saving pco2 data')
+
+        if not os.path.exists(logfile):
+            self.pco2_df.to_csv(logfile, index=False, header=True)
+        else:
+            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
+
+        return self.pco2_df

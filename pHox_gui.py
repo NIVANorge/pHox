@@ -30,7 +30,6 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
-base_folderpath = "/home/pi/pHox/data"
 
 class TimerManager:
     def __init__(self, input_timer):
@@ -93,14 +92,15 @@ class AsyncThreadWrapper:
 
 
 class panelPco2(QWidget):
-    def __init__(self, parent, panelargs):
+    # ONLY PCO2
+    def __init__(self, parent, panelargs, base_folderpath):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
-
+        self.base_folderpath = base_folderpath
         if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument()
+            self.pco2_instrument = test_pco2_instrument(self.base_folderpath)
         else:
-            self.pco2_instrument = onlyPco2instrument()
+            self.pco2_instrument = onlyPco2instrument(self.base_folderpath)
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()  #
@@ -170,9 +170,17 @@ class panelPco2(QWidget):
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
         await self.tab_pco2.update_tab_values(values)
         await self.update_pco2_plot()
-        if not self.args.localdev:
-            self.save_pCO2_data()
+        self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
+        await self.send_pco2_to_ferrybox()
         return
+
+
+    async def send_pco2_to_ferrybox(self):
+        row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
+        print('pco2 raw to string ')
+        print('final string:' + "$PPCO2," + row_to_string + ",*\n")
+        udp.send_data("$PPCO2," + row_to_string + ",*\n", self.pco2_instrument.ship_code)
+
 
     async def update_pco2_plot(self):
         # UPDATE PLOT WIDGETS
@@ -184,57 +192,18 @@ class panelPco2(QWidget):
         self.pco2_list.append(self.pco2_instrument.co2)
         self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
 
-    def save_pCO2_data(self):
-
-        labelSample = datetime.now().isoformat("_")[0:19]
-
-        path = base_folderpath + "/data/"
-        if self.args.localdev:
-            base_folderpath = os.getcwd() + '/data/'
-
-        if not os.path.exists(path):
-            os.mkdir(path)
-        logfile = os.path.join(path, "pCO2.log")
-
-        self.pco2_df = pd.DataFrame(
-            {
-                "Time": [labelSample],
-                "Lon": [fbox["longitude"]],
-                "Lat": [fbox["latitude"]],
-                "fb_temp": [fbox["temperature"]],
-                "fb_sal": [fbox["salinity"]],
-
-                "Tw": [self.wat_temp],
-                "Flow": [self.wat_flow],
-                "Pw": [self.wat_pres],
-                "Ta": [self.air_temp],
-                "Pa": [self.air_pres],
-                "Leak": [self.leak_detect],
-                "CO2": [self.pco2_instrument.co2],
-                "TCO2": [self.pco2_instrument.co2_temp]
-            })
-
-        if not os.path.exists(logfile):
-            self.pco2_df.to_csv(logfile, index=False, header=True)
-        else:
-            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
-
-        if not self.args.localdev:
-            row_to_string = self.pco2_df.to_csv(index=False, header=True).rstrip()
-            udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
-
     def autorun(self):
         pass
 
 class Panel(QWidget):
-    def __init__(self, parent, panelargs):
+    def __init__(self, parent, panelargs,base_folderpath):
         super(QWidget, self).__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
                             "Paused"]
 
         self.args = panelargs
-
+        self.base_folderpath = base_folderpath
         self.starttime = datetime.now()
         self.fformat = "%Y%m%d_%H%M%S"
         self.init_instrument()
@@ -249,9 +218,9 @@ class Panel(QWidget):
 
         if self.args.pco2:
             if self.args.localdev:
-                self.pco2_instrument = test_pco2_instrument()
+                self.pco2_instrument = test_pco2_instrument(self.base_folderpath)
             else:
-                self.pco2_instrument = pco2_instrument()
+                self.pco2_instrument = pco2_instrument(self.base_folderpath)
 
         self.init_ui()
         self.create_timers()
@@ -344,7 +313,6 @@ class Panel(QWidget):
         self.timer2.timeout.connect(self.update_plot_no_request)
         if self.args.pco2:
             self.timerSave_pco2 = QtCore.QTimer()
-
             self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
     def btn_manual_mode_clicked(self):
@@ -1023,7 +991,7 @@ class Panel(QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
-    def get_value_pco2(self, channel, coef):
+    def get_value_pco2_from_voltage(self, channel, coef):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
@@ -1038,11 +1006,11 @@ class Panel(QWidget):
     async def update_pco2_data(self):
 
         # UPDATE VALUES
-        self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
-        self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
-        self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
-        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.air_temp_cal)
-        self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
+        self.wat_temp = self.get_value_pco2_from_voltage(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
+        self.wat_flow = self.get_value_pco2_from_voltage(channel=2, coef=self.pco2_instrument.wat_flow_cal)
+        self.wat_pres = self.get_value_pco2_from_voltage(channel=3, coef=self.pco2_instrument.wat_pres_cal)
+        self.air_temp = self.get_value_pco2_from_voltage(channel=4, coef=self.pco2_instrument.air_temp_cal)
+        self.air_pres = self.get_value_pco2_from_voltage(channel=5, coef=self.pco2_instrument.air_pres_cal)
         self.leak_detect = 999
         await self.pco2_instrument.get_pco2_values()
 
@@ -1060,34 +1028,16 @@ class Panel(QWidget):
         self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
 
         # if not self.args.localdev:
-        await self.save_pCO2_data(values)
+        self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
+        self.send_pco2_to_ferrybox()
         return
 
-    async def save_pCO2_data(self, values):
 
-        labelSample = datetime.now().isoformat("_")[0:19]
-
-        path = "/home/pi/pHox/data_pCO2/"
-        if not self.args.localdev:
-            if not os.path.exists(path):
-                os.mkdir(path)
-        logfile = os.path.join(path, "pCO2.log")
-        pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
-                    fbox["temperature"], fbox["salinity"]] + values
-        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
-                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
-
-        self.pco2_df.loc[0] = pco2_row
-        #logging.debug('Saving pco2 data')
-        if not self.args.localdev:
-            if not os.path.exists(logfile):
-                self.pco2_df.to_csv(logfile, index=False, header=True)
-            else:
-                self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
-
-        if not self.args.localdev:
-            row_to_string = self.pco2_df.to_csv(index=False, header=True).rstrip()
-            udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
+    def send_pco2_to_ferrybox(self):
+        row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
+        print('pco2 raw to string')
+        print('final string:' + "$PPCO2," + row_to_string + ",*\n")
+        udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
 
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
@@ -1332,11 +1282,9 @@ class Panel(QWidget):
         self.save_spt(folderpath, flnmStr)
         logging.info("Save evl data to file")
         self.save_evl(folderpath, flnmStr)
-        logging.info("Send data to ferrybox")
 
-        logging.info("Send data to ferrybox")
+        logging.info("Send pH data to ferrybox")
         self.send_to_ferrybox()
-
 
         self.save_logfile_df(folderpath, flnmStr)
 
@@ -1505,13 +1453,14 @@ class Panel(QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
     def get_folderpath(self):
-        if self.args.localdev:
-            base_folderpath = os.getcwd() + '/data/'
 
         if "Calibration" in self.major_modes:
-            folderpath = base_folderpath + "/data_pH_calibr/"
+            folderpath = self.base_folderpath + "/data_pH_calibr/"
         else:
-            folderpath = base_folderpath + "/data_pH/"
+            folderpath = self.base_folderpath + "/data_pH/"
+
+        if self.args.localdev:
+            self.base_folderpath = os.getcwd() + '/data/'
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
@@ -1682,14 +1631,12 @@ class Panel(QWidget):
 
         logging.info("saved log_df")
 
-    def send_to_ferrybox(self):
-        row_to_string = self.data_log_row.to_csv(index=False, header=True).rstrip()
-        udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
+
 
 
 class Panel_pH(Panel):
-    def __init__(self, parent, panelargs):
-        super().__init__(parent, panelargs)
+    def __init__(self, parent, panelargs, base_folderpath):
+        super().__init__(parent, panelargs, base_folderpath)
 
         line_specs = [
             [None, self.instrument.THR, "w"],
@@ -1740,7 +1687,7 @@ class Panel_pH(Panel):
 
     def get_final_value(self, timeStamp):
         # get final pH
-        logging.debug(f'get final pH {self.evalPar_df}')
+        logging.debug(f'get final pH ')
         p = self.instrument.pH_eval(self.evalPar_df)
         (pH_lab, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
          self.pH_t_corr) = p
@@ -1775,11 +1722,16 @@ class Panel_pH(Panel):
         dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
         self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
 
+    def send_to_ferrybox(self):
+        row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
+        print ("$PPHOX," + row_to_string + ",*\n")
+        udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
+
+
 class Panel_CO3(Panel):
-    def __init__(self, parent, panelargs):
-        super().__init__(parent, panelargs)
-
-
+    def __init__(self, parent, panelargs,base_folderpath):
+        super().__init__(parent, panelargs,base_folderpath)
+        self.base_folderpath = base_folderpath
         self.plotwidget1.setXRange(220, 260)
         self.plotwidget2.setXRange(220, 260)
         self.plotwidget2.setTitle("Last CO3 measurement")
@@ -1825,13 +1777,13 @@ class Panel_CO3(Panel):
 
     def get_folderpath(self):
 
-        if self.args.localdev:
-            base_folderpath = os.getcwd() + '/data/'
-
         if "Calibration" in self.major_modes:
-            folderpath = base_folderpath + "/data_co3_calibr/"
+            folderpath = self.base_folderpath + "/data_co3_calibr/"
         else:
-            folderpath = base_folderpath + "/data_co3/"
+            folderpath = self.base_folderpath + "/data_co3/"
+
+        if self.args.localdev:
+            self.base_folderpath= os.getcwd() + '/data/'
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
@@ -1930,6 +1882,14 @@ class Panel_CO3(Panel):
         #dif_CO3 = self.data_log_row['CO3_insitu'].values - #reference value
         self.fill_table_config(9, 1, "None")
 
+    def send_to_ferrybox(self):
+
+        logging.info('Sending CO3 data to ferrybox is not implemented yet')
+        row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
+        #print (row_to_string)
+        #udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
+
+
 class SensorStateUpdateManager:
     """
     This class should control reading values from sensors and if new values have been fetched, it is responsible for
@@ -1980,6 +1940,8 @@ class boxUI(QMainWindow):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
 
+        from util import base_folderpath
+
         parser.add_argument("--nodye", action="store_true")
         parser.add_argument("--pco2", action="store_true")
         parser.add_argument("--co3", action="store_true")
@@ -2009,11 +1971,11 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
-            self.main_widget = panelPco2(self, self.args)
+            self.main_widget = panelPco2(self, self.args, base_folderpath)
         elif self.args.co3:
-            self.main_widget = Panel_CO3(self, self.args)
+            self.main_widget = Panel_CO3(self, self.args, base_folderpath)
         else:
-            self.main_widget = Panel_pH(self, self.args)
+            self.main_widget = Panel_pH(self, self.args, base_folderpath)
             #self.main_widget = Panel_Spec_instruments(self, self.args)
         self.setCentralWidget(self.main_widget)
         self.showMaximized()

@@ -6,9 +6,8 @@ import os
 import logging
 logging.getLogger()
 
-
-UDP_SEND = 6801
-UDP_RECV = 6802
+UDP_SEND = 56801   # was 6801
+UDP_RECV = 56802   # was 6802
 UDP_IP = "192.168.0.2"  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 

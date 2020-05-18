@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import udp
 from precisions import precision as prec
-from util import config_file
+from util import config_file, base_folderpath
 try:
     import pigpio
     import RPi.GPIO as GPIO

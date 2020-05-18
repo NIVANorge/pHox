@@ -1,7 +1,7 @@
 import logging
 import json
 logging.getLogger()
-
+base_folderpath = "/home/pi/pHox/data"
 try:
     box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
 except:
@@ -11,3 +11,5 @@ except:
 config_name = "configs/config_" + box_id + ".json"
 with open(config_name) as json_file:
     config_file = json.load(json_file)
+
+
