@@ -91,7 +91,7 @@ class AsyncThreadWrapper:
         return self.result
 
 
-class panelPco2(QWidget):
+class Panel_PCO2(QWidget):
     # ONLY PCO2
     def __init__(self, parent, panelargs, base_folderpath):
         super(QWidget, self).__init__(parent)
@@ -555,15 +555,10 @@ class Panel(QWidget):
         self.btn_save_config = self.create_button("Save config", False)
         self.btn_save_config.clicked.connect(self.btn_save_config_clicked)
 
-        self.dye_combo = QComboBox()
-        self.dye_combo.addItem("TB")
-        self.dye_combo.addItem("MCP")
 
-        index = self.dye_combo.findText(self.instrument.dye, QtCore.Qt.MatchFixedString)
-        if index >= 0:
-            self.dye_combo.setCurrentIndex(index)
 
-        self.dye_combo.currentIndexChanged.connect(self.dye_combo_chngd)
+
+
 
         self.tableConfigWidget = QTableWidget()
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -574,53 +569,101 @@ class Panel(QWidget):
         self.tableConfigWidget.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         self.fill_table_config(0, 0, "DYE type")
-        self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
-
-        if not self.args.co3:
-            self.fill_table_config(1, 0, str("NIR, "+"HI-, "+"I2-"))
-            self.fill_table_config(1, 1, str(self.instrument.NIR) + ',' +  str(self.instrument.HI)+ ',' + str(self.instrument.I2))
+        self.config_dye_info()
 
         self.fill_table_config(2, 0, 'Pumping time (seconds)')
         self.fill_table_config(2, 1, str(self.instrument.pumpTime))
-        self.fill_table_config(4, 0, "pH sampling interval (min)")
+
+        self.fill_table_config(3, 0, "Sampling interval (min)")
         self.samplingInt_combo = QComboBox()
-        [self.samplingInt_combo.addItem(n) for n in ['5', '7', '10', '15', '20', '30', '60']]
-        self.set_combo_index(self.samplingInt_combo, int(self.instrument.samplingInterval / 60))
-        self.tableConfigWidget.setCellWidget(4, 1, self.samplingInt_combo)
-        self.samplingInt_combo.currentIndexChanged.connect(self.sampling_int_chngd)
+        self.combo_in_config(self.samplingInt_combo, 'Sampling interval')
+        self.tableConfigWidget.setCellWidget(3, 1, self.samplingInt_combo)
 
-        self.fill_table_config(5, 0, "Spectroph intergration time")
+        self.fill_table_config(4, 0, "Spectroph integration time")
         self.specIntTime_combo = QComboBox()
-        [self.specIntTime_combo.addItem(str(n)) for n in range(100, 5000, 100)]
-        self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
-        self.specIntTime_combo.currentIndexChanged.connect(self.specIntTime_combo_chngd)
-        self.tableConfigWidget.setCellWidget(5, 1, self.specIntTime_combo)
+        self.combo_in_config(self.specIntTime_combo, "Spectroph integration time")
+        self.tableConfigWidget.setCellWidget(4, 1, self.specIntTime_combo)
 
-        self.fill_table_config(6, 0, "Ship")
+        self.fill_table_config(5, 0, "Ship")
         self.ship_code_combo = QComboBox()
-        [self.ship_code_combo.addItem(t_id) for t_id in ['Standalone', 'NB', 'FA', 'TF']]
-        self.tableConfigWidget.setCellWidget(6, 1, self.ship_code_combo)
-        self.ship_code_combo.currentIndexChanged.connect(self.ship_code_changed)
+        self.combo_in_config(self.ship_code_combo, "Ship")
+        self.tableConfigWidget.setCellWidget(5, 1, self.ship_code_combo)
 
-        self.fill_table_config(7, 0, 'Temp probe id')
+        self.fill_table_config(6, 0, 'Temp probe id')
         self.temp_id_combo = QComboBox()
-        [self.temp_id_combo.addItem("Probe_" + str(n)) for n in range(1, 10)]
-        self.set_combo_index(self.temp_id_combo, self.instrument.TempProbe_id)
-        self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_combo)
-        self.temp_id_combo.currentIndexChanged.connect(self.temp_id_combo_changed)
+        self.combo_in_config(self.temp_id_combo, 'Temp probe id')
+        self.tableConfigWidget.setCellWidget(6, 1, self.temp_id_combo)
 
-        self.fill_table_config(8, 0, 'Temp probe is calibrated')
+        self.fill_table_config(7, 0, 'Temp probe is calibrated')
         self.temp_id_is_calibr = QtGui.QCheckBox()
 
         if self.instrument.temp_iscalibrated:
             self.temp_id_is_calibr.setChecked(True)
         self.temp_id_is_calibr.setEnabled(False)
-        self.tableConfigWidget.setCellWidget(8, 1, self.temp_id_is_calibr)
-        self.set_combo_index(self.ship_code_combo, self.instrument.ship_code)
+        self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_is_calibr)
 
-        self.fill_table_config(9, 0, 'Calibration check passed')
-        self.fill_table_config(9, 1, "Didn't run calibration yet")
 
+        self.fill_table_config(8, 0, 'Calibration check passed')
+        self.fill_table_config(8, 1, "Didn't run calibration yet")
+
+        self.create_manual_sal_group()
+        self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
+        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
+        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
+        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0)
+        self.tab_config.setLayout(self.tab_config.layout)
+
+    def config_dye_info(self):
+        self.dye_combo = QComboBox()
+        self.combo_in_config(self.dye_combo, "DYE type pH")
+        self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
+
+        #if not self.args.co3:
+        #    self.fill_table_config(1, 0, str("NIR, "+"HI-, "+"I2-"))
+        #    self.fill_table_config(1, 1, str(self.instrument.NIR) + ',' + str(self.instrument.HI)+
+        #                           ',' + str(self.instrument.I2))
+
+    def combo_in_config(self, combo, name):
+        combo_dict = {
+            "Ship": [
+                ['Standalone', 'NB', 'FA', 'TF'],
+                self.ship_code_changed,
+                self.instrument.ship_code],
+
+            'Temp probe id': [
+                ["Probe_" + str(n) for n in range(1, 10)],
+                self.temp_id_combo_changed,
+                self.instrument.TempProbe_id],
+
+            'Sampling interval': [
+                ['5', '7', '10', '15', '20', '30', '60'],
+                self.sampling_int_chngd,
+                int(self.instrument.samplingInterval)
+            ],
+
+            "Spectroph integration time" : [
+                list(range(100, 5000, 100)),
+                self.specIntTime_combo_chngd,
+                self.instrument.specIntTime
+            ],
+            "DYE type pH" : [
+                ["TB", "MCP"],
+                self.dye_combo_chngd,
+                self.instrument.dye
+            ],
+            "DYE type CO3": [
+                ['Pb_perchlor'],
+                self.dye_combo_chngd,
+                self.instrument.dye
+            ]
+        }
+
+        [combo.addItem(str(item)) for item in combo_dict[name][0]]
+        combo.currentIndexChanged.connect(combo_dict[name][1])
+        self.set_combo_index(combo, combo_dict[name][2])
+
+
+    def create_manual_sal_group(self):
         self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
         l = QtGui.QHBoxLayout()
         self.whole_sal = QComboBox()
@@ -639,12 +682,7 @@ class Panel(QWidget):
         l.addWidget(self.third_decimal)
 
         self.manual_sal_group.setLayout(l)
-
-        self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
-        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0)
-        self.tab_config.setLayout(self.tab_config.layout)
+        return self.manual_sal_group
 
     def get_salinity_manual(self):
         salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
@@ -661,8 +699,7 @@ class Panel(QWidget):
                 combo, str(text)))
 
     def sampling_int_chngd(self, ind):
-        minutes = int(self.samplingInt_combo.currentText())
-        self.instrument.samplingInterval = int(minutes) * 60
+        self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
@@ -844,8 +881,7 @@ class Panel(QWidget):
             j["pH"]["LED2"] = self.instrument.LED2
             j["pH"]["LED3"] = self.instrument.LED3
 
-            minutes = int(self.samplingInt_combo.currentText())
-            j["Operational"]["SAMPLING_INTERVAL_SEC"] = minutes * 60
+            j["Operational"]["SAMPLING_INTERVAL_MIN"] = int(self.samplingInt_combo.currentText())
             json_file.seek(0)  # rewind
             json.dump(j, json_file, indent=4)
             json_file.truncate()
@@ -866,10 +902,10 @@ class Panel(QWidget):
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
-        self.fill_table_config(1, 1,
+        '''self.fill_table_config(1, 1,
                                str(self.instrument.NIR) + ',' +
                                str(self.instrument.HI) + ',' +
-                               str(self.instrument.I2))
+                               str(self.instrument.I2))'''
 
     def change_plus_minus_butn(self, ind, dif):
         value = self.spinboxes[ind].value() + dif
@@ -1163,9 +1199,9 @@ class Panel(QWidget):
             if "Measuring" not in self.major_modes:
                 self.until_next_sample = self.instrument.samplingInterval
 
-            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000)
+            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
 
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample / 60} minutes ')
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
             self.infotimer_contin_mode.start(self.infotimer_step * 1000)
         else:
             self.unset_major_mode("Continuous")
@@ -1253,10 +1289,7 @@ class Panel(QWidget):
             self.btn_manual_mode.setEnabled(True)
 
         if 'Measurement' not in self.major_modes:
-            if self.until_next_sample > 60:
-                self.StatusBox.setText(f'Next sample in {self.until_next_sample / 60} minutes ')
-            else:
-                self.StatusBox.setText(f'Next sample in {self.until_next_sample} seconds ')
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
 
         self.until_next_sample -= self.infotimer_step
 
@@ -1446,8 +1479,7 @@ class Panel(QWidget):
 
             if 'Calibration' in self.major_modes:
                 self.get_calibration_results()
-                dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
-                self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
+
 
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
@@ -1632,8 +1664,6 @@ class Panel(QWidget):
         logging.info("saved log_df")
 
 
-
-
 class Panel_pH(Panel):
     def __init__(self, parent, panelargs, base_folderpath):
         super().__init__(parent, panelargs, base_folderpath)
@@ -1719,8 +1749,17 @@ class Panel_pH(Panel):
 
 
     def get_calibration_results(self):
-        dif_pH = self.data_log_row['pH_insitu'].values - self.instrument.buffer_pH_value
-        self.fill_table_config(9, 1, f"pH diff after calibration {dif_pH}")
+        pH_buffer_theoretical = self.instrument.calc_pH_buffer_theo(self.evalPar_df)
+
+        dif_pH = self.data_log_row['pH_lab'].values - pH_buffer_theoretical
+        calibration_threshold = 0.05
+        if abs(dif_pH) < calibration_threshold:
+            result = True
+        else:
+            result = False
+        # Should we also add the time of last calibration?
+        # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
+        self.fill_table_config(9, 1, f"{result}")
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
@@ -1774,6 +1813,13 @@ class Panel_CO3(Panel):
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
         self.tab_manual.setLayout(self.tab_manual.layout)
 
+    def config_dye_info(self):
+        self.dye_combo = QComboBox()
+        self.combo_in_config(self.dye_combo, "DYE type CO3")
+        self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
+
+    def dye_combo_chngd(self):
+        pass
 
     def get_folderpath(self):
 
@@ -1971,7 +2017,7 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
-            self.main_widget = panelPco2(self, self.args, base_folderpath)
+            self.main_widget = Panel_PCO2(self, self.args, base_folderpath)
         elif self.args.co3:
             self.main_widget = Panel_CO3(self, self.args, base_folderpath)
         else:

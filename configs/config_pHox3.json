@@ -18,7 +18,7 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_SEC": 300,
+        "SAMPLING_INTERVAL_MIN": 5,
         "Comment": "all intervals are in seconds",
         "pumpTime": 20,
         "mixTime": 5,

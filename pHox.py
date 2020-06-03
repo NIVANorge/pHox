@@ -216,7 +216,7 @@ class Common_instrument(object):
         self.vNTCch = int(conf_operational["T_PROBE_CH"])
         if not (self.vNTCch in range(9)):
             self.vNTCch = 8
-        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_SEC"])
+        self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.pumpTime = int(conf_operational["pumpTime"])
         self.mixT = int(conf_operational["mixTime"])
         self.waitT = int(conf_operational["waitTime"])
@@ -681,6 +681,17 @@ class pH_instrument(Common_instrument):
             self.TempCalCoef[1],
             self.dye,
         ]
+
+    def calc_pH_buffer_theo(self, evalPar_df):
+        # Recalculate buffer pH to cuvette temperature
+        t_cuv_K = evalPar_df["T_cuvette"][0] + 273.15
+        par1 = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2) / (t_cuv_K)
+        par2 = (64.52243-0.084041*35)*np.log(t_cuv_K)
+        sal = 35
+        pH_buffer_theoretical = par1 - 366.27059+0.53993607*sal+0.00016329*sal**2 + par2 - 0.11149858*(t_cuv_K)
+        return pH_buffer_theoretical
+
+
 
     def pH_eval(self, evalPar_df):
         logging.debug(f'evalPar_df["T_cuvette"] {evalPar_df["T_cuvette"]}')
