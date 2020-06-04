@@ -1071,10 +1071,10 @@ class Panel(QWidget):
 
     def send_pco2_to_ferrybox(self):
         row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
-        print('pco2 raw to string')
-        print('final string:' + "$PPCO2," + row_to_string + ",*\n")
-        udp.send_data("$PPCO2," + row_to_string + ",*\n", self.instrument.ship_code)
-
+        v = self.pco2_instrument.ppco2_string_version
+        string_to_udp = "$PPCO2," + str(v) + ',' + row_to_string + ",*\n"
+        udp.send_data(string_to_udp, self.instrument.ship_code)
+        print (string_to_udp)
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
         adj, pixelLevel = await self.instrument.auto_adjust()
@@ -1763,8 +1763,9 @@ class Panel_pH(Panel):
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        print ("$PPHOX," + row_to_string + ",*\n")
-        udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
+        string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+                         row_to_string + ",*\n")
+        udp.send_data(string_to_udp, self.instrument.ship_code)
 
 
 class Panel_CO3(Panel):

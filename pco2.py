@@ -89,6 +89,7 @@ class pco2_instrument(object):
         self.air_pres_cal = f["AIR_PRES_CAL"]
         self.water_detect = f["WAT_DETECT"]
         self.Co2_CalCoef = f["CO2_FRAC_CAL"]
+        self.ppco2_string_version = f['PPCO2_STRING_VERSION']
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
         self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"

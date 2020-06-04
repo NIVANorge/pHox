@@ -50,8 +50,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "Tris_Buffer_salinity": 0,
-        "Theoretical_pH": 0
+        "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",

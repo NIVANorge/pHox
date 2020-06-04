@@ -475,7 +475,7 @@ class pH_instrument(Common_instrument):
         self.LED2 = int(conf_pH["LED2"])
         self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [self.LED1, self.LED2, self.LED3]
-
+        self.PPHOX_string_version = conf_pH['PPHOX_STRING_VERSION']
     '''def get_wvlPixels(self, wvls):
         self.wvlPixels = []
         for wl in (self.HI, self.I2, self.NIR):

@@ -49,7 +49,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "LED4": 70
+        "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
         "water_temperature":
@@ -59,8 +59,8 @@
             29.84
         ],
             "WAT_TEMP_CH": 1
-        }
-,
+        },
+        "PPCO2_STRING_VERSION": "1",
         "comment1": "# Water flow calibration coefficients :",
         "WAT_FLOW_CAL": [
             -1.25,

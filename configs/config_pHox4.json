@@ -46,7 +46,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "LED4": 96
+        "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
