@@ -115,7 +115,7 @@ class Panel_PCO2(QWidget):
         # v.addWidget(self.plotwidget_pco2)
         # self.tab_pco2_plot.setLayout(v)
 
-        self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
+        self.pco2_data_line = self.plotwidget_pco2.plot()
         # self.tab_pco2.layout2.addWidget(self.plotwidget_pco2, 0, 2)
         self.tab_pco2.setLayout(self.tab_pco2.layout2)
         self.plotwidget_pco2.setBackground("#19232D")
@@ -132,6 +132,9 @@ class Panel_PCO2(QWidget):
         self.timerSave_pco2.timeout.connect(self.update_pco2_data)
         self.timerSave_pco2.start(1000)
         self.make_tab_pco2_calibration()
+
+        self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
+        self.symbolSize = 10
 
     def make_tab_pco2_calibration(self):
         l = QGridLayout()
@@ -184,13 +187,22 @@ class Panel_PCO2(QWidget):
 
     async def update_pco2_plot(self):
         # UPDATE PLOT WIDGETS
+        # only pco2 plot
+
+        if len(self.pco2_times) == 5:
+            self.symbolSize = 5
+
+        if len(self.pco2_times) == 300:
+            self.pen = pg.mkPen(None)
+
         if len(self.pco2_times) > 7000:
             self.pco2_times = self.pco2_times[1:]
             self.pco2_list = self.pco2_list[1:]
 
         self.pco2_times.append(datetime.now().timestamp())
         self.pco2_list.append(self.pco2_instrument.co2)
-        self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
+
+        self.pco2_data_line.setData(self.pco2_times, self.pco2_list, symbolBrush= 'w', alpha = 0.3, size=1, symbol='o', symbolSize = self.symbolSize, pen=self.pen)
 
     def autorun(self):
         pass
@@ -217,6 +229,8 @@ class Panel(QWidget):
         self.voltage_live = QLineEdit()
 
         if self.args.pco2:
+            self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
+            self.symbolSize = 10
             if self.args.localdev:
                 self.pco2_instrument = test_pco2_instrument(self.base_folderpath)
             else:
@@ -257,7 +271,8 @@ class Panel(QWidget):
             self.tab_pco2_plot.setLayout(v)
             self.pco2_list = []
             self.pco2_times = []
-            self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o')
+
+            self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o', pen=self.pen)
 
             self.plotwidget_pco2.setBackground("#19232D")
             self.plotwidget_pco2.showGrid(x=True, y=True)
@@ -1055,26 +1070,36 @@ class Panel(QWidget):
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
         await self.tab_pco2.update_tab_values(values)
 
+        await self.update_pco2_plot()
+
+        # if returnnot self.args.localdev:
+        self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
+        self.send_pco2_to_ferrybox()
+
+    async def update_pco2_plot(self):
+        # UPDATE PLOT WIDGETS
+
+        if len(self.pco2_times) == 5:
+            self.symbolSize = 5
+
+        if len(self.pco2_times) == 300:
+            self.pen = pg.mkPen(None)
+
         if len(self.pco2_times) > 7000:
             self.pco2_times = self.pco2_times[1:]
             self.pco2_list = self.pco2_list[1:]
 
         self.pco2_times.append(datetime.now().timestamp())
         self.pco2_list.append(self.pco2_instrument.co2)
-        self.pco2_data_line.setData(self.pco2_times, self.pco2_list)
-
-        # if not self.args.localdev:
-        self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
-        self.send_pco2_to_ferrybox()
-        return
-
+        self.pco2_data_line.setData(self.pco2_times, self.pco2_list, symbolBrush= 'w', symbol='o',
+                                    symbolSize = self.symbolSize, pen=self.pen)
 
     def send_pco2_to_ferrybox(self):
         row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
         v = self.pco2_instrument.ppco2_string_version
         string_to_udp = "$PPCO2," + str(v) + ',' + row_to_string + ",*\n"
         udp.send_data(string_to_udp, self.instrument.ship_code)
-        print (string_to_udp)
+
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
         adj, pixelLevel = await self.instrument.auto_adjust()
