@@ -184,7 +184,7 @@ class Panel_PCO2(QWidget):
 
     async def update_pco2_plot(self):
         # UPDATE PLOT WIDGETS
-        if len(self.pco2_times) > 25:
+        if len(self.pco2_times) > 7000:
             self.pco2_times = self.pco2_times[1:]
             self.pco2_list = self.pco2_list[1:]
 
@@ -228,7 +228,7 @@ class Panel(QWidget):
 
         self.until_next_sample = None
         self.infotimer_step = 15  # seconds
-        self.manual_limit = 60 * 3  # 3 minutes, time when we turn off manual mode if continuous is clicked
+        self.manual_limit = 3  # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
         self.tabs = QTabWidget()
@@ -1055,7 +1055,7 @@ class Panel(QWidget):
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
         await self.tab_pco2.update_tab_values(values)
 
-        if len(self.pco2_times) > 25:
+        if len(self.pco2_times) > 7000:
             self.pco2_times = self.pco2_times[1:]
             self.pco2_list = self.pco2_list[1:]
 
@@ -1291,7 +1291,7 @@ class Panel(QWidget):
         if 'Measurement' not in self.major_modes:
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
 
-        self.until_next_sample -= self.infotimer_step
+        self.until_next_sample -= round(self.infotimer_step/60,3)
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
@@ -1772,6 +1772,7 @@ class Panel_CO3(Panel):
     def __init__(self, parent, panelargs,base_folderpath):
         super().__init__(parent, panelargs,base_folderpath)
         self.base_folderpath = base_folderpath
+
         self.plotwidget1.setXRange(220, 260)
         self.plotwidget2.setXRange(220, 260)
         self.plotwidget2.setTitle("Last CO3 measurement")

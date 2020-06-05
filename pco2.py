@@ -121,7 +121,7 @@ class pco2_instrument(object):
             response_t = self.portSens.read(15)
             logging.debug('response_t {response_t}')
             try:
-                self.co2_temp = round(float(response_t[3:]), prec['Tdeg'])
+                self.co2_temp = round(float(response_t[3:]), prec['T_cuvette'])
             except ValueError:
                 self.co2_temp = 0
 
