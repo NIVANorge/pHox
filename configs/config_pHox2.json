@@ -21,7 +21,7 @@
         "SAMPLING_INTERVAL_MIN": 5,
         "Comment": "all intervals are in minutes",
         "pumpTime": 15,
-        "mixTime": 5,
+        "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 1000,
