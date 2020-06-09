@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_6",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -18,17 +18,17 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 5,
+        "SAMPLING_INTERVAL_MIN": 15,
         "Comment": "all intervals are in seconds",
         "pumpTime": 20,
-        "mixTime": 5,
+        "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 1800,
-        "Ship_Code": "Standalone",
-        "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
-        "LIGHT_THRESHOLD_STS": 15500,            
-        "LIGHT_THRESHOLD_FLAME": 60000     
+        "Spectro_Integration_time": 900,
+        "Ship_Code": "NB",
+        "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
+        "LIGHT_THRESHOLD_STS": 15500,
+        "LIGHT_THRESHOLD_FLAME": 60000
     },
     "pH": {
         "LED_SLOTS": [
@@ -37,9 +37,9 @@
             12,
             16
         ],
-        "LED1": 29,
-        "LED2": 16,
-        "LED3": 80,
+        "LED1": 29.271484375,
+        "LED2": 47.875,
+        "LED3": 86.5,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -95,9 +95,8 @@
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor"
-           
     },
-    "TrisBuffer":{
+    "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35

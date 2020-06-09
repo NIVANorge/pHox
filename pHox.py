@@ -302,7 +302,11 @@ class Common_instrument(object):
     def get_Vd(self, nAver, channel):
         V = 0.0000
         for i in range(nAver):
-            V += self.adc.read_voltage(channel)
+            try:
+                V += self.adc.read_voltage(channel)
+            except TimeoutError:
+                print('Timeout error in get_Vd')
+                pass
         return V / nAver
 
     def calc_wavelengths(self):
