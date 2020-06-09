@@ -302,7 +302,10 @@ class Common_instrument(object):
     def get_Vd(self, nAver, channel):
         V = 0.0000
         for i in range(nAver):
-            V += self.adc.read_voltage(channel)
+            try:
+                V += self.adc.read_voltage(channel)
+            except TimeoutError:
+                pass
         return V / nAver
 
     def calc_wavelengths(self):
@@ -699,7 +702,7 @@ class pH_instrument(Common_instrument):
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
         t_cuvette = evalPar_df["T_cuvette"][0]
         pH_lab = evalPar_df["pH"][0]
-        pH_t_corr = evalPar_df["pH"] + dpH_dT * (evalPar_df["T_cuvette"] - t_cuvette)
+        pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
 
         nrows = evalPar_df.shape[0]
 
@@ -736,7 +739,7 @@ class pH_instrument(Common_instrument):
                     else:
                         pH_lab = pH_t_corr[1]
 
-            pH_insitu = round(pH_lab + dpH_dT * (t_cuvette - self.fb_data["temperature"]), prec["pH"])
+            pH_insitu = round(pH_lab + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])
             pH_lab = round(pH_lab, prec["pH"])
 

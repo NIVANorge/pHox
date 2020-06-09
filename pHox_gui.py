@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainT
 from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout,
                              QTableWidget, QHeaderView, QComboBox, QCheckBox,
                              QSlider, QInputDialog, QApplication, QMainWindow)
+from PyQt5.QtGui import QIcon,QPixmap
 import numpy as np
 import pyqtgraph as pg
 import argparse
@@ -570,9 +571,10 @@ class Panel(QWidget):
         self.btn_save_config = self.create_button("Save config", False)
         self.btn_save_config.clicked.connect(self.btn_save_config_clicked)
 
-
-
-
+        self.btn_test_udp = self.create_button('Test UDP', True)
+        self.timer_test_udp = QtCore.QTimer()
+        self.timer_test_udp.timeout.connect(self.send_test_udp)
+        self.btn_test_udp.clicked.connect(self.test_udp)
 
 
         self.tableConfigWidget = QTableWidget()
@@ -623,9 +625,10 @@ class Panel(QWidget):
 
         self.create_manual_sal_group()
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0)
-        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0)
+        self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
+        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 2)
+        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 2 )
+        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 1, 2)
         self.tab_config.setLayout(self.tab_config.layout)
 
     def config_dye_info(self):
@@ -1243,19 +1246,25 @@ class Panel(QWidget):
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
 
-            valve_turned = QMessageBox.question(self, "important message!!!",
-                                                "Manually turn the valve to calibration mode",
-                                                QMessageBox.Yes | QMessageBox.No)
-            valve_turned_confirm = QMessageBox.question(self, "important message!!!",
-                                                        "ARE YOU SURE YOU TURNED THE VALVE???",
-                                                        QMessageBox.Yes | QMessageBox.No)
+            valve_turned_msg = QMessageBox()
+            valve_turned_msg.setIconPixmap(QPixmap("Figure_1.png"))
+            valve_turned_msg.setWindowTitle('Message')
+            valve_turned_msg.setText(
+                "Turn the input valve (white) to internal input water position " +
+                "  (Get water from calibration solution)")
+            valve_turned_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            valve_turned = valve_turned_msg.exec_()
+            #QMessageBox.question, "important message",
+            #"Turn the input valve (white) to calibration position",
+            #, parent = self
 
-            if valve_turned == QMessageBox.Yes and valve_turned_confirm == QMessageBox.Yes:
+
+            if valve_turned == QMessageBox.Yes:
                 folderpath = self.get_folderpath()
                 flnmStr, timeStamp = self.get_filename()
                 await self.sample(folderpath, flnmStr, timeStamp)
 
-                v = QMessageBox.question(self, "important message!!!",
+                v = QMessageBox.question(self, "important message",
                                          "Manually turn the valve back to ferrybox mode",
                                          QMessageBox.Yes | QMessageBox.No)
 
@@ -1737,14 +1746,14 @@ class Panel_pH(Panel):
 
         [
             self.fill_table_measurement(k, 1, str(self.data_log_row[v].values[0]))
-            for k, v in enumerate(["pH_lab", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
+            for k, v in enumerate(["pH_cuvette", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
         ]
 
     def get_final_value(self, timeStamp):
         # get final pH
         logging.debug(f'get final pH ')
         p = self.instrument.pH_eval(self.evalPar_df)
-        (pH_lab, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+        (pH_cuvette, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
          self.pH_t_corr) = p
 
         self.data_log_row = pd.DataFrame(
@@ -1755,7 +1764,7 @@ class Panel_pH(Panel):
                 "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
-                "pH_lab": [pH_lab],
+                "pH_lab": [pH_cuvette],
                 "T_cuvette": [t_cuvette],
                 "perturbation": [perturbation],
                 "evalAnir": [evalAnir],
@@ -1776,7 +1785,7 @@ class Panel_pH(Panel):
     def get_calibration_results(self):
         pH_buffer_theoretical = self.instrument.calc_pH_buffer_theo(self.evalPar_df)
 
-        dif_pH = self.data_log_row['pH_lab'].values - pH_buffer_theoretical
+        dif_pH = self.data_log_row['pH_cuvette'].values - pH_buffer_theoretical
         calibration_threshold = 0.05
         if abs(dif_pH) < calibration_threshold:
             result = True
@@ -1785,6 +1794,37 @@ class Panel_pH(Panel):
         # Should we also add the time of last calibration?
         # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
         self.fill_table_config(9, 1, f"{result}")
+
+    def test_udp(self, state):
+        print (state)
+        timeStamp = datetime.utcnow().isoformat("_")[0:16]
+        self.test_data_log_row = pd.DataFrame(
+            {
+                "Time": [timeStamp],
+                "Lon": [fbox["longitude"]],
+                "Lat": [fbox["latitude"]],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
+                "SHIP": [self.instrument.ship_code],
+                "pH_lab": [0],
+                "T_cuvette": [0],
+                "perturbation": [0],
+                "evalAnir": [0],
+                "pH_insitu": [0],
+                "box_id": ['box_test']
+            }
+        )
+        if state:
+            self.timer_test_udp.start(10000)
+        else:
+            self.timer_test_udp.stop()
+
+    def send_test_udp(self):
+        print ('send test udp')
+        string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+                     self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
+        print (string_to_udp)
+        udp.send_data(string_to_udp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
