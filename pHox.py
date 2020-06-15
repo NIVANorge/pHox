@@ -305,10 +305,7 @@ class Common_instrument(object):
             try:
                 V += self.adc.read_voltage(channel)
             except TimeoutError:
-<<<<<<< HEAD
                 print('Timeout error in get_Vd')
-=======
->>>>>>> 05001b19c38d607800d76862e55bb1cede1b6951
                 pass
         return V / nAver
 
