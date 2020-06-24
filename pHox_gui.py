@@ -388,6 +388,9 @@ class Panel(QWidget):
             self.manual_widgets_set_enabled(False)
             self.config_widgets_set_state(False)
 
+        if mode_set == 'Paused':
+            self.btn_manual_mde.setEnabled(True)
+
         self.major_modes.add(mode_set)
         logging.debug(f"New mode:{self.major_modes}")
         return True
@@ -1729,7 +1732,7 @@ class Panel_pH(Panel):
         self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
-         for k, v in enumerate(["pH lab", "T lab", "pH insitu", "T insitu", "S insitu"])]
+         for k, v in enumerate(["pH cuvette", "T cuvette", "pH insitu", "T insitu", "S insitu"])]
 
     def make_tab_manual(self):
         self.tab_manual.layout = QGridLayout()
@@ -1764,7 +1767,7 @@ class Panel_pH(Panel):
                 "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
-                "pH_lab": [pH_cuvette],
+                "pH_cuvette": [pH_cuvette],
                 "T_cuvette": [t_cuvette],
                 "perturbation": [perturbation],
                 "evalAnir": [evalAnir],
@@ -1806,7 +1809,7 @@ class Panel_pH(Panel):
                 "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
-                "pH_lab": [0],
+                "pH_cuvette": [0],
                 "T_cuvette": [0],
                 "perturbation": [0],
                 "evalAnir": [0],
@@ -1830,7 +1833,7 @@ class Panel_pH(Panel):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
         string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                          row_to_string + ",*\n")
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        #udp.send_data(string_to_udp, self.instrument.ship_code)
 
 
 class Panel_CO3(Panel):
