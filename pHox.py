@@ -860,12 +860,13 @@ class Test_instrument(pH_instrument):
             await asyncio.sleep(self.waitT)
 
     async def pump_dye(self, nshots):
+        # biochemical valve solenoid pump
         for shot in range(nshots):
             logging.info("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.15)
             self.turn_off_relay(self.dyepump_slot)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.35)
         return
 
     def print_Com(self, port, txtData):

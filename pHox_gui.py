@@ -178,13 +178,9 @@ class Panel_PCO2(QWidget):
         await self.send_pco2_to_ferrybox()
         return
 
-
     async def send_pco2_to_ferrybox(self):
         row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
-        print('pco2 raw to string ')
-        print('final string:' + "$PPCO2," + row_to_string + ",*\n")
         udp.send_data("$PPCO2," + row_to_string + ",*\n", self.pco2_instrument.ship_code)
-
 
     async def update_pco2_plot(self):
         # UPDATE PLOT WIDGETS
@@ -203,7 +199,9 @@ class Panel_PCO2(QWidget):
         self.pco2_times.append(datetime.now().timestamp())
         self.pco2_list.append(self.pco2_instrument.co2)
 
-        self.pco2_data_line.setData(self.pco2_times, self.pco2_list, symbolBrush= 'w', alpha = 0.3, size=1, symbol='o', symbolSize = self.symbolSize, pen=self.pen)
+        self.pco2_data_line.setData(self.pco2_times, self.pco2_list, symbolBrush='w',
+                                    alpha=0.3, size=1, symbol='o',
+                                    symbolSize=self.symbolSize, pen=self.pen)
 
     def autorun(self):
         pass
@@ -212,7 +210,8 @@ class Panel(QWidget):
     def __init__(self, parent, panelargs,base_folderpath):
         super(QWidget, self).__init__(parent)
         self.major_modes = set()
-        self.valid_modes = ["Measuring", "Adjusting", "Manual", "Continuous", "Calibration", "Flowcheck",
+        self.valid_modes = ["Measuring", "Adjusting", "Manual",
+                            "Continuous", "Calibration", "Flowcheck",
                             "Paused"]
 
         self.args = panelargs
@@ -389,7 +388,7 @@ class Panel(QWidget):
             self.config_widgets_set_state(False)
 
         if mode_set == 'Paused':
-            self.btn_manual_mde.setEnabled(True)
+            self.btn_manual_mode.setEnabled(True)
 
         self.major_modes.add(mode_set)
         logging.debug(f"New mode:{self.major_modes}")
