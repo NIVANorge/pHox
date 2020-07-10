@@ -151,7 +151,6 @@ class pco2_instrument(object):
         return self.pco2_df
 
 
-
 class onlyPco2instrument(pco2_instrument):
     # Class for communication with Raspberry PI for the only pco2 case
     def __init__(self,base_folderpath):

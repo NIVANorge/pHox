@@ -480,10 +480,6 @@ class pH_instrument(Common_instrument):
         self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [self.LED1, self.LED2, self.LED3]
         self.PPHOX_string_version = conf_pH['PPHOX_STRING_VERSION']
-    '''def get_wvlPixels(self, wvls):
-        self.wvlPixels = []
-        for wl in (self.HI, self.I2, self.NIR):
-            self.wvlPixels.append(self.find_nearest(wvls, wl))'''
 
     def adjust_LED(self, led, LED):
         self.rpi.set_PWM_dutycycle(self.led_slots[led], LED)

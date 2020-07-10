@@ -92,8 +92,8 @@ class AsyncThreadWrapper:
         return self.result
 
 
-class Panel_PCO2(QWidget):
-    # ONLY PCO2
+class Panel_PCO2_only(QWidget):
+    # Class for ONLY PCO2 Instrument
     def __init__(self, parent, panelargs, base_folderpath):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
@@ -110,14 +110,9 @@ class Panel_PCO2(QWidget):
         self.pco2_times = []
         self.tab_pco2_calibration = QTabWidget()
         self.tabs.addTab(self.tab_pco2_calibration, "Calibration")
-        # v = QtGui.QVBoxLayout()
         date_axis = TimeAxisItem(orientation='bottom')
         self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
-        # v.addWidget(self.plotwidget_pco2)
-        # self.tab_pco2_plot.setLayout(v)
-
         self.pco2_data_line = self.plotwidget_pco2.plot()
-        # self.tab_pco2.layout2.addWidget(self.plotwidget_pco2, 0, 2)
         self.tab_pco2.setLayout(self.tab_pco2.layout2)
         self.plotwidget_pco2.setBackground("#19232D")
         self.plotwidget_pco2.showGrid(x=True, y=True)
@@ -205,6 +200,7 @@ class Panel_PCO2(QWidget):
 
     def autorun(self):
         pass
+
 
 class Panel(QWidget):
     def __init__(self, parent, panelargs,base_folderpath):
@@ -2057,13 +2053,9 @@ class boxUI(QMainWindow):
 
         from util import base_folderpath
 
-        parser.add_argument("--nodye", action="store_true")
-        parser.add_argument("--pco2", action="store_true")
-        parser.add_argument("--co3", action="store_true")
-        parser.add_argument("--debug", action="store_true")
-        parser.add_argument("--localdev", action="store_true")
-        parser.add_argument("--stability", action="store_true")
-        parser.add_argument("--onlypco2", action="store_true")
+        arguments = ["--nodye", "--pco2", "--co3", "--debug",
+                     "--localdev", "--stability", "--onlypco2"]
+        [parser.add_argument(ar, action="store_true") for ar in arguments]
         self.args = parser.parse_args()
 
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
@@ -2073,7 +2065,6 @@ class boxUI(QMainWindow):
         fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         fh.setLevel(logging.DEBUG)
         self.logger.addHandler(fh)
-
 
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
@@ -2086,12 +2077,12 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
-            self.main_widget = Panel_PCO2(self, self.args, base_folderpath)
+            self.main_widget = Panel_PCO2_only(self, self.args, base_folderpath)
         elif self.args.co3:
             self.main_widget = Panel_CO3(self, self.args, base_folderpath)
         else:
             self.main_widget = Panel_pH(self, self.args, base_folderpath)
-            #self.main_widget = Panel_Spec_instruments(self, self.args)
+
         self.setCentralWidget(self.main_widget)
         self.showMaximized()
         self.main_widget.autorun()
@@ -2108,7 +2099,8 @@ class boxUI(QMainWindow):
         if result == QMessageBox.Yes:
 
             if self.args.co3:
-                self.main_widget.instrument.turn_off_relay(self.main_widget.instrument.light_slot)
+                self.main_widget.instrument.turn_off_relay(
+                    self.main_widget.instrument.light_slot)
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
                 self.main_widget.timerSpectra_plot.stop()

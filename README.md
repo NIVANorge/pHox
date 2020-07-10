@@ -25,7 +25,7 @@ Append the command line argument with parameters if you want to change the mode:
 * --debug  # to show logging messages of debug level (by default, only info level messages are shown)
 * --localdev # to run the program in a local development mode (**only for testing**)
 * --nodye  # do not inject dye during sample for not making a cuvette dirty (**only for testing**) 
-* --stability # to test stability of a spectrophotometr. It this option is enabled,every time we get spectrum 
+* --stability # to test stability of a spectrophotometer. It this option is enabled,every time we get spectrum 
  to update the plot, this spectrum is also saved into sp_stability.log (**only for testing**)
 
 
@@ -38,31 +38,49 @@ Append the command line argument with parameters if you want to change the mode:
 4. make sure that the configuration for you box is in configs/ folder, if it is not there, 
 create it. 
 
-
-### Folder structure  
- ![](utils/folder_structure.png)
- 
-#### Code  description
+### Code  description
 
 ###### Versions and libraries
 
 The code is written on Python and should be used with versions >= python3.7 
 For the GUI development we used PyQT library
 
-#### TODO: Subthemes: 
-* Communication with the Raspberry pi
+##### Folder structure  
+ ![](utils/folder_structure.png)
+ * spt,evl and log files description 
+ 
+### Graphical part description 
+Libraries: pyQT, pyqtgraph
+
+###### Classes structure for GUI panel create 
+![](utils/classes.png)
+
+When you call the main module, pHox_gui.py, the main graphical panel is created. 
+Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
+In these classes, all widgets, all timers are created.  
+
+######  qss styles 
+###### Live plotting
+
+### Communication part
+
+![](utils/instrument_classes.png)
 * Communication with the spectrometer
-* Live plotting 
+* Communication with raspberri pi, valves, pumps
+* Udp and ferrybox data 
+
+#### TODO: Subthemes: 
+
 * Configuration files 
 * Local testing 
-* Measurement algorythm 
+* Measurement algorithm 
 * Light source or LED, auto adjustment 
 * Autostart and autostop 
-* spt,evl and log files description 
-* udp and ferrybox data 
+
+
 * precisions
 * asynchronous parts
-* qss styles 
+
 * Logic and modes 
     * Continuous mode 
     * Single measurement mode
