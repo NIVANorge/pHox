@@ -113,8 +113,6 @@ QTextEdit{
 }
 
 
-QLabel {font-size: 10pt;}
-
 QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
   color: #11161a;
 }
@@ -137,3 +135,4 @@ QCheckBox::indicator::checked {
 QTabBar::tab {width: 4em;height: 2em; font-size: 10pt; 
               margin-bottom: 0;}
 QSpinBox {margin-right: 0px; max-width: 30px;}
+QLabel {font-size: 10pt;}

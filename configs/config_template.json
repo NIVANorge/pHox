@@ -27,7 +27,9 @@
         "Ship_Code": "NB",
         "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
         "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
     },
     "pH": {
         "LED_SLOTS": [

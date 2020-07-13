@@ -175,6 +175,8 @@ class Panel_PCO2_only(QWidget):
 
     async def send_pco2_to_ferrybox(self):
         row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
+        #TODO: add pco2 string version
+        v = self.pco2_instrument.ppco2_string_version
         udp.send_data("$PPCO2," + row_to_string + ",*\n", self.pco2_instrument.ship_code)
 
     async def update_pco2_plot(self):
@@ -586,6 +588,12 @@ class Panel(QWidget):
         self.fill_table_config(0, 0, "DYE type")
         self.config_dye_info()
 
+
+        self.fill_table_config(1, 0, "Autoadjust state")
+        self.autoadjState_combo = QComboBox()
+        self.combo_in_config(self.autoadjState_combo, "Autoadjust_state")
+        self.tableConfigWidget.setCellWidget(1, 1, self.autoadjState_combo)
+
         self.fill_table_config(2, 0, 'Pumping time (seconds)')
         self.fill_table_config(2, 1, str(self.instrument.pumpTime))
 
@@ -594,9 +602,9 @@ class Panel(QWidget):
         self.combo_in_config(self.samplingInt_combo, 'Sampling interval')
         self.tableConfigWidget.setCellWidget(3, 1, self.samplingInt_combo)
 
-        self.fill_table_config(4, 0, "Spectroph integration time")
+        self.fill_table_config(4, 0, "Spectro integration time")
         self.specIntTime_combo = QComboBox()
-        self.combo_in_config(self.specIntTime_combo, "Spectroph integration time")
+        self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
         self.tableConfigWidget.setCellWidget(4, 1, self.specIntTime_combo)
 
         self.fill_table_config(5, 0, "Ship")
@@ -634,11 +642,6 @@ class Panel(QWidget):
         self.combo_in_config(self.dye_combo, "DYE type pH")
         self.tableConfigWidget.setCellWidget(0, 1, self.dye_combo)
 
-        #if not self.args.co3:
-        #    self.fill_table_config(1, 0, str("NIR, "+"HI-, "+"I2-"))
-        #    self.fill_table_config(1, 1, str(self.instrument.NIR) + ',' + str(self.instrument.HI)+
-        #                           ',' + str(self.instrument.I2))
-
     def combo_in_config(self, combo, name):
         combo_dict = {
             "Ship": [
@@ -654,10 +657,14 @@ class Panel(QWidget):
             'Sampling interval': [
                 ['5', '7', '10', '15', '20', '30', '60'],
                 self.sampling_int_chngd,
-                int(self.instrument.samplingInterval)
-            ],
+                int(self.instrument.samplingInterval)],
 
-            "Spectroph integration time" : [
+            "Autoadjust_state": [
+                ['ON', 'OFF', 'ON_NORED'],
+                 self.autoadj_opt_chgd,
+                 self.instrument.autoadj_opt
+                 ],
+            "Spectro integration time": [
                 list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
@@ -717,6 +724,7 @@ class Panel(QWidget):
     def sampling_int_chngd(self, ind):
         self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
 
+
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
         new_int_time = int(self.specIntTime_combo.currentText())
@@ -724,6 +732,9 @@ class Panel(QWidget):
 
     def ship_code_changed(self):
         self.instrument.ship_code = self.ship_code_combo.currentText()
+
+    def autoadj_opt_chgd(self):
+        self.instrument.autoadj_opt = self.autoadjState_combo.currentText()
 
     def temp_id_combo_changed(self):
         self.instrument.TempProbe_id = self.temp_id_combo.currentText()
@@ -893,9 +904,9 @@ class Panel(QWidget):
 
             j["Operational"]["TEMP_PROBE_ID"] = self.instrument.TempProbe_id
 
-            j["pH"]["LED1"] = self.instrument.LED1
-            j["pH"]["LED2"] = self.instrument.LED2
-            j["pH"]["LED3"] = self.instrument.LED3
+            j["pH"]["LED1"] = self.instrument.LEDS[0]
+            j["pH"]["LED2"] = self.instrument.LEDS[1]
+            j["pH"]["LED3"] = self.instrument.LEDS[2]
 
             j["Operational"]["SAMPLING_INTERVAL_MIN"] = int(self.samplingInt_combo.currentText())
             json_file.seek(0)  # rewind
@@ -1125,12 +1136,10 @@ class Panel(QWidget):
 
     async def autoAdjust_LED(self):
         with TimerManager(self.timer2):
-            check = await self.instrument.precheck_leds_to_adj()
-            if not check:
+            check_passed = await self.instrument.precheck_leds_to_adj()
+            if not check_passed:
                 (
-                    self.instrument.LED1,
-                    self.instrument.LED2,
-                    self.instrument.LED3,
+                    self.instrument.LEDS[0], self.instrument.LEDS[1], self.instrument.LEDS[2],
                     result,
                 ) = await self.instrument.auto_adjust()
 
@@ -1139,9 +1148,7 @@ class Panel(QWidget):
 
                 if result:
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
-                    self.sliders[0].setValue(self.instrument.LED1)
-                    self.sliders[1].setValue(self.instrument.LED2)
-                    self.sliders[2].setValue(self.instrument.LED3)
+                    [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
                     logging.info("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
                     datay = await self.instrument.spectrometer_cls.get_intensities()
                     await self.update_spectra_plot_manual(datay)
@@ -1149,7 +1156,7 @@ class Panel(QWidget):
                     self.StatusBox.setText('Not able to adjust LEDs automatically')
 
             else:
-                result = check
+                result = check_passed
                 logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
@@ -1356,9 +1363,8 @@ class Panel(QWidget):
 
 
     def update_LEDs(self):
-        self.sliders[0].setValue(self.instrument.LED1)
-        self.sliders[1].setValue(self.instrument.LED2)
-        self.sliders[2].setValue(self.instrument.LED3)
+        [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
+
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
@@ -1475,7 +1481,8 @@ class Panel(QWidget):
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
-            if not self.btn_disable_autoadj.isChecked():
+
+            if not self.instrument.autoadj_opt == 'OFF':
                 self.sample_steps[0].setChecked(True)
                 logging.info("Autoadjust LEDS")
                 res = await self.call_autoAdjust()
@@ -1993,10 +2000,41 @@ class Panel_CO3(Panel):
         #dif_CO3 = self.data_log_row['CO3_insitu'].values - #reference value
         self.fill_table_config(9, 1, "None")
 
+    def test_udp(self, state):
+        print (state)
+        timeStamp = datetime.utcnow().isoformat("_")[0:16]
+        self.test_data_log_row = pd.DataFrame(
+            {
+                "Time": [timeStamp],
+                "Lon": [fbox["longitude"]],
+                "Lat": [fbox["latitude"]],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
+                "SHIP": [self.instrument.ship_code],
+                "co3_slope": [999],
+                'co3_intercept': [999],
+                'co3_rvalue': [999],
+                "box_id": ['box_test']
+            })
+        if state:
+            self.timer_test_udp.start(10000)
+        else:
+            self.timer_test_udp.stop()
+
+    def send_test_udp(self):
+        print ('send test udp CO3')
+        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
+                     self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
+
+        udp.send_data(string_to_udp, self.instrument.ship_code)
+
     def send_to_ferrybox(self):
 
-        logging.info('Sending CO3 data to ferrybox is not implemented yet')
-        row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
+        logging.info('Sending CO3 data to ferrybox')
+        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
+                     self.data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
+        udp.send_data(string_to_udp, self.instrument.ship_code)
+
         #print (row_to_string)
         #udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
 

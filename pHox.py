@@ -227,7 +227,7 @@ class Common_instrument(object):
         self.dyepump_slot = conf_operational["DYEPUMP_SLOT"]
         self.stirrer_slot = conf_operational["STIRR_SLOT"]
         self.extra_slot = conf_operational["SPARE_SLOT"]
-
+        self.autoadj_opt = conf_operational["Autoadjust_state"]
         # TODO: Replace ssrlines with new lines
         # keep it for now since there is a loop dependent on self.ssrLines
         self.ssrLines = [
@@ -339,6 +339,7 @@ class CO3_instrument(Common_instrument):
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"]
         self.wvl_needed = (self.wvl1, self.wvl2, 350)
+
 
     async def auto_adjust(self, *args):
 
@@ -475,10 +476,10 @@ class pH_instrument(Common_instrument):
 
         # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
-        self.LED1 = int(conf_pH["LED1"])
-        self.LED2 = int(conf_pH["LED2"])
-        self.LED3 = int(conf_pH["LED3"])
-        self.LEDS = [self.LED1, self.LED2, self.LED3]
+       # self.LED1 = int(conf_pH["LED1"])
+       # self.LED2 = int(conf_pH["LED2"])
+       # self.LED3 = int(conf_pH["LED3"])
+        self.LEDS = [int(conf_pH["LED1"]), int(conf_pH["LED2"]), int(conf_pH["LED3"])]
         self.PPHOX_string_version = conf_pH['PPHOX_STRING_VERSION']
 
     def adjust_LED(self, led, LED):
@@ -539,9 +540,12 @@ class pH_instrument(Common_instrument):
         self.spectrum = await self.spectrometer_cls.get_intensities()
         led_vals = np.array(self.spectrum)[self.wvlPixels]
         max_cond = all(n < self.maxval for n in led_vals)
-        min_cond = (led_vals[0] > self.minval and led_vals[1] > self.minval and led_vals[2] > self.THR * 0.90)
+        if self.autoadj_opt == 'ON_NORED':
+            min_cond = (led_vals[0] > self.minval and led_vals[1] > self.minval)
+        else:
+            min_cond = all(n >self.THR for n in led_vals)
         logging.debug(f"precheck result {max_cond,min_cond,led_vals}")
-        return (max_cond and min_cond)
+        return False # (max_cond and min_cond)
 
     async def auto_adjust(self, *args):
         self.adj_action = None
@@ -558,15 +562,21 @@ class pH_instrument(Common_instrument):
             await asyncio.sleep(0.5)
             logging.info(f"Trying {self.specIntTime} ms integration time...")
 
-            LED1, adj1, res1 = await self.find_LED(led_ind=0, adj=adj1, LED=self.LED1)
+            LED1, adj1, res1 = await self.find_LED(led_ind=0, adj=adj1, LED=self.LEDS[0])
 
             if adj1:
                 logging.info("*** adj1 = True")
-                LED2, adj2, res2 = await self.find_LED(led_ind=1, adj=adj2, LED=self.LED2)
+
+                LED2, adj2, res2 = await self.find_LED(led_ind=1, adj=adj2, LED=self.LEDS[1])
 
                 if adj2:
                     logging.info("*** adj2 = True")
-                    LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LED3)
+
+                    if self.autoadj_opt == 'ON_NORED':
+                        LED3, adj3, res = 99, True, "READ adjusting disabled"
+                    else:
+                        LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LEDS[2])
+
                 else:
                     LED3 = 50
             else:
@@ -816,6 +826,11 @@ class Test_instrument(pH_instrument):
     async def auto_adjust(self, *args):
         result = True
         LED1, LED2, LED3 = 50, 60, 70
+        print (self.autoadj_opt,'self.autoadj_opt')
+        if self.autoadj_opt == 'ON_NORED':
+            logging.debug('NO RED in adjusting')
+            LED3, adj3, res = 99, True, "READ adjusting disabled"
+        print (LED1, LED2, LED3, result)
         return LED1, LED2, LED3, result
 
     def reset_lines(self):
