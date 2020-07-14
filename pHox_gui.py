@@ -758,7 +758,7 @@ class Panel(QWidget):
             self.btn_dye_pmp,
             self.btn_wpump,
             self.btn_checkflow,
-            self.btn_disable_autoadj
+
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -772,18 +772,17 @@ class Panel(QWidget):
         btn_grid = QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
-        self.btn_disable_autoadj = self.create_button("Disable autoadjust", True)
+
         # self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button("LEDs", True)
         self.btn_valve = self.create_button("Inlet valve", True)
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
-
         self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-        btn_grid.addWidget(self.btn_disable_autoadj, 0, 1)
+
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
