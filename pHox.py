@@ -545,7 +545,7 @@ class pH_instrument(Common_instrument):
         else:
             min_cond = all(n >self.THR for n in led_vals)
         logging.debug(f"precheck result {max_cond,min_cond,led_vals}")
-        return False # (max_cond and min_cond)
+        return (max_cond and min_cond)
 
     async def auto_adjust(self, *args):
         self.adj_action = None
@@ -869,6 +869,11 @@ class Test_instrument(pH_instrument):
             await asyncio.sleep(self.waitT)
             self.turn_off_relay(line)
             await asyncio.sleep(self.waitT)
+
+    async def precheck_leds_to_adj(self):
+        logging.info('returning False in precheck leds localdev')
+        return False
+
 
     async def pump_dye(self, nshots):
         # biochemical valve solenoid pump

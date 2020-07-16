@@ -35,7 +35,7 @@ import asyncio
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
-        print('init method called')
+        print('TimerManager init method called')
 
     def __enter__(self):
         self.input_timer.start(1000)
@@ -43,7 +43,7 @@ class TimerManager:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.input_timer.stop()
-        print('exit method called')
+        print('TimerManager method called')
 
 
 class QTextEditLogger(logging.Handler):
@@ -220,7 +220,7 @@ class Panel(QWidget):
 
         self.wvls = self.instrument.calc_wavelengths()
         self.instrument.get_wvlPixels(self.wvls)
-
+        self.noWheelCombos = []
         self.t_insitu_live = QLineEdit()
         self.s_insitu_live = QLineEdit()
         self.t_cuvette_live = QLineEdit()
@@ -565,6 +565,14 @@ class Panel(QWidget):
     def fill_table_config(self, x, y, item):
         self.tableConfigWidget.setItem(x, y, QTableWidgetItem(item))
 
+    def eventFilter(self, source, event):
+        """ Filter all mouse scrolling for the defined comboboxes """
+        if (event.type() == QtCore.QEvent.Wheel and
+                source in self.noWheelCombos):
+            print(source, event)
+            return True
+        return super(Panel, self).eventFilter(source, event)
+
     def make_tab_config(self):
         self.tab_config.layout = QGridLayout()
         # Define widgets for config tab
@@ -591,6 +599,7 @@ class Panel(QWidget):
 
         self.fill_table_config(1, 0, "Autoadjust state")
         self.autoadjState_combo = QComboBox()
+
         self.combo_in_config(self.autoadjState_combo, "Autoadjust_state")
         self.tableConfigWidget.setCellWidget(1, 1, self.autoadjState_combo)
 
@@ -600,10 +609,12 @@ class Panel(QWidget):
         self.fill_table_config(3, 0, "Sampling interval (min)")
         self.samplingInt_combo = QComboBox()
         self.combo_in_config(self.samplingInt_combo, 'Sampling interval')
+
         self.tableConfigWidget.setCellWidget(3, 1, self.samplingInt_combo)
 
         self.fill_table_config(4, 0, "Spectro integration time")
         self.specIntTime_combo = QComboBox()
+
         self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
         self.tableConfigWidget.setCellWidget(4, 1, self.specIntTime_combo)
 
@@ -630,6 +641,7 @@ class Panel(QWidget):
         self.fill_table_config(8, 1, "Didn't run calibration yet")
 
         self.create_manual_sal_group()
+
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 2)
@@ -680,6 +692,9 @@ class Panel(QWidget):
                 self.instrument.dye
             ]
         }
+
+        self.noWheelCombos.append(combo)
+        combo.installEventFilter(self)
 
         [combo.addItem(str(item)) for item in combo_dict[name][0]]
         combo.currentIndexChanged.connect(combo_dict[name][1])
@@ -928,11 +943,6 @@ class Panel(QWidget):
             self.instrument.HI = int(default["TB_wl_HI"])
             self.instrument.I2 = int(default["TB_wl_I2"])
 
-        '''self.fill_table_config(1, 1,
-                               str(self.instrument.NIR) + ',' +
-                               str(self.instrument.HI) + ',' +
-                               str(self.instrument.I2))'''
-
     def change_plus_minus_butn(self, ind, dif):
         value = self.spinboxes[ind].value() + dif
         if value < 0:
@@ -997,9 +1007,7 @@ class Panel(QWidget):
             stabfile_df.to_csv(stabfile, index=False, header=True)
 
     async def update_absorbance_plot(self, n_inj, spAbs):
-        print('update_absorbance_plot')
-        print (spAbs)
-
+        logging.debug('update_absorbance_plot')
         self.abs_lines[n_inj].setData(self.wvls, spAbs)
         await asyncio.sleep(0.005)
 
@@ -1326,10 +1334,11 @@ class Panel(QWidget):
             logging.debug('> 3 min Until next sample, Reenable Manual control button ')
             self.btn_manual_mode.setEnabled(True)
 
-        if 'Measurement' not in self.major_modes:
+        if 'Measuring' not in self.major_modes:
+
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
 
-        self.until_next_sample -= round(self.infotimer_step/60,3)
+        self.until_next_sample -= round(self.infotimer_step/60, 3)
 
     @asyncSlot()
     async def continuous_mode_timer_finished(self):
@@ -1468,7 +1477,7 @@ class Panel(QWidget):
 
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
-            print ('call get new df')
+
             self.create_new_df()
 
             if self.args.co3:
@@ -1800,7 +1809,6 @@ class Panel_pH(Panel):
         self.fill_table_config(9, 1, f"{result}")
 
     def test_udp(self, state):
-        print (state)
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
         self.test_data_log_row = pd.DataFrame(
             {
@@ -2134,7 +2142,7 @@ class boxUI(QMainWindow):
         event.ignore()
 
         if result == QMessageBox.Yes:
-
+            logging.info('The program was closed by user')
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(
                     self.main_widget.instrument.light_slot)
