@@ -3,9 +3,10 @@ import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
-from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, onlyPco2instrument
+from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, only_pco2_instrument
 import os, sys
-from util import box_id, config_name
+from util import get_base_folderpath, box_id, config_name
+#
 
 try:
     import warnings, time, RPi.GPIO
@@ -19,7 +20,7 @@ from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainT
 from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout,
                              QTableWidget, QHeaderView, QComboBox, QCheckBox,
                              QSlider, QInputDialog, QApplication, QMainWindow)
-from PyQt5.QtGui import QIcon,QPixmap
+from PyQt5.QtGui import QIcon, QPixmap
 import numpy as np
 import pyqtgraph as pg
 import argparse
@@ -30,6 +31,7 @@ from udp import Ferrybox as fbox
 from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
+
 
 
 class TimerManager:
@@ -94,14 +96,14 @@ class AsyncThreadWrapper:
 
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument
-    def __init__(self, parent, panelargs, base_folderpath):
+    def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
         self.args = panelargs
-        self.base_folderpath = base_folderpath
+
         if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument(self.base_folderpath)
+            self.pco2_instrument = test_pco2_instrument(base_folderpath)
         else:
-            self.pco2_instrument = onlyPco2instrument(self.base_folderpath)
+            self.pco2_instrument = only_pco2_instrument(base_folderpath)
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()  #
@@ -205,7 +207,7 @@ class Panel_PCO2_only(QWidget):
 
 
 class Panel(QWidget):
-    def __init__(self, parent, panelargs,base_folderpath):
+    def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual",
@@ -213,7 +215,7 @@ class Panel(QWidget):
                             "Paused"]
 
         self.args = panelargs
-        self.base_folderpath = base_folderpath
+
         self.starttime = datetime.now()
         self.fformat = "%Y%m%d_%H%M%S"
         self.init_instrument()
@@ -230,9 +232,9 @@ class Panel(QWidget):
             self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
             self.symbolSize = 10
             if self.args.localdev:
-                self.pco2_instrument = test_pco2_instrument(self.base_folderpath)
+                self.pco2_instrument = test_pco2_instrument(base_folderpath)
             else:
-                self.pco2_instrument = pco2_instrument(self.base_folderpath)
+                self.pco2_instrument = pco2_instrument(base_folderpath)
 
         self.init_ui()
         self.create_timers()
@@ -240,7 +242,7 @@ class Panel(QWidget):
 
         self.until_next_sample = None
         self.infotimer_step = 15  # seconds
-        self.manual_limit = 3  # 3 minutes, time when we turn off manual mode if continuous is clicked
+        self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
         self.tabs = QTabWidget()
@@ -250,11 +252,10 @@ class Panel(QWidget):
         self.tab_config = QWidget()
         self.plots = QWidget()
 
-        # Add tabs
         self.tabs.addTab(self.tab_home, "Home")
-        self.tabs.addTab(self.tab_log, "Log")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
+        self.tabs.addTab(self.tab_log, "Log")
 
         if self.args.pco2:
             self.tab_pco2 = tab_pco2_class()
@@ -267,9 +268,7 @@ class Panel(QWidget):
             self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
             v.addWidget(self.plotwidget_pco2)
             self.tab_pco2_plot.setLayout(v)
-            self.pco2_list = []
-            self.pco2_times = []
-
+            self.pco2_list, self.pco2_times = [], []
             self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o', pen=self.pen)
 
             self.plotwidget_pco2.setBackground("#19232D")
@@ -474,8 +473,6 @@ class Panel(QWidget):
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
-
-
 
         self.plotSpc = self.plotwidget1.plot()
         self.plot_calc_pH = self.plotwidget2.plot()
@@ -894,9 +891,13 @@ class Panel(QWidget):
         state = self.btn_dye_pmp.isChecked()
         if not self.args.nodye:
             if state:
-                logging.info("in pump dye clicked")
-                await self.instrument.pump_dye(3)
-                self.btn_dye_pmp.setChecked(False)
+                async with self.updater.disable_live_plotting():
+                    #TODO:stop updating the graph
+                    logging.info("in pump dye clicked")
+                    await self.instrument.pump_dye(3)
+                    self.btn_dye_pmp.setChecked(False)
+                    # updat plot after pumping
+                    await self.update_spectra_plot()
         else:
             logging.info('Trying to pump in no pump mode')
             self.btn_dye_pmp.setChecked(False)
@@ -1532,14 +1533,10 @@ class Panel(QWidget):
         [step.setChecked(False) for step in self.sample_steps]
 
     def get_folderpath(self):
-
         if "Calibration" in self.major_modes:
-            folderpath = self.base_folderpath + "/data_pH_calibr/"
+            folderpath = base_folderpath + "/data_pH_calibr/"
         else:
-            folderpath = self.base_folderpath + "/data_pH/"
-
-        if self.args.localdev:
-            self.base_folderpath = os.getcwd() + '/data/'
+            folderpath = base_folderpath + "/data_pH/"
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
@@ -1712,8 +1709,8 @@ class Panel(QWidget):
 
 
 class Panel_pH(Panel):
-    def __init__(self, parent, panelargs, base_folderpath):
-        super().__init__(parent, panelargs, base_folderpath)
+    def __init__(self, parent, panelargs):
+        super().__init__(parent, panelargs)
 
         line_specs = [
             [None, self.instrument.THR, "w"],
@@ -1846,9 +1843,8 @@ class Panel_pH(Panel):
 
 
 class Panel_CO3(Panel):
-    def __init__(self, parent, panelargs,base_folderpath):
-        super().__init__(parent, panelargs,base_folderpath)
-        self.base_folderpath = base_folderpath
+    def __init__(self, parent, panelargs):
+        super().__init__(parent, panelargs)
 
         self.plotwidget1.setXRange(220, 260)
         self.plotwidget2.setXRange(220, 260)
@@ -1903,12 +1899,9 @@ class Panel_CO3(Panel):
     def get_folderpath(self):
 
         if "Calibration" in self.major_modes:
-            folderpath = self.base_folderpath + "/data_co3_calibr/"
+            folderpath = base_folderpath + "/data_co3_calibr/"
         else:
-            folderpath = self.base_folderpath + "/data_co3/"
-
-        if self.args.localdev:
-            self.base_folderpath= os.getcwd() + '/data/'
+            folderpath = base_folderpath + "/data_co3/"
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
@@ -2096,12 +2089,13 @@ class boxUI(QMainWindow):
         super().__init__(*args, **kwargs)
         parser = argparse.ArgumentParser()
 
-        from util import base_folderpath
-
         arguments = ["--nodye", "--pco2", "--co3", "--debug",
                      "--localdev", "--stability", "--onlypco2"]
         [parser.add_argument(ar, action="store_true") for ar in arguments]
         self.args = parser.parse_args()
+        global base_folderpath
+        base_folderpath = get_base_folderpath(self.args)
+
 
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
         self.logger = logging.getLogger('general_logger')
@@ -2115,6 +2109,7 @@ class boxUI(QMainWindow):
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
+
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
@@ -2122,11 +2117,11 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
         if self.args.onlypco2:
-            self.main_widget = Panel_PCO2_only(self, self.args, base_folderpath)
+            self.main_widget = Panel_PCO2_only(self, self.args)
         elif self.args.co3:
-            self.main_widget = Panel_CO3(self, self.args, base_folderpath)
+            self.main_widget = Panel_CO3(self, self.args)
         else:
-            self.main_widget = Panel_pH(self, self.args, base_folderpath)
+            self.main_widget = Panel_pH(self, self.args)
 
         self.setCentralWidget(self.main_widget)
         self.showMaximized()

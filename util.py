@@ -2,10 +2,15 @@ import logging
 import json
 import os
 logging.getLogger()
-base_folderpath = "/home/pi/pHox/data"
 
-if not os.path.exists(base_folderpath):
-    os.makedirs(base_folderpath)
+def get_base_folderpath(args):
+    if args.localdev:
+        base_folderpath = os.getcwd() + '/data/'
+    else:
+        base_folderpath = "/home/pi/pHox/data"
+    if not os.path.exists(base_folderpath):
+        os.makedirs(base_folderpath)
+    return base_folderpath
 
 try:
     box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
