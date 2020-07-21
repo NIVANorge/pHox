@@ -26,16 +26,17 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
-
 def get_linregress(x, y):
     a = np.vstack([x, np.ones(len(x))]).T
     slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
     r_value = np.corrcoef(x, y)[0][1]
     return slope, intercept, r_value
 
+
 class Spectrometer_localtest(object):
     def close(self):
         pass
+
 
 class Spectro_localtest(object):
     def __init__(self,panelargs):
@@ -210,9 +211,9 @@ class Common_instrument(object):
 
     def load_config(self):
         conf_operational = config_file["Operational"]
-        self._autostart = self.to_bool(conf_operational["AUTOSTART"])
-        self._automode = conf_operational["AUTOSTART_MODE"]
-        self.DURATION = int(conf_operational["DURATION"])
+        self.autostart = self.to_bool(conf_operational["AUTOSTART"])
+        self.automode = conf_operational["AUTOSTART_MODE"]
+        #self.DURATION = int(conf_operational["DURATION"])
         self.vNTCch = int(conf_operational["T_PROBE_CH"])
         if not (self.vNTCch in range(9)):
             self.vNTCch = 8

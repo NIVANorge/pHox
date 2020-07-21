@@ -33,7 +33,6 @@ from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
 
-
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
@@ -697,7 +696,6 @@ class Panel(QWidget):
         combo.currentIndexChanged.connect(combo_dict[name][1])
         self.set_combo_index(combo, combo_dict[name][2])
 
-
     def create_manual_sal_group(self):
         self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
         l = QtGui.QHBoxLayout()
@@ -735,7 +733,6 @@ class Panel(QWidget):
 
     def sampling_int_chngd(self, ind):
         self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
-
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
@@ -987,7 +984,6 @@ class Panel(QWidget):
     def btn_leds_checked(self):
         state = self.btn_leds.isChecked()
         self.set_LEDs(state)
-
 
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
@@ -1354,8 +1350,6 @@ class Panel(QWidget):
             logging.info("Skipped a sample because the previous measurement is still ongoing")
             pass  # TODO Increase interval
 
-
-
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
 
@@ -1369,11 +1363,8 @@ class Panel(QWidget):
 
         self.save_logfile_df(folderpath, flnmStr)
 
-
-
     def update_LEDs(self):
         [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
-
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
@@ -1444,18 +1435,18 @@ class Panel(QWidget):
 
     def autorun(self):
         logging.info("start autorun")
-        if self.instrument._autostart:
-            if self.instrument._automode == "time":
-                self.StatusBox.setText("Automatic scheduled start enabled")
-                self.timerAuto.timeout.connect(self.autostart_time)
-                self.timerAuto.start(1000)
-
-            elif self.instrument._automode == "pump":
+        if self.instrument.autostart:
+            if self.instrument.automode == "pump":
                 self.StatusBox.setText("Automatic start at pump enabled")
                 self.timerAuto.timeout.connect(self.autostart_pump)
                 self.timerAuto.start(1000)
 
-            elif self.instrument._autostart and self.instrument._automode == "now":
+            elif self.instrument.automode == "time":
+                self.StatusBox.setText("Automatic scheduled start enabled")
+                self.timerAuto.timeout.connect(self.autostart_time)
+                self.timerAuto.start(1000)
+
+            elif self.instrument.automode == "now":
                 self.StatusBox.setText("Immediate automatic start enabled")
                 self._autostart()
         else:
@@ -1552,7 +1543,6 @@ class Panel(QWidget):
                 "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
                 "TempCalCoef2", "DYE"]
         )
-
 
     async def pump_if_needed(self):
         if (
@@ -1667,7 +1657,6 @@ class Panel(QWidget):
         self.spCounts_df[str(n_inj)] = postinj_spec
         return spAbs_min_blank
 
-
     def save_spt(self, folderpath, flnmStr):
         sptpath = folderpath + "/spt/"
         if not os.path.exists(sptpath):
@@ -1680,7 +1669,6 @@ class Panel(QWidget):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
         self.evalPar_df.to_csv(flnm, index=False, header=True)
-
 
     def save_logfile_df(self, folderpath, flnmStr):
         logging.info("save log file df")
@@ -2096,39 +2084,42 @@ class boxUI(QMainWindow):
         global base_folderpath
         base_folderpath = get_base_folderpath(self.args)
 
-
         logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
         self.logger = logging.getLogger('general_logger')
-
         fh = logging.FileHandler('errors.log')
         fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         fh.setLevel(logging.DEBUG)
         self.logger.addHandler(fh)
-
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
+        self.set_title()
+        self.main_widget = self.create_main_widget()
+        self.setCentralWidget(self.main_widget)
 
+        self.showMaximized()
+        self.main_widget.autorun()
+
+        with loop:
+            sys.exit(loop.run_forever())
+
+    def set_title(self):
         if self.args.pco2:
             self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
         elif self.args.co3:
             self.setWindowTitle(f"{box_id}, parameter CO3")
         else:
             self.setWindowTitle(f"{box_id}")
+
+    def create_main_widget(self):
         if self.args.onlypco2:
-            self.main_widget = Panel_PCO2_only(self, self.args)
+            main_widget = Panel_PCO2_only(self, self.args)
         elif self.args.co3:
-            self.main_widget = Panel_CO3(self, self.args)
+            main_widget = Panel_CO3(self, self.args)
         else:
-            self.main_widget = Panel_pH(self, self.args)
-
-        self.setCentralWidget(self.main_widget)
-        self.showMaximized()
-        self.main_widget.autorun()
-
-        with loop:
-            sys.exit(loop.run_forever())
+            main_widget = Panel_pH(self, self.args)
+        return main_widget
 
     def closeEvent(self, event):
         result = QMessageBox.question(
