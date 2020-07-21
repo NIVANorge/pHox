@@ -49,6 +49,7 @@ class tab_pco2_class(QWidget):
         groupbox.setLayout(layout)
         self.layout2.addWidget(groupbox)
 
+
     async def update_tab_values(self, values):
         [self.pco2_params[n].setText(str(values[n])) for n in range(len(values))]
 

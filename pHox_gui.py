@@ -104,32 +104,48 @@ class Panel_PCO2_only(QWidget):
         else:
             self.pco2_instrument = only_pco2_instrument(base_folderpath)
 
-        self.tabs = QTabWidget()
-        self.tab_pco2 = tab_pco2_class()  #
-        self.tabs.addTab(self.tab_pco2, "pCO2")
-        self.pco2_list = []
-        self.pco2_times = []
-        self.tab_pco2_calibration = QTabWidget()
-        self.tabs.addTab(self.tab_pco2_calibration, "Calibration")
-        date_axis = TimeAxisItem(orientation='bottom')
-        self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
-        self.pco2_data_line = self.plotwidget_pco2.plot()
-        self.tab_pco2.setLayout(self.tab_pco2.layout2)
-        self.plotwidget_pco2.setBackground("#19232D")
-        self.plotwidget_pco2.showGrid(x=True, y=True)
-        self.plotwidget_pco2.setTitle("pCO2 value time series")
-        hboxPanel = QtGui.QHBoxLayout()
+        self.pco2_timeseries = {'times': [], 'values': []}
 
+        self.tabs = QTabWidget()
+        self.tab_pco2 = tab_pco2_class()
+        self.tab_pco2_calibration = QWidget()
+        self.tab_pco2_config = QWidget()
+
+        l = QGridLayout()
+        self.clear_plot_btn = QPushButton('Clear plot')
+        self.clear_plot_btn.clicked.connect(self.clear_plot_btn_clicked)
+        l.addWidget(self.clear_plot_btn)
+        self.tab_pco2_config.setLayout(l)
+
+        self.tabs.addTab(self.tab_pco2, "pCO2")
+        self.tabs.addTab(self.tab_pco2_calibration, "Calibrate")
+        self.tabs.addTab(self.tab_pco2_config, "Config")
+
+        self.make_tab_pco2_calibration()
+        self.make_tab_plotwidget()
+
+        hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwidget_pco2)
         hboxPanel.addWidget(self.tabs)
-
-        self.setLayout(hboxPanel)
 
         self.timerSave_pco2 = QtCore.QTimer()
         self.timerSave_pco2.timeout.connect(self.update_pco2_data)
         self.timerSave_pco2.start(1000)
-        self.make_tab_pco2_calibration()
 
+        self.tab_pco2.setLayout(self.tab_pco2.layout2)
+        self.setLayout(hboxPanel)
+
+    def clear_plot_btn_clicked(self):
+        self.pco2_timeseries['times'] = []
+        self.pco2_timeseries['values'] = []
+
+    def make_tab_plotwidget(self):
+        date_axis = TimeAxisItem(orientation='bottom')
+        self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
+        self.pco2_data_line = self.plotwidget_pco2.plot()
+        self.plotwidget_pco2.setBackground("#19232D")
+        self.plotwidget_pco2.showGrid(x=True, y=True)
+        self.plotwidget_pco2.setTitle("pCO2 value time series")
         self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
         self.symbolSize = 10
 
@@ -184,22 +200,25 @@ class Panel_PCO2_only(QWidget):
         # UPDATE PLOT WIDGETS
         # only pco2 plot
 
-        if len(self.pco2_times) == 5:
+        legth = len(self.pco2_timeseries['times'])
+        if legth == 5:
             self.symbolSize = 5
-
-        if len(self.pco2_times) == 300:
+        elif legth == 300:
             self.pen = pg.mkPen(None)
 
-        if len(self.pco2_times) > 7000:
-            self.pco2_times = self.pco2_times[1:]
-            self.pco2_list = self.pco2_list[1:]
+        if legth > 7000:
+            self.pco2_timeseries['times'] = self.pco2_timeseries['times'][1:]
+            self.pco2_timeseries['values'] = self.pco2_timeseries['values'][1:]
 
-        self.pco2_times.append(datetime.now().timestamp())
-        self.pco2_list.append(self.pco2_instrument.co2)
+        self.pco2_timeseries['times'].append(datetime.now().timestamp())
+        self.pco2_timeseries['values'].append(self.pco2_instrument.co2)
 
-        self.pco2_data_line.setData(self.pco2_times, self.pco2_list, symbolBrush='w',
-                                    alpha=0.3, size=1, symbol='o',
+        self.pco2_data_line.setData(self.pco2_timeseries['times'],
+                                    self.pco2_timeseries['values'],
+                                    symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                     symbolSize=self.symbolSize, pen=self.pen)
+
+
 
     def autorun(self):
         pass
@@ -277,10 +296,8 @@ class Panel(QWidget):
         self.make_tab_log()
         self.make_tab_home()
         self.make_tab_manual()
-
         self.make_tab_config()
         self.make_plotwidgets()
-        # disable all manual control buttons
 
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
@@ -1771,14 +1788,12 @@ class Panel_pH(Panel):
             }
         )
 
-
     def update_evl_file(self,spAbs_min_blank, vNTC,dilution, vol_injected,manual_salinity,n_inj):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
                                                                  dilution, vol_injected, manual_salinity)
 
     def get_logfile_name(self,folderpath):
         return (os.path.join(folderpath, 'pH.log'))
-
 
     def get_calibration_results(self):
         pH_buffer_theoretical = self.instrument.calc_pH_buffer_theo(self.evalPar_df)

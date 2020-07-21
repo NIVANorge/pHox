@@ -78,6 +78,21 @@ The file is updates after each measurement.
 This structure is for pH and CO<sub>3</sub>, both of them are spectrometric measurements. 
 For pCO<sub>2</sub>, there is only `pCO2.log` 
 
+#### Classes structure
+
+![](utils/classes.png)
+
+When you call the main module, pHox_gui.py, the main graphical panel is created. 
+Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
+In these classes, all widgets, all timers are created.  
+
+
+Gui class is a Main class. All other classes (for spectrophotometer and raspberry are depended on it)
+Then from the main class, we create the instrument class 
+
+pH_instrument and CO3_instrument are children classes for common instrument class.
+They are are combined together because both of them use spectrophotometer. 
+pCO2 does not need a class for it.
 
 #### Communication between ferrybox computer, raspberry pi, instruments and spectrophotometers.
 
@@ -170,12 +185,7 @@ The autoadjust function will be triggered every time measurement is started,if s
 Then, the options are also shown in  the GUI, in the config tab. 
 
 ### Graphical part description 
-###### Classes structure for GUI panel create 
-![](utils/classes.png)
 
-When you call the main module, pHox_gui.py, the main graphical panel is created. 
-Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
-In these classes, all widgets, all timers are created.  
 
 ######  qss styles 
 
