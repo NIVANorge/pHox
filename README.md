@@ -97,10 +97,25 @@ pCO2 does not need a class for it.
 #### Communication between ferrybox computer, raspberry pi, instruments and spectrophotometers.
 
 ##### Ferrybox computer - Raspberry pi
-UDP 
 module upd.py 
+
+This communication is organized using UDP (User Datagram Protocol), 
+it works in two directions (two separate processes): 
+1) From FB computer to pHox
+2) From pHox to FB computer. 
+
 When the program is started, the Thread for udp messages is also starts. 
-Every (time interval) is 
+Every (time interval) the message from Ferrybox computer is sent to the pHox. 
+
+String message from pHox to UDP consists of: 
+* measurement code ( "$PCO3,", '$PPHOX' or "$PPCO2')
+* measurement_string_version 
+
+    (defined in the config file, helps to decode the message,"PCO3_string_version": "1") 
+    
+* string with data
+
+
 
 ##### Raspberry - Spectrophotometer 
 

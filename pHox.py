@@ -341,6 +341,7 @@ class CO3_instrument(Common_instrument):
         self.dye = conf["Default_DYE"]
         self.wvl_needed = (self.wvl1, self.wvl2, 350)
 
+        self.PCO3_string_version = str(conf["PCO3_string_version"])
 
     async def auto_adjust(self, *args):
 

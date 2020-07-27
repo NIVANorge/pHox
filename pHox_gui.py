@@ -486,6 +486,7 @@ class Panel(QWidget):
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setTitle("Last pH measurement")
 
+
         vboxPlot = QtGui.QVBoxLayout()
         vboxPlot.addWidget(self.plotwidget1)
         vboxPlot.addWidget(self.plotwidget2)
@@ -495,7 +496,13 @@ class Panel(QWidget):
         self.after_calc_pH = self.plotwidget2.plot()
         self.lin_fit_pH = self.plotwidget2.plot()
 
+        self.plotwidget1.setMouseEnabled(x=False, y=False)
+        self.plotwidget2.setMouseEnabled(x=False, y=False)
+
         self.plotwdigets_groupbox.setLayout(vboxPlot)
+
+
+
 
     def make_steps_groupBox(self):
 
@@ -597,7 +604,6 @@ class Panel(QWidget):
         self.timer_test_udp.timeout.connect(self.send_test_udp)
         self.btn_test_udp.clicked.connect(self.test_udp)
 
-
         self.tableConfigWidget = QTableWidget()
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
@@ -608,7 +614,6 @@ class Panel(QWidget):
 
         self.fill_table_config(0, 0, "DYE type")
         self.config_dye_info()
-
 
         self.fill_table_config(1, 0, "Autoadjust state")
         self.autoadjState_combo = QComboBox()
@@ -2034,8 +2039,8 @@ class Panel_CO3(Panel):
     def send_to_ferrybox(self):
 
         logging.info('Sending CO3 data to ferrybox')
-        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
-                     self.data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
+        row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
+        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
         udp.send_data(string_to_udp, self.instrument.ship_code)
 
         #print (row_to_string)

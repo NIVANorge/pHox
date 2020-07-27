@@ -93,14 +93,15 @@
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# used to be SAVE_PCO2_SEC",
         "pCO2_Sampling_interval": 1,
-        "PPCO2_STRING_VERSION": 1
+        "PPCO2_STRING_VERSION": "1"
     },
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
         "LIGHT_SLOT": 5,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
+        "Default_DYE": "Pb_perchlor",
+        "PCO3_string_version": "1"
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
