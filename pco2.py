@@ -134,7 +134,6 @@ class pco2_instrument(object):
             except ValueError:
                 self.co2_temp = 0
 
-
     async def save_pCO2_data(self, values, fbox):
 
         labelSample = datetime.now().isoformat("_")[0:19]

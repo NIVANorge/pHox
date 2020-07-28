@@ -102,8 +102,8 @@ QGroupBox::title {
   border-style: solid;
   border-radius: 4px;
   color: #19232D;
-  max-width: 150px
-}
+  max-width: 150px;
+   }
 
 QTextEdit{
   padding-top: 0em;
@@ -117,20 +117,22 @@ QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
   color: #11161a;
 }
 
-QCheckBox::indicator::unchecked  {
-  background-color: white;
-  color: #121111;
-  width: 1em;
-  height: 1em;
+
+QCheckBox::indicator{
+  width: 1.5em;
+  height: 1.5em;
   border: 2px solid #5A5A5A;
 }
 
 QCheckBox::indicator::checked {
-  width: 1em;
-  height: 1em;
-  background-color: #79c98d;
-  border: 2px solid #5A5A5A;
-}
+  background-color: #79c98d;}
+
+QCheckBox::indicator::indeterminate {
+    background-color: red;}
+
+QCheckBox::indicator::unchecked  {
+  background-color: white; }
+
 
 QTabBar::tab {width: 4em;height: 2em; font-size: 10pt; 
               margin-bottom: 0;}

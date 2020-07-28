@@ -562,7 +562,7 @@ class Panel(QWidget):
 
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
-        self.btn_calibr = self.create_button("Make calibration", True)
+        self.btn_calibr = self.create_button("Make calibration\n check", True)
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
@@ -608,7 +608,7 @@ class Panel(QWidget):
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
         self.tableConfigWidget.horizontalHeader().hide()
-        self.tableConfigWidget.setRowCount(10)
+        self.tableConfigWidget.setRowCount(8)
         self.tableConfigWidget.setColumnCount(2)
         self.tableConfigWidget.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
@@ -655,17 +655,28 @@ class Panel(QWidget):
         self.tableConfigWidget.setCellWidget(7, 1, self.temp_id_is_calibr)
 
 
-        self.fill_table_config(8, 0, 'Calibration check passed')
-        self.fill_table_config(8, 1, "Didn't run calibration yet")
-
         self.create_manual_sal_group()
+        self.btn_calibr_checkbox = QCheckBox('Calibration check result')
+        self.btn_calibr_checkbox.setEnabled(False)
+        # In this checkbox, state 0 - unchecked means no calibration
+        # state 1 - calibration check failed
+        # state 2 - calibration check is sucessfull
+        self.btn_calibr_checkbox.setTristate()
+
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
+
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 2)
-        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 2 )
+
+        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 1)
+        self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
+
         self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 1, 2)
         self.tab_config.setLayout(self.tab_config.layout)
+
+
+
 
     def config_dye_info(self):
         self.dye_combo = QComboBox()
@@ -740,9 +751,16 @@ class Panel(QWidget):
         return self.manual_sal_group
 
     def get_salinity_manual(self):
-        salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
+
+        if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
+             salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
                            + int(self.second_decimal.currentText()) / 100 +
                            int(self.third_decimal.currentText()) / 1000)
+        elif 'Calibration' in self.major_modes:
+            salinity_manual = self.instrument.buffer_sal
+        else:
+            salinity_manual = None
+
         return salinity_manual
 
     def set_combo_index(self, combo, text):
@@ -1511,7 +1529,7 @@ class Panel(QWidget):
                 logging.info(f"res after autoadjust: '{res}")
             else:
                 res = True
-                logging.info("Make sample without autoadjust")
+                logging.info("Measure sample without autoadjustment")
             if res:
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
@@ -1519,11 +1537,11 @@ class Panel(QWidget):
                 dark = await self.measure_dark()
                 blank_min_dark = await self.measure_blank(dark)
 
-                # Steps 3,4,5,6 Measurement cycle
-                await self.measurement_cycle(blank_min_dark, dark)
+                # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
+                await self.absorbance_measurement_cycle(blank_min_dark, dark)
 
-                self.get_final_value(timeStamp)
-                logging.info("Single measurement is done...")
+                await self.get_final_value(timeStamp)
+                logging.info("The measurement is finished...")
 
 
             # Step 7 Open valve
@@ -1538,8 +1556,6 @@ class Panel(QWidget):
         if not self.args.co3 and res:
             self.update_pH_plot()
 
-            if 'Calibration' in self.major_modes:
-                self.get_calibration_results()
 
 
         self.StatusBox.setText('Finished the measurement')
@@ -1607,30 +1623,30 @@ class Panel(QWidget):
         await self.update_spectra_plot_manual(blank)
         return blank_min_dark
 
-    async def measurement_cycle(self, blank_min_dark, dark):
+    async def absorbance_measurement_cycle(self, blank_min_dark, dark):
+        """
+        This function is called after each injection of dye.
+        Here the volume of injected dye is calculated and the dilution
+        Then the absorbance spectrum is calculated
+
+        :param blank_min_dark: spectrum intensities of distilled  water
+        :param dark: spectrum of intensities of the dark ( and empty?)
+        :return: updates evl file ( file with a middle step for pH calculation, containing
+        the values for each dye injection)
+        """
+
         for n_inj in range(self.instrument.ncycles):
-            logging.info(f"n_inj='{n_inj}")
+            logging.info(f"dye injection n ='{n_inj}")
             self.sample_steps[n_inj + 2].setChecked(True)
             await asyncio.sleep(0.05)
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
             dilution = self.instrument.Cuvette_V / (vol_injected + self.instrument.Cuvette_V)
-
             vNTC = await self.inject_dye(n_inj)
-            spAbs_min_blank = await self.calc_spectrum(n_inj, blank_min_dark, dark)
-            logging.info("Calculate init pH")
-
-            if 'Continuous' not in self.major_modes and 'Calibration' not in self.major_modes:
-                manual_salinity = self.get_salinity_manual()
-            elif 'Calibration' in self.major_modes:
-                manual_salinity = self.instrument.buffer_sal
-            else:
-                manual_salinity = None
-
-            self.update_evl_file(spAbs_min_blank, vNTC, dilution, vol_injected, manual_salinity, n_inj)
-            if self.args.co3:
-                await self.update_absorbance_plot(n_inj, spAbs_min_blank)
+            absorbance = await self.calc_absorbance(n_inj, blank_min_dark, dark)
+            manual_salinity = self.get_salinity_manual()
+            self.update_evl_file(absorbance, vNTC, dilution, vol_injected, manual_salinity, n_inj)
 
         return
 
@@ -1654,30 +1670,42 @@ class Panel(QWidget):
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
-        vNTC = self.instrument.get_Vd(3, self.instrument.vNTCch)
-        return vNTC
+        Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
+        return Voltage
 
-    async def calc_spectrum(self, n_inj, blank_min_dark, dark):
-        logging.info("Get spectrum")
-        # measure spectrum after injecting nshots of dye
-        # Write spectrum to the file
+    async def calc_absorbance(self, n_inj, blank_min_dark, dark):
+        """
+        :param n_inj: number of injected dye shots
+        :param blank_min_dark: intensity spectrum of blank minus intensity spectrum of dark
+        :param dark: intensity spectrum of dark
+        :return: Absorbance at 3 wavelengths that will be used later for pH calculation
+
+        """
+        logging.info("Calculate Absorbance")
+
+        postinj_instensity_spectrum = await self.instrument.spectrometer_cls.get_intensities(
+            self.instrument.specAvScans, correct=True)
+        await self.update_spectra_plot_manual(postinj_instensity_spectrum)
+
         if self.args.localdev:
             logging.info("in debug")
-            postinj_spec = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
-            postinj_spec_min_dark = postinj_spec  # - dark
-            spAbs_min_blank = postinj_spec_min_dark
-            await self.update_spectra_plot_manual(postinj_spec)
+            absorbance_spectrum = postinj_instensity_spectrum
         else:
-            postinj_spec = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
-            self.instrument.spectrum = postinj_spec
-            await self.update_spectra_plot_manual(postinj_spec)
+            self.instrument.spectrum = postinj_instensity_spectrum
+            postinj_instensity_spectrum_min_dark = postinj_instensity_spectrum - dark
+            absorbance_spectrum = -np.log10(postinj_instensity_spectrum_min_dark / blank_min_dark)
 
-            postinj_spec_min_dark = postinj_spec - dark
-            # Absorbance
-            spAbs_min_blank = -np.log10(postinj_spec_min_dark / blank_min_dark)
+        if self.args.co3:
+            await self.update_absorbance_plot(n_inj, absorbance_spectrum)
 
-        self.spCounts_df[str(n_inj)] = postinj_spec
-        return spAbs_min_blank
+        # Save intensity spectrum to spt file
+        self.spCounts_df[str(n_inj)] = postinj_instensity_spectrum
+
+        abs_1 = round(absorbance_spectrum[self.instrument.wvlPixels[0]], prec["A1"])
+        abs_2 = round(absorbance_spectrum[self.instrument.wvlPixels[1]], prec["A2"])
+        abs_3 = round(absorbance_spectrum[self.instrument.wvlPixels[2]], prec["Anir"])
+
+        return [abs_1, abs_2, abs_3]
 
     def save_spt(self, folderpath, flnmStr):
         sptpath = folderpath + "/spt/"
@@ -1769,7 +1797,7 @@ class Panel_pH(Panel):
             for k, v in enumerate(["pH_cuvette", "T_cuvette", "pH_insitu", "fb_temp", "fb_sal"], 0)
         ]
 
-    def get_final_value(self, timeStamp):
+    async def get_final_value(self, timeStamp):
         # get final pH
         logging.debug(f'get final pH ')
         p = self.instrument.pH_eval(self.evalPar_df)
@@ -1793,25 +1821,45 @@ class Panel_pH(Panel):
             }
         )
 
-    def update_evl_file(self,spAbs_min_blank, vNTC,dilution, vol_injected,manual_salinity,n_inj):
-        self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(spAbs_min_blank, vNTC,
-                                                                 dilution, vol_injected, manual_salinity)
+        if 'Calibration' in self.major_modes:
+            calibration_check_res = await self.get_calibration_results()
+            self.data_log_row['cal_result'] = calibration_check_res
+
+
+    def update_evl_file(self, Absorbance, vNTC,dilution, vol_injected, manual_salinity, n_inj):
+
+        self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
+            Absorbance, vNTC, dilution, vol_injected, manual_salinity)
 
     def get_logfile_name(self,folderpath):
         return (os.path.join(folderpath, 'pH.log'))
 
-    def get_calibration_results(self):
-        pH_buffer_theoretical = self.instrument.calc_pH_buffer_theo(self.evalPar_df)
+    async def get_calibration_results(self):
+        """
+            Function for checking the results of calibration check
 
+            The checkbox for showing the result of the calibration check is a tristate checkbox
+            For the simplicity and for reusing the existing styles (white unchecked, green for checked)
+            # state 0 - white, no calibration
+            # state 1 - red, failed calibration check
+            # state 2 - green, succeeded in calibration check
+            :return:
+        """
+
+        pH_buffer_theoretical = 0
         dif_pH = self.data_log_row['pH_cuvette'].values - pH_buffer_theoretical
         calibration_threshold = 0.05
+
+       # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
         if abs(dif_pH) < calibration_threshold:
-            result = True
+            result_to_checkbox = 2
+            check_passed = True
         else:
-            result = False
-        # Should we also add the time of last calibration?
-        # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
-        self.fill_table_config(9, 1, f"{result}")
+            result_to_checkbox = 1
+            check_passed = False
+        self.btn_calibr_checkbox.setCheckState(result_to_checkbox)
+        await asyncio.sleep(0.001)
+        return check_passed
 
     def test_udp(self, state):
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
@@ -1969,7 +2017,7 @@ class Panel_CO3(Panel):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
                                                          dilution, vol_injected, manual_salinity)
 
-    def get_final_value(self, timeStamp):
+    async def get_final_value(self, timeStamp):
         # This function should
         # create a dataframe from CO3 log file
         # and call the function for getting final CO3 values

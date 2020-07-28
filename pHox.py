@@ -380,17 +380,16 @@ class CO3_instrument(Common_instrument):
 
         return adjusted, pixelLevel
 
-    def calc_CO3(self, absSp, vNTC, dilution, vol_injected, manual_salinity):
+    def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
-        vNTC = round(vNTC, prec["vNTC"])
+        voltage = round(voltage, prec["vNTC"])
 
-        T_cuvette = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["fb_temperature"])
+        T_cuvette = round((self.TempCalCoef[0] * voltage) + self.TempCalCoef[1], prec["fb_temperature"])
         # T = 273.15 + T_cuvette
-        A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
-        A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
-        A_350 = round(absSp[self.wvlPixels[2]], prec["A2"])
+
+        A1, A2, A_350 = Absorbance
+
         print ('A350', A_350)
-        # volume in ml
 
         if manual_salinity is None:
             sal = round(self.fb_data["salinity"], prec["salinity"])
@@ -417,7 +416,7 @@ class CO3_instrument(Common_instrument):
             e1,
             e2e3,
             log_beta1_e2,
-            vNTC,
+            voltage,
             self.fb_data["salinity"],
             A1,
             A2,
@@ -617,15 +616,12 @@ class pH_instrument(Common_instrument):
 
         return LED1, LED2, LED3, result
 
-    def calc_pH(self, absSp, vNTC, dilution, vol_injected, manual_salinity=None):
-
-        vNTC = round(vNTC, prec["vNTC"])
-        T_cuvette = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["T_cuvette"])
-
+    def calc_pH(self, Absorbance, voltage, dilution, vol_injected, manual_salinity=None):
+        A1, A2, Anir = Absorbance
+        voltage = round(voltage, prec["vNTC"])
+        T_cuvette = round((self.TempCalCoef[0] * voltage) + self.TempCalCoef[1], prec["T_cuvette"])
         T = 273.15 + T_cuvette
-        A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
-        A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
-        Anir = round(absSp[self.wvlPixels[2]], prec["Anir"])
+
         if manual_salinity is None:
             fb_sal = round(self.fb_data["salinity"], prec["salinity"])
         else:
@@ -679,7 +675,7 @@ class pH_instrument(Common_instrument):
             e1,
             e2,
             e3,
-            vNTC,
+            voltage,
             fb_sal,
             A1,
             A2,
@@ -702,8 +698,6 @@ class pH_instrument(Common_instrument):
         sal = 35
         pH_buffer_theoretical = par1 - 366.27059+0.53993607*sal+0.00016329*sal**2 + par2 - 0.11149858*(t_cuv_K)
         return pH_buffer_theoretical
-
-
 
     def pH_eval(self, evalPar_df):
         logging.debug(f'evalPar_df["T_cuvette"] {evalPar_df["T_cuvette"]}')
@@ -770,7 +764,7 @@ class Test_CO3_instrument(CO3_instrument):
         pixelLevel = 500
         return adjusted, pixelLevel
 
-    def calc_CO3(self, absSp, vNTC, dilution, vol_injected,manual_salinity):
+    def calc_CO3(self, absSp, voltage, dilution, vol_injected,manual_salinity):
         return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def reset_lines(self):
