@@ -62,7 +62,7 @@ class Spectro_localtest(object):
 
     async def set_integration_time(self, time_millisec):
         while self.busy:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.0001)
         self.set_integration_time_not_async(time_millisec)
         # time.sleep(time_millisec/1.e3)
 
@@ -76,7 +76,7 @@ class Spectro_localtest(object):
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
-            time.sleep(self.integration_time)
+            time.sleep(0.0001)
             sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
             return sp
 
@@ -218,7 +218,7 @@ class Common_instrument(object):
         if not (self.vNTCch in range(9)):
             self.vNTCch = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
-        self.pumpTime = int(conf_operational["pumpTime"])
+        self.pumpTime = int(conf_operational["pumpTime_sec"])
         self.mixT = int(conf_operational["mixTime"])
         self.waitT = int(conf_operational["waitTime"])
         self.ncycles = int(conf_operational["ncycles"])
@@ -773,14 +773,14 @@ class Test_CO3_instrument(CO3_instrument):
     async def set_Valve(self, status):
         pass
         if status:
-            logging.info("Closing the valve ...")
+            logging.info("Closing the valve localdev")
         await asyncio.sleep(0.3)
 
     def set_Valve_sync(self, status):
         if status:
-            logging.info("Closing the valve")
+            logging.info("Closing the valve localdev ")
         else:
-            logging.info("Opening the valve")
+            logging.info("Opening the valve localdev ")
         time.sleep(0.3)
 
     def turn_on_relay(self, line):
@@ -804,7 +804,7 @@ class Test_CO3_instrument(CO3_instrument):
         return v / nAver
 
 
-class Test_instrument(pH_instrument):
+class Test_pH_instrument(pH_instrument):
     def __init__(self, panelargs):
         super().__init__(panelargs)
         pass
@@ -835,15 +835,17 @@ class Test_instrument(pH_instrument):
     async def set_Valve(self, status):
         pass
         if status:
-            logging.info("Closing the valve ...")
-        await asyncio.sleep(0.3)
+            logging.info("Closing the valve localdev pH")
+        else:
+            logging.info("Opening the valve localdev pH")
+        await asyncio.sleep(0.01)
 
     def set_Valve_sync(self, status):
         if status:
-            logging.info("Closing the valve")
+            logging.info("Closing the valve localdev pH")
         else:
-            logging.info("Opening the valve")
-        time.sleep(0.3)
+            logging.info("Opening the valve localdev pH")
+        time.sleep(0.01)
 
     def turn_on_relay(self, line):
         pass
@@ -854,7 +856,7 @@ class Test_instrument(pH_instrument):
     async def pumping(self, pumpTime):
         self.turn_on_relay(self.wpump_slot)  # start the instrument pump
         self.turn_on_relay(self.stirrer_slot)  # start the stirrer
-        await asyncio.sleep(pumpTime)
+        await asyncio.sleep(0.01)
         self.turn_off_relay(self.stirrer_slot)  # turn off the pump
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
@@ -862,23 +864,22 @@ class Test_instrument(pH_instrument):
     async def cycle_line(self, line, nCycles):
         for nCy in range(nCycles):
             self.turn_on_relay(line)
-            await asyncio.sleep(self.waitT)
+            await asyncio.sleep(0.01)
             self.turn_off_relay(line)
-            await asyncio.sleep(self.waitT)
+            await asyncio.sleep(0.01)
 
     async def precheck_leds_to_adj(self):
-        logging.info('returning False in precheck leds localdev')
-        return False
-
+        logging.info('returning True in precheck leds localdev')
+        return True
 
     async def pump_dye(self, nshots):
         # biochemical valve solenoid pump
         for shot in range(nshots):
             logging.info("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(0.15)
+            await asyncio.sleep(0.0001)
             self.turn_off_relay(self.dyepump_slot)
-            await asyncio.sleep(0.35)
+            await asyncio.sleep(0.0001)
         return
 
     def print_Com(self, port, txtData):

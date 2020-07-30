@@ -17,10 +17,10 @@ except:
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit, QFileDialog
-from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout,
-                             QTableWidget, QHeaderView, QComboBox, QCheckBox,
+from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QRadioButton,
+                             QTableWidget, QHeaderView, QComboBox, QCheckBox, QDialog, QDialogButtonBox,
                              QSlider, QInputDialog, QApplication, QMainWindow)
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QPixmap
 import numpy as np
 import pyqtgraph as pg
 import argparse
@@ -32,11 +32,54 @@ from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
+class CalibrationProgess(QDialog):
+    # Adapt dialog depending on the answer clean cuvette or not 
+    def __init__(self, parent=None, cal_mode=None):
+        super(CalibrationProgess, self).__init__(parent)
+        self.cal_mode = cal_mode
+
+        print (self.cal_mode)
+        self.setWindowTitle("Calibration check progress window")
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        progress_steps_style = """
+            QCheckBox::indicator::checked {
+            background-color: #32414B;}
+            """
+
+        self.progress_checkboxes = [QCheckBox('Calibration check {}'.format(n+1)) for n in range(6)]
+        self.result_checkboxes = [QCheckBox('result'.format(n+1)) for n in range(6)]
+        [n.setStyleSheet(progress_steps_style) for n in self.progress_checkboxes]
+        [n.setTristate() for n in self.result_checkboxes]
+
+
+        self.no_cleaning_groupbox = QGroupBox('Before Cuvette cleaning')
+        layout_1 = QtGui.QGridLayout()
+        [layout_1.addWidget(self.progress_checkboxes[n], n, 0) for n in range(3)]
+        [layout_1.addWidget(self.result_checkboxes[n], n, 1) for n in range(3)]
+        self.no_cleaning_groupbox.setLayout(layout_1)
+
+
+        self.layout = QtGui.QGridLayout()
+        self.layout.addWidget(self.no_cleaning_groupbox)
+
+
+        if self.cal_mode == 'with cuvette cleaning':
+            self.with_cleaning_groupbox = QGroupBox('After Cuvette cleaning')
+            layout_2 = QtGui.QGridLayout()
+            #self.layout.addWidget(QLabel('Cuvette cleaning'))
+            [layout_2.addWidget(self.progress_checkboxes[n], n-3, 0) for n in range(3, 6)]
+            [layout_2.addWidget(self.result_checkboxes[n], n-3, 1) for n in range(3, 6)]
+            self.with_cleaning_groupbox.setLayout(layout_2)
+            self.layout.addWidget(self.with_cleaning_groupbox)
+
+        self.setLayout(self.layout)
 
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
-        print('TimerManager init method called')
+        logging.debug('TimerManager init method called')
 
     def __enter__(self):
         self.input_timer.start(1000)
@@ -44,7 +87,7 @@ class TimerManager:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.input_timer.stop()
-        print('TimerManager method called')
+        logging.debug('TimerManager method called')
 
 
 class QTextEditLogger(logging.Handler):
@@ -263,6 +306,9 @@ class Panel(QWidget):
         self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
+
+
+
         self.tabs = QTabWidget()
         self.tab_home = QWidget()
         self.tab_manual = QWidget()
@@ -312,10 +358,12 @@ class Panel(QWidget):
         self.tab_log.layout = QGridLayout()
 
         self.logTextBox = QTextEditLogger(self)
+
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logging.getLogger().addHandler(self.logTextBox)
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
+
 
         if self.args.localdev:
             logging.info("Starting in local debug mode")
@@ -656,12 +704,12 @@ class Panel(QWidget):
 
 
         self.create_manual_sal_group()
-        self.btn_calibr_checkbox = QCheckBox('Calibration check result')
-        self.btn_calibr_checkbox.setEnabled(False)
+        #self.btn_calibr_checkbox = QCheckBox('Calibration check result')
+        #self.btn_calibr_checkbox.setEnabled(False)
         # In this checkbox, state 0 - unchecked means no calibration
         # state 1 - calibration check failed
         # state 2 - calibration check is sucessfull
-        self.btn_calibr_checkbox.setTristate()
+        #self.btn_calibr_checkbox.setTristate()
 
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
@@ -670,7 +718,7 @@ class Panel(QWidget):
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 2)
 
         self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
+        #self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
 
         self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 1, 2)
         self.tab_config.setLayout(self.tab_config.layout)
@@ -1071,7 +1119,7 @@ class Panel(QWidget):
         finally:
             self.updater.update_spectra_in_progress = False
 
-    def update_pH_plot(self):
+    def update_corellation_plot(self):
         logging.info("update pH plot")
 
         self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
@@ -1209,17 +1257,25 @@ class Panel(QWidget):
         await self.call_autoAdjust()
 
     async def call_autoAdjust(self):
-        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
-            self.btn_adjust_leds.setChecked(True)
-            await asyncio.sleep(2)
-            try:
-                if self.args.co3:
-                    res = await self.autoAdjust_IntTime()
-                else:
-                    res = await self.autoAdjust_LED()
-            finally:
-                self.btn_adjust_leds.setChecked(False)
-            return res
+        if not self.instrument.autoadj_opt == 'OFF':
+            self.sample_steps[0].setChecked(True)
+            logging.info("Autoadjust LEDS")
+            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
+                self.btn_adjust_leds.setChecked(True)
+                await asyncio.sleep(2)
+                try:
+                    if self.args.co3:
+                        res = await self.autoAdjust_IntTime()
+                    else:
+                        res = await self.autoAdjust_LED()
+                finally:
+                    self.btn_adjust_leds.setChecked(False)
+            logging.info(f"res after autoadjust: '{res}")
+
+        else:
+            res = True
+            logging.info("Measure sample without autoadjustment")
+        return res
 
     @asyncSlot()
     async def btn_checkflow_clicked(self):
@@ -1295,31 +1351,28 @@ class Panel(QWidget):
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
 
-            valve_turned_msg = QMessageBox()
-            valve_turned_msg.setIconPixmap(QPixmap("Figure_1.png"))
-            valve_turned_msg.setWindowTitle('Message')
-            valve_turned_msg.setText(
-                "Turn the input valve (white) to internal input water position " +
-                "  (Get water from calibration solution)")
-            valve_turned_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            valve_turned = valve_turned_msg.exec_()
-            #QMessageBox.question, "important message",
-            #"Turn the input valve (white) to calibration position",
-            #, parent = self
-
+            valve_turned = self.valve_message('Turn valve into calibration mode')
 
             if valve_turned == QMessageBox.Yes:
-                folderpath = self.get_folderpath()
-                flnmStr, timeStamp = self.get_filename()
-                await self.sample(folderpath, flnmStr, timeStamp)
 
-                v = QMessageBox.question(self, "important message",
-                                         "Manually turn the valve back to ferrybox mode",
-                                         QMessageBox.Yes | QMessageBox.No)
+                with_cleaning = self.valve_message('Calibration_second_step')
+                if with_cleaning:
+                    calibration_type = 'with cuvette cleaning'
+                else:
+                    calibration_type = 'without cuvette cleaning'
 
-                v = QMessageBox.question(self, "important message!!!",
-                                         "ARE YOU SURE YOU TURNED THE VALVE???",
-                                         QMessageBox.Yes | QMessageBox.No)
+                self.calibr_state_dialog = CalibrationProgess(self, calibration_type)
+                self.calibr_state_dialog.show()
+                await self.calibration_check_cycle(calibration_type)
+
+                v = self.valve_message("Valve back to ferrybox mode")
+                #v = QMessageBox.question(self, "important message",
+                #                         "Manually turn the valve back to ferrybox mode",
+                #                        QMessageBox.Yes | QMessageBox.No)
+
+                self.valve_message('After calibration valve angry')
+
+
             self.btn_calibr.setChecked(False)
 
     @asyncSlot()
@@ -1329,12 +1382,9 @@ class Panel(QWidget):
                 self.timerSave_pco2.stop()
             # Start single sampling process
             logging.info("clicked single meas ")
-            message = QMessageBox.question(
-                self,
-                "important message!!!",
-                "Did you pump to flush the sampling chamber?",
-                QMessageBox.Yes | QMessageBox.No,
-            )
+            message = self.valve_message('Single measurement')
+
+
             if message == QMessageBox.No:
                 self.btn_single_meas.setChecked(False)
                 return
@@ -1342,18 +1392,22 @@ class Panel(QWidget):
             flnmStr, timeStamp = self.get_filename()
 
             text, ok = QInputDialog.getText(None, "Enter Sample name", flnmStr)
-            if self.args.pco2:
-                self.timerSave_pco2.start()
+            #if self.args.pco2:
+            #    self.timerSave_pco2.start()
             if ok:
                 if text != "":
                     flnmStr = text
+                else:
+                    flnmStr = None
                 folderpath = self.get_folderpath()
                 # disable all btns in manual tab (There are way more buttons now)
                 self.btn_cont_meas.setEnabled(False)
                 self.btn_single_meas.setEnabled(False)
-                self.btn_calibr.setEnabled(False)  # what does calibration do?
+                self.btn_calibr.setEnabled(False)
 
-                await self.sample(folderpath, flnmStr, timeStamp)
+                await self.sample_cycle(folderpath, flnmStr)
+
+
             self.btn_single_meas.setChecked(False)
 
     def update_contin_mode_info(self):
@@ -1382,10 +1436,9 @@ class Panel(QWidget):
         logging.info("continuous_mode_timer_finished")
         self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
-            flnmStr, timeStamp = self.get_filename()
             folderpath = self.get_folderpath()
             if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
-                await self.sample(folderpath, flnmStr, timeStamp)
+                await self.sample_cycle(folderpath)
         else:
             logging.info("Skipped a sample because the previous measurement is still ongoing")
             pass  # TODO Increase interval
@@ -1393,15 +1446,15 @@ class Panel(QWidget):
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
 
-        logging.info("Save spectrum data to file")
+        logging.debug("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
-        logging.info("Save evl data to file")
+        logging.debug("Save evl data to file")
         self.save_evl(folderpath, flnmStr)
 
-        logging.info("Send pH data to ferrybox")
-        self.send_to_ferrybox()
-
-        self.save_logfile_df(folderpath, flnmStr)
+        if 'Calibration' not in self.major_modes:
+            logging.info("Send pH data to ferrybox")
+            self.send_to_ferrybox()
+            self.save_logfile_df(folderpath, flnmStr)
 
     def update_LEDs(self):
         [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
@@ -1474,6 +1527,7 @@ class Panel(QWidget):
         return
 
     def autorun(self):
+        #self.logger.debug('testt autorunw')
         logging.info("start autorun")
         if self.instrument.autostart:
             if self.instrument.automode == "pump":
@@ -1494,6 +1548,56 @@ class Panel(QWidget):
 
         return
 
+    def valve_message(self, type = 'Turn valve into calibration mode'):
+        types = {'Turn valve into calibration mode':
+                     "<br> 1. Turn the input valve (white) to internal input water position and\
+                      <br>2. place the tube in the Tris buffer bottle\
+                      <br>(Get water from calibration solution)\
+                      <br>\
+                      <br> Did you manange to do it? ",
+
+                 'Calibration_second_step':
+                     "Do you want calibration check to include cuvette cleaning?",
+
+                 'After cuvette cleaning' :
+                     "Click OK after cleaning the cuvette",
+
+                 "Valve back to ferrybox mode":
+                     "Please turn the valve back into the ferrybox mode",
+
+                 "After calibration valve angry":
+                     "ARE YOU SURE YOU TURNED THE VALVE BACK???",
+
+                 "Single measurement":
+                     "Did you pump to flush the sampling chamber?",
+
+                 "Confirm Exit":
+                     "Are you sure you want to exit ?"
+        }
+
+        msg = QMessageBox()
+
+        if type == "After calibration valve angry":
+            image ='angry_phox.png'
+        elif type == 'After cuvette cleaning' or type == "Valve back to ferrybox mode":
+            image = 'fox-logo.png'
+        else:
+            image = 'pHox_question.png'
+
+        pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
+
+        msg.setIconPixmap(pixmap)
+        msg.setWindowIcon(QtGui.QIcon('fox-logo.png'))
+
+        msg.setWindowTitle('Important')
+        msg.setText(types[type])
+        if type == 'After cuvette cleaning':
+            msg.setStandardButtons(QMessageBox.Ok)
+        else:
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+        return msg.exec_()
+
     @asynccontextmanager
     async def ongoing_major_mode_contextmanager(self, mode):
         self.set_major_mode(mode)
@@ -1502,10 +1606,51 @@ class Panel(QWidget):
         finally:
             self.unset_major_mode(mode)
 
-    async def sample(self, folderpath, flnmStr, timeStamp):
+    async def one_calibration_step(self, n, folderpath):
+        if n == 0 or n == 3:
+            await self.instrument.pumping(self.instrument.pumpTime)
+        else:
+            await self.instrument.pumping(self.calibration_pump_time)
+
+        self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
+        await self.sample_cycle(folderpath)
+        check, self.data_log_row['cal_result'] = await self.get_calibration_results()
+        self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
+        self.df_mean_log_row.append(self.data_log_row)
+
+    async def calibration_check_cycle(self, calibration_type):
+        self.calibration_pump_time = 0.001 #30
+        flnmStr, timeStamp = self.get_filename()
+        folderpath = self.get_folderpath()
+
+        self.calibration_step = 'before cleaning'
+        self.df_mean_log_row = []
+
+        for n in range(3):
+            await self.one_calibration_step(n, folderpath)
+
+        print (pd.concat(self.df_mean_log_row))
+
+        # Ask the user to clean the cuvette:
+        if calibration_type == 'with cuvette cleaning':
+            cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+            self.calibration_step = 'after cleaning'
+
+            if cuvette_is_clean:
+
+                for k, v in enumerate(range(3,6)):
+                    await self.one_calibration_step(v, folderpath)
+
+        self.log_row = pd.concat(self.df_mean_log_row)
+        self.save_logfile_df(folderpath, flnmStr)
+
+    async def sample_cycle(self, folderpath, flnmStr_manual = None):
+        flnmStr, timeStamp = self.get_filename()
+        if flnmStr_manual != None:
+            flnmStr = flnmStr_manual
+
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
             # Step 0. Start measurement, create new df,
-            # reset Absorption plot
 
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
@@ -1513,23 +1658,16 @@ class Panel(QWidget):
             self.create_new_df()
 
             if self.args.co3:
+                # reset Absorption plot
                 await self.reset_absorp_plot()
-            # pump if single, close the valve
-            await self.pump_if_needed()
 
-            logging.info("Closing the valve ...")
+            # pump if single or calibration , close the valve
+            await self.pump_if_needed()
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
+            res = await self.call_autoAdjust()
 
-            if not self.instrument.autoadj_opt == 'OFF':
-                self.sample_steps[0].setChecked(True)
-                logging.info("Autoadjust LEDS")
-                res = await self.call_autoAdjust()
-                logging.info(f"res after autoadjust: '{res}")
-            else:
-                res = True
-                logging.info("Measure sample without autoadjustment")
             if res:
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
@@ -1543,20 +1681,15 @@ class Panel(QWidget):
                 await self.get_final_value(timeStamp)
                 logging.info("The measurement is finished...")
 
-
             # Step 7 Open valve
-            logging.info("Opening the valve ...")
             await self.instrument.set_Valve(False)
 
         if res:
             self.save_results(folderpath, flnmStr)
             logging.debug('Saving results')
-            self.update_table_last_meas()
-
-        if not self.args.co3 and res:
-            self.update_pH_plot()
-
-
+            if 'Calibration' not in self.major_modes:
+                self.update_table_last_meas()
+                self.update_corellation_plot()
 
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
@@ -1585,11 +1718,11 @@ class Panel(QWidget):
     async def pump_if_needed(self):
         if (
                 self.instrument.ship_code == "Standalone" and "Continuous" in self.major_modes
-        ) or "Calibration" in self.major_modes:
+        ):
             logging.info("pumping")
             await self.instrument.pumping(self.instrument.pumpTime)
         else:
-            logging.info("pumping is not needed ")
+            logging.info("additional pumping is not needed ")
 
     async def measure_dark(self):
 
@@ -1638,7 +1771,7 @@ class Panel(QWidget):
         for n_inj in range(self.instrument.ncycles):
             logging.info(f"dye injection n ='{n_inj}")
             self.sample_steps[n_inj + 2].setChecked(True)
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.001)
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
@@ -1653,20 +1786,20 @@ class Panel(QWidget):
     async def inject_dye(self, n_inj):
         # create dataframe and store
 
-        logging.info("Start stirrer")
+        logging.debug("Start stirrer")
         self.instrument.turn_on_relay(self.instrument.stirrer_slot)
         logging.info("Dye Injection %d:" % (n_inj + 1))
 
         if not self.args.nodye:
             await self.instrument.pump_dye(self.instrument.nshots)
 
-        logging.info("Mixing")
+        logging.debug("Mixing")
         await asyncio.sleep(self.instrument.mixT)
 
-        logging.info("Stop stirrer")
+        logging.debug("Stop stirrer")
         self.instrument.turn_off_relay(self.instrument.stirrer_slot)
 
-        logging.info("Wait")
+        logging.debug("Wait")
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
@@ -1688,7 +1821,6 @@ class Panel(QWidget):
         await self.update_spectra_plot_manual(postinj_instensity_spectrum)
 
         if self.args.localdev:
-            logging.info("in debug")
             absorbance_spectrum = postinj_instensity_spectrum
         else:
             self.instrument.spectrum = postinj_instensity_spectrum
@@ -1761,7 +1893,7 @@ class Panel_pH(Panel):
 
     def init_instrument(self):
         if self.args.localdev:
-            self.instrument = Test_instrument(self.args)
+            self.instrument = Test_pH_instrument(self.args)
         else:
             self.instrument = pH_instrument(self.args)
 
@@ -1801,6 +1933,10 @@ class Panel_pH(Panel):
         # get final pH
         logging.debug(f'get final pH ')
         p = self.instrument.pH_eval(self.evalPar_df)
+        #list_of_values_to_pHlog = self.instrument.pH_eval(self.evalPar_df)
+        #return list_of_values_to_pHlog
+
+
         (pH_cuvette, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
          self.pH_t_corr) = p
 
@@ -1820,10 +1956,6 @@ class Panel_pH(Panel):
                 "box_id": [box_id]
             }
         )
-
-        if 'Calibration' in self.major_modes:
-            calibration_check_res = await self.get_calibration_results()
-            self.data_log_row['cal_result'] = calibration_check_res
 
 
     def update_evl_file(self, Absorbance, vNTC,dilution, vol_injected, manual_salinity, n_inj):
@@ -1853,13 +1985,14 @@ class Panel_pH(Panel):
        # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
         if abs(dif_pH) < calibration_threshold:
             result_to_checkbox = 2
-            check_passed = True
+            check_passed = 1
         else:
             result_to_checkbox = 1
-            check_passed = False
-        self.btn_calibr_checkbox.setCheckState(result_to_checkbox)
+            check_passed = 0
+
+
         await asyncio.sleep(0.001)
-        return check_passed
+        return result_to_checkbox, check_passed
 
     def test_udp(self, state):
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
@@ -2017,6 +2150,9 @@ class Panel_CO3(Panel):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
                                                          dilution, vol_injected, manual_salinity)
 
+    def update_corellation_plot(self):
+        logging.debug('No correllation plot for CO3 yet')
+
     async def get_final_value(self, timeStamp):
         # This function should
         # create a dataframe from CO3 log file
@@ -2152,16 +2288,20 @@ class boxUI(QMainWindow):
         global base_folderpath
         base_folderpath = get_base_folderpath(self.args)
 
-        logging.root.level = logging.DEBUG if self.args.debug else logging.INFO
-        self.logger = logging.getLogger('general_logger')
-        fh = logging.FileHandler('errors.log')
-        fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        fh.setLevel(logging.DEBUG)
-        self.logger.addHandler(fh)
+        #logging.basicConfig(filename='sample.log', level=logging.INFO)
+        #
+        #self.logger = logging.getLogger('general_logger')
+        #fh = logging.FileHandler('errors.log')
+        #fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        #fh.setLevel(logging.DEBUG)
+        #self.logger.addHandler(fh)
+
+        logging.root.level = logging.INFO  # logging.DEBUG if self.args.debug else
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
+        self.setWindowIcon(QtGui.QIcon('pHox_icon.png'))
         self.set_title()
         self.main_widget = self.create_main_widget()
         self.setCentralWidget(self.main_widget)
@@ -2180,6 +2320,7 @@ class boxUI(QMainWindow):
         else:
             self.setWindowTitle(f"{box_id}")
 
+
     def create_main_widget(self):
         if self.args.onlypco2:
             main_widget = Panel_PCO2_only(self, self.args)
@@ -2190,9 +2331,10 @@ class boxUI(QMainWindow):
         return main_widget
 
     def closeEvent(self, event):
-        result = QMessageBox.question(
-            self, "Confirm Exit...", "Are you sure you want to exit ?", QMessageBox.Yes | QMessageBox.No,
-        )
+        result = self.main_widget.valve_message("Confirm Exit")
+        #"result = QMessageBox.question(
+        #"    self, "Confirm Exit...", "Are you sure you want to exit ?", QMessageBox.Yes | QMessageBox.No,
+        #)""
         event.ignore()
 
         if result == QMessageBox.Yes:
