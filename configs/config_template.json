@@ -48,9 +48,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "LED4": 70,
-        "PPHOX_STRING_VERSION": "1",
-        "Calibration_threshold": 0.1,
-        "pH_buffer_theoretical": 999
+        "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
         "water_temperature": {
@@ -107,6 +105,7 @@
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
-        "S_tris_buffer": 35
+        "S_tris_buffer": 35,
+        "Calibration_threshold": 0.1
     }
 }

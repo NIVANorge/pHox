@@ -1996,9 +1996,9 @@ class Panel_pH(Panel):
             :return:
         """
 
-        pH_buffer_theoretical = config_file['pH']["pH_buffer_theoretical"]
+        pH_buffer_theoretical = config_file["TrisBuffer"]["pH_tris_buffer"]
         dif_pH = self.data_log_row['pH_cuvette'].values - pH_buffer_theoretical
-        calibration_threshold = config_file['pH']["Calibration_threshold"]
+        calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
 
         if abs(dif_pH) < calibration_threshold:
             result_to_checkbox = 2

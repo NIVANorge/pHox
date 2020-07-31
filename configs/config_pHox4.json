@@ -28,7 +28,9 @@
         "Ship_Code": "Standalone",
         "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
         "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
     },
     "pH": {
         "LED_SLOTS": [
@@ -94,7 +96,8 @@
         "WL_2": 250,
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
+        "Default_DYE": "Pb_perchlor",
+        "PCO3_string_version": "1"
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
