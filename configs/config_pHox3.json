@@ -20,7 +20,7 @@
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 15,
         "Comment": "all intervals are in seconds",
-        "pumpTime": 20,
+        "pumpTime": 60,
         "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,

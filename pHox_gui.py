@@ -25,20 +25,19 @@ import numpy as np
 import pyqtgraph as pg
 import argparse
 import pandas as pd
-
-import udp  # Ferrybox data
+from util import config_file
+import udp
 from udp import Ferrybox as fbox
 from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
+
 class CalibrationProgess(QDialog):
     # Adapt dialog depending on the answer clean cuvette or not 
-    def __init__(self, parent=None, cal_mode=None):
+    def __init__(self, parent=None, with_cuvette_cleaning=True):
         super(CalibrationProgess, self).__init__(parent)
-        self.cal_mode = cal_mode
 
-        print (self.cal_mode)
         self.setWindowTitle("Calibration check progress window")
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
@@ -48,34 +47,47 @@ class CalibrationProgess(QDialog):
             background-color: #32414B;}
             """
 
-        self.progress_checkboxes = [QCheckBox('Calibration check {}'.format(n+1)) for n in range(6)]
-        self.result_checkboxes = [QCheckBox('result'.format(n+1)) for n in range(6)]
-        [n.setStyleSheet(progress_steps_style) for n in self.progress_checkboxes]
-        [n.setTristate() for n in self.result_checkboxes]
+        if with_cuvette_cleaning:
+            n_steps = 6
+        else:
+            n_steps = 3
 
+        self.progress_checkboxes = [QCheckBox('Calibration check {}'.format(n+1)) for n in range(n_steps)]
+        self.result_checkboxes = [QCheckBox('result'.format(n+1)) for n in range(n_steps)]
+
+        for n in self.progress_checkboxes:
+            n.setStyleSheet(progress_steps_style)
+            n.setEnabled(False)
+
+        for n in self.result_checkboxes:
+            n.setEnabled(False)
+            n.setTristate()
+            n.setEnabled(False)
 
         self.no_cleaning_groupbox = QGroupBox('Before Cuvette cleaning')
         layout_1 = QtGui.QGridLayout()
-        [layout_1.addWidget(self.progress_checkboxes[n], n, 0) for n in range(3)]
-        [layout_1.addWidget(self.result_checkboxes[n], n, 1) for n in range(3)]
+        for n in range(3):
+            layout_1.addWidget(self.progress_checkboxes[n], n, 0)
+            layout_1.addWidget(self.result_checkboxes[n], n, 1)
         self.no_cleaning_groupbox.setLayout(layout_1)
 
 
         self.layout = QtGui.QGridLayout()
         self.layout.addWidget(self.no_cleaning_groupbox)
 
+        if with_cuvette_cleaning:
 
-        if self.cal_mode == 'with cuvette cleaning':
             self.with_cleaning_groupbox = QGroupBox('After Cuvette cleaning')
             layout_2 = QtGui.QGridLayout()
-            #self.layout.addWidget(QLabel('Cuvette cleaning'))
-            [layout_2.addWidget(self.progress_checkboxes[n], n-3, 0) for n in range(3, 6)]
-            [layout_2.addWidget(self.result_checkboxes[n], n-3, 1) for n in range(3, 6)]
+            for n in range(3, 6):
+                layout_2.addWidget(self.progress_checkboxes[n], n-3, 0)
+                layout_2.addWidget(self.result_checkboxes[n], n-3, 1)
             self.with_cleaning_groupbox.setLayout(layout_2)
             self.layout.addWidget(self.with_cleaning_groupbox)
 
         self.setLayout(self.layout)
-
+    #def exit(self):
+    #     self.close()
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
@@ -704,23 +716,26 @@ class Panel(QWidget):
 
 
         self.create_manual_sal_group()
-        #self.btn_calibr_checkbox = QCheckBox('Calibration check result')
+        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
         #self.btn_calibr_checkbox.setEnabled(False)
+        self.btn_calibr_checkbox.setTristate()
+
         # In this checkbox, state 0 - unchecked means no calibration
         # state 1 - calibration check failed
         # state 2 - calibration check is sucessfull
-        #self.btn_calibr_checkbox.setTristate()
 
+        self.last_calibr_date = QLabel('Date')
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
 
-        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 2)
+        self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
         self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 1)
-        #self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
+        self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
+        self.tab_config.layout.addWidget(self.last_calibr_date, 2, 2, 1, 1)
 
-        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 1, 2)
+        self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 2, 3)
         self.tab_config.setLayout(self.tab_config.layout)
 
 
@@ -1013,15 +1028,17 @@ class Panel(QWidget):
             json.dump(j, json_file, indent=4)
             json_file.truncate()
 
-    def load_config_file(self):
+    '''def load_config_file(self):
         with open(config_name) as json_file:
             j = json.load(json_file)
             default = j["pH"]
-            return default
+            return default'''
 
     def dye_combo_chngd(self, ind):
         self.instrument.dye = self.dye_combo.currentText()
-        default = self.load_config_file()
+        default = config_file['pH']
+        #self.load_config_file()
+
         if self.instrument.dye == "MCP":
             self.instrument.HI = int(default["MCP_wl_HI"])
             self.instrument.I2 = int(default["MCP_wl_I2"])
@@ -1354,25 +1371,21 @@ class Panel(QWidget):
             valve_turned = self.valve_message('Turn valve into calibration mode')
 
             if valve_turned == QMessageBox.Yes:
-
-                with_cleaning = self.valve_message('Calibration_second_step')
-                if with_cleaning:
-                    calibration_type = 'with cuvette cleaning'
+                with_cuvette_cleaning = self.valve_message('Calibration_second_step')
+                if with_cuvette_cleaning == QMessageBox.Yes:
+                    with_cuvette_cleaning = True
                 else:
-                    calibration_type = 'without cuvette cleaning'
+                    with_cuvette_cleaning = False
 
-                self.calibr_state_dialog = CalibrationProgess(self, calibration_type)
+                self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
                 self.calibr_state_dialog.show()
-                await self.calibration_check_cycle(calibration_type)
+                res, timeStamp = await self.calibration_check_cycle(with_cuvette_cleaning)
 
-                v = self.valve_message("Valve back to ferrybox mode")
-                #v = QMessageBox.question(self, "important message",
-                #                         "Manually turn the valve back to ferrybox mode",
-                #                        QMessageBox.Yes | QMessageBox.No)
-
+                self.btn_calibr_checkbox.setCheckState(res)
+                self.last_calibr_date.setText(timeStamp)
+                self.valve_message("Valve back to ferrybox mode")
                 self.valve_message('After calibration valve angry')
-
-
+                self.calibr_state_dialog.close()
             self.btn_calibr.setChecked(False)
 
     @asyncSlot()
@@ -1578,16 +1591,16 @@ class Panel(QWidget):
         msg = QMessageBox()
 
         if type == "After calibration valve angry":
-            image ='angry_phox.png'
+            image ='utils/angry_phox.png'
         elif type == 'After cuvette cleaning' or type == "Valve back to ferrybox mode":
-            image = 'fox-logo.png'
+            image = 'utils/fox-logo.png'
         else:
-            image = 'pHox_question.png'
+            image = 'utils/pHox_question.png'
 
         pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
 
         msg.setIconPixmap(pixmap)
-        msg.setWindowIcon(QtGui.QIcon('fox-logo.png'))
+        msg.setWindowIcon(QtGui.QIcon('utils/fox-logo.png'))
 
         msg.setWindowTitle('Important')
         msg.setText(types[type])
@@ -1618,7 +1631,7 @@ class Panel(QWidget):
         self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
         self.df_mean_log_row.append(self.data_log_row)
 
-    async def calibration_check_cycle(self, calibration_type):
+    async def calibration_check_cycle(self, with_cuvette_cleaning):
         self.calibration_pump_time = 0.001 #30
         flnmStr, timeStamp = self.get_filename()
         folderpath = self.get_folderpath()
@@ -1629,20 +1642,25 @@ class Panel(QWidget):
         for n in range(3):
             await self.one_calibration_step(n, folderpath)
 
-        print (pd.concat(self.df_mean_log_row))
-
         # Ask the user to clean the cuvette:
-        if calibration_type == 'with cuvette cleaning':
+        if with_cuvette_cleaning:
             cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
             self.calibration_step = 'after cleaning'
 
             if cuvette_is_clean:
-
                 for k, v in enumerate(range(3,6)):
                     await self.one_calibration_step(v, folderpath)
 
-        self.log_row = pd.concat(self.df_mean_log_row)
+        self.data_log_row = pd.concat(self.df_mean_log_row)
         self.save_logfile_df(folderpath, flnmStr)
+
+        mean_result = self.data_log_row['cal_result'].mean()
+        if mean_result < 0.5:
+            res = 1
+        else:
+            res = 2
+        return res,timeStamp
+
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
         flnmStr, timeStamp = self.get_filename()
@@ -1978,11 +1996,10 @@ class Panel_pH(Panel):
             :return:
         """
 
-        pH_buffer_theoretical = 0
+        pH_buffer_theoretical = config_file['pH']["pH_buffer_theoretical"]
         dif_pH = self.data_log_row['pH_cuvette'].values - pH_buffer_theoretical
-        calibration_threshold = 0.05
+        calibration_threshold = config_file['pH']["Calibration_threshold"]
 
-       # Check if dif_pH is smaller than the threshold and see if the calibration was passed or not
         if abs(dif_pH) < calibration_threshold:
             result_to_checkbox = 2
             check_passed = 1
@@ -1990,8 +2007,6 @@ class Panel_pH(Panel):
             result_to_checkbox = 1
             check_passed = 0
 
-
-        await asyncio.sleep(0.001)
         return result_to_checkbox, check_passed
 
     def test_udp(self, state):
@@ -2301,7 +2316,7 @@ class boxUI(QMainWindow):
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
-        self.setWindowIcon(QtGui.QIcon('pHox_icon.png'))
+        self.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
         self.set_title()
         self.main_widget = self.create_main_widget()
         self.setCentralWidget(self.main_widget)

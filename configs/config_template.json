@@ -19,9 +19,9 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 5,
-        "pumpTime": 1,
-        "mixTime": 5,
-        "waitTime": 3,
+        "pumpTime_sec": 60,
+        "mixTime": 0,
+        "waitTime": 0,
         "ncycles": 4,
         "Spectro_Integration_time": 500,
         "Ship_Code": "NB",
@@ -48,15 +48,16 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "LED4": 70,
-        "PPHOX_STRING_VERSION": "1"
+        "PPHOX_STRING_VERSION": "1",
+        "Calibration_threshold": 0.1,
+        "pH_buffer_theoretical": 999
     },
     "pCO2": {
-        "water_temperature":
-        {
+        "water_temperature": {
             "WAT_TEMP_CAL": [
-            -25.779,
-            29.84
-        ],
+                -25.779,
+                29.84
+            ],
             "WAT_TEMP_CH": 1
         },
         "comment1": "# Water flow calibration coefficients :",
