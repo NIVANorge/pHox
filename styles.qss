@@ -119,8 +119,8 @@ QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
 
 
 QCheckBox::indicator{
-  width: 1.5em;
-  height: 1.5em;
+  width: 1.0em;
+  height: 1.0em;
   border: 2px solid #5A5A5A;
 }
 

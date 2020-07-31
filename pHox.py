@@ -704,7 +704,7 @@ class pH_instrument(Common_instrument):
         dpH_dT = -0.0155
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
         t_cuvette = evalPar_df["T_cuvette"][0]
-        pH_lab = evalPar_df["pH"][0]
+        pH_cuvette = evalPar_df["pH"][0]
         pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
 
         nrows = evalPar_df.shape[0]
@@ -717,7 +717,7 @@ class pH_instrument(Common_instrument):
             final_slope = 1
             perturbation = 1
             pH_insitu = 999
-            pH_lab = 999
+            pH_cuvette = 999
             slope1, intercept, r_value = get_linregress(x, y)
 
         else:
@@ -728,7 +728,7 @@ class pH_instrument(Common_instrument):
                 slope1, intercept, r_value = get_linregress(x, y)
                 final_slope = slope1
                 if r_value ** 2 > 0.9:
-                    pH_lab = intercept
+                    pH_cuvette = intercept
                     logging.info("r_value **2 > 0.9")
                 else:
                     logging.info("r_value **2 < 0.9 take three first measurements")
@@ -738,17 +738,17 @@ class pH_instrument(Common_instrument):
                     slope2, intercept, r_value = get_linregress(x, y)
                     final_slope = slope2
                     if r_value ** 2 > 0.9:
-                        pH_lab = intercept
+                        pH_cuvette = intercept
                     else:
-                        pH_lab = pH_t_corr[1]
+                        pH_cuvette = pH_t_corr[1]
 
-            pH_insitu = round(pH_lab + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
+            pH_insitu = round(pH_cuvette + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
             perturbation = round(slope1, prec["perturbation"])
-            pH_lab = round(pH_lab, prec["pH"])
+            pH_cuvette = round(pH_cuvette, prec["pH"])
 
         logging.info("leave pH eval")
         return (
-            pH_lab, t_cuvette,
+            pH_cuvette, t_cuvette,
             perturbation, evalAnir,
             pH_insitu, x, y, final_slope, intercept, pH_t_corr
         )

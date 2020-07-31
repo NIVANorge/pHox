@@ -1620,12 +1620,13 @@ class Panel(QWidget):
             self.unset_major_mode(mode)
 
     async def one_calibration_step(self, n, folderpath):
+
+        self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
         if n == 0 or n == 3:
             await self.instrument.pumping(self.instrument.pumpTime)
         else:
             await self.instrument.pumping(self.calibration_pump_time)
 
-        self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
         await self.sample_cycle(folderpath)
         check, self.data_log_row['cal_result'] = await self.get_calibration_results()
         self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
@@ -1659,7 +1660,7 @@ class Panel(QWidget):
             res = 1
         else:
             res = 2
-        return res,timeStamp
+        return res, timeStamp
 
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
