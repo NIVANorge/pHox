@@ -286,9 +286,9 @@ class Common_instrument(object):
     async def pump_dye(self, nshots):
         for shot in range(nshots):
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.15)
             self.turn_off_relay(self.dyepump_slot)
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.35)
         return
 
     # COMMON
