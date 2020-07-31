@@ -1696,22 +1696,41 @@ class Panel(QWidget):
 
                 # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
                 await self.absorbance_measurement_cycle(blank_min_dark, dark)
-
                 await self.get_final_value(timeStamp)
-                logging.info("The measurement is finished...")
 
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
 
         if res:
-            self.save_results(folderpath, flnmStr)
-            logging.debug('Saving results')
+            # QC CHeck. start the time( that will release one time and will check if the flow is good
+            # after N seconds, sheck the level
+            flow_is_good = await self.check_flow()
             if 'Calibration' not in self.major_modes:
                 self.update_table_last_meas()
                 self.update_corellation_plot()
 
+            logging.debug('Saving results')
+            self.data_log_row['flow_QC'] = flow_is_good
+            self.save_results(folderpath, flnmStr)
+
+
+        #TODO: add qc check
+        # Dye is coming
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
+
+    async def check_flow(self):
+        #TODO: change all parameters, levels to real ones
+        await asyncio.sleep(3) # Seconds
+        intensity_after_last_injection = 0
+        current_intensity = 5
+        threshold = 5
+        diff =  current_intensity - intensity_after_last_injection
+        if diff > threshold:
+            flow_is_good = True
+        else:
+            flow_is_good = False
+        return flow_is_good
 
     def get_folderpath(self):
         if "Calibration" in self.major_modes:
