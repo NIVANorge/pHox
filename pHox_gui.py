@@ -17,7 +17,7 @@ except:
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
 from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit, QFileDialog
-from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QRadioButton,
+from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QRadioButton,QProgressBar,
                              QTableWidget, QHeaderView, QComboBox, QCheckBox, QDialog, QDialogButtonBox,
                              QSlider, QInputDialog, QApplication, QMainWindow)
 from PyQt5.QtGui import QPixmap
@@ -315,9 +315,6 @@ class Panel(QWidget):
         self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
-
-
-
         self.tabs = QTabWidget()
         self.tab_home = QWidget()
         self.tab_manual = QWidget()
@@ -363,10 +360,26 @@ class Panel(QWidget):
         self.manual_widgets_set_enabled(False)
         self.setLayout(hboxPanel)
 
+
+    def update_dye_level_bar(self):
+        self.dye_level -= self.dye_step_1meas
+        print (self.dye_level)
+        self.dye_level_bar.setValue(self.dye_level)
+
     def make_tab_log(self):
         self.tab_log.layout = QGridLayout()
 
         self.logTextBox = QTextEditLogger(self)
+        self.dye_level_bar = QProgressBar()
+        self.dye_level = 2000
+        self.dye_level_bar.setMaximum(2000) #ml
+        self.dye_level_bar.setValue(self.dye_level)
+        self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
+                                config_file['Operational']["dye_nshots"])
+
+        # Volume 1 shot 0.03 ml
+        #  1 measurement 1 shot * "dye_nshots" * "ncycles"  = 0.03 ml *  1 * 4 = 0.12 ml
+
 
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -376,7 +389,9 @@ class Panel(QWidget):
 
         if self.args.localdev:
             logging.info("Starting in local debug mode")
-        self.tab_log.layout.addWidget(self.logTextBox.widget)
+        self.tab_log.layout.addWidget(QLabel('Dye level'), 0, 0)
+        self.tab_log.layout.addWidget(self.dye_level_bar, 0, 1)
+        self.tab_log.layout.addWidget(self.logTextBox.widget, 1, 0, 1, 2)
         self.tab_log.setLayout(self.tab_log.layout)
 
     def create_timers(self):
@@ -646,7 +661,6 @@ class Panel(QWidget):
         """ Filter all mouse scrolling for the defined comboboxes """
         if (event.type() == QtCore.QEvent.Wheel and
                 source in self.noWheelCombos):
-            print(source, event)
             return True
         return super(Panel, self).eventFilter(source, event)
 
@@ -989,7 +1003,6 @@ class Panel(QWidget):
         if not self.args.nodye:
             if state:
                 async with self.updater.disable_live_plotting():
-                    #TODO:stop updating the graph
                     logging.info("in pump dye clicked")
                     await self.instrument.pump_dye(3)
                     self.btn_dye_pmp.setChecked(False)
@@ -1376,10 +1389,10 @@ class Panel(QWidget):
 
                 self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
                 self.calibr_state_dialog.show()
-                res, timeStamp = await self.calibration_check_cycle(with_cuvette_cleaning)
+                res = await self.calibration_check_cycle(with_cuvette_cleaning)
 
                 self.btn_calibr_checkbox.setCheckState(res)
-                self.last_calibr_date.setText(timeStamp)
+                self.last_calibr_date.setText(str(datetime.now().date()))
                 self.valve_message("Valve back to ferrybox mode")
                 self.valve_message('After calibration valve angry')
                 self.calibr_state_dialog.close()
@@ -1393,7 +1406,6 @@ class Panel(QWidget):
             # Start single sampling process
             logging.info("clicked single meas ")
             message = self.valve_message('Single measurement')
-
 
             if message == QMessageBox.No:
                 self.btn_single_meas.setChecked(False)
@@ -1657,7 +1669,7 @@ class Panel(QWidget):
             res = 1
         else:
             res = 2
-        return res, timeStamp
+        return res
 
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
@@ -1697,36 +1709,82 @@ class Panel(QWidget):
 
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
+            self.update_dye_level_bar()
+            if res:
+                if 'Calibration' not in self.major_modes:
+                    self.update_table_last_meas()
+                    self.update_corellation_plot()
 
-        if res:
-            # QC CHeck. start the time( that will release one time and will check if the flow is good
-            # after N seconds, sheck the level
-            flow_is_good = await self.check_flow()
-            if 'Calibration' not in self.major_modes:
-                self.update_table_last_meas()
-                self.update_corellation_plot()
-
+                # QC CHeck. start the time( that will release one time and will check if the flow is good
+                # after N seconds, sheck the level
+                #flow_qc = await self.check_flow()
+                # TODO: add qc check
+                # Dye is coming
+                await self.qc()
             logging.debug('Saving results')
-            self.data_log_row['flow_QC'] = flow_is_good
+
             self.save_results(folderpath, flnmStr)
 
 
-        #TODO: add qc check
-        # Dye is coming
+
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
 
+    async def qc(self):
+        # Flow check
+        await asyncio.sleep(3)  # Seconds
+        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
+        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
+        diff = (current_spectrum - last_injection_spectrum).mean()
+        print(diff, 'mean difference between spectra after 3 seconds')
+        # TODO: change all parameters, levels to real ones
+        flow_threshold = 5
+
+        if diff > flow_threshold:
+            flow_is_good = True
+        else:
+            flow_is_good = False
+        self.data_log_row['flow_QC'] = flow_is_good
+
+        #Dye is coming check
+        dye_threshold = 5
+        if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
+            dye_is_coming = True
+        else:
+            dye_is_coming = False
+        self.data_log_row['dye_coming_qc'] = dye_is_coming
+
+        # Spectro integration time check
+        if self.instrument.specIntTime > 2000:
+            self.data_log_row['Integration_time_qc'] = False
+        else:
+            self.data_log_row['Integration_time_qc'] = True
+
+        #Temperature is alive check
+        if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
+            temp_alive = False
+        else:
+            temp_alive = True
+        self.data_log_row['temp_sens_qc'] = temp_alive
+
+        return
+
     async def check_flow(self):
-        #TODO: change all parameters, levels to real ones
-        await asyncio.sleep(3) # Seconds
-        intensity_after_last_injection = 0
-        current_intensity = 5
+
+        await asyncio.sleep(3)  # Seconds
+        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
+        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
+        diff = (current_spectrum - last_injection_spectrum).mean()
+        print(diff, 'mean difference between spectra after 3 seconds')
+        # TODO: change all parameters, levels to real ones
         threshold = 5
-        diff =  current_intensity - intensity_after_last_injection
+
         if diff > threshold:
             flow_is_good = True
         else:
             flow_is_good = False
+        self.data_log_row['flow_QC'] = flow_is_good
+
         return flow_is_good
 
     def get_folderpath(self):
