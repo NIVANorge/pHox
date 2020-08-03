@@ -62,7 +62,6 @@ class CalibrationProgess(QDialog):
         for n in self.result_checkboxes:
             n.setEnabled(False)
             n.setTristate()
-            n.setEnabled(False)
 
         self.no_cleaning_groupbox = QGroupBox('Before Cuvette cleaning')
         layout_1 = QtGui.QGridLayout()
@@ -70,7 +69,6 @@ class CalibrationProgess(QDialog):
             layout_1.addWidget(self.progress_checkboxes[n], n, 0)
             layout_1.addWidget(self.result_checkboxes[n], n, 1)
         self.no_cleaning_groupbox.setLayout(layout_1)
-
 
         self.layout = QtGui.QGridLayout()
         self.layout.addWidget(self.no_cleaning_groupbox)
@@ -86,8 +84,8 @@ class CalibrationProgess(QDialog):
             self.layout.addWidget(self.with_cleaning_groupbox)
 
         self.setLayout(self.layout)
-    #def exit(self):
-    #     self.close()
+
+
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
@@ -135,7 +133,6 @@ class AsyncThreadWrapper:
         self.callback_returned, self.result = False, None
         self.thread = SimpleThread(slow_function, self.result_setter)
         self.thread.start()
-
 
     def result_setter(self, res):
         self.result, self.callback_returned = res, True
@@ -1625,7 +1622,7 @@ class Panel(QWidget):
         if n == 0 or n == 3:
             await self.instrument.pumping(self.instrument.pumpTime)
         else:
-            await self.instrument.pumping(self.calibration_pump_time)
+            await self.instrument.pumping(self.instrument.calibration_pump_time)
 
         await self.sample_cycle(folderpath)
         check, self.data_log_row['cal_result'] = await self.get_calibration_results()
@@ -1633,7 +1630,7 @@ class Panel(QWidget):
         self.df_mean_log_row.append(self.data_log_row)
 
     async def calibration_check_cycle(self, with_cuvette_cleaning):
-        self.calibration_pump_time = 0.001 #30
+
         flnmStr, timeStamp = self.get_filename()
         folderpath = self.get_folderpath()
 
@@ -1649,7 +1646,7 @@ class Panel(QWidget):
             self.calibration_step = 'after cleaning'
 
             if cuvette_is_clean:
-                for k, v in enumerate(range(3,6)):
+                for k, v in enumerate(range(3, 6)):
                     await self.one_calibration_step(v, folderpath)
 
         self.data_log_row = pd.concat(self.df_mean_log_row)

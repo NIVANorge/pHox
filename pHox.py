@@ -219,6 +219,7 @@ class Common_instrument(object):
             self.vNTCch = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.pumpTime = int(conf_operational["pumpTime_sec"])
+        self.calibration_pump_time = int(config_file["TrisBuffer"]["Calibration_pump_time"])
         self.mixT = int(conf_operational["mixTime"])
         self.waitT = int(conf_operational["waitTime"])
         self.ncycles = int(conf_operational["ncycles"])

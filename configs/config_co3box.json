@@ -100,7 +100,8 @@
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35,
-        "Calibration_threshold": 0.1
+        "Calibration_threshold": 0.1,
+        "Calibration_pump_time" : 30
       }
 }
 
