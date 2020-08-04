@@ -320,12 +320,40 @@ class Panel(QWidget):
         self.tab_manual = QWidget()
         self.tab_log = QWidget()
         self.tab_config = QWidget()
+        self.tab_calibration = QWidget()
         self.plots = QWidget()
 
         self.tabs.addTab(self.tab_home, "Home")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
-        self.tabs.addTab(self.tab_log, "Log")
+        self.tabs.addTab(self.tab_log, "Status")
+        self.tabs.addTab(self.tab_calibration, "Calibr")
+
+
+
+        calibration_group = QGroupBox('Calibration')
+        l = QGridLayout()
+
+        self.btn_calibr = self.create_button("Make calibration\n check", True)
+        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
+        #self.btn_calibr_checkbox.setEnabled(False)
+        self.btn_calibr_checkbox.setTristate()
+
+        # In this checkbox, state 0 - unchecked means no calibration
+        # state 1 - calibration check failed
+        # state 2 - calibration check is sucessfull
+
+        self.last_calibr_date = QLabel('Date')
+        l.addWidget(self.btn_calibr, 0, 0, 1, 1)
+        l.addWidget(self.btn_calibr_checkbox, 0, 1, 1, 1)
+        l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
+        calibration_group.setLayout(l)
+
+
+        l = QGridLayout()
+        l.addWidget(calibration_group)
+        self.tab_calibration.setLayout(l)
+
 
         if self.args.pco2:
             self.tab_pco2 = tab_pco2_class()
@@ -360,6 +388,17 @@ class Panel(QWidget):
         self.manual_widgets_set_enabled(False)
         self.setLayout(hboxPanel)
 
+    def refill_dye(self):
+        if self.dye_level < 2000:
+            if self.dye_level >= 1000:
+                self.dye_level = 2000
+            else:
+                self.dye_level = 1000
+        self.dye_level_bar.setValue(self.dye_level)
+
+    def empty_all_dye(self):
+        self.dye_level = 0
+        self.dye_level_bar.setValue(self.dye_level)
 
     def update_dye_level_bar(self):
         self.dye_level -= self.dye_step_1meas
@@ -370,13 +409,29 @@ class Panel(QWidget):
         self.tab_log.layout = QGridLayout()
 
         self.logTextBox = QTextEditLogger(self)
+
+        dye_level_group = QGroupBox('Dye Level ')
+        l = QGridLayout()
         self.dye_level_bar = QProgressBar()
+        self.dye_refill_btn = QPushButton('Refilled \n1 bag')
+        self.dye_empty_btn = QPushButton('Clear \nall')
+        l.addWidget(self.dye_empty_btn,0,0)
+        l.addWidget(self.dye_refill_btn,0,1)
+        l.addWidget(self.dye_level_bar,0,2)
+        dye_level_group.setLayout(l)
+
         self.dye_level = 2000
         self.dye_level_bar.setMaximum(2000) #ml
+        #self.dye_level_bar.setOrientation(QtCore.Qt.Vertical)
         self.dye_level_bar.setValue(self.dye_level)
+
         self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
                                 config_file['Operational']["dye_nshots"])
 
+        self.dye_refill_btn.clicked.connect(self.refill_dye)
+
+        self.dye_empty_btn.clicked.connect(self.empty_all_dye)
+        #self.dye_empty_btn.setToolTip("Selected Icon")
         # Volume 1 shot 0.03 ml
         #  1 measurement 1 shot * "dye_nshots" * "ncycles"  = 0.03 ml *  1 * 4 = 0.12 ml
 
@@ -386,12 +441,28 @@ class Panel(QWidget):
         logging.getLogger().addHandler(self.logTextBox)
         logging.getLogger().setLevel(logging.INFO)
 
+        meas_qc_groupbox = QGroupBox('Last Measurement QC')
+        l = QGridLayout()
+        self.flow_qc_chk = QCheckBox('Flow QC')
+        self.dye_qc_chk = QCheckBox('Dye Coming QC')
+        self.biofouling_qc_chk = QCheckBox('Biofouling QC')
+        self.temp_alive_qc_chk = QCheckBox('Temp sensor alive QC')
+
+        l.addWidget(self.flow_qc_chk, 0, 0)
+        l.addWidget(self.dye_qc_chk, 0, 1)
+        l.addWidget(self.biofouling_qc_chk, 1, 0)
+        l.addWidget(self.temp_alive_qc_chk, 1, 1)
+        meas_qc_groupbox.setLayout(l)
 
         if self.args.localdev:
             logging.info("Starting in local debug mode")
-        self.tab_log.layout.addWidget(QLabel('Dye level'), 0, 0)
-        self.tab_log.layout.addWidget(self.dye_level_bar, 0, 1)
-        self.tab_log.layout.addWidget(self.logTextBox.widget, 1, 0, 1, 2)
+        #self.tab_log.layout.addWidget(QLabel('Dye level'), 0, 0)
+        self.dye_level_bar.setToolTip("Dye level, 100% is two full bags of dye")
+        #self.tab_log.layout.addWidget(self.dye_refill_btn, 0, 0)
+        #self.tab_log.layout.addWidget(self.dye_empty_btn, 0, 1)
+        self.tab_log.layout.addWidget(dye_level_group,0,0)
+        self.tab_log.layout.addWidget(meas_qc_groupbox, 1, 0)
+        self.tab_log.layout.addWidget(self.logTextBox.widget, 2, 0)
         self.tab_log.setLayout(self.tab_log.layout)
 
     def create_timers(self):
@@ -436,7 +507,7 @@ class Panel(QWidget):
             self.btn_single_meas.setEnabled(False)
             if 'Continuous' in self.major_modes:
                 self.btn_adjust_leds.setEnabled(False)
-                self.btn_checkflow.setEnabled(False)
+                #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
             self.btn_single_meas.setEnabled(False)
@@ -445,7 +516,7 @@ class Panel(QWidget):
             self.manual_widgets_set_enabled(False)
             if 'Manual' in self.major_modes:
                 self.btn_adjust_leds.setEnabled(False)
-                self.btn_checkflow.setEnabled(False)
+                #self.btn_checkflow.setEnabled(False)
 
         if mode_set == 'Calibration':
             self.btn_single_meas.setEnabled(False)
@@ -453,13 +524,13 @@ class Panel(QWidget):
             self.config_widgets_set_state(False)
             self.btn_manual_mode.setEnabled(False)
 
-        if mode_set == 'Flowcheck':
+        '''if mode_set == 'Flowcheck':
             self.btn_cont_meas.setEnabled(False)
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.btn_manual_mode.setEnabled(False)
-            self.manual_widgets_set_enabled(False)
+            self.manual_widgets_set_enabled(False)'''
 
         if mode_set in ["Measuring", "Adjusting"]:
             self.btn_manual_mode.setEnabled(False)
@@ -634,7 +705,7 @@ class Panel(QWidget):
 
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
-        self.btn_calibr = self.create_button("Make calibration\n check", True)
+
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
@@ -727,24 +798,13 @@ class Panel(QWidget):
 
 
         self.create_manual_sal_group()
-        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
-        #self.btn_calibr_checkbox.setEnabled(False)
-        self.btn_calibr_checkbox.setTristate()
-
-        # In this checkbox, state 0 - unchecked means no calibration
-        # state 1 - calibration check failed
-        # state 2 - calibration check is sucessfull
-
-        self.last_calibr_date = QLabel('Date')
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
         self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
 
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
-        self.tab_config.layout.addWidget(self.btn_calibr, 2, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_calibr_checkbox, 2, 1, 1, 1)
-        self.tab_config.layout.addWidget(self.last_calibr_date, 2, 2, 1, 1)
+
 
         self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 2, 3)
         self.tab_config.setLayout(self.tab_config.layout)
@@ -880,7 +940,7 @@ class Panel(QWidget):
             self.btn_stirr,
             self.btn_dye_pmp,
             self.btn_wpump,
-            self.btn_checkflow,
+            #self.btn_checkflow,
 
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
@@ -902,18 +962,18 @@ class Panel(QWidget):
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
-        self.btn_checkflow = self.create_button("Check flow", True)
+        #self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
-
+        btn_grid.addWidget(self.btn_wpump, 0, 1)
         btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-        btn_grid.addWidget(self.btn_wpump, 4, 0)
-        btn_grid.addWidget(self.btn_checkflow, 4, 1)
+
+        #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
         if not self.args.co3:
@@ -1304,7 +1364,7 @@ class Panel(QWidget):
             logging.info("Measure sample without autoadjustment")
         return res
 
-    @asyncSlot()
+    '''@asyncSlot()
     async def btn_checkflow_clicked(self):
         if self.btn_checkflow.isChecked():
             if not self.args.debug and fbox["pumping"] != 1:
@@ -1341,7 +1401,7 @@ class Panel(QWidget):
                         break
                 logging.debug(f'Final result of check: {check_succeeded}')
                 self.btn_checkflow.setChecked(False)
-                return check_succeeded
+                return check_succeeded'''
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1742,31 +1802,41 @@ class Panel(QWidget):
 
         if diff > flow_threshold:
             flow_is_good = True
+            self.flow_qc_chk.setCheckState(2)
         else:
             flow_is_good = False
+            self.flow_qc_chk.setCheckState(1)
         self.data_log_row['flow_QC'] = flow_is_good
 
         #Dye is coming check
         dye_threshold = 5
         if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
             dye_is_coming = True
+            self.dye_qc_chk.setCheckState(2)
         else:
             dye_is_coming = False
+            self.dye_qc_chk.setCheckState(1)
         self.data_log_row['dye_coming_qc'] = dye_is_coming
 
         # Spectro integration time check
         if self.instrument.specIntTime > 2000:
             self.data_log_row['Integration_time_qc'] = False
+            self.biofouling_qc_chk.setCheckState(1)
         else:
             self.data_log_row['Integration_time_qc'] = True
+            self.biofouling_qc_chk.setCheckState(2)
 
         #Temperature is alive check
         if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
             temp_alive = False
+            self.temp_alive_qc_chk.setCheckState(1)
         else:
             temp_alive = True
+            self.temp_alive_qc_chk.setCheckState(2)
         self.data_log_row['temp_sens_qc'] = temp_alive
+        #TODO: update QC checkboxes
 
+        # (0,1,2 2 is true, 1 is false)
         return
 
     async def check_flow(self):

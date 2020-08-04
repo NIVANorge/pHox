@@ -138,3 +138,8 @@ QTabBar::tab {width: 4em;height: 2em; font-size: 10pt;
               margin-bottom: 0;}
 QSpinBox {margin-right: 0px; max-width: 30px;}
 QLabel {font-size: 10pt;}
+
+QToolTip {font-size: 11pt;
+          background-color: black;
+
+          }
