@@ -464,7 +464,6 @@ class pH_instrument(Common_instrument):
         conf_pH = config_file["pH"]
         calibr = config_file["TrisBuffer"]
         self.buffer_sal = calibr["S_tris_buffer"]
-        self.buffer_pH_value = calibr["pH_tris_buffer"]
         self.dye = conf_pH["Default_DYE"]
         if self.dye == "MCP":
             self.HI = int(conf_pH["MCP_wl_HI"])

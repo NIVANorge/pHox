@@ -318,41 +318,16 @@ class Panel(QWidget):
         self.tabs = QTabWidget()
         self.tab_home = QWidget()
         self.tab_manual = QWidget()
-        self.tab_log = QWidget()
+        self.tab_status = QWidget()
         self.tab_config = QWidget()
-        self.tab_calibration = QWidget()
+        self.tab_log = QWidget()
         self.plots = QWidget()
 
         self.tabs.addTab(self.tab_home, "Home")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
-        self.tabs.addTab(self.tab_log, "Status")
-        self.tabs.addTab(self.tab_calibration, "Calibr")
-
-
-
-        calibration_group = QGroupBox('Calibration')
-        l = QGridLayout()
-
-        self.btn_calibr = self.create_button("Make calibration\n check", True)
-        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
-        #self.btn_calibr_checkbox.setEnabled(False)
-        self.btn_calibr_checkbox.setTristate()
-
-        # In this checkbox, state 0 - unchecked means no calibration
-        # state 1 - calibration check failed
-        # state 2 - calibration check is sucessfull
-
-        self.last_calibr_date = QLabel('Date')
-        l.addWidget(self.btn_calibr, 0, 0, 1, 1)
-        l.addWidget(self.btn_calibr_checkbox, 0, 1, 1, 1)
-        l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
-        calibration_group.setLayout(l)
-
-
-        l = QGridLayout()
-        l.addWidget(calibration_group)
-        self.tab_calibration.setLayout(l)
+        self.tabs.addTab(self.tab_status, "Status")
+        self.tabs.addTab(self.tab_log, "Log")
 
 
         if self.args.pco2:
@@ -379,6 +354,10 @@ class Panel(QWidget):
         self.make_tab_config()
         self.make_plotwidgets()
 
+        l = QGridLayout()
+        l.addWidget(self.logTextBox.widget)
+        self.tab_log.setLayout(l)
+
         # combine layout for plots and buttons
         hboxPanel = QtGui.QHBoxLayout()
         hboxPanel.addWidget(self.plotwdigets_groupbox)
@@ -404,9 +383,18 @@ class Panel(QWidget):
         self.dye_level -= self.dye_step_1meas
         print (self.dye_level)
         self.dye_level_bar.setValue(self.dye_level)
+        self.update_config('dye_level', 'pH', self.dye_level)
+
+    def update_config(self,parameter, group, value):
+        with open(config_name, "r+") as json_file:
+            j = json.load(json_file)
+            j[group][parameter] = value
+            json_file.seek(0)  # rewind
+            json.dump(j, json_file, indent=4)
+            json_file.truncate()
 
     def make_tab_log(self):
-        self.tab_log.layout = QGridLayout()
+        self.tab_status.layout = QGridLayout()
 
         self.logTextBox = QTextEditLogger(self)
 
@@ -415,38 +403,40 @@ class Panel(QWidget):
         self.dye_level_bar = QProgressBar()
         self.dye_refill_btn = QPushButton('Refilled \n1 bag')
         self.dye_empty_btn = QPushButton('Clear \nall')
-        l.addWidget(self.dye_empty_btn,0,0)
-        l.addWidget(self.dye_refill_btn,0,1)
-        l.addWidget(self.dye_level_bar,0,2)
+        l.addWidget(self.dye_empty_btn, 0, 0)
+        l.addWidget(self.dye_refill_btn, 0, 1)
+        l.addWidget(self.dye_level_bar, 0, 2)
         dye_level_group.setLayout(l)
 
-        self.dye_level = 2000
+        self.dye_level = config_file['pH']['dye_level']
         self.dye_level_bar.setMaximum(2000) #ml
-        #self.dye_level_bar.setOrientation(QtCore.Qt.Vertical)
         self.dye_level_bar.setValue(self.dye_level)
 
         self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
                                 config_file['Operational']["dye_nshots"])
 
         self.dye_refill_btn.clicked.connect(self.refill_dye)
-
         self.dye_empty_btn.clicked.connect(self.empty_all_dye)
         #self.dye_empty_btn.setToolTip("Selected Icon")
         # Volume 1 shot 0.03 ml
         #  1 measurement 1 shot * "dye_nshots" * "ncycles"  = 0.03 ml *  1 * 4 = 0.12 ml
-
 
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logging.getLogger().addHandler(self.logTextBox)
         logging.getLogger().setLevel(logging.INFO)
 
-        meas_qc_groupbox = QGroupBox('Last Measurement QC')
+        meas_qc_groupbox = QGroupBox('Last Measurement Quality Control')
         l = QGridLayout()
         self.flow_qc_chk = QCheckBox('Flow QC')
         self.dye_qc_chk = QCheckBox('Dye Coming QC')
         self.biofouling_qc_chk = QCheckBox('Biofouling QC')
         self.temp_alive_qc_chk = QCheckBox('Temp sensor alive QC')
+        qc_checks = [self.flow_qc_chk, self.dye_qc_chk,
+                     self.biofouling_qc_chk, self.temp_alive_qc_chk]
+        for n in qc_checks:
+            n.setTristate()
+            n.setEnabled(False)
 
         l.addWidget(self.flow_qc_chk, 0, 0)
         l.addWidget(self.dye_qc_chk, 0, 1)
@@ -454,16 +444,43 @@ class Panel(QWidget):
         l.addWidget(self.temp_alive_qc_chk, 1, 1)
         meas_qc_groupbox.setLayout(l)
 
+        calibration_group = QGroupBox('Calibration')
+        l = QGridLayout()
+
+        self.btn_calibr = self.create_button("Make calibration\n check", True)
+        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
+        self.btn_calibr_checkbox.setEnabled(False)
+        self.btn_calibr_checkbox.setTristate()
+        self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
+
+        # In this checkbox, state 0 - unchecked means no calibration
+        # state 1 - calibration check failed
+        # state 2 - calibration check is sucessfull
+
+        self.last_calibr_date = QLabel('Date')
+        l.addWidget(self.btn_calibr, 0, 0, 1, 1)
+        l.addWidget(self.btn_calibr_checkbox, 0, 1, 1, 1)
+        l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
+        calibration_group.setLayout(l)
+
+
+
+        l = QGridLayout()
+        l.addWidget(calibration_group)
+
+
+
         if self.args.localdev:
             logging.info("Starting in local debug mode")
-        #self.tab_log.layout.addWidget(QLabel('Dye level'), 0, 0)
+        #self.tab_status.layout.addWidget(QLabel('Dye level'), 0, 0)
         self.dye_level_bar.setToolTip("Dye level, 100% is two full bags of dye")
-        #self.tab_log.layout.addWidget(self.dye_refill_btn, 0, 0)
-        #self.tab_log.layout.addWidget(self.dye_empty_btn, 0, 1)
-        self.tab_log.layout.addWidget(dye_level_group,0,0)
-        self.tab_log.layout.addWidget(meas_qc_groupbox, 1, 0)
-        self.tab_log.layout.addWidget(self.logTextBox.widget, 2, 0)
-        self.tab_log.setLayout(self.tab_log.layout)
+        #self.tab_status.layout.addWidget(self.dye_refill_btn, 0, 0)
+        #self.tab_status.layout.addWidget(self.dye_empty_btn, 0, 1)
+        self.tab_status.layout.addWidget(dye_level_group, 0, 0)
+        self.tab_status.layout.addWidget(meas_qc_groupbox, 1, 0)
+        self.tab_status.layout.addWidget(calibration_group, 2, 0)
+
+        self.tab_status.setLayout(self.tab_status.layout)
 
     def create_timers(self):
 
@@ -989,7 +1006,7 @@ class Panel(QWidget):
             self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
 
         self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
-        self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
+
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -1328,6 +1345,10 @@ class Panel(QWidget):
                 if result:
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
                     [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
+                    self.update_config('LED1', 'pH', self.instrument.LEDS[0])
+                    self.update_config('LED2', 'pH', self.instrument.LEDS[1])
+                    self.update_config('LED3', 'pH', self.instrument.LEDS[2])
+                    self.update_config("Spectro_Integration_time", "Operational", self.instrument.specIntTime)
                     logging.info("Adjusted LEDS with intergration time {}".format(self.instrument.specIntTime))
                     datay = await self.instrument.spectrometer_cls.get_intensities()
                     await self.update_spectra_plot_manual(datay)
@@ -1632,11 +1653,12 @@ class Panel(QWidget):
 
     def valve_message(self, type = 'Turn valve into calibration mode'):
         types = {'Turn valve into calibration mode':
-                     "<br> 1. Turn the input valve (white) to internal input water position and\
-                      <br>2. place the tube in the Tris buffer bottle\
-                      <br>(Get water from calibration solution)\
+                     "<br> 1. Turn both valves (white) to the Calibration position (see picture)\
+                      <br>2. Place the tube in the Tris buffer bottle\
                       <br>\
-                      <br> Did you manange to do it? ",
+                      <br><img src=utils/111.png>\
+                      <br>\
+                      <br> Click <b>Yes</b> to continue when you are ready, or <b>No</b> to exit",
 
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
@@ -1645,10 +1667,11 @@ class Panel(QWidget):
                      "Click OK after cleaning the cuvette",
 
                  "Valve back to ferrybox mode":
-                     "Please turn the valve back into the ferrybox mode",
+                     "Please turn the valves back into the ferrybox mode\
+                     <br><img src=utils/222.png>",
 
                  "After calibration valve angry":
-                     "ARE YOU SURE YOU TURNED THE VALVE BACK???",
+                     "ARE YOU SURE YOU TURNED THE VALVES BACK???",
 
                  "Single measurement":
                      "Did you pump to flush the sampling chamber?",
@@ -1669,6 +1692,7 @@ class Panel(QWidget):
         pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
 
         msg.setIconPixmap(pixmap)
+
         msg.setWindowIcon(QtGui.QIcon('utils/fox-logo.png'))
 
         msg.setWindowTitle('Important')
@@ -1775,17 +1799,12 @@ class Panel(QWidget):
                     self.update_table_last_meas()
                     self.update_corellation_plot()
 
-                # QC CHeck. start the time( that will release one time and will check if the flow is good
-                # after N seconds, sheck the level
-                #flow_qc = await self.check_flow()
-                # TODO: add qc check
-                # Dye is coming
+                # Save led levels to config file
+                # Save dye level to config file
                 await self.qc()
             logging.debug('Saving results')
 
             self.save_results(folderpath, flnmStr)
-
-
 
         self.StatusBox.setText('Finished the measurement')
         [step.setChecked(False) for step in self.sample_steps]
@@ -2126,8 +2145,11 @@ class Panel_pH(Panel):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
             Absorbance, vNTC, dilution, vol_injected, manual_salinity)
 
-    def get_logfile_name(self,folderpath):
-        return (os.path.join(folderpath, 'pH.log'))
+    def get_logfile_name(self, folderpath):
+        if 'Calibration' in self.major_modes:
+            return (os.path.join(folderpath, 'pH_cal.log'))
+        else:
+            return (os.path.join(folderpath, 'pH.log'))
 
     async def get_calibration_results(self):
         """
@@ -2141,8 +2163,24 @@ class Panel_pH(Panel):
             :return:
         """
 
-        pH_buffer_theoretical = config_file["TrisBuffer"]["pH_tris_buffer"]
-        dif_pH = self.data_log_row['pH_cuvette'].values - pH_buffer_theoretical
+
+        cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
+
+        pH_buffer_theoretical = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2)/(
+                self.data_log_row['T_cuvette'] + 273.15) - 366.27059 + 0.53993607 * 35 + \
+                0.00016329 * 35 ** 2 + (64.52243 - 0.084041 * 35) * np.log(cal_temp_tris
+                + 273.15) - 0.11149858 * (cal_temp_tris + 273.15)
+
+        self.data_log_row['Buffer_theoretical_val'] = pH_buffer_theoretical
+        self.data_log_row['Buffer_temp'] = cal_temp_tris
+
+        dpH_dT = -0.0155
+        pH_at_cal_temp = self.data_log_row['pH_cuvette'].values + dpH_dT * (
+                cal_temp_tris - self.data_log_row['T_cuvette'].values)
+        pH_at_cal_temp = round(pH_at_cal_temp[0], prec['pH'])
+
+        dif_pH = pH_at_cal_temp - pH_buffer_theoretical.values
+
         calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
 
         if abs(dif_pH) < calibration_threshold:
