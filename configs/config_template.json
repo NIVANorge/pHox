@@ -49,7 +49,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 2000 ,
+        "dye_level": 1898.4400000000014,
         "dye_level_comment": "max 2000 ml, two bags"
     },
     "pCO2": {
@@ -106,9 +106,9 @@
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
-        "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35,
         "Calibration_threshold": 0.1,
-        "Calibration_pump_time" : 30
+        "Calibration_pump_time": 30,
+        "T_tris_buffer": 20
     }
 }
