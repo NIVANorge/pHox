@@ -2114,12 +2114,9 @@ class Panel_pH(Panel):
     async def get_final_value(self, timeStamp):
         # get final pH
         logging.debug(f'get final pH ')
-        p = self.instrument.pH_eval(self.evalPar_df)
-        #list_of_values_to_pHlog = self.instrument.pH_eval(self.evalPar_df)
-        #return list_of_values_to_pHlog
+        p = self.instrument.pH_correction(self.evalPar_df)
 
-
-        (pH_cuvette, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+        (pH_cuvette, t_cuvette, self.slope, evalAnir, pH_insitu, self.x, self.y,  self.intercept, rsquare,
          self.pH_t_corr) = p
 
         self.data_log_row = pd.DataFrame(
@@ -2132,9 +2129,10 @@ class Panel_pH(Panel):
                 "SHIP": [self.instrument.ship_code],
                 "pH_cuvette": [pH_cuvette],
                 "T_cuvette": [t_cuvette],
-                "perturbation": [perturbation],
+                "perturbation": [self.slope],
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
+                'r_square': [rsquare]
                 "box_id": [box_id]
             }
         )

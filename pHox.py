@@ -144,6 +144,7 @@ class Common_instrument(object):
     """
     def __init__(self, panelargs):
         logging.getLogger()
+        logging.getLogger().setLevel(logging.INFO)
 
         self.args = panelargs
         self.spectrometer_cls = Spectro_seabreeze() if not self.args.localdev else Spectro_localtest(panelargs)
@@ -699,58 +700,83 @@ class pH_instrument(Common_instrument):
         pH_buffer_theoretical = par1 - 366.27059+0.53993607*sal+0.00016329*sal**2 + par2 - 0.11149858*(t_cuv_K)
         return pH_buffer_theoretical
 
-    def pH_eval(self, evalPar_df):
+    def pH_correction(self, evalPar_df):
+        """
+        This function is for calculation of the final corrected pH value from 4 measurements,
+        Find a best fit.
+        :param evalPar_df: input dataframe is 4 measurements
+        :return: final pH and other params
+        """
+
         logging.debug(f'evalPar_df["T_cuvette"] {evalPar_df["T_cuvette"]}')
         dpH_dT = -0.0155
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
         t_cuvette = evalPar_df["T_cuvette"][0]
         pH_cuvette = evalPar_df["pH"][0]
-        pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
 
-        nrows = evalPar_df.shape[0]
+        # pH_t_corr - List with pH values corrected for  temperature drift iside the cuvette while it's measuring
+        # reference is the first temperature
 
         if self.args.localdev:
             logging.info("ph eval local mode")
             x = evalPar_df["Vol_injected"].values
-            pH_t_corr = [7.1, 7.2, 7.31, 7.2]
+            pH_t_corr = [7.3, 7.2, 7.22, 7.19]
             y = pH_t_corr
-            final_slope = 1
-            perturbation = 1
-            pH_insitu = 999
-            pH_cuvette = 999
-            slope1, intercept, r_value = get_linregress(x, y)
+        else:
+            x = evalPar_df["Vol_injected"].values
+            pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
+            y = pH_t_corr.values
+
+        # Check std between different measuremnt
+        if np.std(y) > 0.005:
+            # If std is high, get the linear regression to extimate the perturbation
+            # generation by adding the dye into the sample
+
+            slope1, intercept1, r_value1 = get_linregress(x, y)
+            r_values, slopes, intercepts = [], [], []
+            #Calculate fit for different combinations fo measurements to find outliers
+            for n in [0 , self.ncycles - 1]: #range(self.ncycles)
+                slope1, intercept, r_value = get_linregress(np.delete(x, n), np.delete(y, n))
+                r_values.append(r_value)
+                slopes.append(slope1)
+                intercepts.append(intercept)
+
+            # Find the best fit
+            r_value2 = np.max(r_values)
+
+            if r_value1 > r_value2:
+                intercept = intercept1
+                perturbation = slope1
+                r_value = r_value
+            else:
+                idx_to_remove = np.argmax(r_values)
+                print ('idx_to_remove', idx_to_remove)
+                intercept = intercepts[idx_to_remove]
+                perturbation = slopes[idx_to_remove]
+                r_value = r_values[idx_to_remove]
+                if idx_to_remove == 1:
+                    idx_to_remove = -1
+
+                y = np.delete(y, idx_to_remove)
+                x = np.delete(x, idx_to_remove)
+
+            if r_value ** 2 < 0.9:
+                intercept = np.mean(y)
 
         else:
-            if nrows > 1:
-                x = evalPar_df["Vol_injected"].values
-                y = pH_t_corr.values
+            intercept = np.mean(y)
+            r_value = 0
+            perturbation = 0
 
-                slope1, intercept, r_value = get_linregress(x, y)
-                final_slope = slope1
-                if r_value ** 2 > 0.9:
-                    pH_cuvette = intercept
-                    logging.info("r_value **2 > 0.9")
-                else:
-                    logging.info("r_value **2 < 0.9 take three first measurements")
-                    x = x[1:]
-                    y = y[1:]
-
-                    slope2, intercept, r_value = get_linregress(x, y)
-                    final_slope = slope2
-                    if r_value ** 2 > 0.9:
-                        pH_cuvette = intercept
-                    else:
-                        pH_cuvette = pH_t_corr[1]
-
-            pH_insitu = round(pH_cuvette + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
-            perturbation = round(slope1, prec["perturbation"])
-            pH_cuvette = round(pH_cuvette, prec["pH"])
+        pH_insitu = round(intercept + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
+        perturbation = round(perturbation, prec["perturbation"])
+        pH_cuvette = round(pH_cuvette, prec["pH"])
 
         logging.info("leave pH eval")
         return (
             pH_cuvette, t_cuvette,
             perturbation, evalAnir,
-            pH_insitu, x, y, final_slope, intercept, pH_t_corr
+            pH_insitu, x, y, intercept, r_value**2, pH_t_corr
         )
 
 
