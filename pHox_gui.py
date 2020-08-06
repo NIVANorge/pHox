@@ -374,10 +374,13 @@ class Panel(QWidget):
             else:
                 self.dye_level = 1000
         self.dye_level_bar.setValue(self.dye_level)
+        self.update_config('dye_level', 'pH', self.dye_level)
 
     def empty_all_dye(self):
         self.dye_level = 0
         self.dye_level_bar.setValue(self.dye_level)
+        self.update_config('dye_level', 'pH', self.dye_level)
+
 
     def update_dye_level_bar(self):
         self.dye_level -= self.dye_step_1meas
@@ -1494,7 +1497,18 @@ class Panel(QWidget):
 
             flnmStr, timeStamp = self.get_filename()
 
-            text, ok = QInputDialog.getText(None, "Enter Sample name", flnmStr)
+            dlg = QInputDialog(self)
+            dlg.setInputMode(QtGui.QInputDialog.TextInput)
+
+            dlg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+
+            dlg.setWindowTitle('Important')
+            dlg.setLabelText("File name for the sample will be {}, \nType the name below if you want to change it".format(flnmStr))
+            #dlg.resize(500, 100)
+            ok = dlg.exec_()
+            text = dlg.textValue()
+            print (text, ok)
+            #text, ok = QInputDialog.getText(None, "Enter Sample name <img src=utils/fox-logo.png>", flnmStr)
             #if self.args.pco2:
             #    self.timerSave_pco2.start()
             if ok:
@@ -1693,7 +1707,7 @@ class Panel(QWidget):
 
         msg.setIconPixmap(pixmap)
 
-        msg.setWindowIcon(QtGui.QIcon('utils/fox-logo.png'))
+        msg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
 
         msg.setWindowTitle('Important')
         msg.setText(types[type])
@@ -1839,12 +1853,12 @@ class Panel(QWidget):
 
         # Spectro integration time check
         if self.instrument.specIntTime > 2000:
-            self.data_log_row['Integration_time_qc'] = False
+            biofouling_qc = False
             self.biofouling_qc_chk.setCheckState(1)
         else:
-            self.data_log_row['Integration_time_qc'] = True
+            biofouling_qc = True
             self.biofouling_qc_chk.setCheckState(2)
-
+        self.data_log_row['biofouling_qc'] = biofouling_qc
         #Temperature is alive check
         if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
             temp_alive = False
@@ -1853,8 +1867,14 @@ class Panel(QWidget):
             temp_alive = True
             self.temp_alive_qc_chk.setCheckState(2)
         self.data_log_row['temp_sens_qc'] = temp_alive
-        #TODO: update QC checkboxes
 
+        if fbox['pumping'] is None:
+            udp_qc = False
+        else:
+            udp_qc = True
+        self.data_log_row['UDP_conn_qc'] = udp_qc
+        overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, udp_qc])
+        self.data_log_row['overall_qc'] = overall_qc
         # (0,1,2 2 is true, 1 is false)
         return
 
@@ -2029,9 +2049,11 @@ class Panel(QWidget):
 
     def save_evl(self, folderpath, flnmStr):
         evlpath = folderpath + "/evl/"
+
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
+        print ('evl flnm sstr',flnm)
         self.evalPar_df.to_csv(flnm, index=False, header=True)
 
     def save_logfile_df(self, folderpath, flnmStr):
@@ -2047,17 +2069,16 @@ class Panel(QWidget):
             self.data_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
 
         logging.info(f"hour_log_path: {hour_log_path}")
-        hour_log_flnm = hour_log_path + flnmStr + ".log"
         logging.info(f"hour_log_flnm: {hour_log_flnm}")
 
         logfile = self.get_logfile_name(folderpath)
-
         if os.path.exists(logfile):
             self.data_log_row.to_csv(logfile, mode='a', index=False, header=False)
         else:
             self.data_log_row.to_csv(logfile, index=False, header=True)
 
         logging.info("saved log_df")
+        print('logfile', logfile)
 
 
 class Panel_pH(Panel):
@@ -2132,7 +2153,7 @@ class Panel_pH(Panel):
                 "perturbation": [self.slope],
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
-                'r_square': [rsquare]
+                'r_square': [rsquare],
                 "box_id": [box_id]
             }
         )
@@ -2165,7 +2186,7 @@ class Panel_pH(Panel):
         cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
 
         pH_buffer_theoretical = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2)/(
-                self.data_log_row['T_cuvette'] + 273.15) - 366.27059 + 0.53993607 * 35 + \
+                cal_temp_tris + 273.15) - 366.27059 + 0.53993607 * 35 + \
                 0.00016329 * 35 ** 2 + (64.52243 - 0.084041 * 35) * np.log(cal_temp_tris
                 + 273.15) - 0.11149858 * (cal_temp_tris + 273.15)
 
@@ -2177,7 +2198,7 @@ class Panel_pH(Panel):
                 cal_temp_tris - self.data_log_row['T_cuvette'].values)
         pH_at_cal_temp = round(pH_at_cal_temp[0], prec['pH'])
 
-        dif_pH = pH_at_cal_temp - pH_buffer_theoretical.values
+        dif_pH = pH_at_cal_temp - pH_buffer_theoretical
 
         calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
 
