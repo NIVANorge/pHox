@@ -83,8 +83,14 @@ class CalibrationProgess(QDialog):
             self.with_cleaning_groupbox.setLayout(layout_2)
             self.layout.addWidget(self.with_cleaning_groupbox)
 
+        self.stop_calibr_btn = QPushButton('Stop Calibration')
+        self.stop_calibr_btn.setCheckable(True)
+        self.layout.addWidget(self.stop_calibr_btn)
+
         self.setLayout(self.layout)
 
+    def closeEvent(self, event):
+        self.stop_calibr_btn.setChecked(True)
 
 class TimerManager:
     def __init__(self, input_timer):
@@ -1727,17 +1733,21 @@ class Panel(QWidget):
             self.unset_major_mode(mode)
 
     async def one_calibration_step(self, n, folderpath):
+        # Check if stop is clicked
+        if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
+            self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
+            if n == 0 or n == 3:
+                await self.instrument.pumping(self.instrument.pumpTime)
+            else:
+                await self.instrument.pumping(self.instrument.calibration_pump_time)
 
-        self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
-        if n == 0 or n == 3:
-            await self.instrument.pumping(self.instrument.pumpTime)
+            await self.sample_cycle(folderpath)
+            check, self.data_log_row['cal_result'] = await self.get_calibration_results()
+            self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
+            self.df_mean_log_row.append(self.data_log_row)
         else:
-            await self.instrument.pumping(self.instrument.calibration_pump_time)
+            pass
 
-        await self.sample_cycle(folderpath)
-        check, self.data_log_row['cal_result'] = await self.get_calibration_results()
-        self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
-        self.df_mean_log_row.append(self.data_log_row)
 
     async def calibration_check_cycle(self, with_cuvette_cleaning):
 
@@ -1751,13 +1761,14 @@ class Panel(QWidget):
             await self.one_calibration_step(n, folderpath)
 
         # Ask the user to clean the cuvette:
-        if with_cuvette_cleaning:
-            cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
-            self.calibration_step = 'after cleaning'
+        if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
+            if with_cuvette_cleaning:
+                cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+                self.calibration_step = 'after cleaning'
 
-            if cuvette_is_clean:
-                for k, v in enumerate(range(3, 6)):
-                    await self.one_calibration_step(v, folderpath)
+                if cuvette_is_clean:
+                    for k, v in enumerate(range(3, 6)):
+                        await self.one_calibration_step(v, folderpath)
 
         self.data_log_row = pd.concat(self.df_mean_log_row)
         self.save_logfile_df(folderpath, flnmStr)
