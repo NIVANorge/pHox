@@ -903,9 +903,9 @@ class Test_pH_instrument(pH_instrument):
         for shot in range(nshots):
             logging.info("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
-            await asyncio.sleep(0.0001)
+            await asyncio.sleep(0.05)
             self.turn_off_relay(self.dyepump_slot)
-            await asyncio.sleep(0.0001)
+            await asyncio.sleep(0.05)
         return
 
     def print_Com(self, port, txtData):

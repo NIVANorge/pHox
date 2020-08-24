@@ -388,9 +388,9 @@ class Panel(QWidget):
         self.update_config('dye_level', 'pH', self.dye_level)
 
 
-    def update_dye_level_bar(self):
-        self.dye_level -= self.dye_step_1meas
-        print (self.dye_level)
+    def update_dye_level_bar(self, nshots = 1):
+        self.dye_level -= self.dye_step_1meas * nshots
+        print ('NEW DYE LEVEL', self.dye_level)
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
@@ -423,7 +423,7 @@ class Panel(QWidget):
 
         self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
                                 config_file['Operational']["dye_nshots"])
-
+        print ('***************self.dye_step_1meas',self.dye_step_1meas)
         self.dye_refill_btn.clicked.connect(self.refill_dye)
         self.dye_empty_btn.clicked.connect(self.empty_all_dye)
         #self.dye_empty_btn.setToolTip("Selected Icon")
@@ -1091,9 +1091,11 @@ class Panel(QWidget):
                 async with self.updater.disable_live_plotting():
                     logging.info("in pump dye clicked")
                     await self.instrument.pump_dye(3)
+                    self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
-                    # updat plot after pumping
-                    await self.update_spectra_plot()
+                    # update plot after pumping
+                    if not self.args.localdev:
+                        await self.update_spectra_plot()
         else:
             logging.info('Trying to pump in no pump mode')
             self.btn_dye_pmp.setChecked(False)
@@ -1223,6 +1225,8 @@ class Panel(QWidget):
             # I don't think this if statement is required
             if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
                 datay = await self.instrument.spectrometer_cls.get_intensities()
+                if (self.args.localdev and self.btn_leds.isChecked() == False):
+                    datay = datay * 0.001 + 1000
                 if self.args.stability:
                     self.save_stability_test(datay)
                 self.plotSpc.setData(self.wvls, datay)
@@ -1815,10 +1819,10 @@ class Panel(QWidget):
                 # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
                 await self.absorbance_measurement_cycle(blank_min_dark, dark)
                 await self.get_final_value(timeStamp)
-
+                self.update_dye_level_bar()
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
-            self.update_dye_level_bar()
+
             if res:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()
