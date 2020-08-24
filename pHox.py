@@ -219,6 +219,8 @@ class Common_instrument(object):
         if not (self.vNTCch in range(9)):
             self.vNTCch = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
+        self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
+        print (self.valid_samplingIintervals)
         self.pumpTime = int(conf_operational["pumpTime_sec"])
         self.calibration_pump_time = int(config_file["TrisBuffer"]["Calibration_pump_time"])
         self.mixT = int(conf_operational["mixTime"])
@@ -248,6 +250,7 @@ class Common_instrument(object):
         self.dye_vol_inj = conf_operational["DYE_V_INJ"]
         self.specIntTime = conf_operational["Spectro_Integration_time"]
         self.ship_code = conf_operational["Ship_Code"]
+        self.valid_ship_codes = conf_operational["Valid_ship_codes"]
 
         if self.spectrometer_cls.spectro_type == "FLMT":
             self.THR = int(conf_operational["LIGHT_THRESHOLD_FLAME"])

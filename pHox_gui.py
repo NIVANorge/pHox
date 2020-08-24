@@ -830,12 +830,8 @@ class Panel(QWidget):
 
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
-
-
         self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 2, 3)
         self.tab_config.setLayout(self.tab_config.layout)
-
-
 
 
     def config_dye_info(self):
@@ -846,7 +842,7 @@ class Panel(QWidget):
     def combo_in_config(self, combo, name):
         combo_dict = {
             "Ship": [
-                ['Standalone', 'NB', 'FA', 'TF'],
+                self.instrument.valid_ship_codes,
                 self.ship_code_changed,
                 self.instrument.ship_code],
 
@@ -856,7 +852,7 @@ class Panel(QWidget):
                 self.instrument.TempProbe_id],
 
             'Sampling interval': [
-                ['5', '7', '10', '15', '20', '30', '60'],
+                self.instrument.valid_samplingIintervals,
                 self.sampling_int_chngd,
                 int(self.instrument.samplingInterval)],
 
@@ -887,7 +883,7 @@ class Panel(QWidget):
 
         [combo.addItem(str(item)) for item in combo_dict[name][0]]
         combo.currentIndexChanged.connect(combo_dict[name][1])
-        self.set_combo_index(combo, combo_dict[name][2])
+        self.set_combo_index(combo, combo_dict[name],name)
 
     def create_manual_sal_group(self):
         self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
@@ -923,13 +919,58 @@ class Panel(QWidget):
 
         return salinity_manual
 
-    def set_combo_index(self, combo, text):
+    def set_combo_index(self, combo, combo_info, combotype):
+        text = combo_info[2]
+        valid_intervals = combo_info[0]
         index = combo.findText(str(text), QtCore.Qt.MatchFixedString)
         if index >= 0:
             combo.setCurrentIndex(index)
         else:
-            logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(
+            if combotype in ("Spectro integration time",'Sampling interval'):
+                idx = np.abs(np.array(list(map(float, valid_intervals))) - float(text)).argmin()
+                text = float(valid_intervals[idx])
+                logging.error('Assigning a new value which is the closest from the list of valid values: {}'.
+                              format(text))
+                combo.setCurrentIndex(idx)
+            else:
+                logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(
                 combo, str(text)))
+
+
+    '''def get_combo_index(self, combotype):
+        combo_dict = {
+            'cont_mode':
+                    {'valid_intervals': self.valid_sampling_intervals,
+                        'interval':  self.cont_mode_interval,
+                        'combobox':  self.cont_mode_interval_combo},
+            'reference_sample':
+                     {'valid_intervals': self.valid_reference_intervals,
+                        'interval':  self.reference_interval,
+                        'combobox':  self.reference_interval_combo}
+                   }
+        v = combo_dict[combotype]
+
+        if str(v['interval']) in  v['valid_intervals']:
+            idx = v['valid_intervals'].index(str(v['interval']))
+        else:
+            # if the value from the config is not in valid intervals, assign the nearest value
+            logging.error('was not able to set value from the config file,combo is {}, value is {}, valid values are {}'
+                          .format(combotype, v["interval"], v["valid_intervals"]))
+            idx = np.abs(np.array(list(map(
+                float, v['valid_intervals']))) - float(v['interval'])).argmin()
+            v['interval'] = float(self.valid_sampling_intervals[idx])
+            logging.error('Assigning a new value which is the closest from the list of valid values: {}'.
+                          format(v['interval']))
+        v['combobox'].setCurrentIndex(idx)
+        self.noWheelCombos.append(v['combobox'])
+        v['combobox'].installEventFilter(self)'''
+
+
+
+
+
+
+
 
     def sampling_int_chngd(self, ind):
         self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
