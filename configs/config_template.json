@@ -19,14 +19,27 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 1,
-        "VALID_SAMPLING_INTERVALS" : ["5", "7", "10", "15", "20", "30", "60"],
+        "VALID_SAMPLING_INTERVALS": [
+            "5",
+            "7",
+            "10",
+            "15",
+            "20",
+            "30",
+            "60"
+        ],
         "pumpTime_sec": 60,
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
         "Spectro_Integration_time": 500.5,
         "Ship_Code": "NB",
-        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
+        "Valid_ship_codes": [
+            "Standalone",
+            "NB",
+            "FA",
+            "TF"
+        ],
         "LIGHT_THRESHOLD_STS": 15500,
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
@@ -50,7 +63,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 997.9599999999999,
+        "dye_level": 997.8399999999999,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {

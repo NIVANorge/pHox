@@ -472,19 +472,13 @@ class Panel(QWidget):
         l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
         calibration_group.setLayout(l)
 
-
-
         l = QGridLayout()
         l.addWidget(calibration_group)
 
-
-
         if self.args.localdev:
             logging.info("Starting in local debug mode")
-        #self.tab_status.layout.addWidget(QLabel('Dye level'), 0, 0)
+
         self.dye_level_bar.setToolTip("Dye level, 100% is two full bags of dye")
-        #self.tab_status.layout.addWidget(self.dye_refill_btn, 0, 0)
-        #self.tab_status.layout.addWidget(self.dye_empty_btn, 0, 1)
         self.tab_status.layout.addWidget(dye_level_group, 0, 0)
         self.tab_status.layout.addWidget(meas_qc_groupbox, 1, 0)
         self.tab_status.layout.addWidget(calibration_group, 2, 0)
@@ -531,9 +525,9 @@ class Panel(QWidget):
         if mode_set == "Manual":
             self.manual_widgets_set_enabled(True)
             self.btn_single_meas.setEnabled(False)
-            if 'Continuous' in self.major_modes:
-                self.btn_adjust_leds.setEnabled(False)
-                #self.btn_checkflow.setEnabled(False)
+            #if 'Continuous' in self.major_modes:
+            #    self.btn_adjust_leds.setEnabled(False)
+            #    #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
             self.btn_single_meas.setEnabled(False)
@@ -549,14 +543,6 @@ class Panel(QWidget):
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.btn_manual_mode.setEnabled(False)
-
-        '''if mode_set == 'Flowcheck':
-            self.btn_cont_meas.setEnabled(False)
-            self.btn_single_meas.setEnabled(False)
-            self.btn_calibr.setEnabled(False)
-            self.config_widgets_set_state(False)
-            self.btn_manual_mode.setEnabled(False)
-            self.manual_widgets_set_enabled(False)'''
 
         if mode_set in ["Measuring", "Adjusting"]:
             self.btn_manual_mode.setEnabled(False)
@@ -670,9 +656,6 @@ class Panel(QWidget):
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
-
-
-
     def make_steps_groupBox(self):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
@@ -731,7 +714,6 @@ class Panel(QWidget):
 
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
-
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
@@ -1006,9 +988,7 @@ class Panel(QWidget):
             self.btn_valve,
             self.btn_stirr,
             self.btn_dye_pmp,
-            self.btn_wpump,
-            #self.btn_checkflow,
-
+            self.btn_wpump
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -1134,8 +1114,8 @@ class Panel(QWidget):
                     await self.instrument.pump_dye(3)
                     self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
-                    # update plot after pumping
                     if not self.args.localdev:
+                        # update plot after pumping
                         await self.update_spectra_plot()
         else:
             logging.info('Trying to pump in no pump mode')
@@ -1278,7 +1258,6 @@ class Panel(QWidget):
             self.updater.update_spectra_in_progress = False
 
     def update_corellation_plot(self):
-        logging.info("update pH plot")
 
         self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
                                   symbol="o", clear=True)
@@ -1420,8 +1399,13 @@ class Panel(QWidget):
 
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
-            self.sample_steps[0].setChecked(True)
+
+            if 'Manual' not in self.major_modes:
+                self.sample_steps[0].setChecked(True)
+            else:
+                self.StatusBox.setText("Autoadjusting LEDS")
             logging.info("Autoadjust LEDS")
+
             async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
                 self.btn_adjust_leds.setChecked(True)
                 await asyncio.sleep(2)
@@ -1433,50 +1417,12 @@ class Panel(QWidget):
                 finally:
                     self.btn_adjust_leds.setChecked(False)
             logging.info(f"res after autoadjust: '{res}")
-
+            if 'Manual' in self.major_modes:
+                self.StatusBox.setText("Finished Autoadjusting LEDS")
         else:
             res = True
             logging.info("Measure sample without autoadjustment")
         return res
-
-    '''@asyncSlot()
-    async def btn_checkflow_clicked(self):
-        if self.btn_checkflow.isChecked():
-            if not self.args.debug and fbox["pumping"] != 1:
-                logging.info('Not doing flowcheck because the pump is off')
-                self.btn_checkflow.setChecked(False)
-                return
-
-            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Flowcheck"):
-                logging.debug(f'Start flowcheck preparations')
-
-                # Closing the valve
-                await self.instrument.set_Valve(True)
-                # Getting a baseline spectrum
-                baseline_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                # inject die twice (with n shots determined by config), this includes stirring
-                await self.inject_dye(3)
-                await self.inject_dye(3)
-
-                dyed_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - dyed_spectrum)))
-                logging.debug(f'Initial diff: {rms_spectrum_difference}')
-                # Re-open the valve
-                await self.instrument.set_Valve(False)
-
-                # Start the flow check
-                start = datetime.utcnow()
-                check_succeeded = False
-                while datetime.utcnow() - start < timedelta(seconds=20):
-                    diluted_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                    new_rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - diluted_spectrum)))
-                    logging.debug(f'got another spectrum, new diff: {new_rms_spectrum_difference}')
-                    if rms_spectrum_difference * .2 > new_rms_spectrum_difference:
-                        check_succeeded = True
-                        break
-                logging.debug(f'Final result of check: {check_succeeded}')
-                self.btn_checkflow.setChecked(False)
-                return check_succeeded'''
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1555,13 +1501,11 @@ class Panel(QWidget):
 
             dlg.setWindowTitle('Important')
             dlg.setLabelText("File name for the sample will be {}, \nType the name below if you want to change it".format(flnmStr))
-            #dlg.resize(500, 100)
+
             ok = dlg.exec_()
             text = dlg.textValue()
-            print (text, ok)
-            #text, ok = QInputDialog.getText(None, "Enter Sample name <img src=utils/fox-logo.png>", flnmStr)
-            #if self.args.pco2:
-            #    self.timerSave_pco2.start()
+
+
             if ok:
                 if text != "":
                     flnmStr = text
@@ -1915,7 +1859,8 @@ class Panel(QWidget):
             biofouling_qc = True
             self.biofouling_qc_chk.setCheckState(2)
         self.data_log_row['biofouling_qc'] = biofouling_qc
-        #Temperature is alive check
+
+        # Temperature is alive check
         if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
             temp_alive = False
             self.temp_alive_qc_chk.setCheckState(1)
@@ -1929,9 +1874,10 @@ class Panel(QWidget):
         else:
             udp_qc = True
         self.data_log_row['UDP_conn_qc'] = udp_qc
+
         overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, udp_qc])
         self.data_log_row['overall_qc'] = overall_qc
-        # (0,1,2 2 is true, 1 is false)
+
         return
 
     async def check_flow(self):
@@ -2124,17 +2070,11 @@ class Panel(QWidget):
         else:
             self.data_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
 
-        logging.info(f"hour_log_path: {hour_log_path}")
-        logging.info(f"hour_log_flnm: {hour_log_flnm}")
-
         logfile = self.get_logfile_name(folderpath)
         if os.path.exists(logfile):
             self.data_log_row.to_csv(logfile, mode='a', index=False, header=False)
         else:
             self.data_log_row.to_csv(logfile, index=False, header=True)
-
-        logging.info("saved log_df")
-        print('logfile', logfile)
 
 
 class Panel_pH(Panel):
@@ -2368,7 +2308,6 @@ class Panel_CO3(Panel):
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
         return folderpath
-
 
     async def measure_dark(self):
         # turn off light and LED
