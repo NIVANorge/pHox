@@ -32,7 +32,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 500.5,
+        "Spectro_Integration_time": 500,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -53,8 +53,8 @@
             16
         ],
         "LED1": 50,
-        "LED2": 16,
-        "LED3": 60,
+        "LED2": 60,
+        "LED3": 70,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -63,7 +63,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 997.8399999999999,
+        "dye_level": 997.5999999999999,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {

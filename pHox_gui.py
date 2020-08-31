@@ -865,7 +865,7 @@ class Panel(QWidget):
 
         [combo.addItem(str(item)) for item in combo_dict[name][0]]
         combo.currentIndexChanged.connect(combo_dict[name][1])
-        self.set_combo_index(combo, combo_dict[name],name)
+        self.set_combo_index(combo, combo_dict[name], name)
 
     def create_manual_sal_group(self):
         self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
@@ -1346,7 +1346,8 @@ class Panel(QWidget):
         adj, pixelLevel = await self.instrument.auto_adjust()
         if adj:
             logging.info("Finished Autoadjust LEDS")
-            self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
+
+            self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         else:
             self.StatusBox.setText('Was not able do auto adjust')
@@ -1366,6 +1367,7 @@ class Panel(QWidget):
     async def autoAdjust_LED(self):
         with TimerManager(self.timer2):
             check_passed = await self.instrument.precheck_leds_to_adj()
+            check_passed = False
             if not check_passed:
                 (
                     self.instrument.LEDS[0], self.instrument.LEDS[1], self.instrument.LEDS[2],
@@ -1373,7 +1375,7 @@ class Panel(QWidget):
                 ) = await self.instrument.auto_adjust()
 
                 logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-                self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
+                self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
 
                 if result:
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
@@ -1973,7 +1975,7 @@ class Panel(QWidget):
         """
 
         for n_inj in range(self.instrument.ncycles):
-            logging.info(f"dye injection n ='{n_inj}")
+
             self.sample_steps[n_inj + 2].setChecked(True)
             await asyncio.sleep(0.001)
             vol_injected = round(
