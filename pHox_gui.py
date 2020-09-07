@@ -1035,8 +1035,7 @@ class Panel(QWidget):
             btn_grid.addWidget(self.btn_lightsource, 4, 1)
             self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
 
-        self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
-
+        self.btn_adjust_leds.clicked.connect(self.btn_autoAdjust_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -1125,6 +1124,13 @@ class Panel(QWidget):
     async def btn_valve_clicked(self):
         logging.debug('Valve button clicked')
         await self.instrument.set_Valve(self.btn_valve.isChecked())
+
+    @asyncSlot()
+    async def btn_autoAdjust_clicked(self):
+        self.instrument.specIntTime = 700
+        self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+        await self.updater.set_specIntTime(self.instrument.specIntTime)
+        await self.call_autoAdjust()
 
     def btn_save_config_clicked(self):
 
@@ -1395,9 +1401,7 @@ class Panel(QWidget):
                 logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
-    @asyncSlot()
-    async def on_autoAdjust_clicked(self):
-        await self.call_autoAdjust()
+
 
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
