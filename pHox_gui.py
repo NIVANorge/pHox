@@ -1744,6 +1744,11 @@ class Panel(QWidget):
             else:
                 await self.instrument.pumping(self.instrument.calibration_pump_time)
 
+            if n == 3:
+                self.instrument.specIntTime = 700
+                self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+                await self.updater.set_specIntTime(self.instrument.specIntTime)
+
             await self.sample_cycle(folderpath)
 
             if self.res_autoadjust:
