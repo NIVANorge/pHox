@@ -162,7 +162,7 @@ class only_pco2_instrument(pco2_instrument):
             self.adc.set_pga(1)
             self.adcdac = ADCDACPi()
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         V = 0.0000
         for i in range(nAver):
             V += self.adc.read_voltage(channel)
@@ -178,7 +178,7 @@ class test_pco2_instrument(pco2_instrument):
         self.co2 = np.random.randint(400, 600)
         self.co2_temp = np.random.randint(1, 10)
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         v = 0
         for i in range(nAver):
             v += 0.6

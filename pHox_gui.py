@@ -220,7 +220,7 @@ class Panel_PCO2_only(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Vd(2, channel)
+            v = self.instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
@@ -433,7 +433,10 @@ class Panel(QWidget):
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logging.getLogger().addHandler(self.logTextBox)
-        logging.getLogger().setLevel(logging.INFO)
+        if self.args.debug:
+            logging.getLogger().setLevel(logging.DEBUG)
+        else:
+            logging.getLogger().setLevel(logging.INFO)
 
         meas_qc_groupbox = QGroupBox('Last Measurement Quality Control')
         l = QGridLayout()
@@ -709,9 +712,6 @@ class Panel(QWidget):
         self.live_update_groupbox.setLayout(self.live_updates_grid)
         self.last_measurement_table_groupbox.setLayout(self.table_grid)
 
-        if self.args.debug:
-            logging.info("Starting in debug mode")
-
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
 
@@ -981,7 +981,7 @@ class Panel(QWidget):
         self.temp_id_combo.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
-        logging.info(f"widgets_enabled_change, state is '{state}'")
+        logging.debug(f"widgets_enabled_change, state is '{state}'")
         buttons = [
             self.btn_adjust_leds,
             self.btn_leds,
@@ -1269,7 +1269,7 @@ class Panel(QWidget):
         self.t_insitu_live.setText(str(round(fbox['temperature'], prec["T_cuvette"])))
         self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
-        voltage = round(self.instrument.get_Vd(3,
+        voltage = round(self.instrument.get_Voltage(3,
                                                self.instrument.vNTCch), prec["vNTC"])
 
         t_cuvette = round((self.instrument.TempCalCoef[0] * voltage)
@@ -1287,7 +1287,7 @@ class Panel(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Vd(2, channel)
+            v = self.instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
@@ -1367,7 +1367,7 @@ class Panel(QWidget):
     async def autoAdjust_LED(self):
         with TimerManager(self.timer2):
             check_passed = await self.instrument.precheck_leds_to_adj()
-            check_passed = False
+
             if not check_passed:
                 (
                     self.instrument.LEDS[0], self.instrument.LEDS[1], self.instrument.LEDS[2],
@@ -1674,7 +1674,7 @@ class Panel(QWidget):
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
 
-                 'After cuvette cleaning' :
+                 'After cuvette cleaning':
                      "Click OK after cleaning the cuvette",
 
                  "Valve back to ferrybox mode":
@@ -1688,7 +1688,13 @@ class Panel(QWidget):
                      "Did you pump to flush the sampling chamber?",
 
                  "Confirm Exit":
-                     "Are you sure you want to exit ?"
+                     "Are you sure you want to exit ?",
+
+                 "Too dirty cuvette":
+                     "The cuvette is too dirty, unable to adjust LEDS\
+                     <br>\
+                     <br> calibration steps 1-3 will be skipped\
+                     Wait for the next message and clean the cuvette"
         }
 
         msg = QMessageBox()
@@ -1726,6 +1732,8 @@ class Panel(QWidget):
     async def one_calibration_step(self, n, folderpath):
         # Check if stop is clicked
         if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
+            if self.args.localdev:
+                self.ncalibr = n
             self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
             if n == 0 or n == 3:
                 await self.instrument.pumping(self.instrument.pumpTime)
@@ -1733,18 +1741,31 @@ class Panel(QWidget):
                 await self.instrument.pumping(self.instrument.calibration_pump_time)
 
             await self.sample_cycle(folderpath)
-            check, self.data_log_row['cal_result'] = await self.get_calibration_results()
-            self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
-            self.df_mean_log_row.append(self.data_log_row)
+
+            if self.res_autoadjust:
+                check, self.data_log_row['cal_result'] = await self.get_calibration_results()
+                self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
+                self.df_mean_log_row.append(self.data_log_row)
+            else:
+
+                if self.skip_calibration_step:
+                    logging.debug('skipping the step')
+                else:
+                    # Pop up window
+                    _ = self.valve_message('Too dirty cuvette')
+                    self.skip_calibration_step = True
+                    # print (message)
+                    # self.calibr_state_dialog.stop_calibr_btn.setChecked(True)
         else:
             pass
-
+        return
 
     async def calibration_check_cycle(self, with_cuvette_cleaning):
 
         flnmStr, timeStamp = self.get_filename()
         folderpath = self.get_folderpath()
 
+        self.skip_calibration_step = False
         self.calibration_step = 'before cleaning'
         self.df_mean_log_row = []
 
@@ -1761,14 +1782,17 @@ class Panel(QWidget):
                     for k, v in enumerate(range(3, 6)):
                         await self.one_calibration_step(v, folderpath)
 
-        self.data_log_row = pd.concat(self.df_mean_log_row)
-        self.save_logfile_df(folderpath, flnmStr)
+        if self.res_autoadjust:
+            self.data_log_row = pd.concat(self.df_mean_log_row)
+            self.save_logfile_df(folderpath, flnmStr)
 
-        mean_result = self.data_log_row['cal_result'].mean()
-        if mean_result < 0.5:
-            res = 1
+            mean_result = self.data_log_row['cal_result'].mean()
+            if mean_result < 0.5:
+                res = 1
+            else:
+                res = 2
         else:
-            res = 2
+            res = 3
         return res
 
 
@@ -1794,9 +1818,16 @@ class Panel(QWidget):
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
-            res = await self.call_autoAdjust()
+            self.res_autoadjust = await self.call_autoAdjust()
 
-            if res:
+            #TODO: testing, change later
+            if self.args.localdev and "Calibration" in self.major_modes:
+                if self.ncalibr in (0, 1, 2):
+                    self.res_autoadjust = False
+                elif self.ncalibr in (3,4,5):
+                    self.res_autoadjust = True
+
+            if self.res_autoadjust:
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
                 await asyncio.sleep(0.05)
@@ -1810,7 +1841,7 @@ class Panel(QWidget):
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
 
-            if res:
+            if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()
                     self.update_corellation_plot()
@@ -1818,12 +1849,14 @@ class Panel(QWidget):
                 # Save led levels to config file
                 # Save dye level to config file
                 await self.qc()
-            logging.debug('Saving results')
+                logging.debug('Saving results')
+                self.save_results(folderpath, flnmStr)
 
-            self.save_results(folderpath, flnmStr)
-
-        self.StatusBox.setText('Finished the measurement')
+                self.StatusBox.setText('Finished the measurement')
+            else:
+                self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
         [step.setChecked(False) for step in self.sample_steps]
+        return
 
     async def qc(self):
         # Flow check
@@ -2009,7 +2042,7 @@ class Panel(QWidget):
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
-        Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
+        Voltage = self.instrument.get_Voltage(3, self.instrument.vNTCch)
         return Voltage
 
     async def calc_absorbance(self, n_inj, blank_min_dark, dark):
@@ -2510,7 +2543,7 @@ class boxUI(QMainWindow):
         #fh.setLevel(logging.DEBUG)
         #self.logger.addHandler(fh)
 
-        logging.root.level = logging.INFO  # logging.DEBUG if self.args.debug else
+        logging.root.level = logging.DEBUG #INFO  # logging.DEBUG if self.args.debug else
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO

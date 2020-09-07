@@ -23,3 +23,4 @@ with open(config_name) as json_file:
     config_file = json.load(json_file)
 
 
+temp_probe_conf_path = 'configs/temperature_sensors_config.json'

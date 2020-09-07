@@ -9,11 +9,10 @@ import numpy as np
 import pandas as pd
 import udp
 from precisions import precision as prec
-from util import config_file
+from util import config_file, temp_probe_conf_path
 try:
     import pigpio
     import RPi.GPIO as GPIO
-    from ADCDACPi import ADCDACPi
     from ADCDifferentialPi import ADCDifferentialPi
     import seabreeze
 
@@ -160,7 +159,6 @@ class Common_instrument(object):
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
-            self.adcdac = ADCDACPi()
 
         # For signaling to threads
         self._exit = False
@@ -172,7 +170,7 @@ class Common_instrument(object):
         self.rpi.write(self.stirrer_slot, 0)
         self.rpi.write(self.extra_slot, 0)
 
-    async def set_Valve(self, status):
+    '''async def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
@@ -186,7 +184,7 @@ class Common_instrument(object):
         await asyncio.sleep(0.3)
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
-        self.rpi.write(chEn, False)
+        self.rpi.write(chEn, False)'''
 
     def set_Valve_sync(self, status):
         chEn = self.valve_slots[0]
@@ -243,6 +241,7 @@ class Common_instrument(object):
         ]
 
         self.valve_slots = conf_operational["VALVE_SLOTS"]
+        
         self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
         self.update_temp_probe_coef()
 
@@ -258,8 +257,7 @@ class Common_instrument(object):
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])
 
     def update_temp_probe_coef(self):
-        path = 'configs/temperature_sensors_config.json'
-        with open(path) as json_file:
+        with open(temp_probe_conf_path) as json_file:
             j = json.load(json_file)
             self.temp_iscalibrated = j[self.TempProbe_id]["is_calibrated"]
             if self.temp_iscalibrated == 'True':
@@ -281,12 +279,12 @@ class Common_instrument(object):
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
-    async def cycle_line(self, line, nCycles):
+    '''async def cycle_line(self, line, nCycles):
         for nCy in range(nCycles):
             self.turn_on_relay(line)
             await asyncio.sleep(self.waitT)
             self.turn_off_relay(line)
-            await asyncio.sleep(self.waitT)
+            await asyncio.sleep(self.waitT)'''
 
     async def pump_dye(self, nshots):
         for shot in range(nshots):
@@ -305,13 +303,13 @@ class Common_instrument(object):
     def print_Com(self, port, txtData):
         port.write(txtData)
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         V = 0.0000
         for i in range(nAver):
             try:
                 V += self.adc.read_voltage(channel)
             except TimeoutError:
-                print('Timeout error in get_Vd')
+                print('Timeout error in get_Voltage')
                 pass
         return V / nAver
 
@@ -826,7 +824,7 @@ class Test_CO3_instrument(CO3_instrument):
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         v = 0
         for i in range(nAver):
             v += 0.6
@@ -890,12 +888,12 @@ class Test_pH_instrument(pH_instrument):
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
-    async def cycle_line(self, line, nCycles):
+    '''async def cycle_line(self, line, nCycles):
         for nCy in range(nCycles):
             self.turn_on_relay(line)
             await asyncio.sleep(0.01)
             self.turn_off_relay(line)
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)'''
 
     async def precheck_leds_to_adj(self):
         logging.info('returning True in precheck leds localdev')
@@ -914,7 +912,7 @@ class Test_pH_instrument(pH_instrument):
     def print_Com(self, port, txtData):
         pass
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         V = 0
         for i in range(nAver):
             V += 0.6
