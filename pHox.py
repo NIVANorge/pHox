@@ -170,7 +170,7 @@ class Common_instrument(object):
         self.rpi.write(self.stirrer_slot, 0)
         self.rpi.write(self.extra_slot, 0)
 
-    '''async def set_Valve(self, status):
+    async def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
         if status:
@@ -184,7 +184,7 @@ class Common_instrument(object):
         await asyncio.sleep(0.3)
         self.rpi.write(ch1, False)
         self.rpi.write(ch2, False)
-        self.rpi.write(chEn, False)'''
+        self.rpi.write(chEn, False)
 
     def set_Valve_sync(self, status):
         chEn = self.valve_slots[0]
