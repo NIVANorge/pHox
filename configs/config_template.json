@@ -63,7 +63,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 0,
+        "dye_level": -0.6,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {
@@ -124,5 +124,9 @@
         "Calibration_threshold": 0.1,
         "Calibration_pump_time": 30,
         "T_tris_buffer": 20
+    },
+    "QC": {
+        "flow_threshold": 2000,
+        "Comment": "the difference between the blue pixel after 4 inj and after 3 sec after opening the valve"
     }
 }

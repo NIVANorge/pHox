@@ -73,14 +73,32 @@ class Spectro_localtest(object):
         # wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
-    async def get_intensities(self, num_avg=1, correct=True):
+    '''async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
             time.sleep(0.0001)
             sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
             return sp
 
         async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
-        return await async_thread_wrapper.result_returner()
+        return await async_thread_wrapper.result_returner()'''
+
+    async def get_intensities(self, num_avg=1, correct=True):
+        def _get_intensities():
+            sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
+            #sp = self.spec.intensities(correct_nonlinearity=correct)
+            #if num_avg > 1:
+            #    for _ in range(num_avg):
+            #        sp = np.vstack([sp, self.spec.intensities(correct_nonlinearity=correct)])
+            #    sp = np.mean(np.array(sp), axis=0)
+            return sp
+
+        while self.busy:
+            await asyncio.sleep(0.05)
+        self.busy = True
+        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
+        sp = await async_thread_wrapper.result_returner()
+        self.busy = False
+        return sp
 
 
 class Spectro_seabreeze(object):
@@ -241,7 +259,7 @@ class Common_instrument(object):
         ]
 
         self.valve_slots = conf_operational["VALVE_SLOTS"]
-        
+
         self.TempProbe_id = conf_operational["TEMP_PROBE_ID"]
         self.update_temp_probe_coef()
 
@@ -315,7 +333,7 @@ class Common_instrument(object):
 
     def calc_wavelengths(self):
         """
-        assign wavelengths to pixels 
+        assign wavelengths to pixels
         and find pixel number of reference wavelengths
         """
         wvls = self.spectrometer_cls.get_wavelengths()
@@ -327,6 +345,7 @@ class Common_instrument(object):
 
     async def get_sp_levels(self, pixel):
         self.spectrum = await self.spectrometer_cls.get_intensities()
+        print (self.spectrum)
         return self.spectrum[pixel]
 
 
@@ -347,7 +366,7 @@ class CO3_instrument(Common_instrument):
         self.PCO3_string_version = str(conf["PCO3_string_version"])
 
     async def auto_adjust(self, *args):
-
+        # CO3!!
         adjusted = False
         pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
@@ -920,13 +939,14 @@ class Test_pH_instrument(pH_instrument):
 
     def calc_wavelengths(self):
         """
-        assign wavelengths to pixels 
+        assign wavelengths to pixels
         and find pixel number of reference wavelengths
         """
         wvls = self.spectrometer_cls.get_wavelengths()
 
         return wvls
 
-    def get_sp_levels(self, pixel):
-        self.spectrum = self.spectrometer_cls.get_intensities()
+    async def get_sp_levels(self, pixel):
+        self.spectrum = await self.spectrometer_cls.get_intensities()
+        print (self.spectrum)
         return self.spectrum[pixel]

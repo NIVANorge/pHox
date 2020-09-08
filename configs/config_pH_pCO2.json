@@ -110,5 +110,9 @@
         "S_tris_buffer": 35,
         "Calibration_threshold": 0.005,
         "Calibration_pump_time" : 30
+    },
+    "QC" : {
+        "flow_threshold": 2000,
+        "Comment": "the difference between the blue pixel after 4 inj and after 3 sec after opening the valve"
     }
 }

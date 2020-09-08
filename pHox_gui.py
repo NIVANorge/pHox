@@ -1868,14 +1868,21 @@ class Panel(QWidget):
         return
 
     async def qc(self):
+
         # Flow check
         await asyncio.sleep(3)  # Seconds
-        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
-        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-        diff = (current_spectrum - last_injection_spectrum).mean()
+
+        blue_ind = self.instrument.wvlPixels[0]
+        print ('blue', blue_ind)
+        last_injection = self.spCounts_df[str(self.instrument.ncycles-1)][blue_ind]
+        print (last_injection)
+        current_blue = await self.instrument.get_sp_levels(blue_ind)
+
+        diff = current_blue - last_injection
+
         print(diff, 'mean difference between spectra after 3 seconds')
         # TODO: change all parameters, levels to real ones
-        flow_threshold = 5
+        flow_threshold = 2000
 
         if diff > flow_threshold:
             flow_is_good = True
@@ -1924,7 +1931,7 @@ class Panel(QWidget):
 
         return
 
-    async def check_flow(self):
+    '''async def check_flow(self):
 
         await asyncio.sleep(3)  # Seconds
         last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
@@ -1940,7 +1947,7 @@ class Panel(QWidget):
             flow_is_good = False
         self.data_log_row['flow_QC'] = flow_is_good
 
-        return flow_is_good
+        return flow_is_good'''
 
     def get_folderpath(self):
         if "Calibration" in self.major_modes:
