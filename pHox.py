@@ -149,6 +149,10 @@ class Spectro_seabreeze(object):
         self.busy = False
         return sp
 
+
+
+
+
     def set_scans_average(self, num):
         # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
@@ -746,9 +750,10 @@ class pH_instrument(Common_instrument):
             x = evalPar_df["Vol_injected"].values
             pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
             y = pH_t_corr.values
-
-        # Check std between different measuremnt
-        if np.std(y) > 0.005:
+        meas_std = np.std(y)
+        logging.info('Measurement Standard Deviation {}'.format(meas_std))
+        # Check std between different measurement
+        if meas_std > 0.001:
             # If std is high, get the linear regression to extimate the perturbation
             # generation by adding the dye into the sample
 

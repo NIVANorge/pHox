@@ -1113,9 +1113,11 @@ class Panel(QWidget):
                     await self.instrument.pump_dye(3)
                     self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
-                    if not self.args.localdev:
+                    #if not self.args.localdev:
                         # update plot after pumping
-                        await self.update_spectra_plot()
+                    datay = await self.instrument.spectrometer_cls.get_intensities()
+                    await self.update_spectra_plot_manual(datay)
+                    #await self.update_spectra_plot()
         else:
             logging.info('Trying to pump in no pump mode')
             self.btn_dye_pmp.setChecked(False)
@@ -1248,6 +1250,7 @@ class Panel(QWidget):
     async def update_spectra_plot(self):
         #logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
         self.updater.update_spectra_in_progress = True
+
         try:
             # I don't think this if statement is required
             if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
@@ -1262,6 +1265,9 @@ class Panel(QWidget):
             logging.exception("could not read and set Data")
         finally:
             self.updater.update_spectra_in_progress = False
+
+
+
 
     def update_corellation_plot(self):
 
@@ -1474,6 +1480,7 @@ class Panel(QWidget):
                 else:
                     with_cuvette_cleaning = False
 
+
                 self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
                 self.calibr_state_dialog.show()
                 res = await self.calibration_check_cycle(with_cuvette_cleaning)
@@ -1679,7 +1686,11 @@ class Panel(QWidget):
                      "Do you want calibration check to include cuvette cleaning?",
 
                  'After cuvette cleaning':
-                     "Click OK after cleaning the cuvette",
+                     "After cuvette cleaning step\
+                      <br>\
+                      <br>Click <b>OK</b> if you cleaned the cuvette\
+                      <br>\
+                      <br>Click Cancel to stop calibration",
 
                  "Valve back to ferrybox mode":
                      "Please turn the valves back into the ferrybox mode\
@@ -1697,8 +1708,7 @@ class Panel(QWidget):
                  "Too dirty cuvette":
                      "The cuvette is too dirty, unable to adjust LEDS\
                      <br>\
-                     <br> calibration steps 1-3 will be skipped\
-                     Wait for the next message and clean the cuvette"
+                     <br> calibration steps 1-3 will be skipped"
         }
 
         msg = QMessageBox()
@@ -1719,6 +1729,8 @@ class Panel(QWidget):
         msg.setWindowTitle('Important')
         msg.setText(types[type])
         if type == 'After cuvette cleaning':
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        elif type == 'Too dirty cuvette':
             msg.setStandardButtons(QMessageBox.Ok)
         else:
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
@@ -1756,18 +1768,13 @@ class Panel(QWidget):
                 self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
                 self.df_mean_log_row.append(self.data_log_row)
             else:
-
-                if self.skip_calibration_step:
-                    logging.debug('skipping the step')
-                else:
-                    # Pop up window
-                    _ = self.valve_message('Too dirty cuvette')
-                    self.skip_calibration_step = True
-                    # print (message)
-                    # self.calibr_state_dialog.stop_calibr_btn.setChecked(True)
+                _ = self.valve_message('Too dirty cuvette')
+                self.skip_calibration_step = True
+                # print (message)
+                # self.calibr_state_dialog.stop_calibr_btn.setChecked(True)
         else:
             pass
-        return
+
 
     async def calibration_check_cycle(self, with_cuvette_cleaning):
 
@@ -1779,6 +1786,8 @@ class Panel(QWidget):
         self.df_mean_log_row = []
 
         for n in range(3):
+            if self.skip_calibration_step:
+                break
             await self.one_calibration_step(n, folderpath)
 
         # Ask the user to clean the cuvette:
@@ -1786,10 +1795,11 @@ class Panel(QWidget):
             if with_cuvette_cleaning:
                 cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
                 self.calibration_step = 'after cleaning'
-
-                if cuvette_is_clean:
+                if cuvette_is_clean == QMessageBox.Ok:
                     for k, v in enumerate(range(3, 6)):
                         await self.one_calibration_step(v, folderpath)
+                else:
+                    pass
 
         if self.res_autoadjust:
             self.data_log_row = pd.concat(self.df_mean_log_row)
@@ -1873,16 +1883,16 @@ class Panel(QWidget):
         await asyncio.sleep(3)  # Seconds
 
         blue_ind = self.instrument.wvlPixels[0]
-        print ('blue', blue_ind)
+
         last_injection = self.spCounts_df[str(self.instrument.ncycles-1)][blue_ind]
-        print (last_injection)
+
         current_blue = await self.instrument.get_sp_levels(blue_ind)
 
         diff = current_blue - last_injection
 
         print(diff, 'mean difference between spectra after 3 seconds')
         # TODO: change all parameters, levels to real ones
-        flow_threshold = 2000
+        flow_threshold = config_file['QC']["flow_threshold"]
 
         if diff > flow_threshold:
             flow_is_good = True
@@ -2232,6 +2242,7 @@ class Panel_pH(Panel):
 
         cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
 
+        # pH theoretical at  20 C
         pH_buffer_theoretical = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2)/(
                 cal_temp_tris + 273.15) - 366.27059 + 0.53993607 * 35 + \
                 0.00016329 * 35 ** 2 + (64.52243 - 0.084041 * 35) * np.log(cal_temp_tris
@@ -2241,8 +2252,11 @@ class Panel_pH(Panel):
         self.data_log_row['Buffer_temp'] = cal_temp_tris
 
         dpH_dT = -0.0155
+
+        # measured pH, corrected to the temperature
         pH_at_cal_temp = self.data_log_row['pH_cuvette'].values + dpH_dT * (
                 cal_temp_tris - self.data_log_row['T_cuvette'].values)
+
         pH_at_cal_temp = round(pH_at_cal_temp[0], prec['pH'])
 
         dif_pH = pH_at_cal_temp - pH_buffer_theoretical
