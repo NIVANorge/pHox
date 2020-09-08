@@ -1686,9 +1686,11 @@ class Panel(QWidget):
                      "Do you want calibration check to include cuvette cleaning?",
 
                  'After cuvette cleaning':
-                     "After cuvette cleaning step\
+                     "<h3>After cuvette cleaning step</h3>\
                       <br>\
-                      <br>Click <b>OK</b> if you cleaned the cuvette\
+                      <br>\
+                      <br>Please, clean the cuvette.\
+                      <br>Click <b>OK</b> When you are ready.\
                       <br>\
                       <br>Click Cancel to stop calibration",
 
