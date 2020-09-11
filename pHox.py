@@ -73,23 +73,9 @@ class Spectro_localtest(object):
         # wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
-    '''async def get_intensities(self, num_avg=1, correct=True):
-        def _get_intensities():
-            time.sleep(0.0001)
-            sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
-            return sp
-
-        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
-        return await async_thread_wrapper.result_returner()'''
-
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
             sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
-            #sp = self.spec.intensities(correct_nonlinearity=correct)
-            #if num_avg > 1:
-            #    for _ in range(num_avg):
-            #        sp = np.vstack([sp, self.spec.intensities(correct_nonlinearity=correct)])
-            #    sp = np.mean(np.array(sp), axis=0)
             return sp
 
         while self.busy:
@@ -148,9 +134,6 @@ class Spectro_seabreeze(object):
         sp = await async_thread_wrapper.result_returner()
         self.busy = False
         return sp
-
-
-
 
 
     def set_scans_average(self, num):
@@ -736,9 +719,9 @@ class pH_instrument(Common_instrument):
         dpH_dT = -0.0155
         evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
         t_cuvette = evalPar_df["T_cuvette"][0]
-        pH_cuvette = evalPar_df["pH"][0]
 
-        # pH_t_corr - List with pH values corrected for  temperature drift iside the cuvette while it's measuring
+
+        # pH_t_corr - List with pH values corrected for temperature drift inside the cuvette while it's measuring
         # reference is the first temperature
 
         if self.args.localdev:
@@ -793,9 +776,11 @@ class pH_instrument(Common_instrument):
             r_value = 0
             perturbation = 0
 
-        pH_insitu = round(intercept + dpH_dT * (self.fb_data["temperature"] - t_cuvette), prec["pH"])
+        pH_insitu = round(intercept + dpH_dT * (
+                self.fb_data["temperature"] - t_cuvette), prec["pH"])
         perturbation = round(perturbation, prec["perturbation"])
-        pH_cuvette = round(pH_cuvette, prec["pH"])
+        # pH should be and intercept here?
+        pH_cuvette = round(intercept, prec["pH"])
 
         logging.info("leave pH eval")
         return (

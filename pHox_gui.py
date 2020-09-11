@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pHox import *
 from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, only_pco2_instrument
 import os, sys
-from util import get_base_folderpath, box_id, config_name
+from util import get_base_folderpath, box_id, config_name,rgb_lookup
 #
 
 try:
@@ -45,7 +45,7 @@ class BatchNumber(QDialog):
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
         self.batch_number_widget = QtGui.QLineEdit()
-        self.batch_number = 0
+        self.batch_number = 1
 
         self.batch_number_widget.setText(str(self.batch_number))
 
@@ -1762,11 +1762,6 @@ class Panel(QWidget):
             self.unset_major_mode(mode)
 
 
-
-
-
-
-
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
@@ -1794,7 +1789,7 @@ class Panel(QWidget):
             #TODO: testing, change later
             if self.args.localdev and "Calibration" in self.major_modes:
                 if self.ncalibr in (0, 1, 2):
-                    self.res_autoadjust = False
+                    self.res_autoadjust = True
                 elif self.ncalibr in (3,4,5):
                     self.res_autoadjust = True
 
@@ -1851,35 +1846,35 @@ class Panel(QWidget):
             self.flow_qc_chk.setCheckState(2)
         else:
             flow_is_good = False
-            self.flow_qc_chk.setCheckState(1)
+            self.flow_qc_chk.setCheckState(rgb_lookup['red'])
         self.data_log_row['flow_QC'] = flow_is_good
 
         #Dye is coming check
         dye_threshold = 5
         if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
             dye_is_coming = True
-            self.dye_qc_chk.setCheckState(2)
+            self.dye_qc_chk.setCheckState(rgb_lookup['green'])
         else:
             dye_is_coming = False
-            self.dye_qc_chk.setCheckState(1)
+            self.dye_qc_chk.setCheckState(rgb_lookup['red'])
         self.data_log_row['dye_coming_qc'] = dye_is_coming
 
         # Spectro integration time check
         if self.instrument.specIntTime > 2000:
             biofouling_qc = False
-            self.biofouling_qc_chk.setCheckState(1)
+            self.biofouling_qc_chk.setCheckState(rgb_lookup['red'])
         else:
             biofouling_qc = True
-            self.biofouling_qc_chk.setCheckState(2)
+            self.biofouling_qc_chk.setCheckState(rgb_lookup['green'])
         self.data_log_row['biofouling_qc'] = biofouling_qc
 
         # Temperature is alive check
         if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
             temp_alive = False
-            self.temp_alive_qc_chk.setCheckState(1)
+            self.temp_alive_qc_chk.setCheckState(rgb_lookup['red'])
         else:
             temp_alive = True
-            self.temp_alive_qc_chk.setCheckState(2)
+            self.temp_alive_qc_chk.setCheckState(rgb_lookup['green'])
         self.data_log_row['temp_sens_qc'] = temp_alive
 
         if fbox['pumping'] is None:
@@ -2208,9 +2203,10 @@ class Panel_pH(Panel):
                     self.calibr_state_dialog.show()
 
                     res = await self.calibration_check_cycle(with_cuvette_cleaning)
-                    self.btn_calibr_checkbox.setCheckState(res)
-
-                    self.last_calibr_date.setText(str(datetime.now().date()))
+                    if not res == 'white':
+                        print (rgb_lookup[res],type(rgb_lookup[res]))
+                        self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
+                        self.last_calibr_date.setText(str(datetime.now().date()))
                     self.valve_message("Valve back to ferrybox mode")
                     self.valve_message('After calibration valve angry')
                     self.calibr_state_dialog.close()
@@ -2249,18 +2245,20 @@ class Panel_pH(Panel):
 
         if self.res_autoadjust:
             self.data_log_row = pd.concat(self.df_mean_log_row)
-            mean_result = self.data_log_row['cal_result'].mean()
+            mean_result = self.data_log_row['cal_result'][-3:].mean()
+
             self.data_log_row['batch_number'] = self.batch_number
 
             self.save_logfile_df(folderpath, flnmStr)
 
-            if mean_result < 0.5:
-                res = 1
+            if mean_result < 0.5: #majority of tests with clean cuvette (last 3) is true
+                res = 'red' #1 #False
             else:
-                res = 2
+                res = 'green' #2 #True, green
         else:
-            res = 3
+            res = 'white'
         return res
+
 
     async def get_calibration_results(self):
         """
@@ -2293,16 +2291,16 @@ class Panel_pH(Panel):
                 cal_temp_tris - self.data_log_row['T_cuvette'].values)
 
         pH_at_cal_temp = round(pH_at_cal_temp[0], prec['pH'])
-
+        self.data_log_row["pH_insitu"] = pH_at_cal_temp
         dif_pH = pH_at_cal_temp - pH_buffer_theoretical
-
+        self.data_log_row['difference'] = dif_pH
         calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
 
         if abs(dif_pH) < calibration_threshold:
-            result_to_checkbox = 2
+            result_to_checkbox = 'green'
             check_passed = 1
         else:
-            result_to_checkbox = 1
+            result_to_checkbox = 'red'
             check_passed = 0
 
         return result_to_checkbox, check_passed
@@ -2362,8 +2360,10 @@ class Panel_pH(Panel):
             await self.sample_cycle(folderpath)
 
             if self.res_autoadjust:
-                check, self.data_log_row['cal_result'] = await self.get_calibration_results()
-                self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
+
+                result_to_checkbox, self.data_log_row['cal_result'] = await self.get_calibration_results()
+
+                self.calibr_state_dialog.result_checkboxes[n].setCheckState(rgb_lookup[result_to_checkbox])
                 self.df_mean_log_row.append(self.data_log_row)
             else:
                 self.skip_calibration_step = True
