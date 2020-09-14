@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pHox import *
 from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, only_pco2_instrument
 import os, sys
-from util import get_base_folderpath, box_id, config_name,rgb_lookup
+from util import get_base_folderpath, box_id, config_name, rgb_lookup
 #
 
 try:
@@ -1395,6 +1395,7 @@ class Panel(QWidget):
             logging.info("Finished Autoadjust LEDS")
 
             self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         else:
             self.StatusBox.setText('Was not able do auto adjust')
@@ -1414,7 +1415,8 @@ class Panel(QWidget):
     async def autoAdjust_LED(self):
         with TimerManager(self.timer2):
             check_passed = await self.instrument.precheck_leds_to_adj()
-
+            if self.args.localdev:
+                check_passed = False
             if not check_passed:
                 (
                     self.instrument.LEDS[0], self.instrument.LEDS[1], self.instrument.LEDS[2],
@@ -1426,7 +1428,11 @@ class Panel(QWidget):
 
                 if result:
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+                    if self.args.localdev:
+                        self.instrument.LEDS = [55, 55, 55]
                     [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
+                    asyncio.sleep(0.1)
+
                     self.update_config('LED1', 'pH', self.instrument.LEDS[0])
                     self.update_config('LED2', 'pH', self.instrument.LEDS[1])
                     self.update_config('LED3', 'pH', self.instrument.LEDS[2])
@@ -1687,26 +1693,30 @@ class Panel(QWidget):
         types = {'Turn valve into calibration mode':
                      "<br> 1. Turn both valves (white) to the Calibration position (see picture)\
                       <br>2. Place the tube in the Tris buffer bottle\
+                      <br>3. Turn the yellow valve to empty the cuvette\
                       <br>\
-                      <br><img src=utils/111.png>\
+                      <br><img src=utils/calibrationmode.png>\
                       <br>\
-                      <br> Click <b>Yes</b> to continue when you are ready, or <b>No</b> to exit",
+                      <br> Click <b>Ok</b> to continue when you are ready, or <b>Cancel</b> to exit",
+
+                'Close drain valve':
+                    '<br> Close the drain (yellow) valve when the cuvette is empty\
+                     <br>\
+                     <br><img src=utils/drain.png>',
 
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
 
                  'After cuvette cleaning':
-                     "<h3>After cuvette cleaning step</h3>\
+                      "<br>Please, clean the cuvette.\
                       <br>\
-                      <br>\
-                      <br>Please, clean the cuvette.\
                       <br>Click <b>OK</b> When you are ready.\
-                      <br>\
                       <br>Click Cancel to stop calibration",
 
                  "Valve back to ferrybox mode":
                      "Please turn the valves back into the ferrybox mode\
-                     <br><img src=utils/222.png>",
+                     <br>\
+                     <br><img src=utils/ferryboxmode.png>",
 
                  "After calibration valve angry":
                      "ARE YOU SURE YOU TURNED THE VALVES BACK???",
@@ -1744,10 +1754,16 @@ class Panel(QWidget):
 
         msg.setWindowTitle('Important')
         msg.setText(types[type])
-        if type == 'After cuvette cleaning':
+        if type in ('After cuvette cleaning',
+                    'Turn valve into calibration mode', 'Close drain valve'):
             msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        elif type == 'Too dirty cuvette' or type == "Too dirty cuvette after cleaning":
+
+        elif type in ('Valve back to ferrybox mode',
+                      'Too dirty cuvette', "Too dirty cuvette after cleaning"):
             msg.setStandardButtons(QMessageBox.Ok)
+
+        elif type == "After calibration valve angry":
+            msg.setStandardButtons(QMessageBox.Yes)
         else:
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
 
@@ -1789,9 +1805,9 @@ class Panel(QWidget):
             #TODO: testing, change later
             if self.args.localdev and "Calibration" in self.major_modes:
                 if self.ncalibr in (0, 1, 2):
-                    self.res_autoadjust = True
+                    self.res_autoadjust = False
                 elif self.ncalibr in (3,4,5):
-                    self.res_autoadjust = True
+                    self.res_autoadjust = False
 
             if self.res_autoadjust:
                 # Step 2. Take dark and blank
@@ -2191,25 +2207,29 @@ class Panel_pH(Panel):
                 await asyncio.sleep(1)
                 valve_turned = self.valve_message('Turn valve into calibration mode')
 
-                if valve_turned == QMessageBox.Yes:
-                    with_cuvette_cleaning = self.valve_message('Calibration_second_step')
-                    if with_cuvette_cleaning == QMessageBox.Yes:
-                        with_cuvette_cleaning = True
-                    else:
-                        with_cuvette_cleaning = False
+                if valve_turned == QMessageBox.Ok:
+                    close_drain_value = self.valve_message('Close drain valve')
+                    if close_drain_value == QMessageBox.Ok:
+                        with_cuvette_cleaning = self.valve_message('Calibration_second_step')
+                        if with_cuvette_cleaning == QMessageBox.Yes:
+                            with_cuvette_cleaning = True
+                        else:
+                            with_cuvette_cleaning = False
 
+                        self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
+                        self.calibr_state_dialog.show()
 
-                    self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
-                    self.calibr_state_dialog.show()
+                        res = await self.calibration_check_cycle(with_cuvette_cleaning)
+                        if not res == 'white':
+                            print (rgb_lookup[res],type(rgb_lookup[res]))
+                            self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
+                            self.last_calibr_date.setText(str(datetime.now().date()))
 
-                    res = await self.calibration_check_cycle(with_cuvette_cleaning)
-                    if not res == 'white':
-                        print (rgb_lookup[res],type(rgb_lookup[res]))
-                        self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
-                        self.last_calibr_date.setText(str(datetime.now().date()))
+                        self.calibr_state_dialog.close()
+
                     self.valve_message("Valve back to ferrybox mode")
                     self.valve_message('After calibration valve angry')
-                    self.calibr_state_dialog.close()
+
                 self.btn_calibr.setChecked(False)
             else:
                 self.btn_calibr.setChecked(False)
