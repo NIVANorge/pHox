@@ -975,8 +975,21 @@ class Panel(QWidget):
             combo.setCurrentIndex(index)
         else:
             if combotype in ("Spectro integration time",'Sampling interval'):
-                idx = np.abs(np.array(list(map(float, valid_intervals))) - float(text)).argmin()
-                text = float(valid_intervals[idx])
+                print ('init text',text)
+
+                diffs = np.abs(np.array(list(map(float, valid_intervals))) - float(text))
+
+                idx2 = np.argpartition(diffs, 2)[:2]
+                text_idx1 = float(valid_intervals[idx2[0]])
+                text_idx2 = float(valid_intervals[idx2[1]])
+
+                if text_idx1 < text_idx2:
+                    idx = idx2[0]
+                    text = text_idx1
+                else:
+                    idx = idx2[1]
+                    text = text_idx2
+
                 logging.error('Assigning a new value which is the closest from the list of valid values: {}'.
                               format(text))
                 combo.setCurrentIndex(idx)
