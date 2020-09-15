@@ -32,7 +32,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 712,
+        "Spectro_Integration_time": 700,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -63,7 +63,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1994.3600000000051,
+        "dye_level": 1994.0000000000055,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {

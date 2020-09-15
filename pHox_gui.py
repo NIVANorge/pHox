@@ -520,10 +520,10 @@ class Panel(QWidget):
 
         meas_qc_groupbox = QGroupBox('Last Measurement Quality Control')
         l = QGridLayout()
-        self.flow_qc_chk = QCheckBox('Flow QC')
-        self.dye_qc_chk = QCheckBox('Dye Coming QC')
-        self.biofouling_qc_chk = QCheckBox('Biofouling QC')
-        self.temp_alive_qc_chk = QCheckBox('Temp sensor alive QC')
+        self.flow_qc_chk = QCheckBox('Flow')
+        self.dye_qc_chk = QCheckBox('Dye')
+        self.biofouling_qc_chk = QCheckBox('Biofouling')
+        self.temp_alive_qc_chk = QCheckBox('Temp sensor')
         qc_checks = [self.flow_qc_chk, self.dye_qc_chk,
                      self.biofouling_qc_chk, self.temp_alive_qc_chk]
         for n in qc_checks:
@@ -1231,12 +1231,12 @@ class Panel(QWidget):
         self.instrument.LEDS[ind] = value
 
     def led_plus_btn_clicked(self):
-        dif = 10
+        dif = 1
         ind = self.plus_btns.index(self.sender())
         self.change_plus_minus_butn(ind, dif)
 
     def led_minus_btn_clicked(self):
-        dif = -10
+        dif = -1
         ind = self.minus_btns.index(self.sender())
         self.change_plus_minus_butn(ind, dif)
 
@@ -1847,7 +1847,7 @@ class Panel(QWidget):
                 logging.debug('Saving results')
                 self.save_results(folderpath, flnmStr)
 
-                self.StatusBox.setText('Finished the measurement')
+                self.StatusBox.setText('The measurement is finished')
             else:
                 self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
         [step.setChecked(False) for step in self.sample_steps]

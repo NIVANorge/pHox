@@ -113,10 +113,12 @@ QTextEdit{
 }
 
 
-QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
-  color: #11161a;
-}
 
+
+QCheckBox:disabled::QLabel {
+    color:black;
+    font-size: 10pt;
+}
 
 QCheckBox::indicator{
   width: 1.0em;
