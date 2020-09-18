@@ -39,7 +39,7 @@ class BatchNumber(QDialog):
 
     def __init__(self, parent=None):
         super(BatchNumber, self).__init__(parent)
-        print ('BachNumber')
+
         self.setWindowTitle("Calibration solution Batch Number")
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
@@ -470,7 +470,7 @@ class Panel(QWidget):
 
     def update_dye_level_bar(self, nshots = 1):
         self.dye_level -= self.dye_step_1meas * nshots
-        print ('NEW DYE LEVEL', self.dye_level)
+
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
@@ -490,7 +490,7 @@ class Panel(QWidget):
         dye_level_group = QGroupBox('Dye Level ')
         l = QGridLayout()
         self.dye_level_bar = QProgressBar()
-        self.dye_refill_btn = QPushButton('Refilled \n1 bag')
+        self.dye_refill_btn = QPushButton('1 bag \nRefilled')
         self.dye_empty_btn = QPushButton('Clear \nall')
         l.addWidget(self.dye_empty_btn, 0, 0)
         l.addWidget(self.dye_refill_btn, 0, 1)
@@ -498,12 +498,12 @@ class Panel(QWidget):
         dye_level_group.setLayout(l)
 
         self.dye_level = config_file['pH']['dye_level']
-        self.dye_level_bar.setMaximum(2000) #ml
+        self.dye_level_bar.setMaximum(2000)
         self.dye_level_bar.setValue(self.dye_level)
 
         self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
                                 config_file['Operational']["dye_nshots"])
-        print ('***************self.dye_step_1meas',self.dye_step_1meas)
+
         self.dye_refill_btn.clicked.connect(self.refill_dye)
         self.dye_empty_btn.clicked.connect(self.empty_all_dye)
         #self.dye_empty_btn.setToolTip("Selected Icon")
@@ -975,7 +975,6 @@ class Panel(QWidget):
             combo.setCurrentIndex(index)
         else:
             if combotype in ("Spectro integration time",'Sampling interval'):
-                print ('init text',text)
 
                 diffs = np.abs(np.array(list(map(float, valid_intervals))) - float(text))
 
@@ -1042,7 +1041,7 @@ class Panel(QWidget):
     def make_btngroupbox(self):
         # Define widgets for main tab
         # Create checkabple buttons
-        self.buttons_groupBox = QGroupBox("Buttons GroupBox")
+        self.buttons_groupBox = QGroupBox("Manual Control")
         btn_grid = QGridLayout()
 
         self.btn_adjust_leds = self.create_button("Adjust Leds", True)
@@ -1203,11 +1202,6 @@ class Panel(QWidget):
             json.dump(j, json_file, indent=4)
             json_file.truncate()
 
-    '''def load_config_file(self):
-        with open(config_name) as json_file:
-            j = json.load(json_file)
-            default = j["pH"]
-            return default'''
 
     def dye_combo_chngd(self, ind):
         self.instrument.dye = self.dye_combo.currentText()
@@ -1315,15 +1309,15 @@ class Panel(QWidget):
             self.updater.update_spectra_in_progress = False
 
 
-
-
     def update_corellation_plot(self):
 
         self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
                                   symbol="o", clear=True)
+
         self.after_calc_pH.setData(self.x, self.y, pen=None, symbol="o", symbolBrush='#30663c')
 
         self.lin_fit_pH.setData(self.x, self.intercept + self.slope * self.x)
+
 
     def update_sensors_info(self):
         self.t_insitu_live.setText(str(round(fbox['temperature'], prec["T_cuvette"])))
@@ -1462,7 +1456,6 @@ class Panel(QWidget):
         return result
 
 
-
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
 
@@ -1518,7 +1511,6 @@ class Panel(QWidget):
             self.infotimer_contin_mode.stop()
             if "Paused" in self.major_modes:
                 self.unset_major_mode('Paused')
-
 
 
     @asyncSlot()
@@ -1866,7 +1858,6 @@ class Panel(QWidget):
 
         diff = current_blue - last_injection
 
-        print(diff, 'mean difference between spectra after 3 seconds')
         # TODO: change all parameters, levels to real ones
         flow_threshold = config_file['QC']["flow_threshold"]
 
@@ -1917,23 +1908,6 @@ class Panel(QWidget):
 
         return
 
-    '''async def check_flow(self):
-
-        await asyncio.sleep(3)  # Seconds
-        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
-        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-        diff = (current_spectrum - last_injection_spectrum).mean()
-        print(diff, 'mean difference between spectra after 3 seconds')
-        # TODO: change all parameters, levels to real ones
-        threshold = 5
-
-        if diff > threshold:
-            flow_is_good = True
-        else:
-            flow_is_good = False
-        self.data_log_row['flow_QC'] = flow_is_good
-
-        return flow_is_good'''
 
     def get_folderpath(self):
         if "Calibration" in self.major_modes:
@@ -2088,11 +2062,10 @@ class Panel(QWidget):
 
     def save_evl(self, folderpath, flnmStr):
         evlpath = folderpath + "/evl/"
-
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
-        print ('evl flnm sstr',flnm)
+
         self.evalPar_df.to_csv(flnm, index=False, header=True)
 
     def save_logfile_df(self, folderpath, flnmStr):
@@ -2234,7 +2207,7 @@ class Panel_pH(Panel):
 
                         res = await self.calibration_check_cycle(with_cuvette_cleaning)
                         if not res == 'white':
-                            print (rgb_lookup[res],type(rgb_lookup[res]))
+
                             self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
                             self.last_calibr_date.setText(str(datetime.now().date()))
 
@@ -2362,10 +2335,10 @@ class Panel_pH(Panel):
             self.timer_test_udp.stop()
 
     def send_test_udp(self):
-        print ('send test udp')
+
         string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                      self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
-        print (string_to_udp)
+
         udp.send_data(string_to_udp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
@@ -2593,7 +2566,7 @@ class Panel_CO3(Panel):
         self.fill_table_config(9, 1, "None")
 
     def test_udp(self, state):
-        print (state)
+
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
         self.test_data_log_row = pd.DataFrame(
             {

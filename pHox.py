@@ -223,7 +223,6 @@ class Common_instrument(object):
             self.vNTCch = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
-        print (self.valid_samplingIintervals)
         self.pumpTime = int(conf_operational["pumpTime_sec"])
         self.calibration_pump_time = int(config_file["TrisBuffer"]["Calibration_pump_time"])
         self.mixT = int(conf_operational["mixTime"])
@@ -309,14 +308,15 @@ class Common_instrument(object):
         port.write(txtData)
 
     def get_Voltage(self, nAver, channel):
-        V = 0.0000
+        v = 0.0000
         for i in range(nAver):
             try:
-                V += self.adc.read_voltage(channel)
+                v += self.adc.read_voltage(channel)
             except TimeoutError:
-                print('Timeout error in get_Voltage')
+                logging.error('Timeout error in get_Voltage')
                 pass
-        return V / nAver
+        Voltage = round(v / nAver, prec["vNTC"])
+        return Voltage
 
     def calc_wavelengths(self):
         """
@@ -332,7 +332,7 @@ class Common_instrument(object):
 
     async def get_sp_levels(self, pixel):
         self.spectrum = await self.spectrometer_cls.get_intensities()
-        print (self.spectrum)
+
         return self.spectrum[pixel]
 
 
@@ -391,21 +391,21 @@ class CO3_instrument(Common_instrument):
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
-        voltage = round(voltage, prec["vNTC"])
+        #voltage = round(voltage, prec["vNTC"])
 
-        T_cuvette = round((self.TempCalCoef[0] * voltage) + self.TempCalCoef[1], prec["fb_temperature"])
+        T_cuvette = (self.TempCalCoef[0] * voltage) + self.TempCalCoef[1] #, prec["fb_temperature"])
         # T = 273.15 + T_cuvette
 
         A1, A2, A_350 = Absorbance
 
-        print ('A350', A_350)
+
 
         if manual_salinity is None:
-            sal = round(self.fb_data["salinity"], prec["salinity"])
+            sal = self.fb_data["salinity"]   #round(, prec["salinity"])
         else:
-            sal = round(manual_salinity, prec["salinity"])
+            sal = manual_salinity               #round(, prec["salinity"])
 
-        S_corr = round(sal * dilution, prec["salinity"])
+        S_corr = sal * dilution                 #round(, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
         R = A2 / A1
         # coefficients from Patsavas et al. 2015
@@ -437,7 +437,7 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
-        print (co3_eval)
+
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
         try:
@@ -574,12 +574,12 @@ class pH_instrument(Common_instrument):
             LED1, adj1, res1 = await self.find_LED(led_ind=0, adj=adj1, LED=self.LEDS[0])
 
             if adj1:
-                logging.info("*** adj1 = True")
+                logging.debug("*** adj1 = True")
 
                 LED2, adj2, res2 = await self.find_LED(led_ind=1, adj=adj2, LED=self.LEDS[1])
 
                 if adj2:
-                    logging.info("*** adj2 = True")
+                    logging.debug("*** adj2 = True")
 
                     if self.autoadj_opt == 'ON_NORED':
                         LED3, adj3, res = 99, True, "READ adjusting disabled"
@@ -626,16 +626,16 @@ class pH_instrument(Common_instrument):
 
     def calc_pH(self, Absorbance, voltage, dilution, vol_injected, manual_salinity=None):
         A1, A2, Anir = Absorbance
-        voltage = round(voltage, prec["vNTC"])
+        #voltage = round(voltage, prec["vNTC"])
         T_cuvette = round((self.TempCalCoef[0] * voltage) + self.TempCalCoef[1], prec["T_cuvette"])
         T = 273.15 + T_cuvette
 
         if manual_salinity is None:
             fb_sal = round(self.fb_data["salinity"], prec["salinity"])
         else:
-            fb_sal = round(manual_salinity, prec["salinity"])
+            fb_sal = manual_salinity #round(, prec["salinity"])
 
-        S_corr = round(fb_sal * dilution, prec["salinity"])
+        S_corr = fb_sal * dilution #round(, prec["salinity"])
 
         R = A2 / A1
 
@@ -671,11 +671,11 @@ class pH_instrument(Common_instrument):
         else:
             raise ValueError("wrong DYE: " + self.dye)
 
-        pH = round(pH, prec["pH"])
+        '''pH = round(pH, prec["pH"])
         pK = round(pK, prec["pK"])
         e1 = round(e1, prec["e1"])
         e2 = round(e2, prec["e2"])
-        e3 = round(e3, prec["e3"])
+        e3 = round(e3, prec["e3"])'''
 
         return [
             pH,
@@ -715,9 +715,8 @@ class pH_instrument(Common_instrument):
         :return: final pH and other params
         """
 
-        logging.debug(f'evalPar_df["T_cuvette"] {evalPar_df["T_cuvette"]}')
         dpH_dT = -0.0155
-        evalAnir = round(evalPar_df["Anir"].mean(), prec["evalAnir"])
+        evalAnir = evalPar_df["Anir"].mean()     #, prec["evalAnir"]
         t_cuvette = evalPar_df["T_cuvette"][0]
 
 
@@ -733,59 +732,66 @@ class pH_instrument(Common_instrument):
             x = evalPar_df["Vol_injected"].values
             pH_t_corr = evalPar_df["pH"] + dpH_dT * (t_cuvette - evalPar_df["T_cuvette"])
             y = pH_t_corr.values
+
         meas_std = np.std(y)
         logging.info('Measurement Standard Deviation {}'.format(meas_std))
         # Check std between different measurement
         if meas_std > 0.001:
-            # If std is high, get the linear regression to extimate the perturbation
-            # generation by adding the dye into the sample
+            # If std is high, get the linear regression to estimate the slope (perturbations)
+            # generated by adding the dye into the sample
 
-            slope1, intercept1, r_value1 = get_linregress(x, y)
-            r_values, slopes, intercepts = [], [], []
+            slope_all, intercept_all, r_value_all = get_linregress(x, y)
+            r_values, slopes, intercepts, x_vars, y_vars = [], [], [], [], []
+
             #Calculate fit for different combinations fo measurements to find outliers
-            for n in [0 , self.ncycles - 1]: #range(self.ncycles)
-                slope1, intercept, r_value = get_linregress(np.delete(x, n), np.delete(y, n))
+            for n in [0, self.ncycles - 1]: #range(self.ncycles)
+                new_x = np.delete(x, n)
+                new_y = np.delete(y, n)
+                slope_all, intercept, r_value = get_linregress(new_x, new_y)
+
                 r_values.append(r_value)
-                slopes.append(slope1)
+                slopes.append(slope_all)
                 intercepts.append(intercept)
+                x_vars.append(new_x)
+                y_vars.append(new_y)
 
             # Find the best fit
-            r_value2 = np.max(r_values)
+            r2_remove_1point = [n ** 2 for n in r_values]
+            r2_value2_best = np.max(r2_remove_1point)
 
-            if r_value1 > r_value2:
-                intercept = intercept1
-                perturbation = slope1
-                r_value = r_value
+            if r_value_all**2 > r2_value2_best:
+                # all point give the best fit
+                intercept = intercept_all
+                slope = slope_all
+                r_value = r_value_all
+
             else:
-                idx_to_remove = np.argmax(r_values)
-                print ('idx_to_remove', idx_to_remove)
-                intercept = intercepts[idx_to_remove]
-                perturbation = slopes[idx_to_remove]
-                r_value = r_values[idx_to_remove]
-                if idx_to_remove == 1:
-                    idx_to_remove = -1
+                # removing one of the point give better fit
+                idx_of_best_fit = np.argmax(r2_remove_1point)
 
-                y = np.delete(y, idx_to_remove)
-                x = np.delete(x, idx_to_remove)
+                intercept = intercepts[idx_of_best_fit]
+                slope = slopes[idx_of_best_fit]
+                r_value = r_values[idx_of_best_fit]
+                x = x_vars[idx_of_best_fit]
+                y = y_vars[idx_of_best_fit]
 
-            if r_value ** 2 < 0.9:
-                intercept = np.mean(y)
-
+            #if r_value ** 2 < 0.9:
+            #    intercept = np.mean(y)
         else:
             intercept = np.mean(y)
             r_value = 0
-            perturbation = 0
+            slope = 0
+
+        intercept = round(intercept, prec['pH'])
 
         pH_insitu = round(intercept + dpH_dT * (
-                self.fb_data["temperature"] - t_cuvette), prec["pH"])
-        perturbation = round(perturbation, prec["perturbation"])
-        # pH should be and intercept here?
-        pH_cuvette = round(intercept, prec["pH"])
+                self.fb_data["temperature"] - t_cuvette), prec['pH'])
+        pH_cuvette = intercept
 
-        logging.info("leave pH eval")
+        logging.debug("leave pH eval")
         return (
             pH_cuvette, t_cuvette,
-            perturbation, evalAnir,
+            slope, evalAnir,
             pH_insitu, x, y, intercept, r_value**2, pH_t_corr
         )
 
@@ -837,7 +843,8 @@ class Test_CO3_instrument(CO3_instrument):
         v = 0
         for i in range(nAver):
             v += 0.6
-        return v / nAver
+        Voltage = round(v / nAver, prec["vNTC"])
+        return Voltage
 
 
 class Test_pH_instrument(pH_instrument):
@@ -858,11 +865,11 @@ class Test_pH_instrument(pH_instrument):
     async def auto_adjust(self, *args):
         result = True
         LED1, LED2, LED3 = 50, 60, 70
-        print (self.autoadj_opt,'self.autoadj_opt')
+
         if self.autoadj_opt == 'ON_NORED':
             logging.debug('NO RED in adjusting')
             LED3, adj3, res = 99, True, "READ adjusting disabled"
-        print (LED1, LED2, LED3, result)
+
         return LED1, LED2, LED3, result
 
     def reset_lines(self):
@@ -922,10 +929,11 @@ class Test_pH_instrument(pH_instrument):
         pass
 
     def get_Voltage(self, nAver, channel):
-        V = 0
+        v = 0
         for i in range(nAver):
-            V += 0.6
-        return V / nAver
+            v += 0.6
+        Voltage = round(v / nAver, prec["vNTC"])
+        return Voltage
 
     def calc_wavelengths(self):
         """
@@ -938,5 +946,4 @@ class Test_pH_instrument(pH_instrument):
 
     async def get_sp_levels(self, pixel):
         self.spectrum = await self.spectrometer_cls.get_intensities()
-        print (self.spectrum)
         return self.spectrum[pixel]

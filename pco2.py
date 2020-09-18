@@ -163,10 +163,11 @@ class only_pco2_instrument(pco2_instrument):
             self.adcdac = ADCDACPi()
 
     def get_Voltage(self, nAver, channel):
-        V = 0.0000
+        v = 0.0000
         for i in range(nAver):
-            V += self.adc.read_voltage(channel)
-        return V / nAver
+            v += self.adc.read_voltage(channel)
+        Voltage = round(v / nAver, prec["vNTC"])
+        return Voltage
 
 
 class test_pco2_instrument(pco2_instrument):
