@@ -2202,6 +2202,7 @@ class Panel_pH(Panel):
                         else:
                             with_cuvette_cleaning = False
 
+
                         self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
                         self.calibr_state_dialog.show()
 
@@ -2228,6 +2229,10 @@ class Panel_pH(Panel):
 
         self.skip_calibration_step = False
         self.calibration_step = 'before cleaning'
+
+        self.instrument.autoadj_opt = 'ON'
+        self.combo_in_config(self.autoadjState_combo, "Autoadjust_state")
+
         self.df_mean_log_row = []
 
         for n in range(3):
