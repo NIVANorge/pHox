@@ -8,7 +8,6 @@ from precisions import precision as prec
 try:
     import pigpio
     import RPi.GPIO as GPIO
-    from ADCDACPi import ADCDACPi
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
@@ -59,7 +58,8 @@ class pco2_instrument(object):
         self.base_folderpath = base_folderpath
         self.path = self.base_folderpath + "/data_pCO2/"
         self.args = panelargs
-
+        self.co2 = 990
+        self.co2_temp = 999
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
@@ -161,13 +161,13 @@ class only_pco2_instrument(pco2_instrument):
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
-            self.adcdac = ADCDACPi()
+            
 
     def get_Voltage(self, nAver, channel):
         v = 0.0000
         for i in range(nAver):
             v += self.adc.read_voltage(channel)
-        Voltage = round(v / nAver, prec["vNTC"])
+        Voltage = round(v / nAver, prec["Voltage"])
         return Voltage
 
 
