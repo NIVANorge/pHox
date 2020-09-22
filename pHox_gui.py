@@ -275,7 +275,7 @@ class Panel_PCO2_only(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Voltage(2, channel)
+            v = self.pco2_instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
