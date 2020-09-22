@@ -42,14 +42,10 @@ class BatchNumber(QDialog):
 
         self.setWindowTitle("Calibration solution Batch Number")
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-
         self.batch_number_widget = QtGui.QLineEdit()
         self.batch_number = 1
 
         self.batch_number_widget.setText(str(self.batch_number))
-
-        #self.batch_number_spin.setStyleSheet(style)
 
         self.layout = QtGui.QGridLayout()
         label_text = 'Please Enter the Calibration Solution Batch Number'
@@ -59,14 +55,12 @@ class BatchNumber(QDialog):
         self.minus_one = QPushButton('-1')
         self.minus_ten = QPushButton('-10')
 
-        #plus_minus_btns = [self.plus_one, self.plus_ten, self.minus_one, self.minus_tem]
         self.btns = {self.plus_one : 1,
                 self.minus_one: -1,
                 self.plus_ten: +10,
                 self.minus_ten: -10 }
 
         [btn.clicked.connect(self.button_clicked) for btn in self.btns.keys()]
-        #plus_minus_btns[ind
 
         self.layout.addWidget(QLabel(label_text), 0, 0, 1, 3)
         self.layout.addWidget(self.batch_number_widget, 1, 0, 2, 1)
@@ -83,7 +77,6 @@ class BatchNumber(QDialog):
         self.layout.addWidget(self.buttonBox, 3, 2, 1, 2)
         self.setLayout(self.layout)
 
-
     @pyqtSlot()
     def button_clicked(self):
 
@@ -93,23 +86,6 @@ class BatchNumber(QDialog):
             self.batch_number = new_value
             self.batch_number_widget.setText(str(self.batch_number))
 
-    ''' def plus_minus_butn_clicked(self, ind, dif):
-
-        self.batch_number = += 10
-        int(self.batch_number.text())
-
-        for ind in range(3):
-            self.plus_btns.append(QPushButton(" + "))
-            self.minus_btns.append(QPushButton(" - "))
-            self.plus_btns[ind].clicked.connect(self.led_plus_btn_clicked)'''
-
-    #def accept(self):
-    #    prin ('accept')
-    #    self.close()
-
-    #def reject(self):
-    #    self.close()
-    #    #print ('rejected')
 
 class CalibrationProgess(QDialog):
     # Adapt dialog depending on the answer clean cuvette or not 
@@ -169,6 +145,7 @@ class CalibrationProgess(QDialog):
 
     def closeEvent(self, event):
         self.stop_calibr_btn.setChecked(True)
+
 
 class TimerManager:
     def __init__(self, input_timer):
@@ -236,9 +213,9 @@ class Panel_PCO2_only(QWidget):
         self.args = panelargs
 
         if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument(base_folderpath)
+            self.pco2_instrument = test_pco2_instrument(base_folderpath, panelargs)
         else:
-            self.pco2_instrument = only_pco2_instrument(base_folderpath)
+            self.pco2_instrument = only_pco2_instrument(base_folderpath, panelargs)
 
         self.pco2_timeseries = {'times': [], 'values': []}
 
@@ -388,9 +365,9 @@ class Panel(QWidget):
             self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
             self.symbolSize = 10
             if self.args.localdev:
-                self.pco2_instrument = test_pco2_instrument(base_folderpath)
+                self.pco2_instrument = test_pco2_instrument(base_folderpath, panelargs)
             else:
-                self.pco2_instrument = pco2_instrument(base_folderpath)
+                self.pco2_instrument = pco2_instrument(base_folderpath, panelargs)
 
         self.init_ui()
         self.create_timers()
@@ -1062,7 +1039,6 @@ class Panel(QWidget):
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
@@ -1324,7 +1300,7 @@ class Panel(QWidget):
         self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
         voltage = round(self.instrument.get_Voltage(3,
-                                               self.instrument.vNTCch), prec["vNTC"])
+                                               self.instrument.Voltagech), prec["Voltage"])
 
         t_cuvette = round((self.instrument.TempCalCoef[0] * voltage)
                           + self.instrument.TempCalCoef[1], prec["T_cuvette"])
@@ -1438,7 +1414,7 @@ class Panel(QWidget):
                     if self.args.localdev:
                         self.instrument.LEDS = [55, 55, 55]
                     [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
-                    asyncio.sleep(0.1)
+                    await asyncio.sleep(0.1)
 
                     self.update_config('LED1', 'pH', self.instrument.LEDS[0])
                     self.update_config('LED2', 'pH', self.instrument.LEDS[1])
@@ -1889,7 +1865,7 @@ class Panel(QWidget):
         self.data_log_row['biofouling_qc'] = biofouling_qc
 
         # Temperature is alive check
-        if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
+        if self.evalPar_df['Voltage'].mean() == self.evalPar_df['Voltage'][0]:
             temp_alive = False
             self.temp_alive_qc_chk.setCheckState(rgb_lookup['red'])
         else:
@@ -1901,6 +1877,7 @@ class Panel(QWidget):
             udp_qc = False
         else:
             udp_qc = True
+
         self.data_log_row['UDP_conn_qc'] = udp_qc
 
         overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, udp_qc])
@@ -1925,7 +1902,7 @@ class Panel(QWidget):
         self.evalPar_df = pd.DataFrame(
             columns=[
                 "pH", "pK", "e1", "e2", "e3",
-                "vNTC", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
+                "Voltage", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
                 "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
                 "TempCalCoef2", "DYE"]
         )
@@ -1991,10 +1968,10 @@ class Panel(QWidget):
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
             dilution = self.instrument.Cuvette_V / (vol_injected + self.instrument.Cuvette_V)
-            vNTC = await self.inject_dye(n_inj)
+            Voltage = await self.inject_dye(n_inj)
             absorbance = await self.calc_absorbance(n_inj, blank_min_dark, dark)
             manual_salinity = self.get_salinity_manual()
-            self.update_evl_file(absorbance, vNTC, dilution, vol_injected, manual_salinity, n_inj)
+            self.update_evl_file(absorbance, Voltage, dilution, vol_injected, manual_salinity, n_inj)
 
         return
 
@@ -2018,7 +1995,7 @@ class Panel(QWidget):
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
-        Voltage = self.instrument.get_Voltage(3, self.instrument.vNTCch)
+        Voltage = self.instrument.get_Voltage(3, self.instrument.Voltagech)
         return Voltage
 
     async def calc_absorbance(self, n_inj, blank_min_dark, dark):
@@ -2165,10 +2142,10 @@ class Panel_pH(Panel):
         )
 
 
-    def update_evl_file(self, Absorbance, vNTC,dilution, vol_injected, manual_salinity, n_inj):
+    def update_evl_file(self, Absorbance, Voltage,dilution, vol_injected, manual_salinity, n_inj):
 
         self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
-            Absorbance, vNTC, dilution, vol_injected, manual_salinity)
+            Absorbance, Voltage, dilution, vol_injected, manual_salinity)
 
     def get_logfile_name(self, folderpath):
         if 'Calibration' in self.major_modes:
@@ -2188,8 +2165,6 @@ class Panel_pH(Panel):
             self.BatchNumberDialog.close()
             if res_ok:
                 self.batch_number = self.BatchNumberDialog.batch_number
-
-
                 await asyncio.sleep(1)
                 valve_turned = self.valve_message('Turn valve into calibration mode')
 
@@ -2269,6 +2244,11 @@ class Panel_pH(Panel):
         else:
             res = 'white'
         return res
+
+    async def cuvette_cleaning_step(self):
+        cuvette_cleaning_dlg = AfterCuvetteCleaning(self)
+        result = cuvette_cleaning_dlg.show()
+        return result
 
 
     async def get_calibration_results(self):
@@ -2441,7 +2421,7 @@ class Panel_CO3(Panel):
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         self.evalPar_df = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "Voltage", "S", "A1", "A2",
                          "R", "T_cuvette", "Vol_injected", " S_corr", 'A350']
             )
 
@@ -2524,8 +2504,8 @@ class Panel_CO3(Panel):
         [self.fill_table_measurement(k, 0, v)
          for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "T insitu", "S insitu"])]
 
-    def update_evl_file(self, spAbs_min_blank, vNTC, dilution, vol_injected, manual_salinity, n_inj):
-        self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
+    def update_evl_file(self, spAbs_min_blank, Voltage, dilution, vol_injected, manual_salinity, n_inj):
+        self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, Voltage,
                                                          dilution, vol_injected, manual_salinity)
 
     def update_corellation_plot(self):

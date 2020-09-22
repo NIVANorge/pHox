@@ -218,9 +218,9 @@ class Common_instrument(object):
         self.autostart = self.to_bool(conf_operational["AUTOSTART"])
         self.automode = conf_operational["AUTOSTART_MODE"]
         #self.DURATION = int(conf_operational["DURATION"])
-        self.vNTCch = int(conf_operational["T_PROBE_CH"])
-        if not (self.vNTCch in range(9)):
-            self.vNTCch = 8
+        self.Voltagech = int(conf_operational["T_PROBE_CH"])
+        if not (self.Voltagech in range(9)):
+            self.Voltagech = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
         self.pumpTime = int(conf_operational["pumpTime_sec"])
@@ -315,7 +315,7 @@ class Common_instrument(object):
             except TimeoutError:
                 logging.error('Timeout error in get_Voltage')
                 pass
-        Voltage = round(v / nAver, prec["vNTC"])
+        Voltage = round(v / nAver, prec["Voltage"])
         return Voltage
 
     def calc_wavelengths(self):
@@ -391,7 +391,7 @@ class CO3_instrument(Common_instrument):
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
-        #voltage = round(voltage, prec["vNTC"])
+        #voltage = round(voltage, prec["Voltage"])
 
         T_cuvette = (self.TempCalCoef[0] * voltage) + self.TempCalCoef[1] #, prec["fb_temperature"])
         # T = 273.15 + T_cuvette
@@ -626,7 +626,7 @@ class pH_instrument(Common_instrument):
 
     def calc_pH(self, Absorbance, voltage, dilution, vol_injected, manual_salinity=None):
         A1, A2, Anir = Absorbance
-        #voltage = round(voltage, prec["vNTC"])
+        #voltage = round(voltage, prec["Voltage"])
         T_cuvette = round((self.TempCalCoef[0] * voltage) + self.TempCalCoef[1], prec["T_cuvette"])
         T = 273.15 + T_cuvette
 
@@ -843,7 +843,7 @@ class Test_CO3_instrument(CO3_instrument):
         v = 0
         for i in range(nAver):
             v += 0.6
-        Voltage = round(v / nAver, prec["vNTC"])
+        Voltage = round(v / nAver, prec["Voltage"])
         return Voltage
 
 
@@ -932,7 +932,7 @@ class Test_pH_instrument(pH_instrument):
         v = 0
         for i in range(nAver):
             v += 0.6
-        Voltage = round(v / nAver, prec["vNTC"])
+        Voltage = round(v / nAver, prec["Voltage"])
         return Voltage
 
     def calc_wavelengths(self):

@@ -55,9 +55,10 @@ class tab_pco2_class(QWidget):
 
 
 class pco2_instrument(object):
-    def __init__(self, base_folderpath):
+    def __init__(self, base_folderpath, panelargs):
         self.base_folderpath = base_folderpath
         self.path = self.base_folderpath + "/data_pCO2/"
+        self.args = panelargs
 
         if not os.path.exists(self.path):
             os.mkdir(self.path)
@@ -154,8 +155,8 @@ class pco2_instrument(object):
 
 class only_pco2_instrument(pco2_instrument):
     # Class for communication with Raspberry PI for the only pco2 case
-    def __init__(self):
-        super().__init__()
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
 
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
@@ -171,8 +172,8 @@ class only_pco2_instrument(pco2_instrument):
 
 
 class test_pco2_instrument(pco2_instrument):
-    def __init__(self, base_folderpath):
-        super().__init__(base_folderpath)
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
         self.save_pco2_interv = 2
 
     async def get_pco2_values(self):
