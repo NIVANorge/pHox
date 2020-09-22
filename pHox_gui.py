@@ -34,6 +34,62 @@ from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
 
+class AfterCuvetteCleaning(QDialog):
+
+    def __init__(self, Panel):
+        super(AfterCuvetteCleaning, self).__init__(Panel)
+        self.main_qt_panel = Panel
+
+        # Class functionality
+        # The Dialog will be opened when the user reach the step of cleaning the Cuvette.
+        # Button Update Plot: measure led intensity and plot it.
+        # So the user can understand if the cuvette was cleaned well or not
+        # Since during the calibration process the automatic real time updates of the plot
+        # Are turned off
+        # Other functionality : Ok and Cancel
+        # If clicked OK, the program will continue the calibration cycle
+        # If Cancel, the calibration will be stopped.
+
+        self.setWindowTitle("Calibration Step After cleaning the Cuvette")
+
+        self.btn_update_plots = QPushButton('Update Intensity Plots')
+        self.btn_update_plots.clicked.connect(self.button_clicked)
+        self.btn_update_plots.setCheckable(True)
+        layout = QtGui.QGridLayout()
+
+        pixmap = QPixmap(QPixmap('utils/pHox_question.png')).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
+
+        self.image = QLabel("Hello")
+        self.image.setPixmap(pixmap)
+
+        self.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+
+        self.text =  QLabel("<br>Please, clean the cuvette.\
+                <br>\
+                <br>Click <b>OK</b> When you are ready.\
+                <br>Click Cancel to stop calibration")
+
+
+        self.buttonBox = QtWidgets.QDialogButtonBox()
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        layout.addWidget(self.image, 0, 0, 1, 1)
+        layout.addWidget(self.text, 0, 1, 1, 1)
+        layout.addWidget(self.btn_update_plots, 1, 1 ,1, 1 )
+        layout.addWidget(self.buttonBox, 2, 0, 1, 2)
+        self.setLayout(layout)
+
+        #cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+
+
+    @asyncSlot()
+    async def button_clicked(self):
+        #datay = await self.main_qt_panelin.strument.spectrometer_cls.get_intensities()
+        await self.main_qt_panel.update_spectra_plot()
+
+
 
 class BatchNumber(QDialog):
 
@@ -275,7 +331,7 @@ class Panel_PCO2_only(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Voltage(2, channel)
+            v = self.pco2_instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
@@ -297,6 +353,7 @@ class Panel_PCO2_only(QWidget):
         values = [self.wat_temp, self.wat_flow, self.wat_pres,
                   self.air_temp, self.air_pres, self.leak_detect,
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+
         await self.tab_pco2.update_tab_values(values)
         await self.update_pco2_plot()
         self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
@@ -1688,11 +1745,7 @@ class Panel(QWidget):
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
 
-                 'After cuvette cleaning':
-                      "<br>Please, clean the cuvette.\
-                      <br>\
-                      <br>Click <b>OK</b> When you are ready.\
-                      <br>Click Cancel to stop calibration",
+
 
                  "Valve back to ferrybox mode":
                      "Please turn the valves back into the ferrybox mode\
@@ -2219,7 +2272,9 @@ class Panel_pH(Panel):
         # Ask the user to clean the cuvette:
         if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
             if with_cuvette_cleaning:
-                cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+
+                cuvette_is_clean = await self.cuvette_cleaning_step()
+
                 self.calibration_step = 'after cleaning'
                 if cuvette_is_clean == QMessageBox.Ok:
                     for k, v in enumerate(range(3, 6)):
