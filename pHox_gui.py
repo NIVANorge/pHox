@@ -633,10 +633,16 @@ class Panel(QWidget):
             #    #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
+
+            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
+
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.manual_widgets_set_enabled(False)
+
             if 'Manual' in self.major_modes:
                 self.btn_adjust_leds.setEnabled(False)
                 #self.btn_checkflow.setEnabled(False)
@@ -681,6 +687,12 @@ class Panel(QWidget):
             self.btn_single_meas.setEnabled(True)
 
         if mode_unset == "Continuous":
+
+            self.infotimer_contin_mode.stop()
+            self.StatusBox.clear()
+            self.timer_contin_mode.stop()
+            self.until_next_sample = self.instrument.samplingInterval
+            self.btn_manual_mode.setEnabled(True)
             if "Measuring" not in self.major_modes:
                 if 'Manual' not in self.major_modes:
                     self.btn_single_meas.setEnabled(True)
@@ -1529,19 +1541,14 @@ class Panel(QWidget):
         if self.btn_cont_meas.isChecked():
             if 'Continuous' not in self.major_modes:
                 self.set_major_mode("Continuous")
-            if "Measuring" not in self.major_modes:
-                self.until_next_sample = self.instrument.samplingInterval
+            # it think we dont need it
+            #if "Measuring" not in self.major_modes:
+            #    self.until_next_sample = self.instrument.samplingInterval
 
-            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
 
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
-            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
         else:
             self.unset_major_mode("Continuous")
-            self.StatusBox.clear()
-            self.timer_contin_mode.stop()
-            self.until_next_sample = self.instrument.samplingInterval
-            self.infotimer_contin_mode.stop()
+
             if "Paused" in self.major_modes:
                 self.unset_major_mode('Paused')
 
@@ -1871,6 +1878,7 @@ class Panel(QWidget):
                 self.StatusBox.setText('The measurement is finished')
             else:
                 self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
+                await asyncio.sleep(0.001)
         [step.setChecked(False) for step in self.sample_steps]
         return
 

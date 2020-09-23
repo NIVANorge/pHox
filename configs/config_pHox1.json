@@ -105,7 +105,8 @@
         "WL_2": 250,
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
+        "Default_DYE": "Pb_perchlor",
+        "PCO3_string_version": "1"
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
