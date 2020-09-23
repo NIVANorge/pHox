@@ -1293,7 +1293,7 @@ class Panel(QWidget):
         self.set_LEDs(state)
 
     def save_stability_test(self, datay):
-        stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
+        stabfile = os.path.join("/home/pi/pHox/data/data_pH/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
             {
@@ -1840,7 +1840,7 @@ class Panel(QWidget):
             if self.args.localdev and "Calibration" in self.major_modes:
                 if self.ncalibr in (0, 1, 2):
                     self.res_autoadjust = False
-                elif self.ncalibr in (3,4,5):
+                elif self.ncalibr in (3, 4, 5):
                     self.res_autoadjust = False
 
             if self.res_autoadjust:
@@ -2529,7 +2529,8 @@ class Panel_CO3(Panel):
         return dark
 
     def save_stability_test(self, datay):
-        stabfile = os.path.join("/home/pi/pHox/data_co3/sp_stability.log")
+
+        stabfile = os.path.join("/home/pi/pHox/data/data_co3/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
                 {
