@@ -430,7 +430,7 @@ class Panel(QWidget):
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
 
-        self.until_next_sample = None
+
         self.infotimer_step = 15  # seconds
         self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
@@ -633,7 +633,7 @@ class Panel(QWidget):
             #    #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
-
+            self.until_next_sample = self.instrument.samplingInterval
             self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
             self.infotimer_contin_mode.start(self.infotimer_step * 1000)
@@ -691,7 +691,7 @@ class Panel(QWidget):
             self.infotimer_contin_mode.stop()
             self.StatusBox.clear()
             self.timer_contin_mode.stop()
-            self.until_next_sample = self.instrument.samplingInterval
+
             self.btn_manual_mode.setEnabled(True)
             if "Measuring" not in self.major_modes:
                 if 'Manual' not in self.major_modes:

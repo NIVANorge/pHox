@@ -32,7 +32,14 @@ def udp_server():
     sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock_listen.settimeout(1)
 
-    sock_listen.bind(("", UDP_RECV))
+
+    try:
+        sock_listen.bind(("", UDP_RECV))
+    except:
+        logging.info('Could not start the UDP listener'
+                     'kill the process: '
+                     'sudo netstat -tulpn'
+                     'sudo kill <PID>')
     logging.info("UDP server started")
 
     while not UDP_EXIT:
