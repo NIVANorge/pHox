@@ -130,6 +130,7 @@ class Spectro_seabreeze(object):
         while self.busy:
             await asyncio.sleep(0.05)
         self.busy = True
+
         async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
         sp = await async_thread_wrapper.result_returner()
         self.busy = False
@@ -336,6 +337,7 @@ class Common_instrument(object):
         return idx
 
     async def get_sp_levels(self, pixel):
+
         self.spectrum = await self.spectrometer_cls.get_intensities()
 
         return self.spectrum[pixel]

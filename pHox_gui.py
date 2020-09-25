@@ -1043,7 +1043,7 @@ class Panel(QWidget):
 
 
     def sampling_int_chngd(self, ind):
-        self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
+        self.instrument.samplingInterval = float(self.samplingInt_combo.currentText())
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
@@ -1359,7 +1359,7 @@ class Panel(QWidget):
     async def update_spectra_plot(self):
         #logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
 
-        print(self.updater.update_spectra_in_progress)
+
         self.updater.update_spectra_in_progress = True
 
         try:
