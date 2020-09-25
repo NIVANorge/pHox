@@ -531,7 +531,7 @@ class Panel(QWidget):
         l.addWidget(self.dye_level_bar, 0, 2)
         dye_level_group.setLayout(l)
 
-        self.dye_level = config_file['pH']['dye_level']
+        self.dye_level = config_file['Operational']['dye_level']
         self.dye_level_bar.setMaximum(2000)
         self.dye_level_bar.setValue(self.dye_level)
 

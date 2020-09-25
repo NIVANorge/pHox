@@ -12,6 +12,8 @@
             25
         ],
         "DYE_V_INJ": 0.03,
+        "dye_level": 2000 ,
+        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
         "specAvScans": 6,
@@ -62,9 +64,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "LED4": 70,
-        "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1987.880000000011,
-        "dye_level_comment": "one bag 1000 ml, two bags"
+        "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
         "water_temperature": {

@@ -140,6 +140,11 @@ class Spectro_seabreeze(object):
         # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
 
+    @classmethod
+    def __delete__(self):
+        self.spec.close()
+        return
+
 
 class Common_instrument(object):
     """ This class is a parent class for pH instrument and CO3 instrument
