@@ -1088,11 +1088,7 @@ class Panel(QWidget):
         self.buttons_groupBox = QGroupBox("Manual Control")
         btn_grid = QGridLayout()
 
-        if not self.args.co3:
-            self.btn_adjust_light_intensity = self.create_button("Adjust Leds", True)
-        else:
-            self.btn_adjust_light_intensity = self.create_button("Adjust Lightsource", True)
-
+        self.btn_adjust_light_intensity = self.create_button("Adjust Light", True)
         self.btn_light = self.create_button("Light", True)
         self.btn_light.clicked.connect(self.btn_light_clicked)
 
