@@ -629,7 +629,7 @@ class Panel(QWidget):
             self.manual_widgets_set_enabled(True)
             self.btn_single_meas.setEnabled(False)
             #if 'Continuous' in self.major_modes:
-            #    self.btn_adjust_leds.setEnabled(False)
+            #    self.btn_adjust_light_intensity.setEnabled(False)
             #    #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
@@ -644,7 +644,7 @@ class Panel(QWidget):
             self.manual_widgets_set_enabled(False)
 
             if 'Manual' in self.major_modes:
-                self.btn_adjust_leds.setEnabled(False)
+                self.btn_adjust_light_intensity.setEnabled(False)
                 #self.btn_checkflow.setEnabled(False)
 
         if mode_set == 'Calibration':
@@ -699,7 +699,7 @@ class Panel(QWidget):
                     self.btn_calibr.setEnabled(True)
                 self.config_widgets_set_state(True)
                 if 'Manual' in self.major_modes:
-                    self.btn_adjust_leds.setEnabled(True)
+                    self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
 
         if mode_unset == "Calibration":
@@ -955,8 +955,7 @@ class Panel(QWidget):
                  self.autoadj_opt_chgd,
                  self.instrument.autoadj_opt
                  ],
-            "Spectro integration time": [
-                list(range(100, 5000, 100)),
+            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
@@ -1072,7 +1071,7 @@ class Panel(QWidget):
     def manual_widgets_set_enabled(self, state):
         logging.debug(f"widgets_enabled_change, state is '{state}'")
         buttons = [
-            self.btn_adjust_leds,
+            self.btn_adjust_light_intensity,
             self.btn_leds,
             self.btn_valve,
             self.btn_stirr,
@@ -1090,10 +1089,25 @@ class Panel(QWidget):
         self.buttons_groupBox = QGroupBox("Manual Control")
         btn_grid = QGridLayout()
 
-        self.btn_adjust_leds = self.create_button("Adjust Leds", True)
+        if not self.args.co3:
+            self.btn_adjust_light_intensity = self.create_button("Adjust Leds", True)
+        else:
+            self.btn_adjust_light_intensity = self.create_button("Adjust Lightsource", True)
 
-        # self.btn_t_dark = self.create_button('Take dark',False)
         self.btn_leds = self.create_button("LEDs", True)
+
+        if not self.args.co3:
+
+            self.btn_leds.clicked.connect(self.btn_leds_checked)
+
+        if self.args.co3:
+            self.btn_lightsource = self.create_button("light source", True)
+            btn_grid.addWidget(self.btn_lightsource, 4, 1)
+
+            self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
+
+
+
         self.btn_valve = self.create_button("Inlet valve", True)
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
@@ -1102,7 +1116,7 @@ class Panel(QWidget):
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_wpump, 0, 1)
-        btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
+        btn_grid.addWidget(self.btn_adjust_light_intensity, 1, 0)
         btn_grid.addWidget(self.btn_leds, 1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
@@ -1111,19 +1125,15 @@ class Panel(QWidget):
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
-        if not self.args.co3:
-            self.btn_leds.clicked.connect(self.btn_leds_checked)
+
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
-        if self.args.co3:
-            self.btn_lightsource = self.create_button("light source", True)
-            btn_grid.addWidget(self.btn_lightsource, 4, 1)
-            self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
 
-        self.btn_adjust_leds.clicked.connect(self.btn_autoAdjust_clicked)
+
+        self.btn_adjust_light_intensity.clicked.connect(self.btn_autoAdjust_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -1194,6 +1204,23 @@ class Panel(QWidget):
             self.instrument.turn_on_relay(self.instrument.light_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.light_slot)
+
+    def btn_leds_checked(self):
+        state = self.btn_leds.isChecked()
+        self.set_LEDs(state)
+
+
+    def set_LEDs(self, state):
+        for i, slider in enumerate(self.sliders):
+            self.instrument.adjust_LED(i, state * slider.value())
+        logging.info("Leds {}".format(str(state)))
+
+
+
+
+
+
+
 
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
@@ -1295,14 +1322,9 @@ class Panel(QWidget):
         self.btn_leds.setChecked(True)
         self.instrument.LEDS[ind] = value
 
-    def set_LEDs(self, state):
-        for i, slider in enumerate(self.sliders):
-            self.instrument.adjust_LED(i, state * slider.value())
-        logging.info("Leds {}".format(str(state)))
 
-    def btn_leds_checked(self):
-        state = self.btn_leds.isChecked()
-        self.set_LEDs(state)
+
+
 
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/data/data_pH/sp_stability.log")
@@ -1336,6 +1358,8 @@ class Panel(QWidget):
     @asyncSlot()
     async def update_spectra_plot(self):
         #logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
+
+        print(self.updater.update_spectra_in_progress)
         self.updater.update_spectra_in_progress = True
 
         try:
@@ -1511,7 +1535,7 @@ class Panel(QWidget):
             logging.info("Autoadjust LEDS")
 
             async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
-                self.btn_adjust_leds.setChecked(True)
+                self.btn_adjust_light_intensity.setChecked(True)
                 await asyncio.sleep(2)
                 try:
                     if self.args.co3:
@@ -1519,7 +1543,7 @@ class Panel(QWidget):
                     else:
                         res = await self.autoAdjust_LED()
                 finally:
-                    self.btn_adjust_leds.setChecked(False)
+                    self.btn_adjust_light_intensity.setChecked(False)
             logging.info(f"res after autoadjust: '{res}")
             if 'Manual' in self.major_modes:
                 self.StatusBox.setText("Finished Autoadjusting LEDS")
