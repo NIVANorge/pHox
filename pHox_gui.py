@@ -955,7 +955,7 @@ class Panel(QWidget):
                  self.autoadj_opt_chgd,
                  self.instrument.autoadj_opt
                  ],
-            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(100, 5000, 100)),
+            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(10, 100, 10)) + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
@@ -1047,7 +1047,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
-        new_int_time = int(self.specIntTime_combo.currentText())
+        new_int_time = float(self.specIntTime_combo.currentText())
         await self.updater.set_specIntTime(new_int_time)
 
     def ship_code_changed(self):
@@ -1072,7 +1072,7 @@ class Panel(QWidget):
         logging.debug(f"widgets_enabled_change, state is '{state}'")
         buttons = [
             self.btn_adjust_light_intensity,
-            self.btn_leds,
+            self.btn_light,
             self.btn_valve,
             self.btn_stirr,
             self.btn_dye_pmp,
@@ -1080,8 +1080,7 @@ class Panel(QWidget):
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
-        if self.args.co3:
-            self.btn_lightsource.setEnabled(state)
+
 
     def make_btngroupbox(self):
         # Define widgets for main tab
@@ -1094,18 +1093,8 @@ class Panel(QWidget):
         else:
             self.btn_adjust_light_intensity = self.create_button("Adjust Lightsource", True)
 
-        self.btn_leds = self.create_button("LEDs", True)
-
-        if not self.args.co3:
-
-            self.btn_leds.clicked.connect(self.btn_leds_checked)
-
-        if self.args.co3:
-            self.btn_lightsource = self.create_button("light source", True)
-            btn_grid.addWidget(self.btn_lightsource, 4, 1)
-
-            self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
-
+        self.btn_light = self.create_button("Light", True)
+        self.btn_light.clicked.connect(self.btn_light_clicked)
 
 
         self.btn_valve = self.create_button("Inlet valve", True)
@@ -1117,7 +1106,7 @@ class Panel(QWidget):
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_wpump, 0, 1)
         btn_grid.addWidget(self.btn_adjust_light_intensity, 1, 0)
-        btn_grid.addWidget(self.btn_leds, 1, 1)
+        btn_grid.addWidget(self.btn_light, 1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
@@ -1130,8 +1119,6 @@ class Panel(QWidget):
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
-
-
 
         self.btn_adjust_light_intensity.clicked.connect(self.btn_autoAdjust_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
@@ -1196,29 +1183,6 @@ class Panel(QWidget):
             self.instrument.turn_on_relay(self.instrument.wpump_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
-
-    @asyncSlot()
-    async def btn_lightsource_clicked(self):
-
-        if self.btn_lightsource.isChecked():
-            self.instrument.turn_on_relay(self.instrument.light_slot)
-        else:
-            self.instrument.turn_off_relay(self.instrument.light_slot)
-
-    def btn_leds_checked(self):
-        state = self.btn_leds.isChecked()
-        self.set_LEDs(state)
-
-
-    def set_LEDs(self, state):
-        for i, slider in enumerate(self.sliders):
-            self.instrument.adjust_LED(i, state * slider.value())
-        logging.info("Leds {}".format(str(state)))
-
-
-
-
-
 
 
 
@@ -1311,7 +1275,7 @@ class Panel(QWidget):
         ind = self.spinboxes.index(source)
         self.instrument.adjust_LED(ind, value)
         self.sliders[ind].setValue(value)
-        self.btn_leds.setChecked(True)
+        self.btn_light.setChecked(True)
         self.instrument.LEDS[ind] = value
 
     def sld_change(self, value):
@@ -1319,7 +1283,7 @@ class Panel(QWidget):
         ind = self.sliders.index(source)
         self.instrument.adjust_LED(ind, value)
         self.spinboxes[ind].setValue(value)
-        self.btn_leds.setChecked(True)
+        self.btn_light.setChecked(True)
         self.instrument.LEDS[ind] = value
 
 
@@ -1366,7 +1330,7 @@ class Panel(QWidget):
             # I don't think this if statement is required
             if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
                 datay = await self.instrument.spectrometer_cls.get_intensities()
-                if (self.args.localdev and self.btn_leds.isChecked() == False):
+                if (self.args.localdev and self.btn_light.isChecked() == False):
                     datay = datay * 0.001 + 1000
                 if self.args.stability:
                     self.save_stability_test(datay)
@@ -1673,16 +1637,15 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
+        logging.info("turn on light source")
+
         if not restart:
-            if self.args.co3:
-                logging.info("turn on light source")
-                self.instrument.turn_on_relay(self.instrument.light_slot)
-                self.btn_lightsource.setChecked(True)
-            else:
+            if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
                 self.update_LEDs()
-                self.btn_leds.setChecked(True)
-                self.btn_leds_checked()
+
+            self.btn_light.setChecked(True)
+            self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -2238,6 +2201,17 @@ class Panel_pH(Panel):
         else:
             return (os.path.join(folderpath, 'pH.log'))
 
+
+    @asyncSlot()
+    async def btn_light_clicked(self):
+        state = self.btn_light.isChecked()
+        self.set_LEDs(state)
+
+    def set_LEDs(self, state):
+        for i, slider in enumerate(self.sliders):
+            self.instrument.adjust_LED(i, state * slider.value())
+        logging.info("Leds {}".format(str(state)))
+
     @asyncSlot()
     async def btn_calibr_clicked(self):
 
@@ -2530,6 +2504,13 @@ class Panel_CO3(Panel):
 
     def dye_combo_chngd(self):
         pass
+
+    @asyncSlot()
+    async def btn_light_clicked(self):
+        if self.btn_lightsource.isChecked():
+            self.instrument.turn_on_relay(self.instrument.light_slot)
+        else:
+            self.instrument.turn_off_relay(self.instrument.light_slot)
 
     def get_folderpath(self):
 
