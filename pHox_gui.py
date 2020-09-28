@@ -74,14 +74,12 @@ class AfterCuvetteCleaning(QDialog):
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
-        vb = pg.ViewBox()
+
         self.plotwidget = pg.PlotWidget()
-        print ('screenGeometry', vb.screenGeometry())
-        self.plotwidget.setGeometry(QtCore.QRect(11, 11, 10, 10))
-
-
         self.plotSpc = self.plotwidget.plot()
-
+        self.plotwidget.setBackground("#19232D")
+        self.plotwidget.showGrid(x=True, y=True)
+        self.plotwidget.setYRange(1000, self.main_qt_panel.instrument.THR * 1.05)
 
         layout.addWidget(self.image, 0, 0, 1, 1)
         layout.addWidget(self.text, 0, 1, 1, 1)
@@ -2289,9 +2287,8 @@ class Panel_pH(Panel):
             if with_cuvette_cleaning:
 
                 cuvette_is_clean = await self.cuvette_cleaning_step()
-
                 self.calibration_step = 'after cleaning'
-                if cuvette_is_clean == QMessageBox.Ok:
+                if cuvette_is_clean: # == QMessageBox.Ok:
                     for k, v in enumerate(range(3, 6)):
                         if self.skip_calibration_step:
                             break
@@ -2319,7 +2316,7 @@ class Panel_pH(Panel):
 
         cuvette_cleaning_dlg = AfterCuvetteCleaning(self)
         result = cuvette_cleaning_dlg.exec_()
-        print (result)
+        print ('RESULT', result)
         return result
 
 
