@@ -970,7 +970,7 @@ class Panel(QWidget):
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
-            "DYE type pH" : [
+            "DYE type pH": [
                 ["TB", "MCP"],
                 self.dye_combo_chngd,
                 self.instrument.dye
@@ -2515,7 +2515,7 @@ class Panel_CO3(Panel):
 
     @asyncSlot()
     async def btn_light_clicked(self):
-        if self.btn_lightsource.isChecked():
+        if self.btn_light.isChecked():
             self.instrument.turn_on_relay(self.instrument.light_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.light_slot)
