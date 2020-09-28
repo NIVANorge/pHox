@@ -74,21 +74,34 @@ class AfterCuvetteCleaning(QDialog):
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
+        vb = pg.ViewBox()
+        self.plotwidget = pg.PlotWidget()
+        print ('screenGeometry', vb.screenGeometry())
+        self.plotwidget.setGeometry(QtCore.QRect(11, 11, 10, 10))
+
+
+        self.plotSpc = self.plotwidget.plot()
+
 
         layout.addWidget(self.image, 0, 0, 1, 1)
         layout.addWidget(self.text, 0, 1, 1, 1)
-        layout.addWidget(self.btn_update_plots, 1, 1 ,1, 1 )
-        layout.addWidget(self.buttonBox, 2, 0, 1, 2)
+        layout.addWidget(self.plotwidget,1,1,1,1,)
+        layout.addWidget(self.btn_update_plots, 2, 1 ,1, 1 )
+        layout.addWidget(self.buttonBox, 3, 0, 1, 2)
         self.setLayout(layout)
 
         #cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+        import threading
+        #b = threading.Thread(target=self.button_clicked)
+        #b.start()
 
 
-    @asyncSlot()
-    async def button_clicked(self):
-        #datay = await self.main_qt_panelin.strument.spectrometer_cls.get_intensities()
-        await self.main_qt_panel.update_spectra_plot()
-
+    def button_clicked(self):
+        self.spectrum = self.main_qt_panel.instrument.spectrometer_cls.get_intensities_slow()
+        #self.plot =
+        self.plotSpc.setData(self.main_qt_panel.wvls, self.spectrum)
+        self.btn_update_plots.setChecked(False)
+        return
 
 
 class BatchNumber(QDialog):
@@ -2303,8 +2316,10 @@ class Panel_pH(Panel):
         return res
 
     async def cuvette_cleaning_step(self):
+
         cuvette_cleaning_dlg = AfterCuvetteCleaning(self)
-        result = cuvette_cleaning_dlg.show()
+        result = cuvette_cleaning_dlg.exec_()
+        print (result)
         return result
 
 

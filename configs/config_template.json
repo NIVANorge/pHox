@@ -34,7 +34,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 700,
+        "Spectro_Integration_time": 10.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -64,7 +64,8 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "LED4": 70,
-        "PPHOX_STRING_VERSION": "1"
+        "PPHOX_STRING_VERSION": "1",
+        "dye_level": 1999.88
     },
     "pCO2": {
         "water_temperature": {

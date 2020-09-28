@@ -86,6 +86,9 @@ class Spectro_localtest(object):
         self.busy = False
         return sp
 
+    def get_intensities_slow(self, num_avg=1, correct=True):
+        sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
+        return sp
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -136,6 +139,14 @@ class Spectro_seabreeze(object):
         self.busy = False
         return sp
 
+    def get_intensities_slow(self, num_avg=1, correct=True):
+
+        sp = self.spec.intensities(correct_nonlinearity=correct)
+        if num_avg > 1:
+            for _ in range(num_avg):
+                sp = np.vstack([sp, self.spec.intensities(correct_nonlinearity=correct)])
+            sp = np.mean(np.array(sp), axis=0)
+        return sp
 
     def set_scans_average(self, num):
         # not supported for FLAME spectrom
