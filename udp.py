@@ -29,15 +29,23 @@ def udp_server():
     logging.debug('in udp server')
     global Ferrybox
     global UDP_EXIT
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(1)
-    sock.bind(("", UDP_RECV))
+    sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock_listen.settimeout(1)
+
+
+    try:
+        sock_listen.bind(("", UDP_RECV))
+    except:
+        logging.info('Could not start the UDP listener'
+                     'kill the process: '
+                     'sudo netstat -tulpn'
+                     'sudo kill <PID>')
     logging.info("UDP server started")
 
     while not UDP_EXIT:
         try:
             Ferrybox['udp_ok'] = False
-            (data, addr) = sock.recvfrom(500)
+            (data, addr) = sock_listen.recvfrom(500)
         except:
             # add time
             pass
@@ -67,7 +75,7 @@ def udp_server():
             elif data.startswith("$PFBOX,LON,"):
                 v = float(w[2])
                 Ferrybox["longitude"] = v
-    sock.close()
+    sock_listen.close()
 
 
 def send_data(s, ship_code=None):

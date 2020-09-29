@@ -4,7 +4,7 @@ precision = {
     "e1": 6,
     "e2": 6,
     "e3": 6,
-    "vNTC": 3,
+    "Voltage": 3,
     "salinity": 2,
     "A1": 5,
     "A2": 5,

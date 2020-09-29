@@ -23,3 +23,6 @@ with open(config_name) as json_file:
     config_file = json.load(json_file)
 
 
+temp_probe_conf_path = 'configs/temperature_sensors_config.json'
+
+rgb_lookup = {'red': 1, 'green': 2, 'white': 0}
