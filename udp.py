@@ -1,11 +1,13 @@
-import logging
+
 from datetime import datetime
 import socket
 import threading
 import os
+import logging
+logging.getLogger()
 
-UDP_SEND = 6801
-UDP_RECV = 6802
+UDP_SEND = 56801   # was 6801
+UDP_RECV = 56802   # was 6802
 UDP_IP = "192.168.0.2"  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 
@@ -19,17 +21,19 @@ Ferrybox = {
     "longitude": 0.0,
     "latitude": 0.0,
     "pumping": None,
-    'udp_ok' : False
+    'udp_ok': False
 }
 
 
 def udp_server():
+    logging.debug('in udp server')
     global Ferrybox
     global UDP_EXIT
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
     logging.info("UDP server started")
+
     while not UDP_EXIT:
         try:
             Ferrybox['udp_ok'] = False
@@ -67,6 +71,8 @@ def udp_server():
 
 
 def send_data(s, ship_code=None):
+    logging.debug('send udp data')
+    print("send UDP: " + s)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # my_dict.get(key, default_value) if key is missing 'default_value' is used
     sock.sendto(bytes(s, encoding="utf8"), (SHIP_IP_DICT.get(ship_code, UDP_IP), UDP_SEND))

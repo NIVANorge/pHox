@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_9",
         "DEF_TEMP_CAL_COEF": [
             70.582,
             16.213
@@ -22,17 +22,19 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_SEC": 300,
-        "Comment": "all intervals are in seconds",
-        "pumpTime": 15,
+        "SAMPLING_INTERVAL_MIN": 30,
+        "Comment": "all intervals are in minutes",
+        "pumpTime_sec": 60,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 1000,
-        "Ship_Code": "Standalone",
+        "Ship_Code": "NB",
         "comment Ship_Code":"Ship code is TF,FA,NB or Standalone ",
-        "LIGHT_THRESHOLD_STS": 15500,            
-        "LIGHT_THRESHOLD_FLAME": 60000    
+        "LIGHT_THRESHOLD_STS": 15500,
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
     },
     "pH": {
         "LED_SLOTS": [
@@ -50,8 +52,9 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "Tris_Buffer_salinity": 0,
-        "Theoretical_pH": 0
+        "PPHOX_STRING_VERSION": "1",
+        "dye_level": 2000 ,
+        "dye_level_comment": "max 2000 ml, two bags"
 
     },
     "pCO2": {
@@ -93,7 +96,8 @@
         "QUERY_CO2": "\\x2A\\x4D\\x31\\x0A\\x0D",
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# use to be SAVE_PCO2_SEC",
-        "pCO2_Sampling_interval": 60
+        "pCO2_Sampling_interval": 60,
+        "PPCO2_STRING_VERSION": "1"
     },
     "CO3": {
         "WL_1": 234,
@@ -101,11 +105,12 @@
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor"
-           
     },
-    "TrisBuffer":{
+    "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
-        "S_tris_buffer": 35
+        "S_tris_buffer": 35,
+        "Calibration_threshold": 0.005,
+        "Calibration_pump_time" : 30
     }
 }

@@ -8,3 +8,4 @@ logs/
 *.spt
 config.json
 test_qt_async.py
+README.pdf
