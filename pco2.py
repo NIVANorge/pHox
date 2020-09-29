@@ -8,7 +8,6 @@ from precisions import precision as prec
 try:
     import pigpio
     import RPi.GPIO as GPIO
-    from ADCDACPi import ADCDACPi
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
@@ -55,10 +54,12 @@ class tab_pco2_class(QWidget):
 
 
 class pco2_instrument(object):
-    def __init__(self, base_folderpath):
+    def __init__(self, base_folderpath, panelargs):
         self.base_folderpath = base_folderpath
         self.path = self.base_folderpath + "/data_pCO2/"
-
+        self.args = panelargs
+        self.co2 = 990
+        self.co2_temp = 999
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
@@ -154,31 +155,32 @@ class pco2_instrument(object):
 
 class only_pco2_instrument(pco2_instrument):
     # Class for communication with Raspberry PI for the only pco2 case
-    def __init__(self):
-        super().__init__()
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
 
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
-            self.adcdac = ADCDACPi()
+            
 
-    def get_Vd(self, nAver, channel):
-        V = 0.0000
+    def get_Voltage(self, nAver, channel):
+        v = 0.0000
         for i in range(nAver):
-            V += self.adc.read_voltage(channel)
-        return V / nAver
+            v += self.adc.read_voltage(channel)
+        Voltage = round(v / nAver, prec["Voltage"])
+        return Voltage
 
 
 class test_pco2_instrument(pco2_instrument):
-    def __init__(self, base_folderpath):
-        super().__init__(base_folderpath)
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
         self.save_pco2_interv = 2
 
     async def get_pco2_values(self):
         self.co2 = np.random.randint(400, 600)
         self.co2_temp = np.random.randint(1, 10)
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         v = 0
         for i in range(nAver):
             v += 0.6

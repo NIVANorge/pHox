@@ -113,10 +113,12 @@ QTextEdit{
 }
 
 
-QCheckBox:unchecked:disabled QCheckBox:checked:disabled {
-  color: #11161a;
-}
 
+
+QCheckBox:disabled::QLabel {
+    color:black;
+    font-size: 10pt;
+}
 
 QCheckBox::indicator{
   width: 1.0em;
@@ -141,5 +143,16 @@ QLabel {font-size: 10pt;}
 
 QToolTip {font-size: 11pt;
           background-color: black;
-
           }
+
+QSpinBox {
+ min-width: 3em;
+ font-size: 10pt;
+}
+/* QSpinBox {
+    padding-right: 15px ;  make room for the arrows
+    margin-right: 1px;
+     border-image: url(:/images/frame.png) 4;
+    border-width: 3;
+
+*/

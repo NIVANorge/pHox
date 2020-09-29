@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pHox import *
 from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, only_pco2_instrument
 import os, sys
-from util import get_base_folderpath, box_id, config_name
+from util import get_base_folderpath, box_id, config_name, rgb_lookup
 #
 
 try:
@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainT
 from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QRadioButton,QProgressBar,
                              QTableWidget, QHeaderView, QComboBox, QCheckBox, QDialog, QDialogButtonBox,
                              QSlider, QInputDialog, QApplication, QMainWindow)
+from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QPixmap
 import numpy as np
 import pyqtgraph as pg
@@ -33,6 +34,126 @@ from asyncqt import QEventLoop, asyncSlot, asyncClose
 import asyncio
 
 
+class AfterCuvetteCleaning(QDialog):
+
+    def __init__(self, Panel):
+        super(AfterCuvetteCleaning, self).__init__(Panel)
+        self.main_qt_panel = Panel
+
+        # Class functionality
+        # The Dialog will be opened when the user reach the step of cleaning the Cuvette.
+        # Button Update Plot: measure led intensity and plot it.
+        # So the user can understand if the cuvette was cleaned well or not
+        # Since during the calibration process the automatic real time updates of the plot
+        # Are turned off
+        # Other functionality : Ok and Cancel
+        # If clicked OK, the program will continue the calibration cycle
+        # If Cancel, the calibration will be stopped.
+
+        self.setWindowTitle("Calibration Step After cleaning the Cuvette")
+
+        self.btn_update_plots = QPushButton('Update Intensity Plots')
+        self.btn_update_plots.clicked.connect(self.button_clicked)
+        self.btn_update_plots.setCheckable(True)
+        layout = QtGui.QGridLayout()
+
+        pixmap = QPixmap(QPixmap('utils/pHox_question.png')).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
+
+        self.image = QLabel("Hello")
+        self.image.setPixmap(pixmap)
+
+        self.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+
+        self.text =  QLabel("<br>Please, clean the cuvette.\
+                <br>\
+                <br>Click <b>OK</b> When you are ready.\
+                <br>Click Cancel to stop calibration")
+
+
+        self.buttonBox = QtWidgets.QDialogButtonBox()
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.plotwidget = pg.PlotWidget()
+        self.plotSpc = self.plotwidget.plot()
+        self.plotwidget.setBackground("#19232D")
+        self.plotwidget.showGrid(x=True, y=True)
+        self.plotwidget.setYRange(1000, self.main_qt_panel.instrument.THR * 1.05)
+
+        layout.addWidget(self.image, 0, 0, 1, 1)
+        layout.addWidget(self.text, 0, 1, 1, 1)
+        layout.addWidget(self.plotwidget,1,1,1,1,)
+        layout.addWidget(self.btn_update_plots, 2, 1 ,1, 1 )
+        layout.addWidget(self.buttonBox, 3, 0, 1, 2)
+        self.setLayout(layout)
+
+        #cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
+        import threading
+        #b = threading.Thread(target=self.button_clicked)
+        #b.start()
+
+
+    def button_clicked(self):
+        self.spectrum = self.main_qt_panel.instrument.spectrometer_cls.get_intensities_slow()
+        #self.plot =
+        self.plotSpc.setData(self.main_qt_panel.wvls, self.spectrum)
+        self.btn_update_plots.setChecked(False)
+        return
+
+
+class BatchNumber(QDialog):
+
+    def __init__(self, parent=None):
+        super(BatchNumber, self).__init__(parent)
+
+        self.setWindowTitle("Calibration solution Batch Number")
+
+        self.batch_number_widget = QtGui.QLineEdit()
+        self.batch_number = 1
+
+        self.batch_number_widget.setText(str(self.batch_number))
+
+        self.layout = QtGui.QGridLayout()
+        label_text = 'Please Enter the Calibration Solution Batch Number'
+
+        self.plus_one = QPushButton('+1')
+        self.plus_ten = QPushButton('+10')
+        self.minus_one = QPushButton('-1')
+        self.minus_ten = QPushButton('-10')
+
+        self.btns = {self.plus_one : 1,
+                self.minus_one: -1,
+                self.plus_ten: +10,
+                self.minus_ten: -10 }
+
+        [btn.clicked.connect(self.button_clicked) for btn in self.btns.keys()]
+
+        self.layout.addWidget(QLabel(label_text), 0, 0, 1, 3)
+        self.layout.addWidget(self.batch_number_widget, 1, 0, 2, 1)
+        self.layout.addWidget(self.plus_one,  1, 1)
+        self.layout.addWidget(self.plus_ten,  1, 2)
+        self.layout.addWidget(self.minus_one, 2, 1)
+        self.layout.addWidget(self.minus_ten, 2, 2)
+
+        self.buttonBox = QtWidgets.QDialogButtonBox()
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout.addWidget(self.buttonBox, 3, 2, 1, 2)
+        self.setLayout(self.layout)
+
+    @pyqtSlot()
+    def button_clicked(self):
+
+        new_value = self.batch_number + self.btns[self.sender()]
+
+        if new_value > 0:
+            self.batch_number = new_value
+            self.batch_number_widget.setText(str(self.batch_number))
+
+
 class CalibrationProgess(QDialog):
     # Adapt dialog depending on the answer clean cuvette or not 
     def __init__(self, parent=None, with_cuvette_cleaning=True):
@@ -40,7 +161,7 @@ class CalibrationProgess(QDialog):
 
         self.setWindowTitle("Calibration check progress window")
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        #QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
         progress_steps_style = """
             QCheckBox::indicator::checked {
@@ -83,7 +204,14 @@ class CalibrationProgess(QDialog):
             self.with_cleaning_groupbox.setLayout(layout_2)
             self.layout.addWidget(self.with_cleaning_groupbox)
 
+        self.stop_calibr_btn = QPushButton('Stop Calibration')
+        self.stop_calibr_btn.setCheckable(True)
+        self.layout.addWidget(self.stop_calibr_btn)
+
         self.setLayout(self.layout)
+
+    def closeEvent(self, event):
+        self.stop_calibr_btn.setChecked(True)
 
 
 class TimerManager:
@@ -152,9 +280,9 @@ class Panel_PCO2_only(QWidget):
         self.args = panelargs
 
         if self.args.localdev:
-            self.pco2_instrument = test_pco2_instrument(base_folderpath)
+            self.pco2_instrument = test_pco2_instrument(base_folderpath, panelargs)
         else:
-            self.pco2_instrument = only_pco2_instrument(base_folderpath)
+            self.pco2_instrument = only_pco2_instrument(base_folderpath, panelargs)
 
         self.pco2_timeseries = {'times': [], 'values': []}
 
@@ -214,7 +342,7 @@ class Panel_PCO2_only(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Vd(2, channel)
+            v = self.pco2_instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
@@ -236,6 +364,7 @@ class Panel_PCO2_only(QWidget):
         values = [self.wat_temp, self.wat_flow, self.wat_pres,
                   self.air_temp, self.air_pres, self.leak_detect,
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+
         await self.tab_pco2.update_tab_values(values)
         await self.update_pco2_plot()
         self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
@@ -298,19 +427,21 @@ class Panel(QWidget):
         self.t_cuvette_live = QLineEdit()
         self.voltage_live = QLineEdit()
 
+        self.btn_calibr = QPushButton()
+
         if self.args.pco2:
             self.pen = pg.mkPen(width=0.5, style=QtCore.Qt.DashLine)
             self.symbolSize = 10
             if self.args.localdev:
-                self.pco2_instrument = test_pco2_instrument(base_folderpath)
+                self.pco2_instrument = test_pco2_instrument(base_folderpath, panelargs)
             else:
-                self.pco2_instrument = pco2_instrument(base_folderpath)
+                self.pco2_instrument = pco2_instrument(base_folderpath, panelargs)
 
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
 
-        self.until_next_sample = None
+
         self.infotimer_step = 15  # seconds
         self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
@@ -374,14 +505,17 @@ class Panel(QWidget):
             else:
                 self.dye_level = 1000
         self.dye_level_bar.setValue(self.dye_level)
+        self.update_config('dye_level', 'pH', self.dye_level)
 
     def empty_all_dye(self):
         self.dye_level = 0
         self.dye_level_bar.setValue(self.dye_level)
+        self.update_config('dye_level', 'pH', self.dye_level)
 
-    def update_dye_level_bar(self):
-        self.dye_level -= self.dye_step_1meas
-        print (self.dye_level)
+
+    def update_dye_level_bar(self, nshots = 1):
+        self.dye_level -= self.dye_step_1meas * nshots
+
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
@@ -401,15 +535,15 @@ class Panel(QWidget):
         dye_level_group = QGroupBox('Dye Level ')
         l = QGridLayout()
         self.dye_level_bar = QProgressBar()
-        self.dye_refill_btn = QPushButton('Refilled \n1 bag')
+        self.dye_refill_btn = QPushButton('1 bag \nRefilled')
         self.dye_empty_btn = QPushButton('Clear \nall')
         l.addWidget(self.dye_empty_btn, 0, 0)
         l.addWidget(self.dye_refill_btn, 0, 1)
         l.addWidget(self.dye_level_bar, 0, 2)
         dye_level_group.setLayout(l)
 
-        self.dye_level = config_file['pH']['dye_level']
-        self.dye_level_bar.setMaximum(2000) #ml
+        self.dye_level = config_file['Operational']['dye_level']
+        self.dye_level_bar.setMaximum(2000)
         self.dye_level_bar.setValue(self.dye_level)
 
         self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
@@ -424,14 +558,17 @@ class Panel(QWidget):
         # You can format what is printed to text box
         self.logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         logging.getLogger().addHandler(self.logTextBox)
-        logging.getLogger().setLevel(logging.INFO)
+        if self.args.debug:
+            logging.getLogger().setLevel(logging.DEBUG)
+        else:
+            logging.getLogger().setLevel(logging.INFO)
 
         meas_qc_groupbox = QGroupBox('Last Measurement Quality Control')
         l = QGridLayout()
-        self.flow_qc_chk = QCheckBox('Flow QC')
-        self.dye_qc_chk = QCheckBox('Dye Coming QC')
-        self.biofouling_qc_chk = QCheckBox('Biofouling QC')
-        self.temp_alive_qc_chk = QCheckBox('Temp sensor alive QC')
+        self.flow_qc_chk = QCheckBox('Flow')
+        self.dye_qc_chk = QCheckBox('Dye')
+        self.biofouling_qc_chk = QCheckBox('Biofouling')
+        self.temp_alive_qc_chk = QCheckBox('Temp sensor')
         qc_checks = [self.flow_qc_chk, self.dye_qc_chk,
                      self.biofouling_qc_chk, self.temp_alive_qc_chk]
         for n in qc_checks:
@@ -444,43 +581,23 @@ class Panel(QWidget):
         l.addWidget(self.temp_alive_qc_chk, 1, 1)
         meas_qc_groupbox.setLayout(l)
 
-        calibration_group = QGroupBox('Calibration')
-        l = QGridLayout()
-
-        self.btn_calibr = self.create_button("Make calibration\n check", True)
-        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
-        self.btn_calibr_checkbox.setEnabled(False)
-        self.btn_calibr_checkbox.setTristate()
-        self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
-
-        # In this checkbox, state 0 - unchecked means no calibration
-        # state 1 - calibration check failed
-        # state 2 - calibration check is sucessfull
-
-        self.last_calibr_date = QLabel('Date')
-        l.addWidget(self.btn_calibr, 0, 0, 1, 1)
-        l.addWidget(self.btn_calibr_checkbox, 0, 1, 1, 1)
-        l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
-        calibration_group.setLayout(l)
-
-
-
-        l = QGridLayout()
-        l.addWidget(calibration_group)
-
 
 
         if self.args.localdev:
             logging.info("Starting in local debug mode")
-        #self.tab_status.layout.addWidget(QLabel('Dye level'), 0, 0)
+
         self.dye_level_bar.setToolTip("Dye level, 100% is two full bags of dye")
-        #self.tab_status.layout.addWidget(self.dye_refill_btn, 0, 0)
-        #self.tab_status.layout.addWidget(self.dye_empty_btn, 0, 1)
         self.tab_status.layout.addWidget(dye_level_group, 0, 0)
         self.tab_status.layout.addWidget(meas_qc_groupbox, 1, 0)
-        self.tab_status.layout.addWidget(calibration_group, 2, 0)
+
+        if not self.args.co3:
+            calibration_group = self.make_calibration_groupbox()
+            self.tab_status.layout.addWidget(calibration_group, 2, 0)
 
         self.tab_status.setLayout(self.tab_status.layout)
+
+
+
 
     def create_timers(self):
 
@@ -522,17 +639,23 @@ class Panel(QWidget):
         if mode_set == "Manual":
             self.manual_widgets_set_enabled(True)
             self.btn_single_meas.setEnabled(False)
-            if 'Continuous' in self.major_modes:
-                self.btn_adjust_leds.setEnabled(False)
-                #self.btn_checkflow.setEnabled(False)
+            #if 'Continuous' in self.major_modes:
+            #    self.btn_adjust_light_intensity.setEnabled(False)
+            #    #self.btn_checkflow.setEnabled(False)
 
         if mode_set == "Continuous":
+            self.until_next_sample = self.instrument.samplingInterval
+            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
+
             self.btn_single_meas.setEnabled(False)
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.manual_widgets_set_enabled(False)
+
             if 'Manual' in self.major_modes:
-                self.btn_adjust_leds.setEnabled(False)
+                self.btn_adjust_light_intensity.setEnabled(False)
                 #self.btn_checkflow.setEnabled(False)
 
         if mode_set == 'Calibration':
@@ -540,14 +663,6 @@ class Panel(QWidget):
             self.btn_calibr.setEnabled(False)
             self.config_widgets_set_state(False)
             self.btn_manual_mode.setEnabled(False)
-
-        '''if mode_set == 'Flowcheck':
-            self.btn_cont_meas.setEnabled(False)
-            self.btn_single_meas.setEnabled(False)
-            self.btn_calibr.setEnabled(False)
-            self.config_widgets_set_state(False)
-            self.btn_manual_mode.setEnabled(False)
-            self.manual_widgets_set_enabled(False)'''
 
         if mode_set in ["Measuring", "Adjusting"]:
             self.btn_manual_mode.setEnabled(False)
@@ -583,13 +698,19 @@ class Panel(QWidget):
             self.btn_single_meas.setEnabled(True)
 
         if mode_unset == "Continuous":
+
+            self.infotimer_contin_mode.stop()
+            self.StatusBox.clear()
+            self.timer_contin_mode.stop()
+
+            self.btn_manual_mode.setEnabled(True)
             if "Measuring" not in self.major_modes:
                 if 'Manual' not in self.major_modes:
                     self.btn_single_meas.setEnabled(True)
                     self.btn_calibr.setEnabled(True)
                 self.config_widgets_set_state(True)
                 if 'Manual' in self.major_modes:
-                    self.btn_adjust_leds.setEnabled(True)
+                    self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
 
         if mode_unset == "Calibration":
@@ -661,15 +782,12 @@ class Panel(QWidget):
 
         self.plotwdigets_groupbox.setLayout(vboxPlot)
 
-
-
-
     def make_steps_groupBox(self):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
         self.sample_steps = [QCheckBox(f) for f in [
-            "1. Adjusting LEDS", "2  Measuring dark,blank",
+            "1. Adjusting Light", "2  Measuring dark,blank",
             "3. Measurement 1", "4. Measurement 2",
             "5. Measurement 3", "6. Measurement 4"]]
         layout = QGridLayout()
@@ -717,12 +835,8 @@ class Panel(QWidget):
         self.live_update_groupbox.setLayout(self.live_updates_grid)
         self.last_measurement_table_groupbox.setLayout(self.table_grid)
 
-        if self.args.debug:
-            logging.info("Starting in debug mode")
-
         self.btn_cont_meas = self.create_button("Continuous measurements", True)
         self.btn_single_meas = self.create_button("Single measurement", True)
-
 
         self.btn_single_meas.clicked.connect(self.btn_single_meas_clicked)
         self.btn_cont_meas.clicked.connect(self.btn_cont_meas_clicked)
@@ -821,12 +935,8 @@ class Panel(QWidget):
 
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
-
-
         self.tab_config.layout.addWidget(self.manual_sal_group, 3, 0, 2, 3)
         self.tab_config.setLayout(self.tab_config.layout)
-
-
 
 
     def config_dye_info(self):
@@ -837,7 +947,7 @@ class Panel(QWidget):
     def combo_in_config(self, combo, name):
         combo_dict = {
             "Ship": [
-                ['Standalone', 'NB', 'FA', 'TF'],
+                self.instrument.valid_ship_codes,
                 self.ship_code_changed,
                 self.instrument.ship_code],
 
@@ -847,7 +957,7 @@ class Panel(QWidget):
                 self.instrument.TempProbe_id],
 
             'Sampling interval': [
-                ['5', '7', '10', '15', '20', '30', '60'],
+                self.instrument.valid_samplingIintervals,
                 self.sampling_int_chngd,
                 int(self.instrument.samplingInterval)],
 
@@ -856,12 +966,11 @@ class Panel(QWidget):
                  self.autoadj_opt_chgd,
                  self.instrument.autoadj_opt
                  ],
-            "Spectro integration time": [
-                list(range(100, 5000, 100)),
+            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(10, 100, 10)) + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
-            "DYE type pH" : [
+            "DYE type pH": [
                 ["TB", "MCP"],
                 self.dye_combo_chngd,
                 self.instrument.dye
@@ -878,7 +987,7 @@ class Panel(QWidget):
 
         [combo.addItem(str(item)) for item in combo_dict[name][0]]
         combo.currentIndexChanged.connect(combo_dict[name][1])
-        self.set_combo_index(combo, combo_dict[name][2])
+        self.set_combo_index(combo, combo_dict[name], name)
 
     def create_manual_sal_group(self):
         self.manual_sal_group = QGroupBox('Salinity used for manual measurement')
@@ -914,20 +1023,42 @@ class Panel(QWidget):
 
         return salinity_manual
 
-    def set_combo_index(self, combo, text):
+    def set_combo_index(self, combo, combo_info, combotype):
+        text = combo_info[2]
+        valid_intervals = combo_info[0]
         index = combo.findText(str(text), QtCore.Qt.MatchFixedString)
         if index >= 0:
             combo.setCurrentIndex(index)
         else:
-            logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(
+            if combotype in ("Spectro integration time",'Sampling interval'):
+
+                diffs = np.abs(np.array(list(map(float, valid_intervals))) - float(text))
+
+                idx2 = np.argpartition(diffs, 2)[:2]
+                text_idx1 = float(valid_intervals[idx2[0]])
+                text_idx2 = float(valid_intervals[idx2[1]])
+
+                if text_idx1 < text_idx2:
+                    idx = idx2[0]
+                    text = text_idx1
+                else:
+                    idx = idx2[1]
+                    text = text_idx2
+
+                logging.error('Assigning a new value which is the closest from the list of valid values: {}'.
+                              format(text))
+                combo.setCurrentIndex(idx)
+            else:
+                logging.error('was not able to set value from the config file,combo is {}, value is {}'.format(
                 combo, str(text)))
 
+
     def sampling_int_chngd(self, ind):
-        self.instrument.samplingInterval = int(self.samplingInt_combo.currentText())
+        self.instrument.samplingInterval = float(self.samplingInt_combo.currentText())
 
     @asyncSlot()
     async def specIntTime_combo_chngd(self):
-        new_int_time = int(self.specIntTime_combo.currentText())
+        new_int_time = float(self.specIntTime_combo.currentText())
         await self.updater.set_specIntTime(new_int_time)
 
     def ship_code_changed(self):
@@ -949,32 +1080,30 @@ class Panel(QWidget):
         self.temp_id_combo.setEnabled(state)
 
     def manual_widgets_set_enabled(self, state):
-        logging.info(f"widgets_enabled_change, state is '{state}'")
+        logging.debug(f"widgets_enabled_change, state is '{state}'")
         buttons = [
-            self.btn_adjust_leds,
-            self.btn_leds,
+            self.btn_adjust_light_intensity,
+            self.btn_light,
             self.btn_valve,
             self.btn_stirr,
             self.btn_dye_pmp,
-            self.btn_wpump,
-            #self.btn_checkflow,
-
+            self.btn_wpump
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
-        if self.args.co3:
-            self.btn_lightsource.setEnabled(state)
+
 
     def make_btngroupbox(self):
         # Define widgets for main tab
         # Create checkabple buttons
-        self.buttons_groupBox = QGroupBox("Buttons GroupBox")
+        self.buttons_groupBox = QGroupBox("Manual Control")
         btn_grid = QGridLayout()
 
-        self.btn_adjust_leds = self.create_button("Adjust Leds", True)
+        self.btn_adjust_light_intensity = self.create_button("Adjust Light", True)
+        self.btn_light = self.create_button("Light", True)
+        self.btn_light.clicked.connect(self.btn_light_clicked)
 
-        # self.btn_t_dark = self.create_button('Take dark',False)
-        self.btn_leds = self.create_button("LEDs", True)
+
         self.btn_valve = self.create_button("Inlet valve", True)
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
@@ -983,30 +1112,22 @@ class Panel(QWidget):
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_wpump, 0, 1)
-        btn_grid.addWidget(self.btn_adjust_leds, 1, 0)
-        btn_grid.addWidget(self.btn_leds, 1, 1)
+        btn_grid.addWidget(self.btn_adjust_light_intensity, 1, 0)
+        btn_grid.addWidget(self.btn_light, 1, 1)
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
 
-
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
-        if not self.args.co3:
-            self.btn_leds.clicked.connect(self.btn_leds_checked)
+
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
-        if self.args.co3:
-            self.btn_lightsource = self.create_button("light source", True)
-            btn_grid.addWidget(self.btn_lightsource, 4, 1)
-            self.btn_lightsource.clicked.connect(self.btn_lightsource_clicked)
-
-        self.btn_adjust_leds.clicked.connect(self.on_autoAdjust_clicked)
-
+        self.btn_adjust_light_intensity.clicked.connect(self.btn_autoAdjust_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
 
         self.buttons_groupBox.setLayout(btn_grid)
@@ -1020,7 +1141,7 @@ class Panel(QWidget):
         self.plus_btns, self.minus_btns = [], []
 
         for ind in range(3):
-            self.plus_btns.append(QPushButton("+"))
+            self.plus_btns.append(QPushButton(" + "))
             self.minus_btns.append(QPushButton(" - "))
             self.plus_btns[ind].clicked.connect(self.led_plus_btn_clicked)
             self.minus_btns[ind].clicked.connect(self.led_minus_btn_clicked)
@@ -1028,10 +1149,12 @@ class Panel(QWidget):
             self.sliders[ind].setFocusPolicy(QtCore.Qt.NoFocus)
             self.sliders[ind].setTracking(True)
             self.spinboxes.append(QtGui.QSpinBox())
+
             # create connections
             if not self.args.co3:
                 self.sliders[ind].valueChanged[int].connect(self.sld_change)
                 self.spinboxes[ind].valueChanged[int].connect(self.spin_change)
+                self.spinboxes[ind].adjustSize()
 
         grid = QGridLayout()
 
@@ -1056,9 +1179,11 @@ class Panel(QWidget):
 
     def btn_stirr_clicked(self):
         if self.btn_stirr.isChecked():
-            self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+            self.instrument.turn_on_relay(
+                self.instrument.stirrer_slot)
         else:
-            self.instrument.turn_off_relay(self.instrument.stirrer_slot)
+            self.instrument.turn_off_relay(
+                self.instrument.stirrer_slot)
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1066,13 +1191,7 @@ class Panel(QWidget):
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
 
-    @asyncSlot()
-    async def btn_lightsource_clicked(self):
 
-        if self.btn_lightsource.isChecked():
-            self.instrument.turn_on_relay(self.instrument.light_slot)
-        else:
-            self.instrument.turn_off_relay(self.instrument.light_slot)
 
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
@@ -1082,9 +1201,13 @@ class Panel(QWidget):
                 async with self.updater.disable_live_plotting():
                     logging.info("in pump dye clicked")
                     await self.instrument.pump_dye(3)
+                    self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
-                    # updat plot after pumping
-                    await self.update_spectra_plot()
+                    #if not self.args.localdev:
+                        # update plot after pumping
+                    datay = await self.instrument.spectrometer_cls.get_intensities()
+                    await self.update_spectra_plot_manual(datay)
+                    #await self.update_spectra_plot()
         else:
             logging.info('Trying to pump in no pump mode')
             self.btn_dye_pmp.setChecked(False)
@@ -1093,6 +1216,13 @@ class Panel(QWidget):
     async def btn_valve_clicked(self):
         logging.debug('Valve button clicked')
         await self.instrument.set_Valve(self.btn_valve.isChecked())
+
+    @asyncSlot()
+    async def btn_autoAdjust_clicked(self):
+        self.instrument.specIntTime = 700
+        self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+        await self.updater.set_specIntTime(self.instrument.specIntTime)
+        await self.call_autoAdjust()
 
     def btn_save_config_clicked(self):
 
@@ -1115,11 +1245,6 @@ class Panel(QWidget):
             json.dump(j, json_file, indent=4)
             json_file.truncate()
 
-    '''def load_config_file(self):
-        with open(config_name) as json_file:
-            j = json.load(json_file)
-            default = j["pH"]
-            return default'''
 
     def dye_combo_chngd(self, ind):
         self.instrument.dye = self.dye_combo.currentText()
@@ -1143,12 +1268,12 @@ class Panel(QWidget):
         self.instrument.LEDS[ind] = value
 
     def led_plus_btn_clicked(self):
-        dif = 10
+        dif = 1
         ind = self.plus_btns.index(self.sender())
         self.change_plus_minus_butn(ind, dif)
 
     def led_minus_btn_clicked(self):
-        dif = -10
+        dif = -1
         ind = self.minus_btns.index(self.sender())
         self.change_plus_minus_butn(ind, dif)
 
@@ -1157,7 +1282,7 @@ class Panel(QWidget):
         ind = self.spinboxes.index(source)
         self.instrument.adjust_LED(ind, value)
         self.sliders[ind].setValue(value)
-        self.btn_leds.setChecked(True)
+        self.btn_light.setChecked(True)
         self.instrument.LEDS[ind] = value
 
     def sld_change(self, value):
@@ -1165,20 +1290,15 @@ class Panel(QWidget):
         ind = self.sliders.index(source)
         self.instrument.adjust_LED(ind, value)
         self.spinboxes[ind].setValue(value)
-        self.btn_leds.setChecked(True)
+        self.btn_light.setChecked(True)
         self.instrument.LEDS[ind] = value
 
-    def set_LEDs(self, state):
-        for i, slider in enumerate(self.sliders):
-            self.instrument.adjust_LED(i, state * slider.value())
-        logging.info("Leds {}".format(str(state)))
 
-    def btn_leds_checked(self):
-        state = self.btn_leds.isChecked()
-        self.set_LEDs(state)
+
+
 
     def save_stability_test(self, datay):
-        stabfile = os.path.join("/home/pi/pHox/sp_stability.log")
+        stabfile = os.path.join("/home/pi/pHox/data/data_pH/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
             {
@@ -1209,11 +1329,16 @@ class Panel(QWidget):
     @asyncSlot()
     async def update_spectra_plot(self):
         #logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
+
+
         self.updater.update_spectra_in_progress = True
+
         try:
             # I don't think this if statement is required
             if "Adjusting" not in self.major_modes and "Measuring" not in self.major_modes:
                 datay = await self.instrument.spectrometer_cls.get_intensities()
+                if (self.args.localdev and self.btn_light.isChecked() == False):
+                    datay = datay * 0.001 + 1000
                 if self.args.stability:
                     self.save_stability_test(datay)
                 self.plotSpc.setData(self.wvls, datay)
@@ -1223,21 +1348,23 @@ class Panel(QWidget):
         finally:
             self.updater.update_spectra_in_progress = False
 
+
     def update_corellation_plot(self):
-        logging.info("update pH plot")
 
         self.plot_calc_pH.setData(self.evalPar_df["Vol_injected"].values, self.pH_t_corr, pen=None,
                                   symbol="o", clear=True)
+
         self.after_calc_pH.setData(self.x, self.y, pen=None, symbol="o", symbolBrush='#30663c')
 
         self.lin_fit_pH.setData(self.x, self.intercept + self.slope * self.x)
+
 
     def update_sensors_info(self):
         self.t_insitu_live.setText(str(round(fbox['temperature'], prec["T_cuvette"])))
         self.s_insitu_live.setText(str(round(fbox['salinity'], prec['salinity'])))
 
-        voltage = round(self.instrument.get_Vd(3,
-                                               self.instrument.vNTCch), prec["vNTC"])
+        voltage = round(self.instrument.get_Voltage(3,
+                                               self.instrument.Voltagech), prec["Voltage"])
 
         t_cuvette = round((self.instrument.TempCalCoef[0] * voltage)
                           + self.instrument.TempCalCoef[1], prec["T_cuvette"])
@@ -1254,7 +1381,7 @@ class Panel(QWidget):
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
-            v = self.instrument.get_Vd(2, channel)
+            v = self.instrument.get_Voltage(2, channel)
             x = 0
             for i in range(2):
                 x += coef[i] * pow(v, i)
@@ -1313,7 +1440,9 @@ class Panel(QWidget):
         adj, pixelLevel = await self.instrument.auto_adjust()
         if adj:
             logging.info("Finished Autoadjust LEDS")
-            self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
+
+            self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+
             self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
         else:
             self.StatusBox.setText('Was not able do auto adjust')
@@ -1333,6 +1462,8 @@ class Panel(QWidget):
     async def autoAdjust_LED(self):
         with TimerManager(self.timer2):
             check_passed = await self.instrument.precheck_leds_to_adj()
+            if self.args.localdev:
+                check_passed = False
             if not check_passed:
                 (
                     self.instrument.LEDS[0], self.instrument.LEDS[1], self.instrument.LEDS[2],
@@ -1340,11 +1471,15 @@ class Panel(QWidget):
                 ) = await self.instrument.auto_adjust()
 
                 logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
-                self.set_combo_index(self.specIntTime_combo, self.instrument.specIntTime)
+                self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
 
                 if result:
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
+                    if self.args.localdev:
+                        self.instrument.LEDS = [55, 55, 55]
                     [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
+                    await asyncio.sleep(0.1)
+
                     self.update_config('LED1', 'pH', self.instrument.LEDS[0])
                     self.update_config('LED2', 'pH', self.instrument.LEDS[1])
                     self.update_config('LED3', 'pH', self.instrument.LEDS[2])
@@ -1360,16 +1495,18 @@ class Panel(QWidget):
                 logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
-    @asyncSlot()
-    async def on_autoAdjust_clicked(self):
-        await self.call_autoAdjust()
 
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
-            self.sample_steps[0].setChecked(True)
+
+            if 'Manual' not in self.major_modes:
+                self.sample_steps[0].setChecked(True)
+            else:
+                self.StatusBox.setText("Autoadjusting LEDS")
             logging.info("Autoadjust LEDS")
+
             async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
-                self.btn_adjust_leds.setChecked(True)
+                self.btn_adjust_light_intensity.setChecked(True)
                 await asyncio.sleep(2)
                 try:
                     if self.args.co3:
@@ -1377,52 +1514,14 @@ class Panel(QWidget):
                     else:
                         res = await self.autoAdjust_LED()
                 finally:
-                    self.btn_adjust_leds.setChecked(False)
+                    self.btn_adjust_light_intensity.setChecked(False)
             logging.info(f"res after autoadjust: '{res}")
-
+            if 'Manual' in self.major_modes:
+                self.StatusBox.setText("Finished Autoadjusting LEDS")
         else:
             res = True
             logging.info("Measure sample without autoadjustment")
         return res
-
-    '''@asyncSlot()
-    async def btn_checkflow_clicked(self):
-        if self.btn_checkflow.isChecked():
-            if not self.args.debug and fbox["pumping"] != 1:
-                logging.info('Not doing flowcheck because the pump is off')
-                self.btn_checkflow.setChecked(False)
-                return
-
-            async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Flowcheck"):
-                logging.debug(f'Start flowcheck preparations')
-
-                # Closing the valve
-                await self.instrument.set_Valve(True)
-                # Getting a baseline spectrum
-                baseline_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                # inject die twice (with n shots determined by config), this includes stirring
-                await self.inject_dye(3)
-                await self.inject_dye(3)
-
-                dyed_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - dyed_spectrum)))
-                logging.debug(f'Initial diff: {rms_spectrum_difference}')
-                # Re-open the valve
-                await self.instrument.set_Valve(False)
-
-                # Start the flow check
-                start = datetime.utcnow()
-                check_succeeded = False
-                while datetime.utcnow() - start < timedelta(seconds=20):
-                    diluted_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-                    new_rms_spectrum_difference = np.sqrt(np.mean(np.square(baseline_spectrum - diluted_spectrum)))
-                    logging.debug(f'got another spectrum, new diff: {new_rms_spectrum_difference}')
-                    if rms_spectrum_difference * .2 > new_rms_spectrum_difference:
-                        check_succeeded = True
-                        break
-                logging.debug(f'Final result of check: {check_succeeded}')
-                self.btn_checkflow.setChecked(False)
-                return check_succeeded'''
 
     def get_next_sample(self):
         return (datetime.now() + timedelta(seconds=self.instrument.samplingInterval)).strftime("%H:%M")
@@ -1437,47 +1536,17 @@ class Panel(QWidget):
         if self.btn_cont_meas.isChecked():
             if 'Continuous' not in self.major_modes:
                 self.set_major_mode("Continuous")
-            if "Measuring" not in self.major_modes:
-                self.until_next_sample = self.instrument.samplingInterval
+            # it think we dont need it
+            #if "Measuring" not in self.major_modes:
+            #    self.until_next_sample = self.instrument.samplingInterval
 
-            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
 
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
-            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
         else:
             self.unset_major_mode("Continuous")
-            self.StatusBox.clear()
-            self.timer_contin_mode.stop()
-            self.until_next_sample = self.instrument.samplingInterval
-            self.infotimer_contin_mode.stop()
+
             if "Paused" in self.major_modes:
                 self.unset_major_mode('Paused')
 
-    @asyncSlot()
-    async def btn_calibr_clicked(self):
-
-        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
-            logging.info("clicked calibration")
-
-            valve_turned = self.valve_message('Turn valve into calibration mode')
-
-            if valve_turned == QMessageBox.Yes:
-                with_cuvette_cleaning = self.valve_message('Calibration_second_step')
-                if with_cuvette_cleaning == QMessageBox.Yes:
-                    with_cuvette_cleaning = True
-                else:
-                    with_cuvette_cleaning = False
-
-                self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
-                self.calibr_state_dialog.show()
-                res = await self.calibration_check_cycle(with_cuvette_cleaning)
-
-                self.btn_calibr_checkbox.setCheckState(res)
-                self.last_calibr_date.setText(str(datetime.now().date()))
-                self.valve_message("Valve back to ferrybox mode")
-                self.valve_message('After calibration valve angry')
-                self.calibr_state_dialog.close()
-            self.btn_calibr.setChecked(False)
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
@@ -1494,9 +1563,18 @@ class Panel(QWidget):
 
             flnmStr, timeStamp = self.get_filename()
 
-            text, ok = QInputDialog.getText(None, "Enter Sample name", flnmStr)
-            #if self.args.pco2:
-            #    self.timerSave_pco2.start()
+            dlg = QInputDialog(self)
+            dlg.setInputMode(QtGui.QInputDialog.TextInput)
+
+            dlg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+
+            dlg.setWindowTitle('Important')
+            dlg.setLabelText("File name for the sample will be {}, \nType the name below if you want to change it".format(flnmStr))
+
+            ok = dlg.exec_()
+            text = dlg.textValue()
+
+
             if ok:
                 if text != "":
                     flnmStr = text
@@ -1566,16 +1644,15 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
+        logging.info("turn on light source")
+
         if not restart:
-            if self.args.co3:
-                logging.info("turn on light source")
-                self.instrument.turn_on_relay(self.instrument.light_slot)
-                self.btn_lightsource.setChecked(True)
-            else:
+            if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
                 self.update_LEDs()
-                self.btn_leds.setChecked(True)
-                self.btn_leds_checked()
+
+            self.btn_light.setChecked(True)
+            self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -1655,20 +1732,26 @@ class Panel(QWidget):
         types = {'Turn valve into calibration mode':
                      "<br> 1. Turn both valves (white) to the Calibration position (see picture)\
                       <br>2. Place the tube in the Tris buffer bottle\
+                      <br>3. Turn the yellow valve to empty the cuvette\
                       <br>\
-                      <br><img src=utils/111.png>\
+                      <br><img src=utils/calibrationmode.png>\
                       <br>\
-                      <br> Click <b>Yes</b> to continue when you are ready, or <b>No</b> to exit",
+                      <br> Click <b>Ok</b> to continue when you are ready, or <b>Cancel</b> to exit",
+
+                'Close drain valve':
+                    '<br> Close the drain (yellow) valve when the cuvette is empty\
+                     <br>\
+                     <br><img src=utils/drain.png>',
 
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
 
-                 'After cuvette cleaning' :
-                     "Click OK after cleaning the cuvette",
+
 
                  "Valve back to ferrybox mode":
                      "Please turn the valves back into the ferrybox mode\
-                     <br><img src=utils/222.png>",
+                     <br>\
+                     <br><img src=utils/ferryboxmode.png>",
 
                  "After calibration valve angry":
                      "ARE YOU SURE YOU TURNED THE VALVES BACK???",
@@ -1677,7 +1760,16 @@ class Panel(QWidget):
                      "Did you pump to flush the sampling chamber?",
 
                  "Confirm Exit":
-                     "Are you sure you want to exit ?"
+                     "Are you sure you want to exit ?",
+
+                 "Too dirty cuvette":
+                     "The cuvette is too dirty, unable to adjust LEDS\
+                     <br>\
+                     <br> calibration steps 1-3 will be skipped",
+
+                 "Too dirty cuvette after cleaning":
+                     "The cuvette is still too dirty\
+                     <br> Stopping the calibration"
         }
 
         msg = QMessageBox()
@@ -1693,12 +1785,20 @@ class Panel(QWidget):
 
         msg.setIconPixmap(pixmap)
 
-        msg.setWindowIcon(QtGui.QIcon('utils/fox-logo.png'))
+        msg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
 
         msg.setWindowTitle('Important')
         msg.setText(types[type])
-        if type == 'After cuvette cleaning':
+        if type in ('After cuvette cleaning',
+                    'Turn valve into calibration mode', 'Close drain valve'):
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        elif type in ('Valve back to ferrybox mode',
+                      'Too dirty cuvette', "Too dirty cuvette after cleaning"):
             msg.setStandardButtons(QMessageBox.Ok)
+
+        elif type == "After calibration valve angry":
+            msg.setStandardButtons(QMessageBox.Yes)
         else:
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
 
@@ -1711,49 +1811,6 @@ class Panel(QWidget):
             yield None
         finally:
             self.unset_major_mode(mode)
-
-    async def one_calibration_step(self, n, folderpath):
-
-        self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
-        if n == 0 or n == 3:
-            await self.instrument.pumping(self.instrument.pumpTime)
-        else:
-            await self.instrument.pumping(self.instrument.calibration_pump_time)
-
-        await self.sample_cycle(folderpath)
-        check, self.data_log_row['cal_result'] = await self.get_calibration_results()
-        self.calibr_state_dialog.result_checkboxes[n].setCheckState(check)
-        self.df_mean_log_row.append(self.data_log_row)
-
-    async def calibration_check_cycle(self, with_cuvette_cleaning):
-
-        flnmStr, timeStamp = self.get_filename()
-        folderpath = self.get_folderpath()
-
-        self.calibration_step = 'before cleaning'
-        self.df_mean_log_row = []
-
-        for n in range(3):
-            await self.one_calibration_step(n, folderpath)
-
-        # Ask the user to clean the cuvette:
-        if with_cuvette_cleaning:
-            cuvette_is_clean = self.valve_message(type='After cuvette cleaning')
-            self.calibration_step = 'after cleaning'
-
-            if cuvette_is_clean:
-                for k, v in enumerate(range(3, 6)):
-                    await self.one_calibration_step(v, folderpath)
-
-        self.data_log_row = pd.concat(self.df_mean_log_row)
-        self.save_logfile_df(folderpath, flnmStr)
-
-        mean_result = self.data_log_row['cal_result'].mean()
-        if mean_result < 0.5:
-            res = 1
-        else:
-            res = 2
-        return res
 
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
@@ -1778,9 +1835,16 @@ class Panel(QWidget):
             await self.instrument.set_Valve(True)
 
             # Step 1. Autoadjust LEDS
-            res = await self.call_autoAdjust()
+            self.res_autoadjust = await self.call_autoAdjust()
 
-            if res:
+            #TODO: testing, change later
+            if self.args.localdev and "Calibration" in self.major_modes:
+                if self.ncalibr in (0, 1, 2):
+                    self.res_autoadjust = False
+                elif self.ncalibr in (3, 4, 5):
+                    self.res_autoadjust = False
+
+            if self.res_autoadjust:
                 # Step 2. Take dark and blank
                 self.sample_steps[1].setChecked(True)
                 await asyncio.sleep(0.05)
@@ -1790,11 +1854,11 @@ class Panel(QWidget):
                 # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
                 await self.absorbance_measurement_cycle(blank_min_dark, dark)
                 await self.get_final_value(timeStamp)
-
+                self.update_dye_level_bar()
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
-            self.update_dye_level_bar()
-            if res:
+
+            if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()
                     self.update_corellation_plot()
@@ -1802,79 +1866,80 @@ class Panel(QWidget):
                 # Save led levels to config file
                 # Save dye level to config file
                 await self.qc()
-            logging.debug('Saving results')
+                logging.debug('Saving results')
+                self.save_results(folderpath, flnmStr)
 
-            self.save_results(folderpath, flnmStr)
-
-        self.StatusBox.setText('Finished the measurement')
+                self.StatusBox.setText('The measurement is finished')
+            else:
+                self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
+                await asyncio.sleep(0.001)
         [step.setChecked(False) for step in self.sample_steps]
+        return
 
     async def qc(self):
+
         # Flow check
         await asyncio.sleep(3)  # Seconds
-        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
-        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-        diff = (current_spectrum - last_injection_spectrum).mean()
-        print(diff, 'mean difference between spectra after 3 seconds')
+
+        blue_ind = self.instrument.wvlPixels[0]
+
+        last_injection = self.spCounts_df[str(self.instrument.ncycles-1)][blue_ind]
+
+        current_blue = await self.instrument.get_sp_levels(blue_ind)
+
+        diff = current_blue - last_injection
+
         # TODO: change all parameters, levels to real ones
-        flow_threshold = 5
+        flow_threshold = config_file['QC']["flow_threshold"]
 
         if diff > flow_threshold:
             flow_is_good = True
             self.flow_qc_chk.setCheckState(2)
         else:
             flow_is_good = False
-            self.flow_qc_chk.setCheckState(1)
+            self.flow_qc_chk.setCheckState(rgb_lookup['red'])
         self.data_log_row['flow_QC'] = flow_is_good
 
         #Dye is coming check
         dye_threshold = 5
         if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
             dye_is_coming = True
-            self.dye_qc_chk.setCheckState(2)
+            self.dye_qc_chk.setCheckState(rgb_lookup['green'])
         else:
             dye_is_coming = False
-            self.dye_qc_chk.setCheckState(1)
+            self.dye_qc_chk.setCheckState(rgb_lookup['red'])
         self.data_log_row['dye_coming_qc'] = dye_is_coming
 
         # Spectro integration time check
         if self.instrument.specIntTime > 2000:
-            self.data_log_row['Integration_time_qc'] = False
-            self.biofouling_qc_chk.setCheckState(1)
+            biofouling_qc = False
+            self.biofouling_qc_chk.setCheckState(rgb_lookup['red'])
         else:
-            self.data_log_row['Integration_time_qc'] = True
-            self.biofouling_qc_chk.setCheckState(2)
+            biofouling_qc = True
+            self.biofouling_qc_chk.setCheckState(rgb_lookup['green'])
+        self.data_log_row['biofouling_qc'] = biofouling_qc
 
-        #Temperature is alive check
-        if self.evalPar_df['vNTC'].mean() == self.evalPar_df['vNTC'][0]:
+        # Temperature is alive check
+        if self.evalPar_df['Voltage'].mean() == self.evalPar_df['Voltage'][0]:
             temp_alive = False
-            self.temp_alive_qc_chk.setCheckState(1)
+            self.temp_alive_qc_chk.setCheckState(rgb_lookup['red'])
         else:
             temp_alive = True
-            self.temp_alive_qc_chk.setCheckState(2)
+            self.temp_alive_qc_chk.setCheckState(rgb_lookup['green'])
         self.data_log_row['temp_sens_qc'] = temp_alive
-        #TODO: update QC checkboxes
 
-        # (0,1,2 2 is true, 1 is false)
+        if fbox['pumping'] is None:
+            udp_qc = False
+        else:
+            udp_qc = True
+
+        self.data_log_row['UDP_conn_qc'] = udp_qc
+
+        overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, udp_qc])
+        self.data_log_row['overall_qc'] = overall_qc
+
         return
 
-    async def check_flow(self):
-
-        await asyncio.sleep(3)  # Seconds
-        last_injection_spectrum = self.spCounts_df[str(self.instrument.ncycles-1)]
-        current_spectrum = await self.instrument.spectrometer_cls.get_intensities()
-        diff = (current_spectrum - last_injection_spectrum).mean()
-        print(diff, 'mean difference between spectra after 3 seconds')
-        # TODO: change all parameters, levels to real ones
-        threshold = 5
-
-        if diff > threshold:
-            flow_is_good = True
-        else:
-            flow_is_good = False
-        self.data_log_row['flow_QC'] = flow_is_good
-
-        return flow_is_good
 
     def get_folderpath(self):
         if "Calibration" in self.major_modes:
@@ -1892,7 +1957,7 @@ class Panel(QWidget):
         self.evalPar_df = pd.DataFrame(
             columns=[
                 "pH", "pK", "e1", "e2", "e3",
-                "vNTC", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
+                "Voltage", "salinity", "A1", "A2", "T_cuvette", "S_corr", "Anir",
                 "Vol_injected", "TempProbe_id", "Probe_iscalibr", "TempCalCoef1",
                 "TempCalCoef2", "DYE"]
         )
@@ -1951,17 +2016,17 @@ class Panel(QWidget):
         """
 
         for n_inj in range(self.instrument.ncycles):
-            logging.info(f"dye injection n ='{n_inj}")
+
             self.sample_steps[n_inj + 2].setChecked(True)
             await asyncio.sleep(0.001)
             vol_injected = round(
                 self.instrument.dye_vol_inj * (n_inj + 1) * self.instrument.nshots, prec["vol_injected"],
             )
             dilution = self.instrument.Cuvette_V / (vol_injected + self.instrument.Cuvette_V)
-            vNTC = await self.inject_dye(n_inj)
+            Voltage = await self.inject_dye(n_inj)
             absorbance = await self.calc_absorbance(n_inj, blank_min_dark, dark)
             manual_salinity = self.get_salinity_manual()
-            self.update_evl_file(absorbance, vNTC, dilution, vol_injected, manual_salinity, n_inj)
+            self.update_evl_file(absorbance, Voltage, dilution, vol_injected, manual_salinity, n_inj)
 
         return
 
@@ -1985,7 +2050,7 @@ class Panel(QWidget):
         await asyncio.sleep(self.instrument.waitT)
 
         # measuring Voltage for temperature probe
-        Voltage = self.instrument.get_Vd(3, self.instrument.vNTCch)
+        Voltage = self.instrument.get_Voltage(3, self.instrument.Voltagech)
         return Voltage
 
     async def calc_absorbance(self, n_inj, blank_min_dark, dark):
@@ -2032,6 +2097,7 @@ class Panel(QWidget):
         if not os.path.exists(evlpath):
             os.makedirs(evlpath)
         flnm = evlpath + flnmStr + ".evl"
+
         self.evalPar_df.to_csv(flnm, index=False, header=True)
 
     def save_logfile_df(self, folderpath, flnmStr):
@@ -2046,18 +2112,11 @@ class Panel(QWidget):
         else:
             self.data_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
 
-        logging.info(f"hour_log_path: {hour_log_path}")
-        hour_log_flnm = hour_log_path + flnmStr + ".log"
-        logging.info(f"hour_log_flnm: {hour_log_flnm}")
-
         logfile = self.get_logfile_name(folderpath)
-
         if os.path.exists(logfile):
             self.data_log_row.to_csv(logfile, mode='a', index=False, header=False)
         else:
             self.data_log_row.to_csv(logfile, index=False, header=True)
-
-        logging.info("saved log_df")
 
 
 class Panel_pH(Panel):
@@ -2114,12 +2173,9 @@ class Panel_pH(Panel):
     async def get_final_value(self, timeStamp):
         # get final pH
         logging.debug(f'get final pH ')
-        p = self.instrument.pH_eval(self.evalPar_df)
-        #list_of_values_to_pHlog = self.instrument.pH_eval(self.evalPar_df)
-        #return list_of_values_to_pHlog
+        p = self.instrument.pH_correction(self.evalPar_df)
 
-
-        (pH_cuvette, t_cuvette, perturbation, evalAnir, pH_insitu, self.x, self.y, self.slope, self.intercept,
+        (pH_cuvette, t_cuvette, self.slope, evalAnir, pH_insitu, self.x, self.y,  self.intercept, rsquare,
          self.pH_t_corr) = p
 
         self.data_log_row = pd.DataFrame(
@@ -2132,24 +2188,137 @@ class Panel_pH(Panel):
                 "SHIP": [self.instrument.ship_code],
                 "pH_cuvette": [pH_cuvette],
                 "T_cuvette": [t_cuvette],
-                "perturbation": [perturbation],
+                "perturbation": [self.slope],
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
+                'r_square': [rsquare],
                 "box_id": [box_id]
             }
         )
 
 
-    def update_evl_file(self, Absorbance, vNTC,dilution, vol_injected, manual_salinity, n_inj):
+    def update_evl_file(self, Absorbance, Voltage,dilution, vol_injected, manual_salinity, n_inj):
 
         self.evalPar_df.loc[n_inj] = self.instrument.calc_pH(
-            Absorbance, vNTC, dilution, vol_injected, manual_salinity)
+            Absorbance, Voltage, dilution, vol_injected, manual_salinity)
 
     def get_logfile_name(self, folderpath):
         if 'Calibration' in self.major_modes:
             return (os.path.join(folderpath, 'pH_cal.log'))
         else:
             return (os.path.join(folderpath, 'pH.log'))
+
+
+    @asyncSlot()
+    async def btn_light_clicked(self):
+        state = self.btn_light.isChecked()
+        self.set_LEDs(state)
+
+    def set_LEDs(self, state):
+        for i, slider in enumerate(self.sliders):
+            self.instrument.adjust_LED(i, state * slider.value())
+        logging.info("Leds {}".format(str(state)))
+
+    @asyncSlot()
+    async def btn_calibr_clicked(self):
+
+        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
+            logging.info("clicked calibration")
+
+            self.BatchNumberDialog = BatchNumber(self)
+
+            res_ok = self.BatchNumberDialog.exec_()
+            self.BatchNumberDialog.close()
+            if res_ok:
+                self.batch_number = self.BatchNumberDialog.batch_number
+                await asyncio.sleep(1)
+                valve_turned = self.valve_message('Turn valve into calibration mode')
+
+                if valve_turned == QMessageBox.Ok:
+                    close_drain_value = self.valve_message('Close drain valve')
+                    if close_drain_value == QMessageBox.Ok:
+                        with_cuvette_cleaning = self.valve_message('Calibration_second_step')
+                        if with_cuvette_cleaning == QMessageBox.Yes:
+                            with_cuvette_cleaning = True
+                        else:
+                            with_cuvette_cleaning = False
+
+
+                        self.calibr_state_dialog = CalibrationProgess(self, with_cuvette_cleaning)
+                        self.calibr_state_dialog.show()
+
+                        res = await self.calibration_check_cycle(with_cuvette_cleaning)
+                        if not res == 'white':
+
+                            self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
+                            self.last_calibr_date.setText(str(datetime.now().date()))
+
+                        self.calibr_state_dialog.close()
+
+                    self.valve_message("Valve back to ferrybox mode")
+                    self.valve_message('After calibration valve angry')
+
+                self.btn_calibr.setChecked(False)
+            else:
+                self.btn_calibr.setChecked(False)
+
+
+    async def calibration_check_cycle(self, with_cuvette_cleaning):
+
+        flnmStr, timeStamp = self.get_filename()
+        folderpath = self.get_folderpath()
+
+        self.skip_calibration_step = False
+        self.calibration_step = 'before cleaning'
+
+        self.instrument.autoadj_opt = 'ON'
+        self.combo_in_config(self.autoadjState_combo, "Autoadjust_state")
+
+        self.df_mean_log_row = []
+
+        for n in range(3):
+            if self.skip_calibration_step:
+                break
+            await self.one_calibration_step(n, folderpath)
+
+        self.skip_calibration_step = False
+        # Ask the user to clean the cuvette:
+        if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
+            if with_cuvette_cleaning:
+
+                cuvette_is_clean = await self.cuvette_cleaning_step()
+                self.calibration_step = 'after cleaning'
+                if cuvette_is_clean: # == QMessageBox.Ok:
+                    for k, v in enumerate(range(3, 6)):
+                        if self.skip_calibration_step:
+                            break
+                        await self.one_calibration_step(v, folderpath)
+                else:
+                    pass
+
+        if self.res_autoadjust:
+            self.data_log_row = pd.concat(self.df_mean_log_row)
+            mean_result = self.data_log_row['cal_result'][-3:].mean()
+
+            self.data_log_row['batch_number'] = self.batch_number
+
+            self.save_logfile_df(folderpath, flnmStr)
+
+            if mean_result < 0.5: #majority of tests with clean cuvette (last 3) is true
+                res = 'red' #1 #False
+            else:
+                res = 'green' #2 #True, green
+        else:
+            res = 'white'
+        return res
+
+    async def cuvette_cleaning_step(self):
+
+        cuvette_cleaning_dlg = AfterCuvetteCleaning(self)
+        result = cuvette_cleaning_dlg.exec_()
+        print ('RESULT', result)
+        return result
+
 
     async def get_calibration_results(self):
         """
@@ -2166,8 +2335,9 @@ class Panel_pH(Panel):
 
         cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
 
+        # pH theoretical at  20 C
         pH_buffer_theoretical = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2)/(
-                self.data_log_row['T_cuvette'] + 273.15) - 366.27059 + 0.53993607 * 35 + \
+                cal_temp_tris + 273.15) - 366.27059 + 0.53993607 * 35 + \
                 0.00016329 * 35 ** 2 + (64.52243 - 0.084041 * 35) * np.log(cal_temp_tris
                 + 273.15) - 0.11149858 * (cal_temp_tris + 273.15)
 
@@ -2175,19 +2345,22 @@ class Panel_pH(Panel):
         self.data_log_row['Buffer_temp'] = cal_temp_tris
 
         dpH_dT = -0.0155
+
+        # measured pH, corrected to the temperature
         pH_at_cal_temp = self.data_log_row['pH_cuvette'].values + dpH_dT * (
                 cal_temp_tris - self.data_log_row['T_cuvette'].values)
+
         pH_at_cal_temp = round(pH_at_cal_temp[0], prec['pH'])
-
-        dif_pH = pH_at_cal_temp - pH_buffer_theoretical.values
-
+        self.data_log_row["pH_insitu"] = pH_at_cal_temp
+        dif_pH = pH_at_cal_temp - pH_buffer_theoretical
+        self.data_log_row['difference'] = dif_pH
         calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
 
         if abs(dif_pH) < calibration_threshold:
-            result_to_checkbox = 2
+            result_to_checkbox = 'green'
             check_passed = 1
         else:
-            result_to_checkbox = 1
+            result_to_checkbox = 'red'
             check_passed = 0
 
         return result_to_checkbox, check_passed
@@ -2216,10 +2389,10 @@ class Panel_pH(Panel):
             self.timer_test_udp.stop()
 
     def send_test_udp(self):
-        print ('send test udp')
+
         string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                      self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
-        print (string_to_udp)
+
         udp.send_data(string_to_udp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
@@ -2228,6 +2401,63 @@ class Panel_pH(Panel):
                          row_to_string + ",*\n")
         #udp.send_data(string_to_udp, self.instrument.ship_code)
 
+    async def one_calibration_step(self, n, folderpath):
+        # Check if stop is clicked
+        if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
+            if self.args.localdev:
+                self.ncalibr = n
+            self.calibr_state_dialog.progress_checkboxes[n].setChecked(True)
+            if n == 0 or n == 3:
+                await self.instrument.pumping(self.instrument.pumpTime)
+            else:
+                await self.instrument.pumping(self.instrument.calibration_pump_time)
+
+            if n == 3:
+                self.instrument.specIntTime = 700
+                self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+                await self.updater.set_specIntTime(self.instrument.specIntTime)
+
+            await self.sample_cycle(folderpath)
+
+            if self.res_autoadjust:
+
+                result_to_checkbox, self.data_log_row['cal_result'] = await self.get_calibration_results()
+
+                self.calibr_state_dialog.result_checkboxes[n].setCheckState(rgb_lookup[result_to_checkbox])
+                self.df_mean_log_row.append(self.data_log_row)
+            else:
+                self.skip_calibration_step = True
+                if self.calibration_step == 'before cleaning':
+                    _ = self.valve_message('Too dirty cuvette')
+                else:
+                    _ = self.valve_message('Too dirty cuvette after cleaning')
+
+                # print (message)
+                # self.calibr_state_dialog.stop_calibr_btn.setChecked(True)
+        else:
+            pass
+
+    def make_calibration_groupbox(self):
+        cal_group = QGroupBox('Calibration')
+        l = QGridLayout()
+
+        self.btn_calibr = self.create_button("Make calibration\n check", True)
+        self.btn_calibr_checkbox = QCheckBox('Last Calibration check result')
+        self.btn_calibr_checkbox.setEnabled(False)
+        self.btn_calibr_checkbox.setTristate()
+        self.btn_calibr.clicked.connect(self.btn_calibr_clicked)
+
+        # In this checkbox, state 0 - unchecked means no calibration
+        # state 1 - calibration check failed
+        # state 2 - calibration check is sucessfull
+
+        self.last_calibr_date = QLabel('Date')
+        l.addWidget(self.btn_calibr, 0, 0, 1, 1)
+        l.addWidget(self.btn_calibr_checkbox, 0, 1, 1, 1)
+        l.addWidget(self.last_calibr_date, 0, 2, 1, 1)
+        cal_group.setLayout(l)
+
+        return cal_group
 
 class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
@@ -2260,7 +2490,7 @@ class Panel_CO3(Panel):
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         self.evalPar_df = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "vNTC", "S", "A1", "A2",
+                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "Voltage", "S", "A1", "A2",
                          "R", "T_cuvette", "Vol_injected", " S_corr", 'A350']
             )
 
@@ -2283,6 +2513,13 @@ class Panel_CO3(Panel):
     def dye_combo_chngd(self):
         pass
 
+    @asyncSlot()
+    async def btn_light_clicked(self):
+        if self.btn_light.isChecked():
+            self.instrument.turn_on_relay(self.instrument.light_slot)
+        else:
+            self.instrument.turn_off_relay(self.instrument.light_slot)
+
     def get_folderpath(self):
 
         if "Calibration" in self.major_modes:
@@ -2293,7 +2530,6 @@ class Panel_CO3(Panel):
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
         return folderpath
-
 
     async def measure_dark(self):
         # turn off light and LED
@@ -2314,7 +2550,8 @@ class Panel_CO3(Panel):
         return dark
 
     def save_stability_test(self, datay):
-        stabfile = os.path.join("/home/pi/pHox/data_co3/sp_stability.log")
+
+        stabfile = os.path.join("/home/pi/pHox/data/data_co3/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
                 {
@@ -2344,8 +2581,8 @@ class Panel_CO3(Panel):
         [self.fill_table_measurement(k, 0, v)
          for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "T insitu", "S insitu"])]
 
-    def update_evl_file(self, spAbs_min_blank, vNTC, dilution, vol_injected, manual_salinity, n_inj):
-        self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, vNTC,
+    def update_evl_file(self, spAbs_min_blank, Voltage, dilution, vol_injected, manual_salinity, n_inj):
+        self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, Voltage,
                                                          dilution, vol_injected, manual_salinity)
 
     def update_corellation_plot(self):
@@ -2391,7 +2628,7 @@ class Panel_CO3(Panel):
         self.fill_table_config(9, 1, "None")
 
     def test_udp(self, state):
-        print (state)
+
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
         self.test_data_log_row = pd.DataFrame(
             {
@@ -2494,7 +2731,7 @@ class boxUI(QMainWindow):
         #fh.setLevel(logging.DEBUG)
         #self.logger.addHandler(fh)
 
-        logging.root.level = logging.INFO  # logging.DEBUG if self.args.debug else
+        logging.root.level = logging.DEBUG #INFO  # logging.DEBUG if self.args.debug else
         for name, logger in logging.root.manager.loggerDict.items():
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
@@ -2517,7 +2754,6 @@ class boxUI(QMainWindow):
             self.setWindowTitle(f"{box_id}, parameter CO3")
         else:
             self.setWindowTitle(f"{box_id}")
-
 
     def create_main_widget(self):
         if self.args.onlypco2:
