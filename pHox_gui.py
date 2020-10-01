@@ -57,12 +57,12 @@ class AfterCuvetteCleaning(QDialog):
         self.btn_update_plots.setCheckable(True)
         layout = QtGui.QGridLayout()
 
-        pixmap = QPixmap(QPixmap('utils/pHox_question.png')).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
+        pixmap = QPixmap(QPixmap('utils/pHox_idea.png')).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
 
         self.image = QLabel("Hello")
         self.image.setPixmap(pixmap)
 
-        self.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+        self.setWindowIcon(QtGui.QIcon('utils/phox_logo.png'))
 
         self.text =  QLabel("<br>Please, clean the cuvette.\
                 <br>\
@@ -1566,7 +1566,7 @@ class Panel(QWidget):
             dlg = QInputDialog(self)
             dlg.setInputMode(QtGui.QInputDialog.TextInput)
 
-            dlg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+            dlg.setWindowIcon(QtGui.QIcon('utils/pHox_logo.png'))
 
             dlg.setWindowTitle('Important')
             dlg.setLabelText("File name for the sample will be {}, \nType the name below if you want to change it".format(flnmStr))
@@ -1728,7 +1728,7 @@ class Panel(QWidget):
 
         return
 
-    def valve_message(self, type = 'Turn valve into calibration mode'):
+    def valve_message(self, type='Turn valve into calibration mode'):
         types = {'Turn valve into calibration mode':
                      "<br> 1. Turn both valves (white) to the Calibration position (see picture)\
                       <br>2. Place the tube in the Tris buffer bottle\
@@ -1738,54 +1738,52 @@ class Panel(QWidget):
                       <br>\
                       <br> Click <b>Ok</b> to continue when you are ready, or <b>Cancel</b> to exit",
 
-                'Close drain valve':
-                    '<br> Close the drain (yellow) valve when the cuvette is empty\
-                     <br>\
-                     <br><img src=utils/drain.png>',
+                    'Close drain valve':
+                        '<br> Close the drain (yellow) valve when the cuvette is empty\
+                         <br>\
+                         <br><img src=utils/drain.png>',
 
-                 'Calibration_second_step':
-                     "Do you want calibration check to include cuvette cleaning?",
+                    'Calibration_second_step':
+                         "Do you want calibration check to include cuvette cleaning?",
 
+                    "Valve back to ferrybox mode":
+                         "Please turn the valves back into the ferrybox mode\
+                         <br>\
+                         <br><img src=utils/ferryboxmode.png>",
 
+                    "After calibration valve angry":
+                         "ARE YOU SURE YOU TURNED THE VALVES BACK???",
 
-                 "Valve back to ferrybox mode":
-                     "Please turn the valves back into the ferrybox mode\
-                     <br>\
-                     <br><img src=utils/ferryboxmode.png>",
+                    "Single measurement":
+                         "Did you pump to flush the sampling chamber?",
 
-                 "After calibration valve angry":
-                     "ARE YOU SURE YOU TURNED THE VALVES BACK???",
+                    "Confirm Exit":
+                         "Are you sure you want to exit ?",
 
-                 "Single measurement":
-                     "Did you pump to flush the sampling chamber?",
+                    "Too dirty cuvette":
+                         "The cuvette is too dirty, unable to adjust LEDS\
+                         <br>\
+                         <br> calibration steps 1-3 will be skipped",
 
-                 "Confirm Exit":
-                     "Are you sure you want to exit ?",
-
-                 "Too dirty cuvette":
-                     "The cuvette is too dirty, unable to adjust LEDS\
-                     <br>\
-                     <br> calibration steps 1-3 will be skipped",
-
-                 "Too dirty cuvette after cleaning":
+                     "Too dirty cuvette after cleaning":
                      "The cuvette is still too dirty\
                      <br> Stopping the calibration"
-        }
+                    }
 
         msg = QMessageBox()
 
         if type == "After calibration valve angry":
-            image ='utils/angry_phox.png'
-        elif type == 'After cuvette cleaning' or type == "Valve back to ferrybox mode":
-            image = 'utils/fox-logo.png'
-        else:
+            image = 'utils/angry_phox.png'
+        elif type in ('Calibration_second_step', "Single measurement", "Confirm Exit"):
             image = 'utils/pHox_question.png'
+        else:
+            image = 'utils/pHox_idea.png'
 
         pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
 
         msg.setIconPixmap(pixmap)
 
-        msg.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+        msg.setWindowIcon(QtGui.QIcon('utils/pHox_logo.png'))
 
         msg.setWindowTitle('Important')
         msg.setText(types[type])
@@ -2224,7 +2222,7 @@ class Panel_pH(Panel):
 
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Calibration"):
             logging.info("clicked calibration")
-
+            await asyncio.sleep(0.1)
             self.BatchNumberDialog = BatchNumber(self)
 
             res_ok = self.BatchNumberDialog.exec_()
@@ -2736,7 +2734,7 @@ class boxUI(QMainWindow):
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 
-        self.setWindowIcon(QtGui.QIcon('utils/pHox_icon.png'))
+        self.setWindowIcon(QtGui.QIcon('utils/pHox_logo.png'))
         self.set_title()
         self.main_widget = self.create_main_widget()
         self.setCentralWidget(self.main_widget)
