@@ -416,7 +416,7 @@ class CO3_instrument(Common_instrument):
         return [
             CO3,
             e1,
-            e2e3,
+            e3e2,
             log_beta1_e2,
             vNTC,
             self.fb_data["salinity"],
