@@ -12,6 +12,8 @@
             25
         ],
         "DYE_V_INJ": 0.03,
+        "dye_level": 2000 ,
+        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 4,
         "specAvScans": 6,
@@ -19,16 +21,18 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 15,
-        "Comment": "all intervals are in seconds",
-        "pumpTime": 20,
+        "VALID_SAMPLING_INTERVALS" : ["5", "7", "10", "15", "20", "30", "60"],
+        "pumpTime_sec": 60,
         "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 900,
         "Ship_Code": "NB",
-        "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
+        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
         "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
     },
     "pH": {
         "LED_SLOTS": [
@@ -47,6 +51,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1"
+
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -99,6 +104,13 @@
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
-        "S_tris_buffer": 35
+        "S_tris_buffer": 35,
+        "Calibration_threshold": 0.005,
+        "Calibration_pump_time" : 30,
+        "T_tris_buffer": 20
+    },
+    "QC" : {
+        "flow_threshold": 2000,
+        "Comment": "the difference between the blue pixel after 4 inj and after 3 sec after opening the valve"
     }
 }

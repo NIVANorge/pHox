@@ -12,22 +12,40 @@
             25
         ],
         "DYE_V_INJ": 0.03,
+        "dye_level": 2000,
+        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 5,
-        "pumpTime": 1,
-        "mixTime": 5,
-        "waitTime": 3,
+        "SAMPLING_INTERVAL_MIN": 1,
+        "VALID_SAMPLING_INTERVALS": [
+            "5",
+            "7",
+            "10",
+            "15",
+            "20",
+            "30",
+            "60"
+        ],
+        "pumpTime_sec": 60,
+        "mixTime": 0,
+        "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 500,
+        "Spectro_Integration_time": 10.0,
         "Ship_Code": "NB",
-        "comment Ship_Code": "Ship code is TF,FA,NB or Standalone ",
+        "Valid_ship_codes": [
+            "Standalone",
+            "NB",
+            "FA",
+            "TF"
+        ],
         "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
     },
     "pH": {
         "LED_SLOTS": [
@@ -36,9 +54,9 @@
             19,
             16
         ],
-        "LED1": 50,
-        "LED2": 16,
-        "LED3": 60,
+        "LED1": 55,
+        "LED2": 55,
+        "LED3": 55,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -46,15 +64,15 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "LED4": 70,
-        "PPHOX_STRING_VERSION": "1"
+        "PPHOX_STRING_VERSION": "1",
+        "dye_level": 1999.88
     },
     "pCO2": {
-        "water_temperature":
-        {
+        "water_temperature": {
             "WAT_TEMP_CAL": [
-            -25.779,
-            29.84
-        ],
+                -25.779,
+                29.84
+            ],
             "WAT_TEMP_CH": 1
         },
         "comment1": "# Water flow calibration coefficients :",
@@ -91,18 +109,25 @@
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# used to be SAVE_PCO2_SEC",
         "pCO2_Sampling_interval": 1,
-        "PPCO2_STRING_VERSION": 1
+        "PPCO2_STRING_VERSION": "1"
     },
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
         "LIGHT_SLOT": 5,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
+        "Default_DYE": "Pb_perchlor",
+        "PCO3_string_version": "1"
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
-        "pH_tris_buffer": 8.094,
-        "S_tris_buffer": 35
+        "S_tris_buffer": 35,
+        "Calibration_threshold": 0.005,
+        "Calibration_pump_time": 30,
+        "T_tris_buffer": 20
+    },
+    "QC": {
+        "flow_threshold": 2000,
+        "Comment": "the difference between the blue pixel after 4 inj and after 3 sec after opening the valve"
     }
 }

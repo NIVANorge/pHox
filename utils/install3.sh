@@ -126,7 +126,7 @@ if [ "$ans" != "Y" ]
 then
     f="/etc/dhcpcd.conf"
     {
-    echo 'interface eth0' 'static ip_address=192.168.0.9/24' 'static routers=192.168.0.1'
+    echo -e '\ninterface eth0' '\nstatic ip_address=192.168.0.9/24' '\nstatic routers=192.168.0.1'
     } >> $f
 fi
 

@@ -8,7 +8,6 @@ from precisions import precision as prec
 try:
     import pigpio
     import RPi.GPIO as GPIO
-    from ADCDACPi import ADCDACPi
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
@@ -49,13 +48,21 @@ class tab_pco2_class(QWidget):
         groupbox.setLayout(layout)
         self.layout2.addWidget(groupbox)
 
+
     async def update_tab_values(self, values):
         [self.pco2_params[n].setText(str(values[n])) for n in range(len(values))]
 
 
 class pco2_instrument(object):
-    def __init__(self, base_folderpath):
+    def __init__(self, base_folderpath, panelargs):
         self.base_folderpath = base_folderpath
+        self.path = self.base_folderpath + "/data_pCO2/"
+        self.args = panelargs
+        self.co2 = 990
+        self.co2_temp = 999
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
+
         ports = list(serial.tools.list_ports.comports())
         connection_types = [port[1] for port in ports]
         try:
@@ -105,6 +112,9 @@ class pco2_instrument(object):
             "T CO2 sensor \xB0C",
         ]
 
+        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
+                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+
     async def get_pco2_values(self):
         if self.portSens:
             self.portSens.write(self.QUERY_CO2)
@@ -125,21 +135,13 @@ class pco2_instrument(object):
             except ValueError:
                 self.co2_temp = 0
 
-
     async def save_pCO2_data(self, values, fbox):
 
         labelSample = datetime.now().isoformat("_")[0:19]
-        path = self.base_folderpath + "/data_pCO2/"
-
-        if not os.path.exists(path):
-            os.mkdir(path)
-
-        logfile = os.path.join(path, "pCO2.log")
+        logfile = os.path.join(self.path, "pCO2.log")
 
         pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
                     fbox["temperature"], fbox["salinity"]] + values
-        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
-                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
         self.pco2_df.loc[0] = pco2_row
         logging.debug('Saving pco2 data')
 
@@ -151,61 +153,35 @@ class pco2_instrument(object):
         return self.pco2_df
 
 
-
-class onlyPco2instrument(pco2_instrument):
+class only_pco2_instrument(pco2_instrument):
     # Class for communication with Raspberry PI for the only pco2 case
-    def __init__(self,base_folderpath):
-        super().__init__()
-        self.base_folderpath = base_folderpath
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
+
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
-            self.adcdac = ADCDACPi()
+            
 
-    def get_Vd(self, nAver, channel):
-        V = 0.0000
+    def get_Voltage(self, nAver, channel):
+        v = 0.0000
         for i in range(nAver):
-            V += self.adc.read_voltage(channel)
-        return V / nAver
+            v += self.adc.read_voltage(channel)
+        Voltage = round(v / nAver, prec["Voltage"])
+        return Voltage
 
 
 class test_pco2_instrument(pco2_instrument):
-    def __init__(self, base_folderpath):
-        super().__init__(base_folderpath)
+    def __init__(self, base_folderpath, panelargs):
+        super().__init__(base_folderpath, panelargs)
         self.save_pco2_interv = 2
 
     async def get_pco2_values(self):
         self.co2 = np.random.randint(400, 600)
         self.co2_temp = np.random.randint(1, 10)
 
-    def get_Vd(self, nAver, channel):
+    def get_Voltage(self, nAver, channel):
         v = 0
         for i in range(nAver):
             v += 0.6
         return v / nAver
-
-    async def save_pCO2_data(self, values, fbox):
-
-        labelSample = datetime.now().isoformat("_")[0:19]
-        self.base_folderpath = os.getcwd() + '/data/'
-
-        path = self.base_folderpath + "/data_pCO2/"
-
-        if not os.path.exists(path):
-            os.mkdir(path)
-        logfile = os.path.join(path, "pCO2.log")
-
-        pco2_row = [labelSample, fbox["longitude"], fbox["latitude"],
-                    fbox["temperature"], fbox["salinity"]] + values
-
-        self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
-                                             "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
-        self.pco2_df.loc[0] = pco2_row
-        logging.debug('Saving pco2 data')
-
-        if not os.path.exists(logfile):
-            self.pco2_df.to_csv(logfile, index=False, header=True)
-        else:
-            self.pco2_df.to_csv(logfile, mode='a', index=False, header=False)
-
-        return self.pco2_df
