@@ -103,7 +103,7 @@ class Spectro_seabreeze(object):
         if not self.spectro_type:
             logging.info("could not get the spectro type, defaulting to FLMT")
             self.spectro_type = "FLMT"
-        logging.info("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
+        logging.debug("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
 
     def set_integration_time_not_async(self, time_millisec):
         if self.busy:
@@ -517,7 +517,7 @@ class pH_instrument(Common_instrument):
         if led_ind == 2:
             self.minval = self.THR * 0.90
 
-        logging.info(f"led_ind {led_ind}")
+        logging.debug(f"led_ind {led_ind}")
         step = 0
 
         increment = 50
@@ -525,13 +525,13 @@ class pH_instrument(Common_instrument):
         # Increment is decreased twice in case we change the direction
         # of decrease/increase
         while not adj:
-            logging.info(f"step is {step}")
+            logging.debug(f"step is {step}")
             step += 1
             self.adjust_LED(led_ind, LED)
             await asyncio.sleep(0.1)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[led_ind])
             await asyncio.sleep(0.1)
-            logging.info(f"pixelLevel {pixelLevel}")
+            logging.debug(f"pixelLevel {pixelLevel}")
 
             if pixelLevel > self.maxval and LED > 15:
                 logging.debug("case0  Too high pixellevel, decrease LED ")
@@ -616,7 +616,7 @@ class pH_instrument(Common_instrument):
                 self.adj_action = "decrease"
                 self.specIntTime -= increment_sptint
                 if self.specIntTime < 50:
-                    logging.info("self.specIntTime < 50")
+                    logging.info("self.specIntTime < 50, stop")
                     break
 
             elif any(t == "increase int time" for t in [res1, res2, res3]):
@@ -628,7 +628,7 @@ class pH_instrument(Common_instrument):
                     self.adj_action = "increase"
 
                 else:
-                    logging.info("too high spt")
+                    logging.info("too high spt, stop")
                     break
 
             elif adj1 and adj2 and adj3:
@@ -936,7 +936,7 @@ class Test_pH_instrument(pH_instrument):
     async def pump_dye(self, nshots):
         # biochemical valve solenoid pump
         for shot in range(nshots):
-            logging.info("inject shot {}".format(shot))
+            logging.debug("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
             await asyncio.sleep(0.05)
             self.turn_off_relay(self.dyepump_slot)

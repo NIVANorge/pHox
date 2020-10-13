@@ -1199,7 +1199,7 @@ class Panel(QWidget):
         if not self.args.nodye:
             if state:
                 async with self.updater.disable_live_plotting():
-                    logging.info("in pump dye clicked")
+                    logging.debug("in pump dye clicked")
                     await self.instrument.pump_dye(3)
                     self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
@@ -1470,10 +1470,11 @@ class Panel(QWidget):
                     result,
                 ) = await self.instrument.auto_adjust()
 
-                logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
+
                 self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
 
                 if result:
+                    logging.info(f"values after autoadjust: '{self.instrument.LEDS}'")
                     self.timerSpectra_plot.setInterval(self.instrument.specIntTime)
                     if self.args.localdev:
                         self.instrument.LEDS = [55, 55, 55]
@@ -1554,7 +1555,7 @@ class Panel(QWidget):
             if self.args.pco2:
                 self.timerSave_pco2.stop()
             # Start single sampling process
-            logging.info("clicked single meas ")
+            logging.debug("clicked single meas ")
             message = self.valve_message('Single measurement')
 
             if message == QMessageBox.No:
@@ -1670,7 +1671,7 @@ class Panel(QWidget):
         return
 
     def autostart_pump(self):
-        logging.info("Initial automatic start at pump enabled")
+        logging.debug("Initial automatic start at pump enabled")
 
         self.timerAuto.stop()
         self.timerAuto.timeout.disconnect(self.autostart_pump)
