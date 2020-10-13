@@ -439,7 +439,7 @@ class CO3_instrument(Common_instrument):
 
         S_corr = sal * dilution                 #round(, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
-        R = A2 / A1
+        R = (A2 - A_350) / (A1 - A_350)
         # coefficients from Patsavas et al. 2015
         #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
