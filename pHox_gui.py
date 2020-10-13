@@ -2488,7 +2488,7 @@ class Panel_CO3(Panel):
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
         self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
         self.evalPar_df = pd.DataFrame(
-                columns=["CO3", "e1", "e2e3", "log_beta1_e2", "Voltage", "S", "A1", "A2",
+                columns=["CO3", "e1", "e3e2", "log_beta1_e2", "Voltage", "S", "A1", "A2",
                          "R", "T_cuvette", "Vol_injected", " S_corr", 'A350']
             )
 
