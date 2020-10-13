@@ -330,11 +330,7 @@ class Common_instrument(object):
             try:
                 v += self.adc.read_voltage(channel)
             except TimeoutError:
-<<<<<<< HEAD
-                print('Timeout error in get_Vd')
-=======
                 logging.error('Timeout error in get_Voltage')
->>>>>>> 34562c57201576264e9161e84b5db96411a8e3c1
                 pass
         Voltage = round(v / nAver, prec["Voltage"])
         return Voltage
@@ -415,22 +411,12 @@ class CO3_instrument(Common_instrument):
 
         #voltage = round(voltage, prec["Voltage"])
 
-<<<<<<< HEAD
-        T_cuvette = round((self.TempCalCoef[0] * vNTC) + self.TempCalCoef[1], prec["fb_temperature"])
-        T = 273.15 + T_cuvette
-        A1 = round(absSp[self.wvlPixels[0]], prec["A1"])
-        A2 = round(absSp[self.wvlPixels[1]], prec["A2"])
-        A_350 = round(absSp[self.wvlPixels[2]], prec["A2"])
-        print ('A350', A_350)
-        # volume in ml
-=======
         T_cuvette = (self.TempCalCoef[0] * voltage) + self.TempCalCoef[1] #, prec["fb_temperature"])
-        # T = 273.15 + T_cuvette
+        T = 273.15 + T_cuvette
 
         A1, A2, A_350 = Absorbance
 
 
->>>>>>> 34562c57201576264e9161e84b5db96411a8e3c1
 
         if manual_salinity is None:
             sal = self.fb_data["salinity"]   #round(, prec["salinity"])
