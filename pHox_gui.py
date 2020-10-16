@@ -1236,9 +1236,10 @@ class Panel(QWidget):
 
             j["Operational"]["TEMP_PROBE_ID"] = self.instrument.TempProbe_id
 
-            j["pH"]["LED1"] = self.instrument.LEDS[0]
-            j["pH"]["LED2"] = self.instrument.LEDS[1]
-            j["pH"]["LED3"] = self.instrument.LEDS[2]
+            if not self.args.co3:
+                j["pH"]["LED1"] = self.instrument.LEDS[0]
+                j["pH"]["LED2"] = self.instrument.LEDS[1]
+                j["pH"]["LED3"] = self.instrument.LEDS[2]
 
             j["Operational"]["SAMPLING_INTERVAL_MIN"] = int(self.samplingInt_combo.currentText())
             json_file.seek(0)  # rewind
@@ -1628,6 +1629,34 @@ class Panel(QWidget):
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
 
+
+        upload_RT_dict = {"spt": {},
+                       "eval": {},
+                       "final_pH": {}}
+
+        for col in self.spCounts_df.columns:
+            upload_RT_dict['spt'][col] = self.spCounts_df[col].values.tolist()
+
+        for col in self.evalPar_df.columns:
+            upload_RT_dict['eval'][col] = self.evalPar_df[col].values.tolist()
+
+        for col in self.data_log_row.columns:
+            upload_RT_dict["final_pH"][col] = self.data_log_row[col].values.tolist()[0]
+
+
+        if not self.args.co3:
+            import json
+
+            upload_RT_path = os.path.join(folderpath, "upload")
+
+            if not os.path.exists(upload_RT_path):
+                os.makedirs(upload_RT_path)
+
+            path = os.path.join(upload_RT_path, flnmStr, ".json")
+
+            with open(os.path.join(upload_RT_path, flnmStr +".json"), 'w') as fp:
+                json.dump(upload_RT_dict, fp, indent=4)
+
         logging.debug("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
         logging.debug("Save evl data to file")
@@ -1652,8 +1681,8 @@ class Panel(QWidget):
                 self.StatusBox.setText("Turn on LEDs")
                 self.update_LEDs()
 
-            self.btn_light.setChecked(True)
-            self.btn_light.click()
+                self.btn_light.setChecked(True)
+                self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -1952,7 +1981,7 @@ class Panel(QWidget):
 
     def create_new_df(self):
         self.spCounts_df = pd.DataFrame(columns=["Wavelengths", "dark", "blank"])
-        self.spCounts_df["Wavelengths"] = ["%.2f" % w for w in self.wvls]
+        self.spCounts_df["Wavelengths"] = [float("%.2f" % w) for w in self.wvls]
         self.evalPar_df = pd.DataFrame(
             columns=[
                 "pH", "pK", "e1", "e2", "e3",
