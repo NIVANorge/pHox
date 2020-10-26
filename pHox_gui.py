@@ -321,6 +321,11 @@ class Panel_PCO2_only(QWidget):
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
         self.setLayout(hboxPanel)
 
+    def close(self):
+        self.pco2_instrument.connection.close()
+        return
+
+
     def valve_message(self, type = "Confirm Exit"):
 
         msg = QMessageBox()
