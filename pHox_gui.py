@@ -7,7 +7,7 @@ from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class, only_pco
 import os, sys
 from util import get_base_folderpath, box_id, config_name, rgb_lookup
 #
-
+import struct
 try:
     import warnings, time, RPi.GPIO
     import RPi.GPIO as GPIO
@@ -322,7 +322,10 @@ class Panel_PCO2_only(QWidget):
         self.setLayout(hboxPanel)
 
     def close(self):
-        self.pco2_instrument.close()
+        try:
+            self.pco2_instrument.connection.close()
+        except:
+            pass
         return
 
 
@@ -398,7 +401,8 @@ class Panel_PCO2_only(QWidget):
         self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
         self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
 
-        await self.pco2_instrument.get_pco2_values()
+        await self.get_pco2_values()
+
 
         values = [self.wat_temp, self.air_temp_mem, self.wat_flow, self.wat_pres,
                   self.air_pres, self.air_temp_env, self.pco2_instrument.co2,
@@ -409,6 +413,49 @@ class Panel_PCO2_only(QWidget):
         self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
         await self.send_pco2_to_ferrybox()
         return
+
+
+    async def get_pco2_values(self):
+        self.connection.flushInput()
+        self.data = {}
+        synced = False
+        count = 100
+        while not synced:
+            if self.btn_measure.isChecked():
+                break
+            b = self.connection.read(1)
+            if len(b) and (b[0] == b'\x07'[0]):
+                synced = True
+            count = count - 1
+            if count < 0:
+                self.data['CH1_Vout'] = -999.0
+                self.data['ppm'] = -999.0
+                self.data['type'] = b'\x81'
+                self.data['range'] = -999.0
+                self.data['sn'] = b'no_sync'
+                self.data['VP'] = -999.0
+                self.data['VT'] = -999.0
+                self.data['mode'] = b'\x80'
+                # raise ValueError('cannot sync to CO2 detector')
+                return (self.data)
+        try:
+            self.buff = self.connection.read(37)
+            print (self.butt)
+            self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
+            self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
+            self.data['type'] = self.buff[8:9]
+            self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
+            self.data['sn'] = self.buff[13:27]
+            self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
+            self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
+            self.data['mode'] = self.buff[35:36]
+            if self.data['type'][0] != b'\x81'[0]:
+                raise ValueError('the gas type is not correct')
+            if self.data['mode'][0] != b'\x80'[0]:
+                raise ValueError('the detector mode is not correct')
+        except:
+            raise
+        return (self.data)
 
     async def send_pco2_to_ferrybox(self):
         row_to_string = self.pco2_df.to_csv(index=False, header=False).rstrip()
@@ -1440,11 +1487,11 @@ class Panel(QWidget):
         self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
         self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
 
-        await self.pco2_instrument.get_pco2_values()
-
         values = [self.wat_temp, self.wat_flow, self.wat_pres,
                   self.air_temp, self.air_pres, self.leak_detect,
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+
+        await self.pco2_instrument.get_pco2_values()
 
         await self.tab_pco2.update_tab_values(values)
 
