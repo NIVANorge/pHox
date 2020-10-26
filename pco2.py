@@ -22,6 +22,7 @@ from datetime import datetime
 
 from util import config_file
 logging.getLogger()
+logging.getLogger().setLevel(logging.DEBUG)
 
 class tab_pco2_class(QWidget):
     def __init__(self):
@@ -65,16 +66,30 @@ class pco2_instrument(object):
         self.args = panelargs
         self.co2 = 990
         self.co2_temp = 999
+        self.buff = None
+        self.data = {}
+
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
-        ports = list(serial.tools.list_ports.comports())
-        connection_types = [port[1] for port in ports]
+
         try:
-            ind = connection_types.index('USB-RS485 Cable')
-            port = ports[ind][0]
-            logging.debug(f'Connected port is {port}')
-            self.connection = serial.Serial(port,
+
+            ports = list(serial.tools.list_ports.comports())
+            connection_types = [port[1] for port in ports]
+
+            self.port = ports[0]
+
+            #ind = connection_types.index('USB-RS485 Cable')
+            #port = ports[ind][0]
+            logging.debug(f'Connected port is {self.port}')
+
+            self.connection = serial.Serial(self.port[0], baudrate=115200, timeout=5,
+                                            parity=serial.PARITY_NONE,
+                                            stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS,
+                                            rtscts=False, dsrdtr=False,
+                                            xonxoff=False)
+            '''self.connection = serial.Serial(port,
                                       baudrate=9600,
                                       parity=serial.PARITY_NONE,
                                       stopbits=serial.STOPBITS_ONE,
@@ -83,7 +98,7 @@ class pco2_instrument(object):
                                       timeout=0.5,
                                       rtscts=False,
                                       dsrdtr=False,
-                                      xonxoff=False)
+                                      xonxoff=False)'''
             logging.debug(self.connection)
         except:
             logging.debug('Was not able to find connection to the instrument')
@@ -94,9 +109,6 @@ class pco2_instrument(object):
 
         self.ship_code = config_file['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
-
-
-        self.Co2_CalCoef = f["CO2"]["CO2_FRAC_CAL"]
         self.ppco2_string_version = f['PPCO2_STRING_VERSION']
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
@@ -115,6 +127,8 @@ class pco2_instrument(object):
 
         self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
                                              "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
+
+
 
     async def get_pco2_values(self):
         self.connection.flushInput()
@@ -164,6 +178,7 @@ class pco2_instrument(object):
             logging.debug(f'full response_co2 {response_co2}')
             try:
                 value = float(response_co2[3:])
+                self.Co2_CalCoef = config_file["pCO2"]["CO2"]["Calibr"]
                 value = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * value
             except ValueError:
                 value = 0
@@ -225,3 +240,7 @@ class test_pco2_instrument(pco2_instrument):
         for i in range(nAver):
             v += 0.6
         return v / nAver
+
+    def close(self):
+        print ('close connection, localtest')
+        logging.debug('close connection, localtest')
