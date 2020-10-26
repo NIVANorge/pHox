@@ -317,8 +317,13 @@ class Panel_PCO2_only(QWidget):
         self.btn_measure.setCheckable(True)
         self.btn_measure.clicked[bool].connect(self.btn_measure_clicked)
 
-        self.tab_pco2.group_layout.addWidget(self.btn_measure)
+        self.StatusBox = QtGui.QTextEdit()
+        self.StatusBox.setReadOnly(True)
+
+        self.tab_pco2.group_layout.addWidget(self.btn_measure, 1, 0)
+        self.tab_pco2.group_layout.addWidget(self.StatusBox, 1, 1)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
+
         self.setLayout(hboxPanel)
 
     def close(self):
@@ -416,45 +421,49 @@ class Panel_PCO2_only(QWidget):
 
 
     async def get_pco2_values(self):
-        self.connection.flushInput()
         self.data = {}
         synced = False
         count = 100
-        while not synced:
-            if self.btn_measure.isChecked():
-                break
-            b = self.connection.read(1)
-            if len(b) and (b[0] == b'\x07'[0]):
-                synced = True
-            count = count - 1
-            if count < 0:
-                self.data['CH1_Vout'] = -999.0
-                self.data['ppm'] = -999.0
-                self.data['type'] = b'\x81'
-                self.data['range'] = -999.0
-                self.data['sn'] = b'no_sync'
-                self.data['VP'] = -999.0
-                self.data['VT'] = -999.0
-                self.data['mode'] = b'\x80'
-                # raise ValueError('cannot sync to CO2 detector')
-                return (self.data)
-        try:
-            self.buff = self.connection.read(37)
-            print (self.butt)
-            self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
-            self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
-            self.data['type'] = self.buff[8:9]
-            self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
-            self.data['sn'] = self.buff[13:27]
-            self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
-            self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
-            self.data['mode'] = self.buff[35:36]
-            if self.data['type'][0] != b'\x81'[0]:
-                raise ValueError('the gas type is not correct')
-            if self.data['mode'][0] != b'\x80'[0]:
-                raise ValueError('the detector mode is not correct')
-        except:
-            raise
+        self.StatusBox.setText('Wait, instrument is synchronizing')
+        if not self.args.locadev:
+            self.pco2_instrument.connection.flushInput()
+            while not synced:
+                self.StatusBox.setText('Wait, instrument is synchronizing')
+                if not self.btn_measure.isChecked():
+                    break
+                b = self.connection.read(1)
+                if len(b) and (b[0] == b'\x07'[0]):
+                    synced = True
+                count = count - 1
+                if count < 0:
+                    self.data['CH1_Vout'] = -999.0
+                    self.data['ppm'] = -999.0
+                    self.data['type'] = b'\x81'
+                    self.data['range'] = -999.0
+                    self.data['sn'] = b'no_sync'
+                    self.data['VP'] = -999.0
+                    self.data['VT'] = -999.0
+                    self.data['mode'] = b'\x80'
+                    # raise ValueError('cannot sync to CO2 detector')
+                    return (self.data)
+            try:
+                self.StatusBox.setText('Trying to read data')
+                self.buff = self.pco2_instrument.read(37)
+                print (self.butt)
+                self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
+                self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
+                self.data['type'] = self.buff[8:9]
+                self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
+                self.data['sn'] = self.buff[13:27]
+                self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
+                self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
+                self.data['mode'] = self.buff[35:36]
+                if self.data['type'][0] != b'\x81'[0]:
+                    raise ValueError('the gas type is not correct')
+                if self.data['mode'][0] != b'\x80'[0]:
+                    raise ValueError('the detector mode is not correct')
+            except:
+                raise
         return (self.data)
 
     async def send_pco2_to_ferrybox(self):
