@@ -316,12 +316,19 @@ class Panel_PCO2_only(QWidget):
         self.btn_measure = QPushButton('Measure')
         self.btn_measure.setCheckable(True)
         self.btn_measure.clicked[bool].connect(self.btn_measure_clicked)
+        
+        self.btn_measure_once = QPushButton('Measure Once')
+        self.btn_measure_once.setCheckable(True)
+        self.btn_measure_once.clicked[bool].connect(self.btn_measure_once_clicked)
+
+
 
         self.StatusBox = QtGui.QTextEdit()
         self.StatusBox.setReadOnly(True)
 
         self.tab_pco2.group_layout.addWidget(self.btn_measure, 1, 0)
-        self.tab_pco2.group_layout.addWidget(self.StatusBox, 1, 1)
+        self.tab_pco2.group_layout.addWidget(self.btn_measure_once, 1, 1)
+        self.tab_pco2.group_layout.addWidget(self.StatusBox, 2, 1)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
 
         self.setLayout(hboxPanel)
@@ -352,10 +359,13 @@ class Panel_PCO2_only(QWidget):
 
         return msg.exec_()
 
-    #@asyncSlot() async
-    def btn_measure_clicked(self, state):
-        if state:
-            self.timerSave_pco2.start(1000)
+    @asyncSlot()
+    async def btn_measure_once_clicked(self):
+        await self.update_pco2_data()
+        
+    def btn_measure_clicked(self):
+        if self.btn_measure.isChecked():
+            self.timerSave_pco2.start(10000)
         else:
             self.timerSave_pco2.stop()
 
@@ -414,42 +424,43 @@ class Panel_PCO2_only(QWidget):
                   self.pco2_instrument.co2_temp]
 
         await self.tab_pco2.update_tab_values(values)
-        await self.update_pco2_plot()
-        self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
-        await self.send_pco2_to_ferrybox()
+        await asyncio.sleep(0.1)
+        #await self.update_pco2_plot()
+        #self.pco2_df = await self.pco2_instrument.save_pCO2_data(values, fbox)
+        #await self.send_pco2_to_ferrybox()
         return
 
-
-    async def get_pco2_values(self):
-        self.data = {}
+    async def sync_pco2(self):
         synced = False
-        count = 100
-        self.StatusBox.setText('Wait, instrument is synchronizing')
-        if not self.args.locadev:
+        for n in range(100):
+            
+            print (n)
+            self.StatusBox.setText('Wait, instrument is synchronizing, step {}'.format(n))
+            await asyncio.sleep(0.01)
+            if (not self.btn_measure.isChecked() and not self.btn_measure_once.isChecked()):
+                return
+            b = self.pco2_instrument.connection.read(1)
+            print (b.startswith(b'\x07'))
+            if len(b) and (b[0] == b'\x07'[0]):
+                synced = True
+                return synced
+                
+            if n == 99:
+                return False
+        return synced
+            
+    async def get_pco2_values(self):
+        print ('get pco2 values')
+        self.data = {}
+        synced = await self.sync_pco2() #False
+        print ("synced", synced)
+        if (not self.args.localdev and synced):
             self.pco2_instrument.connection.flushInput()
-            while not synced:
-                self.StatusBox.setText('Wait, instrument is synchronizing')
-                if not self.btn_measure.isChecked():
-                    break
-                b = self.connection.read(1)
-                if len(b) and (b[0] == b'\x07'[0]):
-                    synced = True
-                count = count - 1
-                if count < 0:
-                    self.data['CH1_Vout'] = -999.0
-                    self.data['ppm'] = -999.0
-                    self.data['type'] = b'\x81'
-                    self.data['range'] = -999.0
-                    self.data['sn'] = b'no_sync'
-                    self.data['VP'] = -999.0
-                    self.data['VT'] = -999.0
-                    self.data['mode'] = b'\x80'
-                    # raise ValueError('cannot sync to CO2 detector')
-                    return (self.data)
+
             try:
                 self.StatusBox.setText('Trying to read data')
-                self.buff = self.pco2_instrument.read(37)
-                print (self.butt)
+                self.buff = self.pco2_instrument.connection.read(38)
+                print ('buffer', self.buff)
                 self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
                 self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
                 self.data['type'] = self.buff[8:9]
@@ -458,12 +469,25 @@ class Panel_PCO2_only(QWidget):
                 self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
                 self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
                 self.data['mode'] = self.buff[35:36]
+                print (self.data['type'][0],b'\x81'[0])
                 if self.data['type'][0] != b'\x81'[0]:
-                    raise ValueError('the gas type is not correct')
-                if self.data['mode'][0] != b'\x80'[0]:
-                    raise ValueError('the detector mode is not correct')
+                    print ('the gas type is not correct')
+                    self.data = None
+                #if self.data['mode'][0] != b'\x80'[0]:
+                #    raise ValueError('the detector mode is not correct')
             except:
                 raise
+        else:
+            self.data['CH1_Vout'] = -999.0
+            self.data['ppm'] = -999.0
+            self.data['type'] = b'\x81'
+            self.data['range'] = -999.0
+            self.data['sn'] = b'no_sync'
+            self.data['VP'] = -999.0
+            self.data['VT'] = -999.0
+            self.data['mode'] = b'\x80'
+            # raise ValueError('cannot sync to CO2 detector')
+        print (self.data)
         return (self.data)
 
     async def send_pco2_to_ferrybox(self):
@@ -1487,7 +1511,7 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def update_pco2_data(self):
-
+        print ("update pco2 data")
         # UPDATE VALUES
         self.wat_temp = self.get_value_pco2_from_voltage(type="Tw")
         self.air_temp_mem = self.get_value_pco2_from_voltage(type="Ta_mem")
@@ -1500,7 +1524,7 @@ class Panel(QWidget):
                   self.air_temp, self.air_pres, self.leak_detect,
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
 
-        await self.pco2_instrument.get_pco2_values()
+        await self.get_pco2_values()
 
         await self.tab_pco2.update_tab_values(values)
 

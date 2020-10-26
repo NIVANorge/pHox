@@ -75,20 +75,21 @@ class pco2_instrument(object):
 
         try:
 
-            ports = list(serial.tools.list_ports.comports())
-            connection_types = [port[1] for port in ports]
-
-            self.port = ports[0]
-
+            #ports = list(serial.tools.list_ports.comports())
+            #connection_types = [port[1] for port in ports]
+            #print (connection_types)
+            #self.port = ports[0]
+    
             #ind = connection_types.index('USB-RS485 Cable')
             #port = ports[ind][0]
-            logging.debug(f'Connected port is {self.port}')
+            #logging.debug(f'Connected port is {self.port}')
 
-            self.connection = serial.Serial(self.port[0], baudrate=115200, timeout=5,
+            self.connection = serial.Serial('/dev/serial0', baudrate=115200, timeout=5,
                                             parity=serial.PARITY_NONE,
                                             stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS,
                                             rtscts=False, dsrdtr=False,
                                             xonxoff=False)
+                
             '''self.connection = serial.Serial(port,
                                       baudrate=9600,
                                       parity=serial.PARITY_NONE,
@@ -111,8 +112,8 @@ class pco2_instrument(object):
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
         self.ppco2_string_version = f['PPCO2_STRING_VERSION']
 
-        self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
-        self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
+        #self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
+        #self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
 
         self.VAR_NAMES = [
             "Water temperature \xB0C",
@@ -127,48 +128,6 @@ class pco2_instrument(object):
 
         self.pco2_df = pd.DataFrame(columns=["Time", "Lon", "Lat", "fb_temp", "fb_sal",
                                              "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
-
-
-
-    async def get_pco2_values(self):
-        self.connection.flushInput()
-        self.data = {}
-        synced = False
-        count = 100
-        while not synced:
-            b = self.connection.read(1)
-            if len(b) and (b[0] == b'\x07'[0]):
-                synced = True
-            count = count - 1
-            if count < 0:
-                self.data['CH1_Vout'] = -999.0
-                self.data['ppm'] = -999.0
-                self.data['type'] = b'\x81'
-                self.data['range'] = -999.0
-                self.data['sn'] = b'no_sync'
-                self.data['VP'] = -999.0
-                self.data['VT'] = -999.0
-                self.data['mode'] = b'\x80'
-                # raise ValueError('cannot sync to CO2 detector')
-                return (self.data)
-        try:
-            self.buff = self.connection.read(37)
-            print (self.butt)
-            self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
-            self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
-            self.data['type'] = self.buff[8:9]
-            self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
-            self.data['sn'] = self.buff[13:27]
-            self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
-            self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
-            self.data['mode'] = self.buff[35:36]
-            if self.data['type'][0] != b'\x81'[0]:
-                raise ValueError('the gas type is not correct')
-            if self.data['mode'][0] != b'\x80'[0]:
-                raise ValueError('the detector mode is not correct')
-        except:
-            raise
-        return (self.data)
 
 
     '''async def get_pco2_values(self):
