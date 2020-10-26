@@ -58,7 +58,7 @@
         "Tw": {
             "Channel": 1,
             "comment":  "water_temperature",
-                "WAT_TEMP_CAL": [
+                "Calibr": [
                 -25.779,
                 29.84
             ]
@@ -66,21 +66,21 @@
         "Ta_mem": {
             "Channel": 2,
             "comment3": "# Air, Temperature, analog  (air behind the membrane)",
-            "AIR_TEMP_CAL": [
+            "Calibr": [
                 80.329,
                 17.415
             ]},
         "Qw": {
             "Channel": 4,
             "comment1": "# Water Flow:",
-            "WAT_FLOW_CAL": [
+            "Calibr": [
                 -1.25,
                 1.6682
             ]},
         "Pw": {
             "Channel": 3,
             "comment2": "# Water, Pressure, analog:",
-            "WAT_PRES_CAL": [
+            "Calibr": [
                 -2.5,
                 1.75562
             ]
@@ -89,7 +89,7 @@
         "Pa_env": {
              "Channel": 5,
             "comment4": "Air, Pressure, (air in the pelicase)",
-            "AIR_PRES_CAL": [
+            "Calibr": [
                 781.2273,
                 302.2975
             ]
@@ -104,7 +104,7 @@
 
         "CO2": {
             "comment6": " # CO2 molar fraction calibration coefficients :",
-            "CO2_FRAC_CAL": [
+            "Calibr": [
                 -30.439,
                 1.4352
             ]
