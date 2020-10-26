@@ -2,8 +2,9 @@ import serial
 import serial.tools.list_ports
 import logging
 import numpy as np
-from PyQt5.QtWidgets import QLineEdit, QWidget
-from PyQt5.QtWidgets import (QGroupBox, QLabel, QGridLayout)
+from PyQt5 import QtCore
+from PyQt5.QtGui import QPixmap
+
 from precisions import precision as prec
 try:
     import pigpio
@@ -11,7 +12,9 @@ try:
     from ADCDifferentialPi import ADCDifferentialPi
 except:
     pass
-
+from PyQt5.QtWidgets import QLineEdit, QWidget
+from PyQt5.QtWidgets import QGroupBox, QMessageBox, QLabel, QGridLayout
+from PyQt5 import QtGui, QtCore, QtWidgets
 import os
 import pandas as pd
 
@@ -23,8 +26,9 @@ logging.getLogger()
 class tab_pco2_class(QWidget):
     def __init__(self):
         super(QWidget, self).__init__()
-        self.layout2 = QGridLayout()
+        
         groupbox = QGroupBox('Updates from pCO2')
+        self.group_layout = QGridLayout()
         layout = QGridLayout()
 
         self.Tw_pco2_live = QLineEdit()
@@ -46,7 +50,7 @@ class tab_pco2_class(QWidget):
         [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
 
         groupbox.setLayout(layout)
-        self.layout2.addWidget(groupbox)
+        self.group_layout.addWidget(groupbox)
 
 
     async def update_tab_values(self, values):
@@ -161,7 +165,6 @@ class only_pco2_instrument(pco2_instrument):
         if not self.args.localdev:
             self.adc = ADCDifferentialPi(0x68, 0x69, 14)
             self.adc.set_pga(1)
-            
 
     def get_Voltage(self, nAver, channel):
         v = 0.0000

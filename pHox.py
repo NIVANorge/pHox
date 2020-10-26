@@ -25,6 +25,7 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
+
 def get_linregress(x, y):
     a = np.vstack([x, np.ones(len(x))]).T
     slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
@@ -234,10 +235,7 @@ class Common_instrument(object):
         conf_operational = config_file["Operational"]
         self.autostart = self.to_bool(conf_operational["AUTOSTART"])
         self.automode = conf_operational["AUTOSTART_MODE"]
-        #self.DURATION = int(conf_operational["DURATION"])
         self.Voltagech = int(conf_operational["T_PROBE_CH"])
-        if not (self.Voltagech in range(9)):
-            self.Voltagech = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
         self.pumpTime = int(conf_operational["pumpTime_sec"])

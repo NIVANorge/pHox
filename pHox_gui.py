@@ -288,6 +288,7 @@ class Panel_PCO2_only(QWidget):
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()
+
         self.tab_pco2_calibration = QWidget()
         self.tab_pco2_config = QWidget()
 
@@ -310,10 +311,40 @@ class Panel_PCO2_only(QWidget):
 
         self.timerSave_pco2 = QtCore.QTimer()
         self.timerSave_pco2.timeout.connect(self.update_pco2_data)
-        self.timerSave_pco2.start(1000)
+        #self.timerSave_pco2.start(1000)
 
-        self.tab_pco2.setLayout(self.tab_pco2.layout2)
+        self.btn_measure = QPushButton('Measure')
+        self.btn_measure.setCheckable(True)
+        self.btn_measure.clicked[bool].connect(self.btn_measure_clicked)
+
+        self.tab_pco2.group_layout.addWidget(self.btn_measure)
+        self.tab_pco2.setLayout(self.tab_pco2.group_layout)
         self.setLayout(hboxPanel)
+
+    def valve_message(self, type = "Confirm Exit"):
+
+        msg = QMessageBox()
+
+        image = 'utils/pHox_question.png'
+
+        pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
+
+        msg.setIconPixmap(pixmap)
+        msg.setWindowIcon(QtGui.QIcon('utils/pHox_logo.png'))
+
+        msg.setWindowTitle('Important')
+        msg.setText("Are you sure you want to exit ?")
+
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+
+        return msg.exec_()
+
+    #@asyncSlot() async
+    def btn_measure_clicked(self, state):
+        if state:
+            self.timerSave_pco2.start(1000)
+        else:
+            self.timerSave_pco2.stop()
 
     def clear_plot_btn_clicked(self):
         self.pco2_timeseries['times'] = []
@@ -399,8 +430,6 @@ class Panel_PCO2_only(QWidget):
                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                     symbolSize=self.symbolSize, pen=self.pen)
 
-
-
     def autorun(self):
         pass
 
@@ -463,14 +492,18 @@ class Panel(QWidget):
 
         if self.args.pco2:
             self.tab_pco2 = tab_pco2_class()
+
             self.tabs.addTab(self.tab_pco2, "pCO2")
-            self.tab_pco2.setLayout(self.tab_pco2.layout2)
+            self.tab_pco2.setLayout(self.tab_pco2.group_layout)
+
             self.tab_pco2_plot = QTabWidget()
             self.tabs.addTab(self.tab_pco2_plot, "pCO2 plot")
+
             v = QtGui.QVBoxLayout()
             date_axis = TimeAxisItem(orientation='bottom')
             self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
             v.addWidget(self.plotwidget_pco2)
+
             self.tab_pco2_plot.setLayout(v)
             self.pco2_list, self.pco2_times = [], []
             self.pco2_data_line = self.plotwidget_pco2.plot(symbol='o', pen=self.pen)
