@@ -68,49 +68,62 @@
         "dye_level": 1999.88
     },
     "pCO2": {
-        "water_temperature": {
-            "WAT_TEMP_CAL": [
+        "Tw": {
+            "Channel": 1,
+            "comment":  "water_temperature",
+            "Calibr": [
                 -25.779,
                 29.84
-            ],
-            "WAT_TEMP_CH": 1
-        },
-        "comment1": "# Water flow calibration coefficients :",
-        "WAT_FLOW_CAL": [
-            -1.25,
-            1.6682
-        ],
-        "comment2": "# Water pressure calibration coefficients :",
-        "WAT_PRES_CAL": [
-            -2.5,
-            1.75562
-        ],
-        "comment3": "# Air temperature calibration coefficients :",
-        "AIR_TEMP_CAL": [
-            80.329,
-            17.415
-        ],
-        "comment4": "# Air pressure calibration coefficients ",
-        "AIR_PRES_CAL": [
-            781.2273,
-            302.2975
-        ],
-        "comment5": " Water detection voltage threshold :",
-        "WAT_DETECT": [
-            0,
-            1
-        ],
-        "comment6": " # CO2 molar fraction calibration coefficients :",
-        "CO2_FRAC_CAL": [
-            -30.439,
-            1.4352
-        ],
+            ]},
+        "Ta_mem": {
+            "Channel": 2,
+            "comment3": "# Air, Temperature, analog  (air behind the membrane)",
+            "Calibr": [
+                80.329,
+                17.415
+            ]},
+        "Qw": {
+            "Channel": 4,
+            "comment1": "# Water Flow:",
+            "Calibr": [
+                -1.25,
+                1.6682
+            ]},
+        "Pw": {
+            "Channel": 3,
+            "comment2": "# Water Pressure",
+            "Calibr": [
+                -2.5,
+                1.75562
+            ]},
+        "Pa_env": {
+             "Channel": 5,
+            "comment4": "Air, Pressure, (air in the pelicase)",
+            "Calibr": [
+                781.2273,
+                302.2975
+            ]},
+        "Ta_env": {
+            "Channel": 6,
+            "comment5": "  Air Temperature (air in the pelicase) – not installed yet",
+            "Calibr": [
+                0,
+                0
+            ]},
+        "CO2": {
+            "comment6": " # CO2 molar fraction calibration coefficients :",
+            "CO2_FRAC_CAL": [
+                -30.439,
+                1.4352
+            ]},
+
         "QUERY_CO2": "\\x2A\\x4D\\x31\\x0A\\x0D",
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# used to be SAVE_PCO2_SEC",
-        "pCO2_Sampling_interval": 1,
+        "pCO2_Sampling_interval": 10,
         "PPCO2_STRING_VERSION": "1"
     },
+
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,

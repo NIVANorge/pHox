@@ -369,7 +369,9 @@ class Panel_PCO2_only(QWidget):
 
         self.tab_pco2_calibration.setLayout(l)
 
-    def get_value_pco2(self, channel, coef):
+    def get_value_pco2_from_voltage(self, type):
+        channel = config_file['pCO2'][type]["Channel"]
+        coef = config_file['pCO2'][type]["Calibr"]
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
@@ -384,17 +386,18 @@ class Panel_PCO2_only(QWidget):
     async def update_pco2_data(self):
 
         # UPDATE VALUES
-        self.wat_temp = self.get_value_pco2(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
-        self.wat_flow = self.get_value_pco2(channel=2, coef=self.pco2_instrument.wat_flow_cal)
-        self.wat_pres = self.get_value_pco2(channel=3, coef=self.pco2_instrument.wat_pres_cal)
-        self.air_temp = self.get_value_pco2(channel=4, coef=self.pco2_instrument.air_temp_cal)
-        self.air_pres = self.get_value_pco2(channel=5, coef=self.pco2_instrument.air_pres_cal)
-        self.leak_detect = 999
+        self.wat_temp = self.get_value_pco2_from_voltage(type="Tw")
+        self.air_temp_mem = self.get_value_pco2_from_voltage(type="Ta_mem")
+        self.wat_flow = self.get_value_pco2_from_voltage(type="Qw")
+        self.wat_pres = self.get_value_pco2_from_voltage(type="Pw")
+        self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
+        self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
+
         await self.pco2_instrument.get_pco2_values()
 
-        values = [self.wat_temp, self.wat_flow, self.wat_pres,
-                  self.air_temp, self.air_pres, self.leak_detect,
-                  self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+        values = [self.wat_temp, self.air_temp_mem, self.wat_flow, self.wat_pres,
+                  self.air_pres, self.air_temp_env, self.pco2_instrument.co2,
+                  self.pco2_instrument.co2_temp]
 
         await self.tab_pco2.update_tab_values(values)
         await self.update_pco2_plot()
@@ -1327,10 +1330,6 @@ class Panel(QWidget):
         self.btn_light.setChecked(True)
         self.instrument.LEDS[ind] = value
 
-
-
-
-
     def save_stability_test(self, datay):
         stabfile = os.path.join("/home/pi/pHox/data/data_pH/sp_stability.log")
 
@@ -1411,7 +1410,10 @@ class Panel(QWidget):
         else:
             self.ferrypump_box.setChecked(False)
 
-    def get_value_pco2_from_voltage(self, channel, coef):
+    def get_value_pco2_from_voltage(self, type):
+        channel = config_file['CO2'][type]["Channel"]
+        coef = config_file['CO2'][type]["Calibr"]
+
         if self.args.localdev:
             x = np.random.randint(0, 100)
         else:
@@ -1426,27 +1428,19 @@ class Panel(QWidget):
     async def update_pco2_data(self):
 
         # UPDATE VALUES
-        self.wat_temp = self.get_value_pco2_from_voltage(channel=1, coef=self.pco2_instrument.wat_temp_cal_coef)
-        self.wat_flow = self.get_value_pco2_from_voltage(channel=2, coef=self.pco2_instrument.wat_flow_cal)
-        self.wat_pres = self.get_value_pco2_from_voltage(channel=3, coef=self.pco2_instrument.wat_pres_cal)
-        self.air_temp = self.get_value_pco2_from_voltage(channel=4, coef=self.pco2_instrument.air_temp_cal)
-        self.air_pres = self.get_value_pco2_from_voltage(channel=5, coef=self.pco2_instrument.air_pres_cal)
-        self.leak_detect = 999
-
-        #•	Tw: Water Temperature, analog 1
-        """Qw: Water Flow, analog 4
-            Pw: Water Pressure, analog 3
-            Ta_mem: Air Temperature, analog 2 (air behind the membrane)
-        •	Pa_env: Air Pressure, analog 5 (air in the pelicase)
-        •	Ta_env: Air Temperature, analog 6 (air in the pelicase) – not installed yet
-"""
-
+        self.wat_temp = self.get_value_pco2_from_voltage(type="Tw")
+        self.air_temp_mem = self.get_value_pco2_from_voltage(type="Ta_mem")
+        self.wat_flow = self.get_value_pco2_from_voltage(type="Qw")
+        self.wat_pres = self.get_value_pco2_from_voltage(type="Pw")
+        self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
+        self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
 
         await self.pco2_instrument.get_pco2_values()
 
         values = [self.wat_temp, self.wat_flow, self.wat_pres,
                   self.air_temp, self.air_pres, self.leak_detect,
                   self.pco2_instrument.co2, self.pco2_instrument.co2_temp]
+
         await self.tab_pco2.update_tab_values(values)
 
         await self.update_pco2_plot()

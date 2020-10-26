@@ -4,7 +4,7 @@ import logging
 import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtGui import QPixmap
-
+import struct
 from precisions import precision as prec
 try:
     import pigpio
@@ -32,19 +32,20 @@ class tab_pco2_class(QWidget):
         layout = QGridLayout()
 
         self.Tw_pco2_live = QLineEdit()
-        self.flow_pco2_live = QLineEdit()
+        self.Ta_mem_pco2_live = QLineEdit()
+        self.Qw_pco2_live = QLineEdit()
         self.Pw_pco2_live = QLineEdit()
-        self.Ta_pco2_live = QLineEdit()
-        self.Pa_pco2_live = QLineEdit()
-        self.Leak_pco2_live = QLineEdit()
+        self.Pa_env_pco2_live = QLineEdit()
+        self.Ta_env_pco2_live = QLineEdit()
         self.CO2_pco2_live = QLineEdit()
         self.TCO2_pco2_live = QLineEdit()
 
-        self.pco2_params = [self.Tw_pco2_live, self.flow_pco2_live, self.Pw_pco2_live,
-                            self.Ta_pco2_live, self.Pa_pco2_live, self.Leak_pco2_live,
+        self.pco2_params = [self.Tw_pco2_live, self.Ta_mem_pco2_live, self.Qw_pco2_live,
+                            self.Pw_pco2_live, self.Pa_env_pco2_live, self.Ta_env_pco2_live,
                             self.CO2_pco2_live, self.TCO2_pco2_live]
-        self.pco2_labels = ['Water temperature', 'Water flow l/m', 'Water pressure"',
-                            'Air temperature', 'Air pressure mbar', 'Leak Water detect',
+
+        self.pco2_labels = ['Water temperature', 'Air Temperature membr', 'Water Flow',
+                            'Water Pressure', 'Air Pressure env', 'Air Temperature env',
                             'C02 ppm', 'T CO2 sensor']
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
         [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
@@ -73,7 +74,7 @@ class pco2_instrument(object):
             ind = connection_types.index('USB-RS485 Cable')
             port = ports[ind][0]
             logging.debug(f'Connected port is {port}')
-            self.portSens = serial.Serial(port,
+            self.connection = serial.Serial(port,
                                       baudrate=9600,
                                       parity=serial.PARITY_NONE,
                                       stopbits=serial.STOPBITS_ONE,
@@ -83,23 +84,19 @@ class pco2_instrument(object):
                                       rtscts=False,
                                       dsrdtr=False,
                                       xonxoff=False)
-            logging.debug(self.portSens)
+            logging.debug(self.connection)
         except:
             logging.debug('Was not able to find connection to the instrument')
-            self.portSens = None
+            self.connection = None
 
         f = config_file["pCO2"]
+
 
         self.ship_code = config_file['Operational']["Ship_Code"]
         self.save_pco2_interv = f["pCO2_Sampling_interval"]
 
-        self.wat_temp_cal_coef = f["water_temperature"]["WAT_TEMP_CAL"]
-        self.wat_flow_cal = f["WAT_FLOW_CAL"]
-        self.wat_pres_cal = f["WAT_PRES_CAL"]
-        self.air_temp_cal = f["AIR_TEMP_CAL"]
-        self.air_pres_cal = f["AIR_PRES_CAL"]
-        self.water_detect = f["WAT_DETECT"]
-        self.Co2_CalCoef = f["CO2_FRAC_CAL"]
+
+        self.Co2_CalCoef = f["CO2"]["CO2_FRAC_CAL"]
         self.ppco2_string_version = f['PPCO2_STRING_VERSION']
 
         self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
@@ -120,9 +117,50 @@ class pco2_instrument(object):
                                              "Tw", "Flow", "Pw", "Ta", "Pa", "Leak", "CO2", "TCO2"])
 
     async def get_pco2_values(self):
-        if self.portSens:
-            self.portSens.write(self.QUERY_CO2)
-            response_co2 = self.portSens.read(15)
+        self.connection.flushInput()
+        self.data = {}
+        synced = False
+        count = 100
+        while not synced:
+            b = self.connection.read(1)
+            if len(b) and (b[0] == b'\x07'[0]):
+                synced = True
+            count = count - 1
+            if count < 0:
+                self.data['CH1_Vout'] = -999.0
+                self.data['ppm'] = -999.0
+                self.data['type'] = b'\x81'
+                self.data['range'] = -999.0
+                self.data['sn'] = b'no_sync'
+                self.data['VP'] = -999.0
+                self.data['VT'] = -999.0
+                self.data['mode'] = b'\x80'
+                # raise ValueError('cannot sync to CO2 detector')
+                return (self.data)
+        try:
+            self.buff = self.connection.read(37)
+            print (self.butt)
+            self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
+            self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
+            self.data['type'] = self.buff[8:9]
+            self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
+            self.data['sn'] = self.buff[13:27]
+            self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
+            self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
+            self.data['mode'] = self.buff[35:36]
+            if self.data['type'][0] != b'\x81'[0]:
+                raise ValueError('the gas type is not correct')
+            if self.data['mode'][0] != b'\x80'[0]:
+                raise ValueError('the detector mode is not correct')
+        except:
+            raise
+        return (self.data)
+
+
+    '''async def get_pco2_values(self):
+        if self.connection:
+            self.connection.write(self.QUERY_CO2)
+            response_co2 = self.connection.read(15)
             logging.debug(f'full response_co2 {response_co2}')
             try:
                 value = float(response_co2[3:])
@@ -131,16 +169,15 @@ class pco2_instrument(object):
                 value = 0
             self.co2 = round(value, prec['pCO2'])
 
-            self.portSens.write(self.QUERY_T)
-            response_t = self.portSens.read(15)
+            self.connection.write(self.QUERY_T)
+            response_t = self.connection.read(15)
             logging.debug('response_t {response_t}')
             try:
                 self.co2_temp = round(float(response_t[3:]), prec['T_cuvette'])
             except ValueError:
-                self.co2_temp = 0
+                self.co2_temp = 0'''
 
     async def save_pCO2_data(self, values, fbox):
-
         labelSample = datetime.now().isoformat("_")[0:19]
         logfile = os.path.join(self.path, "pCO2.log")
 
