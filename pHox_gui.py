@@ -322,7 +322,7 @@ class Panel_PCO2_only(QWidget):
         self.setLayout(hboxPanel)
 
     def close(self):
-        self.pco2_instrument.connection.close()
+        self.pco2_instrument.close()
         return
 
 

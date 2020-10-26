@@ -22,6 +22,7 @@ from datetime import datetime
 
 from util import config_file
 logging.getLogger()
+logging.getLogger().setLevel(logging.DEBUG)
 
 class tab_pco2_class(QWidget):
     def __init__(self):
@@ -239,3 +240,7 @@ class test_pco2_instrument(pco2_instrument):
         for i in range(nAver):
             v += 0.6
         return v / nAver
+
+    def close(self):
+        print ('close connection, localtest')
+        logging.debug('close connection, localtest')
