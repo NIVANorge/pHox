@@ -1399,6 +1399,16 @@ class Panel(QWidget):
         self.air_temp = self.get_value_pco2_from_voltage(channel=4, coef=self.pco2_instrument.air_temp_cal)
         self.air_pres = self.get_value_pco2_from_voltage(channel=5, coef=self.pco2_instrument.air_pres_cal)
         self.leak_detect = 999
+
+        #•	Tw: Water Temperature, analog 1
+        """Qw: Water Flow, analog 4
+            Pw: Water Pressure, analog 3
+            Ta_mem: Air Temperature, analog 2 (air behind the membrane)
+        •	Pa_env: Air Pressure, analog 5 (air in the pelicase)
+        •	Ta_env: Air Temperature, analog 6 (air in the pelicase) – not installed yet
+"""
+
+
         await self.pco2_instrument.get_pco2_values()
 
         values = [self.wat_temp, self.wat_flow, self.wat_pres,
@@ -1629,23 +1639,20 @@ class Panel(QWidget):
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
 
-
-        upload_RT_dict = {"spt": {},
-                       "eval": {},
-                       "final_pH": {}}
-
-        for col in self.spCounts_df.columns:
-            upload_RT_dict['spt'][col] = self.spCounts_df[col].values.tolist()
-
-        for col in self.evalPar_df.columns:
-            upload_RT_dict['eval'][col] = self.evalPar_df[col].values.tolist()
-
-        for col in self.data_log_row.columns:
-            upload_RT_dict["final_pH"][col] = self.data_log_row[col].values.tolist()[0]
-
-
         if not self.args.co3:
             import json
+            upload_RT_dict = {"spt": {},
+                           "eval": {},
+                           "final_pH": {}}
+
+            for col in self.spCounts_df.columns:
+                upload_RT_dict['spt'][col] = self.spCounts_df[col].values.tolist()
+
+            for col in self.evalPar_df.columns:
+                upload_RT_dict['eval'][col] = self.evalPar_df[col].values.tolist()
+
+            for col in self.data_log_row.columns:
+                upload_RT_dict["final_pH"][col] = self.data_log_row[col].values.tolist()[0]
 
             upload_RT_path = os.path.join(folderpath, "upload")
 
@@ -1665,7 +1672,7 @@ class Panel(QWidget):
         if 'Calibration' not in self.major_modes:
             logging.info("Send pH data to ferrybox")
             self.send_to_ferrybox()
-            self.save_logfile_df(folderpath, flnmStr)
+            self.save_logfile_df(folderpath)
 
     def update_LEDs(self):
         [self.sliders[n].setValue(self.instrument.LEDS[n]) for n in range(3)]
@@ -2128,17 +2135,10 @@ class Panel(QWidget):
 
         self.evalPar_df.to_csv(flnm, index=False, header=True)
 
-    def save_logfile_df(self, folderpath, flnmStr):
+    def save_logfile_df(self, folderpath):
         logging.info("save log file df")
-        hour_log_path = folderpath + "/logs/"
-        if not os.path.exists(hour_log_path):
-            os.makedirs(hour_log_path)
 
-        hour_log_flnm = os.path.join(hour_log_path, datetime.now().strftime("%Y%m%d_%H")) + '.log'
-        if not os.path.exists(hour_log_flnm):
-            self.data_log_row.to_csv(hour_log_flnm, index=False, header=True)
-        else:
-            self.data_log_row.to_csv(hour_log_flnm, mode='a', index=False, header=False)
+
 
         logfile = self.get_logfile_name(folderpath)
         if os.path.exists(logfile):
@@ -2330,7 +2330,7 @@ class Panel_pH(Panel):
 
             self.data_log_row['batch_number'] = self.batch_number
 
-            self.save_logfile_df(folderpath, flnmStr)
+            self.save_logfile_df(folderpath)
 
             if mean_result < 0.5: #majority of tests with clean cuvette (last 3) is true
                 res = 'red' #1 #False

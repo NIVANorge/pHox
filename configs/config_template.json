@@ -57,7 +57,7 @@
         "LED1": 55,
         "LED2": 55,
         "LED3": 55,
-        "Default_DYE": "Pb_perchlor",
+        "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
         "MCP_wl_I2": 578,
