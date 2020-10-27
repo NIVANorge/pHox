@@ -55,27 +55,30 @@
         "PPHOX_STRING_VERSION": "1"
     },
     "pCO2": {
+        "pCO2_Sampling_interval": 10,
+        "interval" : 1,
+        "comment" : "time interval in sec",
         "Tw": {
             "Channel": 1,
             "comment":  "water_temperature",
                 "Calibr": [
-                -25.779,
-                29.84
+                63.646,
+                -74.864
             ]
             },
         "Ta_mem": {
             "Channel": 2,
             "comment3": "# Air, Temperature, analog  (air behind the membrane)",
             "Calibr": [
-                80.329,
-                17.415
+                63.664,
+                -75.035
             ]},
         "Qw": {
             "Channel": 4,
             "comment1": "# Water Flow:",
             "Calibr": [
-                -1.25,
-                1.6682
+                4.2054,
+                -1.7079
             ]},
         "Pw": {
             "Channel": 3,
@@ -90,8 +93,8 @@
              "Channel": 5,
             "comment4": "Air, Pressure, (air in the pelicase)",
             "Calibr": [
-                781.2273,
-                302.2975
+                1115.8,
+                785.41
             ]
         },
         "Ta_env": {
@@ -109,11 +112,17 @@
                 1.4352
             ]
         },
-
+        "VP": {
+            "comment6": " # Gas pressure calibration coefficients :",
+            "Calibr": [
+                1.054,
+                -50.744
+            ]
+        },
         "QUERY_CO2": "\\x2A\\x4D\\x31\\x0A\\x0D",
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# used to be SAVE_PCO2_SEC",
-        "pCO2_Sampling_interval": 10,
+
         "PPCO2_STRING_VERSION": "1"
     },
 
