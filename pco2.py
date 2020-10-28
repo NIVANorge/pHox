@@ -74,46 +74,25 @@ class pco2_instrument(object):
             self.connection = None
 
         f = config_file["pCO2"]
-
+        self.Co2_CalCoef = f["CO2"]["Calibr"]
         self.ship_code = config_file['Operational']["Ship_Code"]
-        #self.save_pco2_interv = f["pCO2_Sampling_interval"]
         self.ppco2_string_version = f['PPCO2_STRING_VERSION']
 
-        # self.QUERY_CO2 = b"\x2A\x4D\x31\x0A\x0D"
-        # self.QUERY_T = b"\x2A\x41\x32\x0A\x0D"
-
-        self.VAR_NAMES = [
-            "Water temperature \xB0C",
-            "Water flow l/m",
-            "Water pressure",
-            "Air temperature \xB0C",
-            "Air pressure mbar",
-            "Water detect",
-            "C02 ppm",
-            "T CO2 sensor \xB0C",
-        ]
-
-
-
-    async def save_pCO2_data(self,data, values, fbox):
+    async def save_pCO2_data(self, data, values):
         data['time'] = data['time'].strftime("%Y%m%d_%H%M%S")
-        print (values)
+
         columns1 = list(data.keys())
-        #print (columns1)
         row = list(data.values())
-        #labelSample = datetime.now().isoformat("_")[0:19]
+
         logfile = os.path.join(self.path, "pCO2.log")
-        columns2 = ["Lon", "Lat", "fb_temp", "fb_sal","Tw", "Ta_mem","Qw", "Pw", "Pa_env", "Ta_env"]
+        columns2 = ["Lon", "Lat", "fb_temp", "fb_sal", "Tw", "Ta_mem", "Qw", "Pw", "Pa_env", "Ta_env"]
         columnss = columns1 + columns2
-        #print (columnss,len(columnss))
+
         self.pco2_df = pd.DataFrame(columns=columnss)
         pco2_row = row + [fbox["longitude"], fbox["latitude"],
                     fbox["temperature"], fbox["salinity"]] + values
-        
-        #print (len(pco2_row),len(row),len(values))          
+
         self.pco2_df.loc[0] = pco2_row
-        print (self.pco2_df)
-        #print (pco2_row)
         logging.debug('Saving pco2 data')
 
         if not os.path.exists(logfile):
@@ -130,15 +109,15 @@ class testconnection():
     def read(self,val):
         return b'\x07'
 
+    def flushInput(self):
+        pass
+
 class only_pco2_instrument(pco2_instrument):
     # Class for communication with Raspberry PI for the only pco2 case
     def __init__(self, base_folderpath, panelargs):
         super().__init__(base_folderpath, panelargs)
-
-
-        if not self.args.localdev:
-            self.adc = ADCDifferentialPi(0x68, 0x69, 14)
-            self.adc.set_pga(1)
+        self.adc = ADCDifferentialPi(0x68, 0x69, 14)
+        self.adc.set_pga(1)
 
     def get_Voltage(self, nAver, channel):
         v = 0.0000
@@ -337,9 +316,12 @@ class Panel_PCO2_only(QWidget):
             x = np.random.randint(0, 100)
         else:
             v = self.pco2_instrument.get_Voltage(2, channel)
-            x = 0
-            for i in range(2):
-                x += coef[i] * pow(v, i)
+            x = coef[0] * v + coef[1]
+
+            #x = 0
+            #for i in range(2):
+            #    x += coef[i] * pow(v, i)
+
             x = round(x, 3)
         return x
 
@@ -355,7 +337,7 @@ class Panel_PCO2_only(QWidget):
         else:
             self.timerSave_pco2.stop()
 
-    @asyncSlot()
+    #@asyncSlot()
     async def update_pco2_data(self):
         self.measuring = True
         start = datetime.now()
@@ -368,9 +350,10 @@ class Panel_PCO2_only(QWidget):
         self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
         #start2 = datetime.now()
         synced = await self.get_pco2_values()
+
         #print ('only pco2 takes', datetime.now() - start2)
         
-        #print (synced, "after getting pco2 values")
+        print (synced, "after getting pco2 values")
 
         values = [self.wat_temp, self.air_temp_mem, self.wat_flow, self.wat_pres,
                   self.air_pres, self.air_temp_env]
@@ -383,12 +366,13 @@ class Panel_PCO2_only(QWidget):
             await self.pco2_instrument.save_pCO2_data(self.data,values, fbox)
         else:
             self.StatusBox.setText('Could not measure')
+            print ('could not measure')
         #self.pco2_df = 
 
         # await self.send_pco2_to_ferrybox()
         self.measuring = False
         print ('measurement took', datetime.now() - start)
-        return
+
 
     async def sync_pco2(self):
         self.pco2_instrument.connection.flushInput()
@@ -418,6 +402,8 @@ class Panel_PCO2_only(QWidget):
                 #self.StatusBox.setText('Trying to read data')
                 self.buff = self.pco2_instrument.connection.read(37)
                 self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
+                self.data['CH1_Vout'] = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * self.data['CH1_Vout']
+
                 self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
                 self.data['type'] = self.buff[8:9]
                 self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]

@@ -68,6 +68,7 @@
         "dye_level": 1999.88
     },
     "pCO2": {
+        "interval": 1,
         "Tw": {
             "Channel": 1,
             "comment":  "water_temperature",

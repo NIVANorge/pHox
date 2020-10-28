@@ -84,8 +84,8 @@
             "Channel": 3,
             "comment2": "# Water, Pressure, analog:",
             "Calibr": [
-                -2.5,
-                1.75562
+                6.3985,
+                -2.5343
             ]
         },
 
@@ -101,15 +101,15 @@
             "Channel": 6,
             "comment5": "  Air Temperature (air in the pelicase) – not installed yet",
             "Calibr": [
-                0,
-                0]
+                63.911,
+                -75.191]
         },
 
         "CO2": {
             "comment6": " # CO2 molar fraction calibration coefficients :",
             "Calibr": [
-                -30.439,
-                1.4352
+                0.28,
+                41.427
             ]
         },
         "VP": {
