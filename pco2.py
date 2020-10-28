@@ -57,7 +57,7 @@ class pco2_instrument(object):
         self.co2 = 990
         self.co2_temp = 999
         self.buff = None
-        self.data = {}
+        self.data = pd.DataFrame
 
         if not os.path.exists(self.path):
             os.mkdir(self.path)
@@ -81,8 +81,9 @@ class pco2_instrument(object):
     async def save_pCO2_data(self, data, values):
         data['time'] = data['time'].strftime("%Y%m%d_%H%M%S")
 
-        columns1 = list(data.keys())
-        row = list(data.values())
+        columns1 = list(data.columns)
+        row = list(data.iloc[0])
+        print (row)
 
         logfile = os.path.join(self.path, "pCO2.log")
         columns2 = ["Lon", "Lat", "fb_temp", "fb_sal", "Tw", "Ta_mem", "Qw", "Pw", "Pa_env", "Ta_env"]
@@ -363,7 +364,7 @@ class Panel_PCO2_only(QWidget):
             await self.tab_pco2.update_tab_values(values, self.data)
             await asyncio.sleep(0.0001)
             await self.update_pco2_plot()
-            await self.pco2_instrument.save_pCO2_data(self.data,values, fbox)
+            await self.pco2_instrument.save_pCO2_data(self.data, values, fbox)
         else:
             self.StatusBox.setText('Could not measure')
             print ('could not measure')
@@ -391,7 +392,8 @@ class Panel_PCO2_only(QWidget):
 
     async def get_pco2_values(self):
 
-        self.data = {}       
+        self.data = pd.DataFrame(columns=['time', 'CH1_Vout', 'ppm', 'type',
+                                          'range', 'sn', 'VP', 'VT', 'mode', 'type'])
         self.data['time'] = datetime.now()
  
         synced = await self.sync_pco2()  # False
@@ -402,9 +404,10 @@ class Panel_PCO2_only(QWidget):
                 #self.StatusBox.setText('Trying to read data')
                 self.buff = self.pco2_instrument.connection.read(37)
                 self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
-                self.data['CH1_Vout'] = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * self.data['CH1_Vout']
 
                 self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
+                self.data['ppm'] = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * self.data['ppm']
+
                 self.data['type'] = self.buff[8:9]
                 self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
                 self.data['sn'] = self.buff[13:27]

@@ -113,7 +113,7 @@
             ]},
         "CO2": {
             "comment6": " # CO2 molar fraction calibration coefficients :",
-            "CO2_FRAC_CAL": [
+            "Calibr": [
                 -30.439,
                 1.4352
             ]},
