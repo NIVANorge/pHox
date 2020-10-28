@@ -406,7 +406,7 @@ class Panel_PCO2_only(QWidget):
                 self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
 
                 self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
-                self.data['ppm'] = float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1]) * self.data['ppm']
+                self.data['ppm'] = self.data['ppm']*float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1])
 
                 self.data['type'] = self.buff[8:9]
                 self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
