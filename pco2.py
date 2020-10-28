@@ -186,8 +186,6 @@ class tab_pco2_class(QWidget):
         [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(all_val))]
 
 
-
-
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument
     def __init__(self, parent, panelargs):
@@ -278,7 +276,6 @@ class Panel_PCO2_only(QWidget):
     def btn_measure_clicked(self):
         if self.btn_measure.isChecked():
             interval = float(config_file['pCO2']['interval'])
-            print (interval)
             self.timerSave_pco2.start(interval * 1000)
         else:
             self.timerSave_pco2.stop()
@@ -349,30 +346,25 @@ class Panel_PCO2_only(QWidget):
         self.wat_pres = self.get_value_pco2_from_voltage(type="Pw")
         self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
         self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
-        #start2 = datetime.now()
-        synced = await self.get_pco2_values()
 
-        #print ('only pco2 takes', datetime.now() - start2)
-        
-        print (synced, "after getting pco2 values")
+        synced = await self.get_pco2_values()
 
         values = [self.wat_temp, self.air_temp_mem, self.wat_flow, self.wat_pres,
                   self.air_pres, self.air_temp_env]
                   
-        if synced: 
-            #values.extend()
+        if synced:
             await self.tab_pco2.update_tab_values(values, self.data)
             await asyncio.sleep(0.0001)
-            await self.update_pco2_plot()
+            self.pco2_df = await self.update_pco2_plot()
             await self.pco2_instrument.save_pCO2_data(self.data, values, fbox)
+            #await self.send_pco2_to_ferrybox()
+
         else:
             self.StatusBox.setText('Could not measure')
-            print ('could not measure')
-        #self.pco2_df = 
 
-        # await self.send_pco2_to_ferrybox()
+
         self.measuring = False
-        print ('measurement took', datetime.now() - start)
+        #print ('measurement took', datetime.now() - start)
 
 
     async def sync_pco2(self):
@@ -416,9 +408,10 @@ class Panel_PCO2_only(QWidget):
                 self.data['mode'] = self.buff[35:36]
                 if self.data['type'][0] != b'\x81'[0]:
                     print('the gas type is not correct')
-                    synced  = False
+                    synced = False
                 # if self.data['mode'][0] != b'\x80'[0]:
                 #    raise ValueError('the detector mode is not correct')
+                self.data = self.data.round({'CH1_Vout': 3, 'ppm': 3, 'range':3, 'VP': 3, 'VT': 3})
             except:
                 raise
         else:
@@ -453,7 +446,7 @@ class Panel_PCO2_only(QWidget):
         
         if length > 10:
              self.pco2_timeseries_averaged['times'].append(self.pco2_timeseries['times'][-1])
-             ppm_avg = np.median(self.pco2_timeseries['values'][-10:])
+             ppm_avg = np.mean(self.pco2_timeseries['values'][-10:])
              self.pco2_timeseries_averaged['values'].append(ppm_avg)    
              self.data['ppm_avg'] = ppm_avg      
              self.pco2_data_averaged_line.setData(self.pco2_timeseries_averaged['times'],
@@ -468,7 +461,10 @@ class Panel_PCO2_only(QWidget):
                                     symbolSize=1, pen=self.pen)
 
     def autorun(self):
-        pass
+        self.btn_measure.setChecked(True)
+
+        if fbox['pumping'] or fbox['pumping'] is None:
+            self.btn_measure_clicked()
 
 class boxUI(QMainWindow):
     def __init__(self, *args, **kwargs):
