@@ -1714,6 +1714,8 @@ class Panel(QWidget):
 
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
+        #TODO: condition for turing on the lamp and wait 3 min for co3 lamp
+        #if self.btn_single_meas.isChecked(:)
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
@@ -2657,9 +2659,6 @@ class boxUI(QMainWindow):
 
     def closeEvent(self, event):
         result = self.main_widget.valve_message("Confirm Exit")
-        #"result = QMessageBox.question(
-        #"    self, "Confirm Exit...", "Are you sure you want to exit ?", QMessageBox.Yes | QMessageBox.No,
-        #)""
         event.ignore()
 
         if result == QMessageBox.Yes:

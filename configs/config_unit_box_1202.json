@@ -58,6 +58,7 @@
         "pCO2_Sampling_interval": 10,
         "interval" : 1,
         "comment" : "time interval in sec",
+        "timeaxis_limit": 7000,
         "Tw": {
             "Channel": 1,
             "comment":  "water_temperature",
