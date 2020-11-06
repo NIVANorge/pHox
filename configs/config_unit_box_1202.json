@@ -109,7 +109,7 @@
         "CO2": {
             "comment6": " # CO2 molar fraction calibration coefficients :",
             "Calibr": [
-                0.28,
+                0.2808,
                 41.427
             ]
         },
@@ -124,7 +124,7 @@
         "QUERY_T": "\\x2A\\x41\\x32\\x0A\\x0D",
         "comment7": "# used to be SAVE_PCO2_SEC",
 
-        "PPCO2_STRING_VERSION": "1"
+        "PPCO2_STRING_VERSION": "2"
     },
 
     "CO3": {
