@@ -108,7 +108,7 @@ QRadioButton::indicator {
 
 
  QLineEdit{
-  font-size: 15pt;
+  font-size: 13pt;
   background-color: #caedd2;
   padding-top: 0em;
   /* This QLineEdit fix  103, 111 */

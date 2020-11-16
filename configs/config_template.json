@@ -65,7 +65,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1999.88
+        "dye_level": 1999.7600000000002
     },
     "pCO2": {
         "interval": 1,
@@ -137,7 +137,9 @@
         "LIGHT_SLOT": 5,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor",
-        "PCO3_string_version": "1"
+        "PCO3_string_version": "1",
+        "SHUTTER_SLOT": 999,
+        "lamp_time": 3
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",

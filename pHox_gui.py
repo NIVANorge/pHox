@@ -273,8 +273,6 @@ class AsyncThreadWrapper:
         return self.result
 
 
-
-
 class Panel(QWidget):
     def __init__(self, parent, panelargs):
         super(QWidget, self).__init__(parent)
@@ -310,7 +308,6 @@ class Panel(QWidget):
         self.init_ui()
         self.create_timers()
         self.updater = SensorStateUpdateManager(self)
-
 
         self.infotimer_step = 15  # seconds
         self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
@@ -386,14 +383,13 @@ class Panel(QWidget):
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
-
     def update_dye_level_bar(self, nshots = 1):
         self.dye_level -= self.dye_step_1meas * nshots
 
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
-    def update_config(self,parameter, group, value):
+    def update_config(self, parameter, group, value):
         with open(config_name, "r+") as json_file:
             j = json.load(json_file)
             j[group][parameter] = value
@@ -469,9 +465,6 @@ class Panel(QWidget):
             self.tab_status.layout.addWidget(calibration_group, 2, 0)
 
         self.tab_status.setLayout(self.tab_status.layout)
-
-
-
 
     def create_timers(self):
 
@@ -1051,6 +1044,12 @@ class Panel(QWidget):
             Btn.setCheckable(True)
         return Btn
 
+    def close_shutter(self):
+        self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
+
+    def open_shutter(self):
+        self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
+
     def btn_stirr_clicked(self):
         if self.btn_stirr.isChecked():
             self.instrument.turn_on_relay(
@@ -1064,7 +1063,6 @@ class Panel(QWidget):
             self.instrument.turn_on_relay(self.instrument.wpump_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
-
 
 
     @asyncSlot()
@@ -1484,8 +1482,13 @@ class Panel(QWidget):
             self.btn_manual_mode.setEnabled(True)
 
         if 'Measuring' not in self.major_modes:
-
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+
+        if self.args.co3 and not self.btn_light.isChecked():
+            self.lamp_time = config_file["CO3"]["lamp_time"] * 60
+            if self.until_next_sample <= self.lamp_time:
+                self.btn_light.setChecked(True)
+                self.btn_light.click()
 
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
@@ -1735,7 +1738,6 @@ class Panel(QWidget):
             # pump if single or calibration , close the valve
             await self.pump_if_needed()
             await self.instrument.set_Valve(True)
-
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
 
@@ -1776,6 +1778,9 @@ class Panel(QWidget):
                 self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
                 await asyncio.sleep(0.001)
         [step.setChecked(False) for step in self.sample_steps]
+        if self.args.co3:
+            self.btn_light.setChecked(False)
+            self.btn_light.click()
         return
 
     async def qc(self):
@@ -1842,7 +1847,6 @@ class Panel(QWidget):
 
         return
 
-
     def get_folderpath(self):
         if "Calibration" in self.major_modes:
             folderpath = base_folderpath + "/data_pH_calibr/"
@@ -1872,23 +1876,6 @@ class Panel(QWidget):
             await self.instrument.pumping(self.instrument.pumpTime)
         else:
             logging.info("additional pumping is not needed ")
-
-    async def measure_dark(self):
-
-        logging.info("turn off LEDS to measure dark")
-        self.set_LEDs(False)
-
-        # grab spectrum
-        dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
-
-        # Turn on LEDs after taking dark
-        self.set_LEDs(True)
-        logging.info("turn on LEDs")
-
-        self.instrument.spectrum = dark
-        self.spCounts_df["dark"] = dark
-        await self.update_spectra_plot_manual(dark)
-        return dark
 
     async def update_spectra_plot_manual(self, spectrum):
         self.plotSpc.setData(self.wvls, spectrum)
@@ -2057,6 +2044,25 @@ class Panel_pH(Panel):
         self.tab_manual.layout.addWidget(self.sliders_groupBox)
         self.tab_manual.layout.addWidget(self.buttons_groupBox)
         self.tab_manual.setLayout(self.tab_manual.layout)
+
+    async def measure_dark(self):
+        # turn off light and LED
+        self.instrument.turn_off_relay(self.instrument.light_slot)
+        logging.info("turn off the light source to measure dark")
+        await asyncio.sleep(1)
+
+        # grab spectrum
+        dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
+
+        self.instrument.turn_on_relay(self.instrument.light_slot)
+        logging.info("turn on the light source")
+        await asyncio.sleep(2)
+
+        self.instrument.spectrum = dark
+        self.spCounts_df["dark"] = dark
+        await self.update_spectra_plot_manual(dark)
+        return dark
+
 
     def update_table_last_meas(self):
 
@@ -2354,6 +2360,7 @@ class Panel_pH(Panel):
 
         return cal_group
 
+
 class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
         super().__init__(parent, panelargs)
@@ -2388,7 +2395,6 @@ class Panel_CO3(Panel):
                 columns=["CO3", "e1", "e3e2", "log_beta1_e2", "Voltage", "S", "A1", "A2",
                          "R", "T_cuvette", "Vol_injected", " S_corr", 'A350']
             )
-
 
     def make_tab_manual(self):
         self.tab_manual.layout = QGridLayout()
@@ -2427,23 +2433,27 @@ class Panel_CO3(Panel):
         return folderpath
 
     async def measure_dark(self):
-        # turn off light and LED
-        self.instrument.turn_off_relay(self.instrument.light_slot)
-        logging.info("turn off the light source to measure dark")
-        await asyncio.sleep(1)
+
+        self.close_shutter()
+        #TODO: close the shutter
+
+        logging.info("close the Shutter to measure dark")
 
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
-        self.instrument.turn_on_relay(self.instrument.light_slot)
-        logging.info("turn on the light source")
-        await asyncio.sleep(2)
+        # Turn on LEDs after taking dark
 
+        logging.info("open the Shutter")
+        self.open_shutter()
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
         await self.update_spectra_plot_manual(dark)
-        return dark
 
+        if self.args.co3:
+            pass
+            #TODO: open the shutter
+        return dark
     def save_stability_test(self, datay):
 
         stabfile = os.path.join("/home/pi/pHox/data/data_co3/sp_stability.log")
