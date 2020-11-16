@@ -748,7 +748,7 @@ class Panel(QWidget):
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
         self.tableConfigWidget.horizontalHeader().hide()
-        self.tableConfigWidget.setRowCount(8)
+        self.tableConfigWidget.setRowCount(9)
         self.tableConfigWidget.setColumnCount(2)
         self.tableConfigWidget.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
@@ -788,6 +788,12 @@ class Panel(QWidget):
 
         self.fill_table_config(7, 0, 'Temp probe is calibrated')
         self.temp_id_is_calibr = QtGui.QCheckBox()
+
+        self.fill_table_config(8, 0, "Drain mode")
+        self.drain_mode_combo = QComboBox()
+        self.combo_in_config(self.drain_mode_combo, 'Drain_mode')
+
+        self.tableConfigWidget.setCellWidget(8, 1, self.drain_mode_combo)
 
         if self.instrument.temp_iscalibrated:
             self.temp_id_is_calibr.setChecked(True)
@@ -833,6 +839,12 @@ class Panel(QWidget):
                  self.autoadj_opt_chgd,
                  self.instrument.autoadj_opt
                  ],
+            "Drain_mode": [
+                ['ON', 'OFF'],
+                self.drain_mode_chgd,
+                self.instrument.drain_mode
+            ],
+
             "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(10, 100, 10)) + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
@@ -930,6 +942,9 @@ class Panel(QWidget):
 
     def ship_code_changed(self):
         self.instrument.ship_code = self.ship_code_combo.currentText()
+
+    def drain_mode_chgd(self):
+        self.instrument.drain_mode = self.drain_mode_combo.currentText()
 
     def autoadj_opt_chgd(self):
         self.instrument.autoadj_opt = self.autoadjState_combo.currentText()
@@ -1778,7 +1793,18 @@ class Panel(QWidget):
         if self.args.co3:
             self.btn_light.setChecked(False)
             self.btn_light.click()
+        if self.instrument.drain_mode == 'ON':
+            # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+            await self.drain()
         return
+
+    async def drain(self):
+
+        self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
+        self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
+        await asyncio.sleep(config_file['Operational']['drain_time'])
+        self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+        self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
     async def qc(self):
 

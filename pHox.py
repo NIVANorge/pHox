@@ -267,6 +267,7 @@ class Common_instrument(object):
         self.Cuvette_V = conf_operational["CUVETTE_V"]  # ml
         self.dye_vol_inj = conf_operational["DYE_V_INJ"]
         self.specIntTime = conf_operational["Spectro_Integration_time"]
+        self.drain_mode = conf_operational['drain_mode']
         self.ship_code = conf_operational["Ship_Code"]
         self.valid_ship_codes = conf_operational["Valid_ship_codes"]
 

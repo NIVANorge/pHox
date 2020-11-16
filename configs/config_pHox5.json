@@ -32,7 +32,8 @@
         "LIGHT_THRESHOLD_STS": 15500,
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
-        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
+        "drain_mode" : "OFF"
     },
     "pH": {
         "LED_SLOTS": [
