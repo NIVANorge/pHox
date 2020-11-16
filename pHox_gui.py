@@ -1734,7 +1734,11 @@ class Panel(QWidget):
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
-
+        if not self.btn_light.isChecked():
+            self.btn_light.setChecked(True)
+            self.btn_light.click()
+            logging.debug('Wait for the lamp warming')
+            await asyncio.sleep(3*60)
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
             # Step 0. Start measurement, create new df,
 
@@ -1794,17 +1798,19 @@ class Panel(QWidget):
             self.btn_light.setChecked(False)
             self.btn_light.click()
         if self.instrument.drain_mode == 'ON':
+            logging.info('Draining')
             # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
             await self.drain()
         return
 
     async def drain(self):
-
+        logging.debug('Start draining')
         self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
         self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
         await asyncio.sleep(config_file['Operational']['drain_time'])
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+        logging.debug('Stop draining')
 
     async def qc(self):
 
@@ -2440,9 +2446,11 @@ class Panel_CO3(Panel):
     @asyncSlot()
     async def btn_light_clicked(self):
         if self.btn_light.isChecked():
+            logging.debug('open shutter and turn on the light source')
             self.open_shutter()
             self.instrument.turn_on_relay(self.instrument.light_slot)
         else:
+            logging.debug('closing shutter and turing off the light')
             self.close_shutter()
             self.instrument.turn_off_relay(self.instrument.light_slot)
 
