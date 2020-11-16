@@ -1045,7 +1045,7 @@ class Panel(QWidget):
         return Btn
 
     def close_shutter(self):
-        self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
+        self.instrument.turn_off_relay(config_file["CO3"]["SHUTTER_SLOT"])
 
     def open_shutter(self):
         self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
@@ -2414,8 +2414,10 @@ class Panel_CO3(Panel):
     @asyncSlot()
     async def btn_light_clicked(self):
         if self.btn_light.isChecked():
+            self.open_shutter()
             self.instrument.turn_on_relay(self.instrument.light_slot)
         else:
+            self.close_shutter()
             self.instrument.turn_off_relay(self.instrument.light_slot)
 
     def get_folderpath(self):
