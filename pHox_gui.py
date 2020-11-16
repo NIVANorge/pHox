@@ -1370,7 +1370,6 @@ class Panel(QWidget):
                 logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
-
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
 
@@ -1421,7 +1420,6 @@ class Panel(QWidget):
 
             if "Paused" in self.major_modes:
                 self.unset_major_mode('Paused')
-
 
     @asyncSlot()
     async def btn_single_meas_clicked(self):
@@ -1714,7 +1712,6 @@ class Panel(QWidget):
             yield None
         finally:
             self.unset_major_mode(mode)
-
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
         #TODO: condition for turing on the lamp and wait 3 min for co3 lamp
@@ -2047,15 +2044,15 @@ class Panel_pH(Panel):
 
     async def measure_dark(self):
         # turn off light and LED
-        self.instrument.turn_off_relay(self.instrument.light_slot)
-        logging.info("turn off the light source to measure dark")
+        self.set_LEDs(False)
+        logging.info("turn on leds")
         await asyncio.sleep(1)
 
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
-        self.instrument.turn_on_relay(self.instrument.light_slot)
-        logging.info("turn on the light source")
+        self.set_LEDs(False)
+        logging.info("turn on the leds")
         await asyncio.sleep(2)
 
         self.instrument.spectrum = dark
@@ -2435,15 +2432,12 @@ class Panel_CO3(Panel):
     async def measure_dark(self):
 
         self.close_shutter()
-        #TODO: close the shutter
-
         logging.info("close the Shutter to measure dark")
 
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
         # Turn on LEDs after taking dark
-
         logging.info("open the Shutter")
         self.open_shutter()
         self.instrument.spectrum = dark
