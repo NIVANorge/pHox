@@ -26,7 +26,7 @@
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 3000,
+        "Spectro_Integration_time": 50,
         "Ship_Code": "Standalone",
         "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
         "LIGHT_THRESHOLD_STS": 15500,
