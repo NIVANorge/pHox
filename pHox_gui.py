@@ -1079,6 +1079,7 @@ class Panel(QWidget):
             logging.debug('open drain')
             # If the inlet valve is open, close it
             if not self.btn_valve.isChecked():
+                self.btn_valve.setChecked(True)
                 await self.instrument.set_Valve(True)
 
             self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
@@ -1508,7 +1509,8 @@ class Panel(QWidget):
             self.lamp_time = config_file["CO3"]["lamp_time"] * 60
             if self.until_next_sample <= self.lamp_time:
                 self.btn_light.setChecked(True)
-                self.btn_light.click()
+                self.btn_light_clicked()
+                #self.btn_light.click()
 
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
@@ -1575,7 +1577,8 @@ class Panel(QWidget):
                 self.update_LEDs()
 
                 self.btn_light.setChecked(True)
-                self.btn_light.click()
+                self.btn_light_clicked()
+                #self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -1725,13 +1728,13 @@ class Panel(QWidget):
 
         return msg.exec_()
 
-    def click_from_code(self,btn):
-        btn.setChecked(True)
-        btn.click()
+    #def click_from_code(self,btn):
+    #    btn.setChecked(True)
+    #    btn.click()
 
-    def unclick_from_code(self,btn):
-        btn.setChecked(False)
-        btn.click()
+    #def unclick_from_code(self,btn):
+    #    btn.setChecked(False)
+    #    btn.click()
 
     @asynccontextmanager
     async def ongoing_major_mode_contextmanager(self, mode):
@@ -1748,7 +1751,8 @@ class Panel(QWidget):
             flnmStr = flnmStr_manual
         if not self.btn_light.isChecked():
             self.btn_light.setChecked(True)
-            self.btn_light.click()
+            self.btn_light_clicked()
+            #self.btn_light.click()
             logging.debug('Wait for the lamp warming')
             await asyncio.sleep(3*60)
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
@@ -1812,7 +1816,8 @@ class Panel(QWidget):
         [step.setChecked(False) for step in self.sample_steps]
         if self.args.co3:
             self.btn_light.setChecked(False)
-            self.btn_light.click()
+            self.btn_light_clicked()
+            #self.btn_light.click()
 
         return
 
@@ -2714,6 +2719,9 @@ class boxUI(QMainWindow):
                 self.main_widget.instrument.spectrometer_cls.spec.close()
             except:
                 logging.info('Error while closing spectro')
+            if self.main_widget.btn_drain.isChecked():
+                self.main_widget.btn_drain.setChecked(False)
+                self.main_widget.btn_drain_clicked()
             self.main_widget.close()
             QApplication.quit()
             sys.exit()
