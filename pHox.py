@@ -250,8 +250,7 @@ class Common_instrument(object):
         self.stirrer_slot = conf_operational["STIRR_SLOT"]
         self.extra_slot = conf_operational["SPARE_SLOT"]
         self.autoadj_opt = conf_operational["Autoadjust_state"]
-        # TODO: Replace ssrlines with new lines
-        # keep it for now since there is a loop dependent on self.ssrLines
+
         self.ssrLines = [
             self.wpump_slot,
             self.dyepump_slot,
@@ -473,7 +472,6 @@ class CO3_instrument(Common_instrument):
 class pH_instrument(Common_instrument):
     def __init__(self, panelargs):
         super().__init__(panelargs)
-        # self.args = panelargs
         self.load_config_pH()
 
         self.maxval = self.THR * 1.05
@@ -503,12 +501,7 @@ class pH_instrument(Common_instrument):
 
         self.NIR = int(conf_pH["wl_NIR-"])
         self.wvl_needed = (self.HI, self.I2, self.NIR)
-
-        # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
-       # self.LED1 = int(conf_pH["LED1"])
-       # self.LED2 = int(conf_pH["LED2"])
-       # self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [int(conf_pH["LED1"]), int(conf_pH["LED2"]), int(conf_pH["LED3"])]
         self.PPHOX_string_version = conf_pH['PPHOX_STRING_VERSION']
 

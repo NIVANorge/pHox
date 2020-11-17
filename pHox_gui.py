@@ -1,13 +1,11 @@
 #! /usr/bin/python
-import logging
 from contextlib import asynccontextmanager
 
 from pHox import *
 from pco2 import pco2_instrument, test_pco2_instrument, tab_pco2_class
 import os, sys
 from util import get_base_folderpath, box_id, config_name, rgb_lookup
-#
-import struct
+
 try:
     import warnings, time, RPi.GPIO
     import RPi.GPIO as GPIO
@@ -16,9 +14,9 @@ except:
 
 from datetime import datetime, timedelta
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit, QFileDialog
-from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QRadioButton,QProgressBar,
-                             QTableWidget, QHeaderView, QComboBox, QCheckBox, QDialog, QDialogButtonBox,
+from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit
+from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QProgressBar,
+                             QTableWidget, QHeaderView, QComboBox, QCheckBox, QDialog,
                              QSlider, QInputDialog, QApplication, QMainWindow)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QPixmap
@@ -30,7 +28,7 @@ from util import config_file
 import udp
 from udp import Ferrybox as fbox
 from precisions import precision as prec
-from asyncqt import QEventLoop, asyncSlot, asyncClose
+from asyncqt import QEventLoop, asyncSlot
 import asyncio
 
 
@@ -96,7 +94,6 @@ class AfterCuvetteCleaning(QDialog):
 
     def button_clicked(self):
         self.spectrum = self.main_qt_panel.instrument.spectrometer_cls.get_intensities_slow()
-        #self.plot =
         self.plotSpc.setData(self.main_qt_panel.wvls, self.spectrum)
         self.btn_update_plots.setChecked(False)
         return
@@ -560,7 +557,8 @@ class Panel(QWidget):
             if 'Continuous' in self.major_modes and self.until_next_sample <= self.manual_limit:
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
-
+            self.btn_drain.setChecked(False)
+            self.btn_drain_clicked()
             self.manual_widgets_set_enabled(False)
             self.btn_single_meas.setEnabled(True)
 
@@ -975,7 +973,6 @@ class Panel(QWidget):
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
 
-
     def make_btngroupbox(self):
         # Define widgets for main tab
         # Create checkabple buttons
@@ -1080,6 +1077,10 @@ class Panel(QWidget):
     async def btn_drain_clicked(self):
         if self.btn_drain.isChecked():
             logging.debug('open drain')
+            # If the inlet valve is open, close it
+            if not self.btn_valve.isChecked():
+                await self.instrument.set_Valve(True)
+
             self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
             self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
         else:
@@ -1087,13 +1088,11 @@ class Panel(QWidget):
             self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
             self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
-
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
             self.instrument.turn_on_relay(self.instrument.wpump_slot)
         else:
             self.instrument.turn_off_relay(self.instrument.wpump_slot)
-
 
     @asyncSlot()
     async def btn_dye_pmp_clicked(self):
@@ -1105,8 +1104,6 @@ class Panel(QWidget):
                     await self.instrument.pump_dye(3)
                     self.update_dye_level_bar(nshots=3)
                     self.btn_dye_pmp.setChecked(False)
-                    #if not self.args.localdev:
-                        # update plot after pumping
                     datay = await self.instrument.spectrometer_cls.get_intensities()
                     await self.update_spectra_plot_manual(datay)
                     #await self.update_spectra_plot()
@@ -2663,14 +2660,6 @@ class boxUI(QMainWindow):
         self.args = parser.parse_args()
         global base_folderpath
         base_folderpath = get_base_folderpath(self.args)
-
-        #logging.basicConfig(filename='sample.log', level=logging.INFO)
-        #
-        #self.logger = logging.getLogger('general_logger')
-        #fh = logging.FileHandler('errors.log')
-        #fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        #fh.setLevel(logging.DEBUG)
-        #self.logger.addHandler(fh)
 
         logging.root.level = logging.DEBUG #INFO  # logging.DEBUG if self.args.debug else
         for name, logger in logging.root.manager.loggerDict.items():
