@@ -969,7 +969,8 @@ class Panel(QWidget):
             self.btn_valve,
             self.btn_stirr,
             self.btn_dye_pmp,
-            self.btn_wpump
+            self.btn_wpump,
+            self.btn_drain
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -1439,11 +1440,6 @@ class Panel(QWidget):
         if self.btn_cont_meas.isChecked():
             if 'Continuous' not in self.major_modes:
                 self.set_major_mode("Continuous")
-            # it think we dont need it
-            #if "Measuring" not in self.major_modes:
-            #    self.until_next_sample = self.instrument.samplingInterval
-
-
         else:
             self.unset_major_mode("Continuous")
 
@@ -1553,8 +1549,6 @@ class Panel(QWidget):
 
             if not os.path.exists(upload_RT_path):
                 os.makedirs(upload_RT_path)
-
-            path = os.path.join(upload_RT_path, flnmStr, ".json")
 
             with open(os.path.join(upload_RT_path, flnmStr +".json"), 'w') as fp:
                 json.dump(upload_RT_dict, fp, indent=4)
@@ -1761,11 +1755,10 @@ class Panel(QWidget):
             logging.debug('Wait for the lamp warming')
             await asyncio.sleep(3*60)
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
-            # Step 0. Start measurement, create new df,
 
+            # Step 0. Start measurement, create new df,
             logging.info(f"sample, mode is {self.major_modes}")
             self.StatusBox.setText("Ongoing measurement")
-
             self.create_new_df()
 
             if self.args.co3:
@@ -1815,7 +1808,6 @@ class Panel(QWidget):
                 await self.qc()
                 logging.debug('Saving results')
                 self.save_results(folderpath, flnmStr)
-
                 self.StatusBox.setText('The measurement is finished')
             else:
                 self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
@@ -1842,16 +1834,11 @@ class Panel(QWidget):
         await asyncio.sleep(3)  # Seconds
 
         blue_ind = self.instrument.wvlPixels[0]
-
         last_injection = self.spCounts_df[str(self.instrument.ncycles-1)][blue_ind]
-
         current_blue = await self.instrument.get_sp_levels(blue_ind)
-
         diff = current_blue - last_injection
 
-        # TODO: change all parameters, levels to real ones
         flow_threshold = config_file['QC']["flow_threshold"]
-
         if diff > flow_threshold:
             flow_is_good = True
             self.flow_qc_chk.setCheckState(2)
@@ -1860,7 +1847,7 @@ class Panel(QWidget):
             self.flow_qc_chk.setCheckState(rgb_lookup['red'])
         self.data_log_row['flow_QC'] = flow_is_good
 
-        #Dye is coming check
+        # Dye is coming check
         dye_threshold = 5
         if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
             dye_is_coming = True
@@ -2044,8 +2031,6 @@ class Panel(QWidget):
 
     def save_logfile_df(self, folderpath):
         logging.info("save log file df")
-
-
 
         logfile = self.get_logfile_name(folderpath)
         if os.path.exists(logfile):
