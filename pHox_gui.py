@@ -1510,6 +1510,7 @@ class Panel(QWidget):
             if self.until_next_sample <= self.lamp_time:
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
+                self.close_shutter()
                 #self.btn_light.click()
 
         self.until_next_sample -= round(self.infotimer_step/60, 3)
@@ -1752,9 +1753,12 @@ class Panel(QWidget):
         if not self.btn_light.isChecked():
             self.btn_light.setChecked(True)
             self.btn_light_clicked()
-            #self.btn_light.click()
+
             logging.debug('Wait for the lamp warming')
+            self.StatusBox.setText('Wait for the lamp warming')
             await asyncio.sleep(3*60)
+            self.StatusBox.setText('start the measurement')
+            logging.debug('start the measurement')
         async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
 
             # Step 0. Start measurement, create new df,
@@ -1793,6 +1797,7 @@ class Panel(QWidget):
 
             if self.instrument.drain_mode == 'ON':
                 logging.info('Draining')
+                self.StatusBox.setText('Draining')
                 # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
                 await self.drain()
 
@@ -2487,11 +2492,8 @@ class Panel_CO3(Panel):
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
         await self.update_spectra_plot_manual(dark)
-
-        if self.args.co3:
-            pass
-            #TODO: open the shutter
         return dark
+
     def save_stability_test(self, datay):
 
         stabfile = os.path.join("/home/pi/pHox/data/data_co3/sp_stability.log")
