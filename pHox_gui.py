@@ -990,6 +990,7 @@ class Panel(QWidget):
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
+        self.btn_drain = self.create_button("Drain", True)
         #self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
@@ -999,7 +1000,7 @@ class Panel(QWidget):
 
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
-
+        btn_grid.addWidget(self.btn_drain, 3, 0)
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
@@ -1007,6 +1008,7 @@ class Panel(QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
+        self.btn_drain.clicked.connect(self.btn_drain_clicked)
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
         self.btn_adjust_light_intensity.clicked.connect(self.btn_autoAdjust_clicked)
@@ -1072,6 +1074,18 @@ class Panel(QWidget):
         else:
             self.instrument.turn_off_relay(
                 self.instrument.stirrer_slot)
+
+    @asyncSlot()
+    async def btn_drain_clicked(self):
+        if self.btn_drain.isChecked():
+            logging.debug('open drain')
+            self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
+            self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
+        else:
+            logging.debug('close drain')
+            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1720,6 +1734,14 @@ class Panel(QWidget):
 
         return msg.exec_()
 
+    def click_from_code(self,btn):
+        btn.setChecked(True)
+        btn.click()
+
+    def unclick_from_code(self,btn):
+        btn.setChecked(False)
+        btn.click()
+
     @asynccontextmanager
     async def ongoing_major_mode_contextmanager(self, mode):
         self.set_major_mode(mode)
@@ -1729,8 +1751,7 @@ class Panel(QWidget):
             self.unset_major_mode(mode)
 
     async def sample_cycle(self, folderpath, flnmStr_manual = None):
-        #TODO: condition for turing on the lamp and wait 3 min for co3 lamp
-        #if self.btn_single_meas.isChecked(:)
+
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
@@ -1775,6 +1796,12 @@ class Panel(QWidget):
                 await self.absorbance_measurement_cycle(blank_min_dark, dark)
                 await self.get_final_value(timeStamp)
                 self.update_dye_level_bar()
+
+            if self.instrument.drain_mode == 'ON':
+                logging.info('Draining')
+                # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+                await self.drain()
+
             # Step 7 Open valve
             await self.instrument.set_Valve(False)
 
@@ -1797,10 +1824,7 @@ class Panel(QWidget):
         if self.args.co3:
             self.btn_light.setChecked(False)
             self.btn_light.click()
-        if self.instrument.drain_mode == 'ON':
-            logging.info('Draining')
-            # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
-            await self.drain()
+
         return
 
     async def drain(self):
@@ -2262,7 +2286,6 @@ class Panel_pH(Panel):
             :return:
         """
 
-
         cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
 
         # pH theoretical at  20 C
@@ -2362,8 +2385,6 @@ class Panel_pH(Panel):
                 else:
                     _ = self.valve_message('Too dirty cuvette after cleaning')
 
-                # print (message)
-                # self.calibr_state_dialog.stop_calibr_btn.setChecked(True)
         else:
             pass
 

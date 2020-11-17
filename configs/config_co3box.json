@@ -104,7 +104,7 @@
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor",
         "PCO3_string_version": "1",
-        "SHUTTER_SLOT": 999,
+        "SHUTTER_SLOT":22,
         "lamp_time": 3
     },
     "TrisBuffer":
