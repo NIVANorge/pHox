@@ -428,6 +428,7 @@ class CO3_instrument(Common_instrument):
         #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
+
         # sharp and Byrne 2019
         e1 = 1.09519*10 + (4.49666*10**3)*S_corr + (1.95519*10**3)*T + (2.44460*10**5)*T**2 + (-2.01796*10**5)*S_corr*T
         e3e2 = 32.4812*10 + (-79.7676*10**3)*S_corr + (6.28521*10**4)*S_corr**2 + (-11.8691*10**3)*T + (-3.58709*10**5)*T**2 + (32.5849*10**5)*S_corr*T
@@ -465,7 +466,8 @@ class CO3_instrument(Common_instrument):
             logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
         except:
             logging.error('could not find CO3 intercept, FIX')
-        (slope1, intercept, r_value) = 999, 999, 999
+            (slope1, intercept, r_value) = 999, 999, 999
+        intercept = y[0]
         return [slope1, intercept, r_value]
 
 
