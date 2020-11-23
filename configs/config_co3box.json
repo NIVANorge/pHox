@@ -12,7 +12,7 @@
             25
         ],
         "DYE_V_INJ": 0.03,
-        "dye_level": 2000 ,
+        "dye_level": 2000,
         "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
@@ -21,20 +21,33 @@
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 5,
-        "VALID_SAMPLING_INTERVALS" : ["5", "7", "10", "15", "20", "30", "60"],
+        "VALID_SAMPLING_INTERVALS": [
+            "5",
+            "7",
+            "10",
+            "15",
+            "20",
+            "30",
+            "60"
+        ],
         "pumpTime_sec": 60,
         "mixTime": 5,
         "waitTime": 3,
         "ncycles": 4,
         "Spectro_Integration_time": 50,
         "Ship_Code": "Standalone",
-        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
+        "Valid_ship_codes": [
+            "Standalone",
+            "NB",
+            "FA",
+            "TF"
+        ],
         "LIGHT_THRESHOLD_STS": 15500,
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
         "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
-        "drain_mode" : "ON",
-        "drain_slot" : 19,
+        "drain_mode": "ON",
+        "drain_slot": 19,
         "air_slot": 16,
         "drain_time": 15
     },
@@ -54,7 +67,8 @@
         "MCP_wl_HI": 434,
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
-        "TB_wl_I2": 596
+        "TB_wl_I2": 596,
+        "dye_level": 1999.88
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -104,21 +118,19 @@
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor",
         "PCO3_string_version": "1",
-        "SHUTTER_SLOT":22,
+        "SHUTTER_SLOT": 22,
         "lamp_time": 3
     },
-    "TrisBuffer":
-      {
+    "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35,
         "Calibration_threshold": 0.005,
-        "Calibration_pump_time" : 30,
+        "Calibration_pump_time": 30,
         "T_tris_buffer": 20
-      },
-    "QC" : {
+    },
+    "QC": {
         "flow_threshold": 2000,
         "Comment": "the difference between the blue pixel after 4 inj and after 3 sec after opening the valve"
     }
 }
-
