@@ -388,7 +388,7 @@ class CO3_instrument(Common_instrument):
                 logging.info("Too high spec int time value,break")
                 break
 
-            elif self.specIntTime < 100:
+            elif self.specIntTime < 1:
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 

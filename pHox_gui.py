@@ -570,10 +570,15 @@ class Panel(QWidget):
 
             self.btn_manual_mode.setEnabled(True)
             if "Measuring" not in self.major_modes:
+                self.config_widgets_set_state(True)
+                if self.args.co3:
+                    self.btn_light.setChecked(False)
+                    self.btn_light_clicked()
+                    # self.close_shutter()
                 if 'Manual' not in self.major_modes:
                     self.btn_single_meas.setEnabled(True)
                     self.btn_calibr.setEnabled(True)
-                self.config_widgets_set_state(True)
+
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
@@ -823,7 +828,7 @@ class Panel(QWidget):
                 self.instrument.ship_code],
 
             'Temp probe id': [
-                ["Probe_" + str(n) for n in range(1, 10)],
+                ["Probe_" + str(n) for n in range(1, 16)],
                 self.temp_id_combo_changed,
                 self.instrument.TempProbe_id],
 
@@ -949,7 +954,12 @@ class Panel(QWidget):
 
     def temp_id_combo_changed(self):
         self.instrument.TempProbe_id = self.temp_id_combo.currentText()
+        #self.instrument.temp_iscalibrated = config_file[self.TempProbe_id]["is_calibrated"]
         self.instrument.update_temp_probe_coef()
+        print (self.instrument.temp_iscalibrated)
+        if self.instrument.temp_iscalibrated:
+            self.temp_id_is_calibr.setChecked(True)
+        self.temp_id_is_calibr.setChecked(False)
 
     def config_widgets_set_state(self, state):
         self.dye_combo.setEnabled(state)
@@ -1506,7 +1516,7 @@ class Panel(QWidget):
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
 
         if self.args.co3 and not self.btn_light.isChecked():
-            self.lamp_time = config_file["CO3"]["lamp_time"] * 60
+            self.lamp_time = config_file["CO3"]["lamp_time"]
             if self.until_next_sample <= self.lamp_time:
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
@@ -1521,7 +1531,7 @@ class Panel(QWidget):
         self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
             folderpath = self.get_folderpath()
-            if fbox["pumping"] == 1 or fbox["pumping"] is None:  # None happens when not connected to the ferrybox
+            if fbox["pumping"] == 1 or fbox["pumping"] is None or self.instrument.ship_code == "Standalone":  # None happens when not connected to the ferrybox
                 await self.sample_cycle(folderpath)
         else:
             logging.info("Skipped a sample because the previous measurement is still ongoing")
@@ -1771,7 +1781,7 @@ class Panel(QWidget):
                 await self.reset_absorp_plot()
 
             # pump if single or calibration , close the valve
-            await self.pump_if_needed()
+            #await self.pump_if_needed()
             await self.instrument.set_Valve(True)
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
