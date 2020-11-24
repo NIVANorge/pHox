@@ -1488,7 +1488,7 @@ class Panel(QWidget):
             self.btn_single_meas.setChecked(False)
 
     def update_contin_mode_info(self):
-
+        print (self.until_next_sample)
         if self.until_next_sample <= self.manual_limit and self.btn_manual_mode.isEnabled():
             logging.debug('<= 3 min Until next sample,disable Manual control button ')
             if 'Manual' in self.major_modes:
@@ -1586,9 +1586,9 @@ class Panel(QWidget):
 
             logging.info("Starting continuous mode in Autostart")
             self.StatusBox.setText("Starting continuous mode")
-            self.btn_cont_meas.setChecked(True)
 
-        if fbox['pumping'] or fbox['pumping'] is None:
+        if fbox['pumping'] or fbox['pumping'] is None or self.instrument.ship_code == "Standalone":
+            self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
         if self.args.pco2:
@@ -1614,7 +1614,7 @@ class Panel(QWidget):
                 logging.debug('No udp connection')
 
             elif fbox['pumping'] == 0:
-                if 'Paused' not in self.major_modes:
+                if ('Paused' not in self.major_modes and self.instrument.ship_code == "Standalone"):
                     self.timer_contin_mode.stop()
                     self.set_major_mode('Paused')
                     logging.debug('Pause continuous mode, since pump is off')
