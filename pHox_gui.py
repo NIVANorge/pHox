@@ -632,7 +632,7 @@ class Panel(QWidget):
         self.plotwidget1.setYRange(1000, self.instrument.THR * 1.05)
 
         self.plotwidget1.showGrid(x=True, y=True)
-        self.plotwidget1.setTitle("LEDs intensities")
+        self.plotwidget1.setTitle("Lightsource intensities")
 
         self.plotwidget2.showGrid(x=True, y=True)
         self.plotwidget2.setTitle("Last pH measurement")
@@ -999,6 +999,7 @@ class Panel(QWidget):
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
         self.btn_drain = self.create_button("Drain", True)
+        self.btn_shutter = self.create_button('Shutter',True)
         #self.btn_checkflow = self.create_button("Check flow", True)
 
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
@@ -1009,6 +1010,7 @@ class Panel(QWidget):
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
         btn_grid.addWidget(self.btn_drain, 3, 0)
+        btn_grid.addWidget(self.btn_shutter, 3, 0)
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
 
         # Define connections Button clicked - Result
@@ -1018,6 +1020,7 @@ class Panel(QWidget):
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
         self.btn_drain.clicked.connect(self.btn_drain_clicked)
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
+        self.btn_shutter.clicked.connect(self.btn_shutter_clicked)
 
         self.btn_adjust_light_intensity.clicked.connect(self.btn_autoAdjust_clicked)
         self.btn_dye_pmp.clicked.connect(self.btn_dye_pmp_clicked)
@@ -1083,6 +1086,9 @@ class Panel(QWidget):
             self.instrument.turn_off_relay(
                 self.instrument.stirrer_slot)
 
+
+
+
     @asyncSlot()
     async def btn_drain_clicked(self):
         if self.btn_drain.isChecked():
@@ -1129,7 +1135,8 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def btn_autoAdjust_clicked(self):
-        self.instrument.specIntTime = 700
+        if not self.args.co3:
+            self.instrument.specIntTime = 700
         self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
         await self.updater.set_specIntTime(self.instrument.specIntTime)
         await self.call_autoAdjust()
@@ -1763,7 +1770,7 @@ class Panel(QWidget):
         if not self.btn_light.isChecked():
             self.btn_light.setChecked(True)
             self.btn_light_clicked()
-
+            self.open_shutter()
             logging.debug('Wait for the lamp warming')
             self.StatusBox.setText('Wait for the lamp warming')
             await asyncio.sleep(3*60)
@@ -2477,6 +2484,21 @@ class Panel_CO3(Panel):
             self.close_shutter()
             self.instrument.turn_off_relay(self.instrument.light_slot)
 
+
+    @asyncSlot()
+    async def btn_shutter_clicked(self):
+        if self.btn_shutter.isChecked():
+            logging.debug('open shutter')
+            self.open_shutter()
+            self.instrument.turn_on_relay(self.instrument.light_slot)
+        else:
+            logging.debug('close shutter')
+            self.close_shutter()
+
+
+
+
+
     def get_folderpath(self):
 
         if "Calibration" in self.major_modes:
@@ -2499,6 +2521,7 @@ class Panel_CO3(Panel):
         # Turn on LEDs after taking dark
         logging.info("open the Shutter")
         self.open_shutter()
+
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
         await self.update_spectra_plot_manual(dark)

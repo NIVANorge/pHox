@@ -373,13 +373,13 @@ class CO3_instrument(Common_instrument):
         adjusted = False
         pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
-        increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
+        increment = 100
 
         maxval = self.THR * 1.05
         minval = self.THR * 0.95
 
         while adjusted == False:
-
+            logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(self.specIntTime * 1.0e-3)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
