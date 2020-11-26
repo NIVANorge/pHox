@@ -166,14 +166,14 @@ class tab_pco2_class(QWidget):
 
         self.pco2_params = [self.Tw_pco2_live, self.Ta_mem_pco2_live, self.Qw_pco2_live,
                             self.Pw_pco2_live, self.Pa_env_pco2_live, self.Ta_env_pco2_live,
-                            self.CO2_pco2_live, self.VP_Vout_live, self.VT_Vout_live]
+                            self.VP_Vout_live, self.VT_Vout_live,self.CO2_pco2_live]
 
         self.pco2_labels = ['Water_temperature', 'Air_Temperature_membr', 'Water_Flow',
                             'Water_Pressure', 'Air_Pressure_env', 'Air_Temperature_env',
-                            'C02_ppm', 'VP_Vout_live', 'VT_Vout_live']
+                            'VP_Vout_live', 'VT_Vout_live','C02_ppm' ]
 
         self.rbtns = []
-        for k,n in enumerate(self.pco2_labels[:-3]):
+        for k,n in enumerate(self.pco2_labels[:-1]):
             b = QRadioButton(n)
             self.rbtns.append(b)
             b.toggled.connect(self.onClicked_radio)
@@ -182,8 +182,8 @@ class tab_pco2_class(QWidget):
         self.rbtns[0].setChecked(True)
         self.parameter_to_plot = 'Water_temperature'
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
-        layout.addWidget(QLabel(self.pco2_labels[-3]), 6, 0)
-        layout.addWidget(QLabel(self.pco2_labels[-2]), 7, 0)
+        #layout.addWidget(QLabel(self.pco2_labels[-3]), 6, 0)
+        #layout.addWidget(QLabel(self.pco2_labels[-2]), 7, 0)
         layout.addWidget(QLabel(self.pco2_labels[-1]), 8, 0)
 
         groupbox.setLayout(layout)
@@ -197,7 +197,7 @@ class tab_pco2_class(QWidget):
             self.parameter_to_plot = radioBtn.text()
 
     async def update_tab_values(self, values, data):
-        all_val = values + [data['ppm'].values[0], data['VP'].values[0], data['VT'].values[0]]
+        all_val = values + [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
         [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(all_val))]
 
 
@@ -215,7 +215,7 @@ class Panel_PCO2_only(QWidget):
         self.pco2_timeseries = pd.DataFrame(columns = [
             'times','CO2_values','Water_temperature',
             'Air_Temperature_membr','Water_Pressure','Air_Pressure_env',
-            'Water_Flow','Air_Temperature_env'])
+            'Water_Flow','Air_Temperature_env','VP_Vout_live', 'VT_Vout_live'])
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()
@@ -485,7 +485,8 @@ class Panel_PCO2_only(QWidget):
             self.pco2_timeseries = self.pco2_timeseries.drop([0], axis=0).reset_index(drop=True)
 
         row = [self.data['timestamp'].values[0], self.data['ppm'].values[0], self.wat_temp,
-               self.air_temp_mem, self.wat_pres, self.air_pres, self.wat_flow, self.air_temp_env]
+               self.air_temp_mem, self.wat_pres, self.air_pres, self.wat_flow, self.air_temp_env,
+               self.data['VP'], self.data['VT']]
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
@@ -495,9 +496,8 @@ class Panel_PCO2_only(QWidget):
                                     self.pco2_timeseries['CO2_values'].values,
                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                     symbolSize=1, pen=self.pen)
-
         self.plotwidget_line.setData(self.pco2_timeseries['times'],
-                                     self.pco2_timeseries[self.tab_pco2.parameter_to_plot],
+                                     np.around(self.pco2_timeseries[self.tab_pco2.parameter_to_plot].astype(np.double), 3),
                                      symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                      symbolSize=1, pen=self.pen)
 
