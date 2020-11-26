@@ -414,10 +414,9 @@ class CO3_instrument(Common_instrument):
 
         A1, A2, A_350 = Absorbance
 
-
-
         if manual_salinity is None:
             sal = self.fb_data["salinity"]   #round(, prec["salinity"])
+            print ('fbox sal', self.fb_data["salinity"])
         else:
             sal = manual_salinity               #round(, prec["salinity"])
 

@@ -182,6 +182,7 @@ class tab_pco2_class(QWidget):
         self.rbtns[0].setChecked(True)
         self.parameter_to_plot = 'Water_temperature'
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        layout.addWidget(QLabel(self.pco2_labels[-3]), 6, 0)
         layout.addWidget(QLabel(self.pco2_labels[-2]), 7, 0)
         layout.addWidget(QLabel(self.pco2_labels[-1]), 8, 0)
 

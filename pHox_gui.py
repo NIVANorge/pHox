@@ -1588,8 +1588,9 @@ class Panel(QWidget):
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
 
-
         if not restart:
+            self.btn_drain.setChecked(False)
+            self.btn_drain_clicked()
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
                 self.update_LEDs()
@@ -1873,7 +1874,7 @@ class Panel(QWidget):
 
         # Dye is coming check
         dye_threshold = 5
-        if (self.spCounts_df['0'] - self.spCounts_df['2']).mean() > dye_threshold:
+        if (self.spCounts_df['blank'] - self.spCounts_df['0']).mean() > dye_threshold:
             dye_is_coming = True
             self.dye_qc_chk.setCheckState(rgb_lookup['green'])
         else:
