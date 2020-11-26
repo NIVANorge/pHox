@@ -161,18 +161,19 @@ class tab_pco2_class(QWidget):
         self.Pa_env_pco2_live = QLineEdit()
         self.Ta_env_pco2_live = QLineEdit()
         self.CO2_pco2_live = QLineEdit()
-        self.CH1_Vout_live = QLineEdit()
+        self.VP_Vout_live = QLineEdit()
+        self.VT_Vout_live = QLineEdit()
 
         self.pco2_params = [self.Tw_pco2_live, self.Ta_mem_pco2_live, self.Qw_pco2_live,
                             self.Pw_pco2_live, self.Pa_env_pco2_live, self.Ta_env_pco2_live,
-                            self.CO2_pco2_live, self.CH1_Vout_live]
+                            self.CO2_pco2_live, self.VP_Vout_live, self.VT_Vout_live]
 
         self.pco2_labels = ['Water_temperature', 'Air_Temperature_membr', 'Water_Flow',
                             'Water_Pressure', 'Air_Pressure_env', 'Air_Temperature_env',
-                            'C02_ppm', 'CH1_Vout']
+                            'C02_ppm', 'VP_Vout_live', 'VT_Vout_live']
 
         self.rbtns = []
-        for k,n in enumerate(self.pco2_labels[:-2]):
+        for k,n in enumerate(self.pco2_labels[:-3]):
             b = QRadioButton(n)
             self.rbtns.append(b)
             b.toggled.connect(self.onClicked_radio)
@@ -181,8 +182,8 @@ class tab_pco2_class(QWidget):
         self.rbtns[0].setChecked(True)
         self.parameter_to_plot = 'Water_temperature'
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
-        layout.addWidget(QLabel(self.pco2_labels[-2]), 6, 0)
-        layout.addWidget(QLabel(self.pco2_labels[-1]), 7, 0)
+        layout.addWidget(QLabel(self.pco2_labels[-2]), 7, 0)
+        layout.addWidget(QLabel(self.pco2_labels[-1]), 8, 0)
 
         groupbox.setLayout(layout)
         self.group_layout.addWidget(groupbox, 0, 0, 1, 2)
@@ -195,7 +196,7 @@ class tab_pco2_class(QWidget):
             self.parameter_to_plot = radioBtn.text()
 
     async def update_tab_values(self, values, data):
-        all_val = values + [data['ppm'].values[0], data['CH1_Vout'].values[0]]
+        all_val = values + [data['ppm'].values[0], data['VP'].values[0], data['VT'].values[0]]
         [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(all_val))]
 
 
@@ -403,7 +404,7 @@ class Panel_PCO2_only(QWidget):
 
     async def get_pco2_values(self):
 
-        self.data = pd.DataFrame(columns=['time', 'timestamp', 'CH1_Vout', 'ppm', 'type',
+        self.data = pd.DataFrame(columns=['time', 'timestamp', 'ppm', 'type',
                                           'range', 'sn', 'VP', 'VT', 'mode'])
         #self.data['type'] = [3]
         #print ('type', self.data['type'])

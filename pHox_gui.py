@@ -291,7 +291,6 @@ class Panel(QWidget):
         self.s_insitu_live = QLineEdit()
         self.t_cuvette_live = QLineEdit()
         self.voltage_live = QLineEdit()
-
         self.btn_calibr = QPushButton()
 
         if self.args.pco2:
@@ -380,7 +379,7 @@ class Panel(QWidget):
         self.dye_level_bar.setValue(self.dye_level)
         self.update_config('dye_level', 'pH', self.dye_level)
 
-    def update_dye_level_bar(self, nshots = 1):
+    def update_dye_level_bar(self, nshots=1):
         self.dye_level -= self.dye_step_1meas * nshots
 
         self.dye_level_bar.setValue(self.dye_level)
@@ -1231,7 +1230,8 @@ class Panel(QWidget):
 
     async def update_absorbance_plot(self, n_inj, spAbs):
         logging.debug('update_absorbance_plot')
-        self.abs_lines[n_inj].setData(self.wvls, spAbs)
+        spAbs_to_plot = spAbs[(self.wvls > 220) & (self.wvls < 260)]
+        self.abs_lines[n_inj].setData(self.wvls_to_plot, spAbs_to_plot)
         await asyncio.sleep(0.005)
 
     async def reset_absorp_plot(self):
@@ -1587,7 +1587,7 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
-        logging.info("turn on light source")
+
 
         if not restart:
             if not self.args.co3:
@@ -1631,7 +1631,7 @@ class Panel(QWidget):
                 logging.debug('No udp connection')
 
             elif fbox['pumping'] == 0:
-                if ('Paused' not in self.major_modes and self.instrument.ship_code == "Standalone"):
+                if ('Paused' not in self.major_modes and self.instrument.ship_code != "Standalone"):
                     self.timer_contin_mode.stop()
                     self.set_major_mode('Paused')
                     logging.debug('Pause continuous mode, since pump is off')
@@ -1788,7 +1788,7 @@ class Panel(QWidget):
                 await self.reset_absorp_plot()
 
             # pump if single or calibration , close the valve
-            #await self.pump_if_needed()
+            await self.pump_if_needed()
             await self.instrument.set_Valve(True)
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
@@ -2028,6 +2028,7 @@ class Panel(QWidget):
             absorbance_spectrum = -np.log10(postinj_instensity_spectrum_min_dark / blank_min_dark)
 
         if self.args.co3:
+            logging.debug(absorbance_spectrum[20:40])
             await self.update_absorbance_plot(n_inj, absorbance_spectrum)
 
         # Save intensity spectrum to spt file
@@ -2426,6 +2427,7 @@ class Panel_CO3(Panel):
 
         self.plotwidget1.setXRange(220, 260)
         self.plotwidget2.setXRange(220, 260)
+        #self.plotwidget2.setYRange(0,1)
         self.plotwidget2.setTitle("Last CO3 measurement")
 
         for widget in [self.plotwidget1, self.plotwidget2]:
@@ -2436,9 +2438,13 @@ class Panel_CO3(Panel):
         self.plotAbs = self.plotwidget2.plot()
         color = ["r", "g", "b", "m", "y"]
         self.abs_lines = []
+        self.wvls_to_plot = self.wvls[(self.wvls > 220) & (self.wvls < 260)]
+        print ('type wvl')
+        print (type(self.wvls))
+        #self.wvls_to_plot = self.wvls
         for n_inj in range(self.instrument.ncycles):
             self.abs_lines.append(
-                self.plotwidget2.plot(x=self.wvls, y=np.zeros(len(self.wvls)), pen=pg.mkPen(color[n_inj]))
+                self.plotwidget2.plot(x=self.wvls_to_plot, y=np.zeros(len(self.wvls_to_plot)), pen=pg.mkPen(color[n_inj]))
             )
     def init_instrument(self):
         if self.args.localdev:
@@ -2494,10 +2500,6 @@ class Panel_CO3(Panel):
         else:
             logging.debug('close shutter')
             self.close_shutter()
-
-
-
-
 
     def get_folderpath(self):
 
@@ -2741,6 +2743,7 @@ class boxUI(QMainWindow):
             if self.args.co3:
                 self.main_widget.instrument.turn_off_relay(
                     self.main_widget.instrument.light_slot)
+                self.main_widget.close_shutter()
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
                 self.main_widget.timerSpectra_plot.stop()

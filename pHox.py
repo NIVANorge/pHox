@@ -380,7 +380,7 @@ class CO3_instrument(Common_instrument):
 
         while adjusted == False:
             logging.debug("Trying Integration time: " + str(self.specIntTime))
-            await self.spectrometer_cls.set_integration_time(self.specIntTime)
+            await self.spectrometer_cls.set_integration_time(max(1, self.specIntTime))
             await asyncio.sleep(self.specIntTime * 1.0e-3)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
@@ -402,7 +402,7 @@ class CO3_instrument(Common_instrument):
 
             else:
                 adjusted = True
-
+            self.specIntTime = max(1, self.specIntTime)
         return adjusted, pixelLevel
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
