@@ -251,12 +251,12 @@ class Panel_PCO2_only(QWidget):
         self.btn_measure_once.setCheckable(True)
         self.btn_measure_once.clicked[bool].connect(self.btn_measure_once_clicked)
 
-        #self.StatusBox = QtGui.QTextEdit()
-        #self.StatusBox.setReadOnly(True)
+        self.StatusBox = QtGui.QTextEdit()
+        self.StatusBox.setReadOnly(True)
 
         self.tab_pco2.group_layout.addWidget(self.btn_measure, 1, 0)
         self.tab_pco2.group_layout.addWidget(self.btn_measure_once, 1, 1)
-        #self.tab_pco2.group_layout.addWidget(self.StatusBox, 2, 0,1,2)
+        self.tab_pco2.group_layout.addWidget(self.StatusBox, 2, 0,1,2)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
 
         self.setLayout(hboxPanel)
