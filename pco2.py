@@ -446,7 +446,8 @@ class Panel_PCO2_only(QWidget):
                     self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
                     self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
                     self.data['mode'] = self.buff[35:36]
-                    if self.data['type'][0] != b'\x81'[0]:
+                    #if self.data['type'][0] != b'\x81'[0]:
+                    if self.buff[8:9][0] != b'\x81'[0]:
                         print('the gas type is not correct')
                         synced = False
                     # if self.data['mode'][0] != b'\x80'[0]:
@@ -490,7 +491,7 @@ class Panel_PCO2_only(QWidget):
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
-
+        print (self.pco2_timeseries)
 
         self.pco2_data_line.setData(self.pco2_timeseries['times'].values,
                                     self.pco2_timeseries['CO2_values'].values,
