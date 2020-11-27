@@ -80,8 +80,62 @@
             ]
         },
         "Probe_9": {
-            "comment": "installed on pHox1, cal by SAM",
+            "comment": "not used",
             "is_calibrated": "True",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_10": {
+            "comment": "not used",
+            "is_calibrated": "False",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_11": {
+            "comment": "not used",
+            "is_calibrated": "False",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_12": {
+            "comment": "not used",
+            "is_calibrated": "False",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_13": {
+            "comment": "not used",
+            "is_calibrated": "False",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_14": {
+            "comment": "not used",
+            "is_calibrated": "False",
+            "calibr_date": "20/02/2020",
+            "Calibr_coef": [
+                70.975,
+                16.184
+            ]
+        },
+          "Probe_15": {
+            "comment": "not used",
+            "is_calibrated": "False",
             "calibr_date": "20/02/2020",
             "Calibr_coef": [
                 70.975,

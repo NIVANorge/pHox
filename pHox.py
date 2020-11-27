@@ -373,30 +373,33 @@ class CO3_instrument(Common_instrument):
         adjusted = False
         pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
 
-        increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
+        increment = 150
 
         maxval = self.THR * 1.05
         minval = self.THR * 0.95
-
+        logging.debug(str(minval)+','+str(maxval))
         while adjusted == False:
-
+            self.specIntTime = max(1, self.specIntTime)
+            logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
-            await asyncio.sleep(self.specIntTime * 1.0e-3)
+            await asyncio.sleep(0.5)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
-
+            logging.debug('pixellevel'+str(pixelLevel))
             if self.specIntTime > 5000:
                 logging.info("Too high spec int time value,break")
                 break
 
-            elif self.specIntTime < 100:
+            elif self.specIntTime < 1:
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 
             elif pixelLevel < minval:
+                logging.debug('adding increment'+str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
 
             elif pixelLevel > maxval:
+                logging.debug('subtracting increment'+str(increment))
                 self.specIntTime -= increment
                 increment = increment / 2
 
@@ -418,6 +421,7 @@ class CO3_instrument(Common_instrument):
 
         if manual_salinity is None:
             sal = self.fb_data["salinity"]   #round(, prec["salinity"])
+            print ('fbox sal', self.fb_data["salinity"])
         else:
             sal = manual_salinity               #round(, prec["salinity"])
 
@@ -425,14 +429,14 @@ class CO3_instrument(Common_instrument):
         logging.debug(f"S_corr {S_corr}")
         R = (A2 - A_350) / (A1 - A_350)
         # coefficients from Patsavas et al. 2015
-        #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
-        #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
-        #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
+        e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
+        e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
+        log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
 
         # sharp and Byrne 2019
-        e1 = 1.09519*10 + (4.49666*10**3)*S_corr + (1.95519*10**3)*T + (2.44460*10**5)*T**2 + (-2.01796*10**5)*S_corr*T
-        e3e2 = 32.4812*10 + (-79.7676*10**3)*S_corr + (6.28521*10**4)*S_corr**2 + (-11.8691*10**3)*T + (-3.58709*10**5)*T**2 + (32.5849*10**5)*S_corr*T
-        log_beta1_e2 = 55.6674*10 + (-51.0194*10**3)*S_corr + (4.61423*10**4)*S_corr**2 + (-13.6998*10**5)*S_corr*T
+        #e1 = 1.09519*10 + (4.49666*10**3)*S_corr + (1.95519*10**3)*T + (2.44460*10**5)*T**2 + (-2.01796*10**5)*S_corr*T
+        #e3e2 = 32.4812*10 + (-79.7676*10**3)*S_corr + (6.28521*10**4)*S_corr**2 + (-11.8691*10**3)*T + (-3.58709*10**5)*T**2 + (32.5849*10**5)*S_corr*T
+        #log_beta1_e2 = 55.6674*10 + (-51.0194*10**3)*S_corr + (4.61423*10**4)*S_corr**2 + (-13.6998*10**5)*S_corr*T
 
         logging.debug(f"R {R}e1 {e1} e3e2{e3e2}")
         arg = (R - e1) / (1 - R * e3e2)
