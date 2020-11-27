@@ -77,7 +77,7 @@ class pco2_instrument(object):
 
         columns1 = list(data.columns)
         row = list(data.iloc[0])
-        #print (row)
+
 
         logfile = os.path.join(self.path, "pCO2.log")
         columns2 = ["Lon", "Lat", "fb_temp", "fb_sal", "Tw", "Ta_mem", "Qw", "Pw", "Pa_env", "Ta_env"]
@@ -491,7 +491,7 @@ class Panel_PCO2_only(QWidget):
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
-        print (self.pco2_timeseries)
+
 
         self.pco2_data_line.setData(self.pco2_timeseries['times'].values,
                                     self.pco2_timeseries['CO2_values'].values,

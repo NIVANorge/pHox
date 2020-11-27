@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_14",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -15,12 +15,12 @@
         "dye_level": 2000,
         "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
-        "dye_nshots": 1,
+        "dye_nshots": 5,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 5,
+        "SAMPLING_INTERVAL_MIN": 10,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -31,10 +31,10 @@
             "60"
         ],
         "pumpTime_sec": 60,
-        "mixTime": 5,
+        "mixTime": 10,
         "waitTime": 3,
-        "ncycles": 4,
-        "Spectro_Integration_time": 50,
+        "ncycles": 1,
+        "Spectro_Integration_time": 20.0,
         "Ship_Code": "Standalone",
         "Valid_ship_codes": [
             "Standalone",
@@ -47,9 +47,9 @@
         "Autoadjust_state": "ON",
         "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
         "drain_mode": "ON",
-        "drain_slot": 19,
-        "air_slot": 16,
-        "drain_time": 15
+        "drain_slot": 16,
+        "air_slot": 26,
+        "drain_time": 60
     },
     "pH": {
         "LED_SLOTS": [
@@ -62,13 +62,13 @@
         "LED2": 16,
         "LED3": 80,
         "LED_THRESHOLD": 15500,
-        "Default_DYE": "MCP",
+        "Default_DYE": "Pb_perchlor",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "dye_level": 1999.88
+        "dye_level": 1996.9999999999982
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -114,11 +114,11 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
-        "LIGHT_SLOT": 5,
+        "LIGHT_SLOT": 20,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor",
         "PCO3_string_version": "1",
-        "SHUTTER_SLOT": 22,
+        "SHUTTER_SLOT": 21,
         "lamp_time": 3
     },
     "TrisBuffer": {
