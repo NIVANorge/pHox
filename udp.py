@@ -80,7 +80,7 @@ def udp_server():
 
 def send_data(s, ship_code=None):
     logging.debug('send udp data')
-    print("send UDP: " + s)
+    #print("send UDP: " + s)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # my_dict.get(key, default_value) if key is missing 'default_value' is used
     sock.sendto(bytes(s, encoding="utf8"), (SHIP_IP_DICT.get(ship_code, UDP_IP), UDP_SEND))
