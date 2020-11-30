@@ -1789,7 +1789,7 @@ class Panel(QWidget):
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
         print(self.timerSpectra_plot.isActive())
-        async with (self.ongoing_major_mode_contextmanager("Measuring"),self.updater.disable_live_plotting()):
+        async with self.ongoing_major_mode_contextmanager("Measuring"), self.updater.disable_live_plotting():
 
             # Step 0. Start measurement, create new df,
             logging.info(f"sample, mode is {self.major_modes}")
