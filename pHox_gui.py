@@ -557,7 +557,6 @@ class Panel(QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
             self.btn_drain.setChecked(False)
-            #self.btn_drain_clicked()
             self.manual_widgets_set_enabled(False)
             self.btn_single_meas.setEnabled(True)
 
@@ -568,8 +567,8 @@ class Panel(QWidget):
             self.timer_contin_mode.stop()
 
             self.btn_manual_mode.setEnabled(True)
-            if "Measuring" not in self.major_modes:
 
+            if "Measuring" not in self.major_modes:
                 if self.args.co3:
                     self.btn_light.setChecked(False)
                     self.btn_light_clicked()
@@ -581,6 +580,7 @@ class Panel(QWidget):
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
+                self.config_widgets_set_state(True)
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -597,6 +597,7 @@ class Panel(QWidget):
                     self.config_widgets_set_state(True)
                 self.btn_manual_mode.setEnabled(True)
                 self.btn_cont_meas.setEnabled(True)
+                self.config_widgets_set_state(True)
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
             logging.debug('unset mode adjusting')
@@ -1491,21 +1492,35 @@ class Panel(QWidget):
             text = dlg.textValue()
 
 
-            if ok:
-                if text != "":
-                    flnmStr = text
-                else:
-                    flnmStr = None
-                folderpath = self.get_folderpath()
-                # disable all btns in manual tab (There are way more buttons now)
-                self.btn_cont_meas.setEnabled(False)
-                self.btn_single_meas.setEnabled(False)
-                self.btn_calibr.setEnabled(False)
+        if ok:
+            if text != "":
+                flnmStr = text
+            else:
+                flnmStr = None
+            folderpath = self.get_folderpath()
+            # disable all btns in manual tab (There are way more buttons now)
+            self.btn_cont_meas.setEnabled(False)
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+            if (not self.btn_light.isChecked() and self.args.co3):
+                await self.wait_for_warming()
+            await self.sample_cycle(folderpath, flnmStr)
 
-                await self.sample_cycle(folderpath, flnmStr)
+        self.btn_single_meas.setChecked(False)
 
+    async def wait_for_warming(self):
+        #self.updater.start_live_plot()
 
-            self.btn_single_meas.setChecked(False)
+        self.btn_light.setChecked(True)
+        self.btn_light_clicked()
+        self.open_shutter()
+        logging.debug('Wait for the lamp warming')
+        self.StatusBox.setText('Wait for the lamp warming')
+        await asyncio.sleep(3 * 60)
+        self.StatusBox.setText('start the measurement')
+        logging.debug('start the measurement')
+        #self.updater.stop_live_plot()
+
 
     def update_contin_mode_info(self):
         print (self.until_next_sample)
@@ -1773,80 +1788,72 @@ class Panel(QWidget):
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
-        async with self.ongoing_major_mode_contextmanager("Measuring"):
-            if not self.btn_light.isChecked():
-                self.btn_light.setChecked(True)
-                self.btn_light_clicked()
-                self.open_shutter()
-                logging.debug('Wait for the lamp warming')
-                self.StatusBox.setText('Wait for the lamp warming')
-                await asyncio.sleep(3*60)
-                self.StatusBox.setText('start the measurement')
-                logging.debug('start the measurement')
-            async with self.updater.disable_live_plotting():
+        print(self.timerSpectra_plot.isActive())
+        async with (self.ongoing_major_mode_contextmanager("Measuring"),self.updater.disable_live_plotting()):
 
-                # Step 0. Start measurement, create new df,
-                logging.info(f"sample, mode is {self.major_modes}")
-                self.StatusBox.setText("Ongoing measurement")
-                self.create_new_df()
+            # Step 0. Start measurement, create new df,
+            logging.info(f"sample, mode is {self.major_modes}")
+            self.StatusBox.setText("Ongoing measurement")
+            self.create_new_df()
 
-                if self.args.co3:
-                    # reset Absorption plot
-                    await self.reset_absorp_plot()
-
-                # pump if single or calibration , close the valve
-                await self.pump_if_needed()
-                await self.instrument.set_Valve(False)
-                # Step 1. Autoadjust LEDS
-                self.res_autoadjust = await self.call_autoAdjust()
-
-                #TODO: testing, change later
-                if self.args.localdev and "Calibration" in self.major_modes:
-                    if self.ncalibr in (0, 1, 2):
-                        self.res_autoadjust = False
-                    elif self.ncalibr in (3, 4, 5):
-                        self.res_autoadjust = False
-
-                if self.res_autoadjust:
-                    # Step 2. Take dark and blank
-                    self.sample_steps[1].setChecked(True)
-                    await asyncio.sleep(0.05)
-                    dark = await self.measure_dark()
-                    blank_min_dark = await self.measure_blank(dark)
-
-                    # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
-                    await self.absorbance_measurement_cycle(blank_min_dark, dark)
-                    await self.get_final_value(timeStamp)
-                    self.update_dye_level_bar()
-
-                if self.instrument.drain_mode == 'ON':
-                    logging.info('Draining')
-                    self.StatusBox.setText('Draining')
-                    # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
-                    await self.drain()
-
-                # Step 7 Open valve
-                await self.instrument.set_Valve(True)
-
-                if self.res_autoadjust:
-                    if 'Calibration' not in self.major_modes:
-                        self.update_table_last_meas()
-                        self.update_corellation_plot()
-
-                    # Save led levels to config file
-                    # Save dye level to config file
-                    await self.qc()
-                    logging.debug('Saving results')
-                    self.save_results(folderpath, flnmStr)
-                    self.StatusBox.setText('The measurement is finished')
-                else:
-                    self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
-                    await asyncio.sleep(0.001)
-            [step.setChecked(False) for step in self.sample_steps]
             if self.args.co3:
-                self.btn_light.setChecked(False)
-                self.btn_light_clicked()
-                #self.btn_light.click()
+                # reset Absorption plot
+                await self.reset_absorp_plot()
+
+            # pump if single or calibration , close the valve
+            await self.pump_if_needed()
+            await self.instrument.set_Valve(False)
+            # Step 1. Autoadjust LEDS
+            self.res_autoadjust = await self.call_autoAdjust()
+
+            #TODO: testing, change later
+            if self.args.localdev and "Calibration" in self.major_modes:
+                if self.ncalibr in (0, 1, 2):
+                    self.res_autoadjust = False
+                elif self.ncalibr in (3, 4, 5):
+                    self.res_autoadjust = False
+
+            if self.res_autoadjust:
+                # Step 2. Take dark and blank
+                self.sample_steps[1].setChecked(True)
+                await asyncio.sleep(0.05)
+                dark = await self.measure_dark()
+                blank_min_dark = await self.measure_blank(dark)
+
+                # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
+                await self.absorbance_measurement_cycle(blank_min_dark, dark)
+                await self.get_final_value(timeStamp)
+                self.update_dye_level_bar()
+
+            if self.instrument.drain_mode == 'ON':
+                logging.info('Draining')
+                self.StatusBox.setText('Draining')
+                # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+                await self.drain()
+
+            # Step 7 Open valve
+            await self.instrument.set_Valve(True)
+
+            if self.res_autoadjust:
+                if 'Calibration' not in self.major_modes:
+                    self.update_table_last_meas()
+                    self.update_corellation_plot()
+
+                # Save led levels to config file
+                # Save dye level to config file
+                await self.qc()
+                logging.debug('Saving results')
+                self.save_results(folderpath, flnmStr)
+                self.StatusBox.setText('The measurement is finished')
+            else:
+                self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
+                await asyncio.sleep(0.001)
+
+        [step.setChecked(False) for step in self.sample_steps]
+        if self.args.co3:
+            self.btn_light.setChecked(False)
+            self.btn_light_clicked()
+            #self.btn_light.click()
 
         return
 
