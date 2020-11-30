@@ -557,7 +557,7 @@ class Panel(QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
             self.btn_drain.setChecked(False)
-            self.btn_drain_clicked()
+            #self.btn_drain_clicked()
             self.manual_widgets_set_enabled(False)
             self.btn_single_meas.setEnabled(True)
 
@@ -1097,19 +1097,15 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def btn_drain_clicked(self):
-        if self.btn_drain.isChecked():
-            logging.debug('open drain')
-            # If the inlet valve is open, close it
-            if not self.btn_valve.isChecked():
-                self.btn_valve.setChecked(True)
-                await self.instrument.set_Valve(True)
+        if self.btn_valve.isChecked():
+            self.btn_valve.setChecked(False)
+            await self.instrument.set_Valve(False)
+        await self.drain()
+        self.btn_drain.setChecked(False)
+        self.btn_valve.setChecked(True)
+        # Open the inlet valve after draining
+        await self.instrument.set_Valve(True)
 
-            self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
-            self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
-        else:
-            logging.debug('close drain')
-            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1592,12 +1588,14 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        self.instrument.set_Valve_sync(False)
-        self.btn_valve.setChecked(False)
+        self.instrument.set_Valve_sync(True)
+        self.btn_valve.setChecked(True)
 
         if not restart:
+            logging.debug('Check that drain is closed')
             self.btn_drain.setChecked(False)
-            self.btn_drain_clicked()
+            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
@@ -1605,7 +1603,6 @@ class Panel(QWidget):
 
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
-                #self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -1799,7 +1796,7 @@ class Panel(QWidget):
 
                 # pump if single or calibration , close the valve
                 await self.pump_if_needed()
-                await self.instrument.set_Valve(True)
+                await self.instrument.set_Valve(False)
                 # Step 1. Autoadjust LEDS
                 self.res_autoadjust = await self.call_autoAdjust()
 
@@ -1829,7 +1826,7 @@ class Panel(QWidget):
                     await self.drain()
 
                 # Step 7 Open valve
-                await self.instrument.set_Valve(False)
+                await self.instrument.set_Valve(True)
 
                 if self.res_autoadjust:
                     if 'Calibration' not in self.major_modes:
@@ -1860,7 +1857,7 @@ class Panel(QWidget):
         await asyncio.sleep(config_file['Operational']['drain_time'])
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
-        logging.debug('Stop draining')
+        logging.debug('Stop draining drain func')
 
     async def qc(self):
 
