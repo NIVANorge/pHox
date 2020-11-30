@@ -363,10 +363,11 @@ class CO3_instrument(Common_instrument):
         conf = config_file["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
+        self.wvl2 = conf["WL_3"]
 
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"]
-        self.wvl_needed = (self.wvl1, self.wvl2, 350)
+        self.wvl_needed = (self.wvl1, self.wvl2, self.wvl3)
 
         self.PCO3_string_version = str(conf["PCO3_string_version"])
 
@@ -414,7 +415,7 @@ class CO3_instrument(Common_instrument):
         T_cuvette = (self.TempCalCoef[0] * voltage) + self.TempCalCoef[1] #, prec["fb_temperature"])
         T = 273.15 + T_cuvette
 
-        A1, A2, A_350 = Absorbance
+        A1, A2, A3 = Absorbance
 
 
 
@@ -425,17 +426,19 @@ class CO3_instrument(Common_instrument):
 
         S_corr = sal * dilution                 #round(, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
-        R = (A2 - A_350) / (A1 - A_350)
-        # coefficients from Patsavas et al. 2015
+        R = (A2 - A3) / (A1 - A3)
+
+        # coefficients from Patsavas et al. 2015 (salinity correction only)
         #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
-        # sharp and Byrne 2019
+        
+        # sharp and Byrne 2019 (temperature and salinity correction) ( 17<S<40)
         e1 = 1.09519*10 + (4.49666*10**3)*S_corr + (1.95519*10**3)*T + (2.44460*10**5)*T**2 + (-2.01796*10**5)*S_corr*T
         e3e2 = 32.4812*10 + (-79.7676*10**3)*S_corr + (6.28521*10**4)*S_corr**2 + (-11.8691*10**3)*T + (-3.58709*10**5)*T**2 + (32.5849*10**5)*S_corr*T
         log_beta1_e2 = 55.6674*10 + (-51.0194*10**3)*S_corr + (4.61423*10**4)*S_corr**2 + (-13.6998*10**5)*S_corr*T
 
-        logging.debug(f"R {R}e1 {e1} e3e2{e3e2}")
+        logging.debug(f"R {R} e1 {e1} e3e2{e3e2}")
         arg = (R - e1) / (1 - R * e3e2)
         logging.debug(f"arg {arg}")
         # CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
@@ -455,7 +458,7 @@ class CO3_instrument(Common_instrument):
             T_cuvette,
             vol_injected,
             S_corr,
-            A_350,
+            A3,
         ]
 
     def calc_final_co3(self, co3_eval):
