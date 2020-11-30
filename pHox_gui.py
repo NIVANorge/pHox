@@ -978,7 +978,9 @@ class Panel(QWidget):
             self.btn_stirr,
             self.btn_dye_pmp,
             self.btn_wpump,
-            self.btn_drain
+            self.btn_drain,
+            self.btn_shutter,
+
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -1077,9 +1079,11 @@ class Panel(QWidget):
 
     def close_shutter(self):
         logging.debug('in func close shutter')
+        self.btn_shutter.setChecked(False)
         self.instrument.turn_off_relay(config_file["CO3"]["SHUTTER_SLOT"])
 
     def open_shutter(self):
+        self.btn_shutter.setChecked(True)
         self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
 
     def btn_stirr_clicked(self):
@@ -1772,79 +1776,80 @@ class Panel(QWidget):
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
-        if not self.btn_light.isChecked():
-            self.btn_light.setChecked(True)
-            self.btn_light_clicked()
-            self.open_shutter()
-            logging.debug('Wait for the lamp warming')
-            self.StatusBox.setText('Wait for the lamp warming')
-            await asyncio.sleep(3*60)
-            self.StatusBox.setText('start the measurement')
-            logging.debug('start the measurement')
-        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
+        async with self.ongoing_major_mode_contextmanager("Measuring"):
+            if not self.btn_light.isChecked():
+                self.btn_light.setChecked(True)
+                self.btn_light_clicked()
+                self.open_shutter()
+                logging.debug('Wait for the lamp warming')
+                self.StatusBox.setText('Wait for the lamp warming')
+                await asyncio.sleep(3*60)
+                self.StatusBox.setText('start the measurement')
+                logging.debug('start the measurement')
+            async with self.updater.disable_live_plotting():
 
-            # Step 0. Start measurement, create new df,
-            logging.info(f"sample, mode is {self.major_modes}")
-            self.StatusBox.setText("Ongoing measurement")
-            self.create_new_df()
+                # Step 0. Start measurement, create new df,
+                logging.info(f"sample, mode is {self.major_modes}")
+                self.StatusBox.setText("Ongoing measurement")
+                self.create_new_df()
 
+                if self.args.co3:
+                    # reset Absorption plot
+                    await self.reset_absorp_plot()
+
+                # pump if single or calibration , close the valve
+                await self.pump_if_needed()
+                await self.instrument.set_Valve(True)
+                # Step 1. Autoadjust LEDS
+                self.res_autoadjust = await self.call_autoAdjust()
+
+                #TODO: testing, change later
+                if self.args.localdev and "Calibration" in self.major_modes:
+                    if self.ncalibr in (0, 1, 2):
+                        self.res_autoadjust = False
+                    elif self.ncalibr in (3, 4, 5):
+                        self.res_autoadjust = False
+
+                if self.res_autoadjust:
+                    # Step 2. Take dark and blank
+                    self.sample_steps[1].setChecked(True)
+                    await asyncio.sleep(0.05)
+                    dark = await self.measure_dark()
+                    blank_min_dark = await self.measure_blank(dark)
+
+                    # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
+                    await self.absorbance_measurement_cycle(blank_min_dark, dark)
+                    await self.get_final_value(timeStamp)
+                    self.update_dye_level_bar()
+
+                if self.instrument.drain_mode == 'ON':
+                    logging.info('Draining')
+                    self.StatusBox.setText('Draining')
+                    # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
+                    await self.drain()
+
+                # Step 7 Open valve
+                await self.instrument.set_Valve(False)
+
+                if self.res_autoadjust:
+                    if 'Calibration' not in self.major_modes:
+                        self.update_table_last_meas()
+                        self.update_corellation_plot()
+
+                    # Save led levels to config file
+                    # Save dye level to config file
+                    await self.qc()
+                    logging.debug('Saving results')
+                    self.save_results(folderpath, flnmStr)
+                    self.StatusBox.setText('The measurement is finished')
+                else:
+                    self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
+                    await asyncio.sleep(0.001)
+            [step.setChecked(False) for step in self.sample_steps]
             if self.args.co3:
-                # reset Absorption plot
-                await self.reset_absorp_plot()
-
-            # pump if single or calibration , close the valve
-            await self.pump_if_needed()
-            await self.instrument.set_Valve(True)
-            # Step 1. Autoadjust LEDS
-            self.res_autoadjust = await self.call_autoAdjust()
-
-            #TODO: testing, change later
-            if self.args.localdev and "Calibration" in self.major_modes:
-                if self.ncalibr in (0, 1, 2):
-                    self.res_autoadjust = False
-                elif self.ncalibr in (3, 4, 5):
-                    self.res_autoadjust = False
-
-            if self.res_autoadjust:
-                # Step 2. Take dark and blank
-                self.sample_steps[1].setChecked(True)
-                await asyncio.sleep(0.05)
-                dark = await self.measure_dark()
-                blank_min_dark = await self.measure_blank(dark)
-
-                # Steps 3,4,5,6 Pump dye, measure intensity, calculate Absorbance
-                await self.absorbance_measurement_cycle(blank_min_dark, dark)
-                await self.get_final_value(timeStamp)
-                self.update_dye_level_bar()
-
-            if self.instrument.drain_mode == 'ON':
-                logging.info('Draining')
-                self.StatusBox.setText('Draining')
-                # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
-                await self.drain()
-
-            # Step 7 Open valve
-            await self.instrument.set_Valve(False)
-
-            if self.res_autoadjust:
-                if 'Calibration' not in self.major_modes:
-                    self.update_table_last_meas()
-                    self.update_corellation_plot()
-
-                # Save led levels to config file
-                # Save dye level to config file
-                await self.qc()
-                logging.debug('Saving results')
-                self.save_results(folderpath, flnmStr)
-                self.StatusBox.setText('The measurement is finished')
-            else:
-                self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
-                await asyncio.sleep(0.001)
-        [step.setChecked(False) for step in self.sample_steps]
-        if self.args.co3:
-            self.btn_light.setChecked(False)
-            self.btn_light_clicked()
-            #self.btn_light.click()
+                self.btn_light.setChecked(False)
+                self.btn_light_clicked()
+                #self.btn_light.click()
 
         return
 
@@ -2041,7 +2046,7 @@ class Panel(QWidget):
 
         abs_1 = round(absorbance_spectrum[self.instrument.wvlPixels[0]], prec["A1"])
         abs_2 = round(absorbance_spectrum[self.instrument.wvlPixels[1]], prec["A2"])
-        abs_3 = round(absorbance_spectrum[self.instrument.wvlPixels[2]], prec["Anir"])
+        abs_3 = round(absorbance_spectrum[self.instrument.wvlPixels[2]], prec["A3"])
 
         return [abs_1, abs_2, abs_3]
 
@@ -2517,10 +2522,10 @@ class Panel_CO3(Panel):
         return folderpath
 
     async def measure_dark(self):
-        self.instrument.turn_off_relay(self.instrument.light_slot)
+        #self.instrument.turn_off_relay(self.instrument.light_slot)
         self.close_shutter()
         logging.info("close the Shutter to measure dark")
-        await asyncio.sleep(15) 
+        await asyncio.sleep(1)
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
         await self.update_spectra_plot_manual(dark)
@@ -2528,10 +2533,8 @@ class Panel_CO3(Panel):
         # Turn on LEDs after taking dark
         logging.debug(str(np.max(dark)))
         logging.info("open the Shutter")
-        self.instrument.turn_on_relay(self.instrument.light_slot)
+        #self.instrument.turn_on_relay(self.instrument.light_slot)
         self.open_shutter()
-        await asyncio.sleep(2)
-
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
 

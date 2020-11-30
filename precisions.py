@@ -9,7 +9,7 @@ precision = {
     "A1": 5,
     "A2": 5,
     "vol_injected": 2,
-    "Anir": 2,
+    "A3": 5,
     "longitude": 6,
     "latitude": 6,
     "fb_temperature": 3,
