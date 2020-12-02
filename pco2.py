@@ -501,10 +501,12 @@ class Panel_PCO2_only(QWidget):
                                     self.pco2_timeseries['CO2_values'].values,
                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                     symbolSize=1, pen=self.pen)
+        self.plotwidget_pco2.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
         self.plotwidget_line.setData(self.pco2_timeseries['times'],
                                      np.around(self.pco2_timeseries[self.tab_pco2.parameter_to_plot].astype(np.double), 3),
                                      symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                      symbolSize=1, pen=self.pen)
+        self.plotwidget_var.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
 
         subset = self.pco2_timeseries[['times', 'CO2_values', self.tab_pco2.parameter_to_plot]]
         subset.set_index('times', inplace=True)
