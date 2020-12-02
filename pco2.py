@@ -262,6 +262,7 @@ class Panel_PCO2_only(QWidget):
 
         self.setLayout(hboxPanel)
 
+
     def close(self):
         try:
             self.pco2_instrument.connection.close()
@@ -307,6 +308,9 @@ class Panel_PCO2_only(QWidget):
 
         self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
         self.plotwidget_var = pg.PlotWidget(axisItems={'bottom': date_axis2})
+        self.plotwidget_pco2.setMouseEnabled(x=False, y=False)
+        self.plotwidget_var.setMouseEnabled(x=False, y=False)
+
 
         self.plotwidget_line = self.plotwidget_var.plot()
         self.plotwidget_line_avg = self.plotwidget_var.plot()
