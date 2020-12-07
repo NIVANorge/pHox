@@ -388,7 +388,7 @@ class CO3_instrument(Common_instrument):
         minval = self.THR * 0.95
         logging.debug('Autoadjusting into range' + str(minval) + ',' + str(maxval))
 
-        increment = 100
+        increment = 200
 
 
         n = 0
