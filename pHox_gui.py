@@ -2444,8 +2444,8 @@ class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
         super().__init__(parent, panelargs)
 
-        self.plotwidget1.setXRange(220, 260)
-        self.plotwidget2.setXRange(220, 260)
+        self.plotwidget1.setXRange(220, 350)
+        self.plotwidget2.setXRange(220, 350)
         #self.plotwidget2.setYRange(0,1)
         self.plotwidget2.setTitle("Last CO3 measurement")
 
