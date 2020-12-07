@@ -2444,20 +2444,21 @@ class Panel_CO3(Panel):
     def __init__(self, parent, panelargs):
         super().__init__(parent, panelargs)
 
-        self.plotwidget1.setXRange(220, 350)
-        self.plotwidget2.setXRange(220, 350)
+        self.plotwidget1.setXRange(220, 360)
+        self.plotwidget2.setXRange(220, 360)
         #self.plotwidget2.setYRange(0,1)
         self.plotwidget2.setTitle("Last CO3 measurement")
 
         for widget in [self.plotwidget1, self.plotwidget2]:
             for instrument, color in [[self.instrument.wvl1, "b"], [
-                                    self.instrument.wvl2, "#eb8934"]]:
+                                    self.instrument.wvl2, "#eb8934"],[
+                                    self.instrument.wvl3, "w"]]:
                 widget.addLine(x=instrument, y=None, pen=pg.mkPen(color, width=1, style=QtCore.Qt.DotLine))
 
         self.plotAbs = self.plotwidget2.plot()
         color = ["r", "g", "b", "m", "y"]
         self.abs_lines = []
-        self.wvls_to_plot = self.wvls[(self.wvls > 220) & (self.wvls < 260)]
+        self.wvls_to_plot = self.wvls[(self.wvls > 220) & (self.wvls < 360)]
         for n_inj in range(self.instrument.ncycles):
             self.abs_lines.append(
                 self.plotwidget2.plot(x=self.wvls_to_plot, y=np.zeros(len(self.wvls_to_plot)), pen=pg.mkPen(color[n_inj]))
