@@ -557,7 +557,6 @@ class Panel(QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
             self.btn_drain.setChecked(False)
-            self.btn_drain_clicked()
             self.manual_widgets_set_enabled(False)
             self.btn_single_meas.setEnabled(True)
 
@@ -568,8 +567,8 @@ class Panel(QWidget):
             self.timer_contin_mode.stop()
 
             self.btn_manual_mode.setEnabled(True)
-            if "Measuring" not in self.major_modes:
 
+            if "Measuring" not in self.major_modes:
                 if self.args.co3:
                     self.btn_light.setChecked(False)
                     self.btn_light_clicked()
@@ -581,6 +580,7 @@ class Panel(QWidget):
                 if 'Manual' in self.major_modes:
                     self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
+                self.config_widgets_set_state(True)
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -597,6 +597,7 @@ class Panel(QWidget):
                     self.config_widgets_set_state(True)
                 self.btn_manual_mode.setEnabled(True)
                 self.btn_cont_meas.setEnabled(True)
+                self.config_widgets_set_state(True)
 
         if mode_unset == 'Adjusting' and "Measuring" not in self.major_modes:
             logging.debug('unset mode adjusting')
@@ -978,7 +979,9 @@ class Panel(QWidget):
             self.btn_stirr,
             self.btn_dye_pmp,
             self.btn_wpump,
-            self.btn_drain
+            self.btn_drain,
+            self.btn_shutter,
+
         ]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
@@ -1077,9 +1080,11 @@ class Panel(QWidget):
 
     def close_shutter(self):
         logging.debug('in func close shutter')
+        self.btn_shutter.setChecked(False)
         self.instrument.turn_off_relay(config_file["CO3"]["SHUTTER_SLOT"])
 
     def open_shutter(self):
+        self.btn_shutter.setChecked(True)
         self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
 
     def btn_stirr_clicked(self):
@@ -1093,19 +1098,15 @@ class Panel(QWidget):
 
     @asyncSlot()
     async def btn_drain_clicked(self):
-        if self.btn_drain.isChecked():
-            logging.debug('open drain')
-            # If the inlet valve is open, close it
-            if not self.btn_valve.isChecked():
-                self.btn_valve.setChecked(True)
-                await self.instrument.set_Valve(True)
+        if self.btn_valve.isChecked():
+            self.btn_valve.setChecked(False)
+            await self.instrument.set_Valve(False)
+        await self.drain()
+        self.btn_drain.setChecked(False)
+        self.btn_valve.setChecked(True)
+        # Open the inlet valve after draining
+        await self.instrument.set_Valve(True)
 
-            self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
-            self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
-        else:
-            logging.debug('close drain')
-            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1491,21 +1492,35 @@ class Panel(QWidget):
             text = dlg.textValue()
 
 
-            if ok:
-                if text != "":
-                    flnmStr = text
-                else:
-                    flnmStr = None
-                folderpath = self.get_folderpath()
-                # disable all btns in manual tab (There are way more buttons now)
-                self.btn_cont_meas.setEnabled(False)
-                self.btn_single_meas.setEnabled(False)
-                self.btn_calibr.setEnabled(False)
+        if ok:
+            if text != "":
+                flnmStr = text
+            else:
+                flnmStr = None
+            folderpath = self.get_folderpath()
+            # disable all btns in manual tab (There are way more buttons now)
+            self.btn_cont_meas.setEnabled(False)
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+            if (not self.btn_light.isChecked() and self.args.co3):
+                await self.wait_for_warming()
+            await self.sample_cycle(folderpath, flnmStr)
 
-                await self.sample_cycle(folderpath, flnmStr)
+        self.btn_single_meas.setChecked(False)
 
+    async def wait_for_warming(self):
+        #self.updater.start_live_plot()
 
-            self.btn_single_meas.setChecked(False)
+        self.btn_light.setChecked(True)
+        self.btn_light_clicked()
+        self.open_shutter()
+        logging.debug('Wait for the lamp warming')
+        self.StatusBox.setText('Wait for the lamp warming')
+        await asyncio.sleep(3 * 60)
+        self.StatusBox.setText('start the measurement')
+        logging.debug('start the measurement')
+        #self.updater.stop_live_plot()
+
 
     def update_contin_mode_info(self):
         print (self.until_next_sample)
@@ -1588,12 +1603,14 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        self.instrument.set_Valve_sync(False)
-        self.btn_valve.setChecked(False)
+        self.instrument.set_Valve_sync(True)
+        self.btn_valve.setChecked(True)
 
         if not restart:
+            logging.debug('Check that drain is closed')
             self.btn_drain.setChecked(False)
-            self.btn_drain_clicked()
+            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
@@ -1601,7 +1618,6 @@ class Panel(QWidget):
 
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
-                #self.btn_light.click()
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
@@ -1772,16 +1788,8 @@ class Panel(QWidget):
         flnmStr, timeStamp = self.get_filename()
         if flnmStr_manual != None:
             flnmStr = flnmStr_manual
-        if not self.btn_light.isChecked():
-            self.btn_light.setChecked(True)
-            self.btn_light_clicked()
-            self.open_shutter()
-            logging.debug('Wait for the lamp warming')
-            self.StatusBox.setText('Wait for the lamp warming')
-            await asyncio.sleep(3*60)
-            self.StatusBox.setText('start the measurement')
-            logging.debug('start the measurement')
-        async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Measuring"):
+        print(self.timerSpectra_plot.isActive())
+        async with self.ongoing_major_mode_contextmanager("Measuring"), self.updater.disable_live_plotting():
 
             # Step 0. Start measurement, create new df,
             logging.info(f"sample, mode is {self.major_modes}")
@@ -1794,7 +1802,7 @@ class Panel(QWidget):
 
             # pump if single or calibration , close the valve
             await self.pump_if_needed()
-            await self.instrument.set_Valve(True)
+            await self.instrument.set_Valve(False)
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
 
@@ -1824,7 +1832,7 @@ class Panel(QWidget):
                 await self.drain()
 
             # Step 7 Open valve
-            await self.instrument.set_Valve(False)
+            await self.instrument.set_Valve(True)
 
             if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
@@ -1840,6 +1848,7 @@ class Panel(QWidget):
             else:
                 self.StatusBox.setText('Was not able to do the measurement, the cuvette is dirty')
                 await asyncio.sleep(0.001)
+
         [step.setChecked(False) for step in self.sample_steps]
         if self.args.co3:
             self.btn_light.setChecked(False)
@@ -1855,7 +1864,7 @@ class Panel(QWidget):
         await asyncio.sleep(config_file['Operational']['drain_time'])
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
-        logging.debug('Stop draining')
+        logging.debug('Stop draining drain func')
 
     async def qc(self):
 
@@ -2041,7 +2050,7 @@ class Panel(QWidget):
 
         abs_1 = round(absorbance_spectrum[self.instrument.wvlPixels[0]], prec["A1"])
         abs_2 = round(absorbance_spectrum[self.instrument.wvlPixels[1]], prec["A2"])
-        abs_3 = round(absorbance_spectrum[self.instrument.wvlPixels[2]], prec["Anir"])
+        abs_3 = round(absorbance_spectrum[self.instrument.wvlPixels[2]], prec["A3"])
 
         return [abs_1, abs_2, abs_3]
 
@@ -2517,10 +2526,10 @@ class Panel_CO3(Panel):
         return folderpath
 
     async def measure_dark(self):
-        self.instrument.turn_off_relay(self.instrument.light_slot)
+        #self.instrument.turn_off_relay(self.instrument.light_slot)
         self.close_shutter()
         logging.info("close the Shutter to measure dark")
-        await asyncio.sleep(15) 
+        await asyncio.sleep(1)
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
         await self.update_spectra_plot_manual(dark)
@@ -2528,10 +2537,8 @@ class Panel_CO3(Panel):
         # Turn on LEDs after taking dark
         logging.debug(str(np.max(dark)))
         logging.info("open the Shutter")
-        self.instrument.turn_on_relay(self.instrument.light_slot)
+        #self.instrument.turn_on_relay(self.instrument.light_slot)
         self.open_shutter()
-        await asyncio.sleep(2)
-
         self.instrument.spectrum = dark
         self.spCounts_df["dark"] = dark
 

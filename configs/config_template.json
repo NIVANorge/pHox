@@ -138,6 +138,7 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
+        "WL_3": 350,
         "LIGHT_SLOT": 5,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
         "Default_DYE": "Pb_perchlor",

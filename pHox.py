@@ -196,7 +196,8 @@ class Common_instrument(object):
     async def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
-        if status:
+
+        if not status:
             logging.info("Closing the valve")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
         else:
@@ -361,11 +362,11 @@ class CO3_instrument(Common_instrument):
         conf = config_file["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
-        self.wvl2 = conf["WL_3"]
+        self.wvl3 = conf["WL_3"]
+        self.wvl_needed = (self.wvl1, self.wvl2, self.wvl3)
 
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"]
-        self.wvl_needed = (self.wvl1, self.wvl2, self.wvl3)
 
         self.PCO3_string_version = str(conf["PCO3_string_version"])
 
@@ -429,6 +430,7 @@ class CO3_instrument(Common_instrument):
 
         S_corr = sal * dilution                 #round(, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
+
         R = (A2 - A3) / (A1 - A3)
 
         # coefficients from Patsavas et al. 2015 (salinity correction only)
@@ -440,6 +442,7 @@ class CO3_instrument(Common_instrument):
         e1 = (1.09519*10**-1) + (4.49666*10**-3)*S_corr + (1.95519*10**-3)*T + (2.44460*10**-5)*T**2 + (-2.01796*10**-5)*S_corr*T
         e3e2 = (32.4812*10**-1) + (-79.7676*10**-3)*S_corr + (6.28521*10**-4)*S_corr**2 + (-11.8691*10**-3)*T + (-3.58709*10**-5)*T**2 + (32.5849*10**-5)*S_corr*T
         log_beta1_e2 = (55.6674*10**-1) + (-51.0194*10**-3)*S_corr + (4.61423*10**-4)*S_corr**2 + (-13.6998*10**-5)*S_corr*T
+
 
         logging.debug(f"R {R} e1 {e1} e3e2{e3e2}")
         arg = (R - e1) / (1 - R * e3e2)
@@ -838,12 +841,12 @@ class Test_CO3_instrument(CO3_instrument):
     async def set_Valve(self, status):
         pass
         if status:
-            logging.info("Closing the valve localdev")
+            logging.info("Closing the inlet valve localdev")
         await asyncio.sleep(0.3)
 
     def set_Valve_sync(self, status):
-        if status:
-            logging.info("Closing the valve localdev ")
+        if not status:
+            logging.info("Closing the inlet  valve localdev ")
         else:
             logging.info("Opening the valve localdev ")
         time.sleep(0.3)
