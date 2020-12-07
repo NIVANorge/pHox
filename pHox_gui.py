@@ -1358,17 +1358,22 @@ class Panel(QWidget):
         string_to_udp = "$PPCO2," + str(v) + ',' + row_to_string + ",*\n"
         udp.send_data(string_to_udp, self.instrument.ship_code)
 
+
+
     async def autoAdjust_IntTime(self):
         # Function calls autoadjust without leds
-        adj, pixelLevel = await self.instrument.auto_adjust()
-        if adj:
-            logging.info("Finished Autoadjust LEDS")
+        check_passed = await self.instrument.precheck_auto_adj()
+        if not check_passed:
+            adj, pixelLevel = await self.instrument.auto_adjust()
+            if adj:
+                logging.info("Finished Autoadjust LEDS")
 
-            self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
-
-            self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
+                self.combo_in_config(self.specIntTime_combo, "Spectro integration time")
+                #self.plotwidget1.plot([self.instrument.wvl2], [pixelLevel], pen=None, symbol="+")
+            else:
+                self.StatusBox.setText('Was not able do auto adjust')
         else:
-            self.StatusBox.setText('Was not able do auto adjust')
+            adj = check_passed
         return adj
 
     @asyncSlot()

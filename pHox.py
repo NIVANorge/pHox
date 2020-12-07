@@ -370,25 +370,41 @@ class CO3_instrument(Common_instrument):
 
         self.PCO3_string_version = str(conf["PCO3_string_version"])
 
+
+    async def precheck_auto_adj(self):
+
+        pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
+        logging.debug('precheck pixel level:' + str(pixelLevel))
+        print(self.THR * 0.95,self.THR * 1.05)
+        if pixelLevel < self.THR * 1.05 and pixelLevel > self.THR * 0.95:
+            return True
+        else:
+            return False
+
     async def auto_adjust(self, *args):
         # CO3!!
         adjusted = False
-        pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
+        maxval = self.THR * 1.05
+        minval = self.THR * 0.95
+        logging.debug('Autoadjusting into range' + str(minval) + ',' + str(maxval))
 
         increment = 100
 
-        maxval = self.THR * 1.05
-        minval = self.THR * 0.95
-        logging.debug(str(minval)+','+str(maxval))
-        while adjusted == False:
+
+        n = 0
+        while n < 15:
+            n += 1
 
             self.specIntTime = max(1, self.specIntTime)
             logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
-
             pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
             logging.debug('pixellevel'+str(pixelLevel))
+
+            if increment == 0:
+                logging.info('increment is 0,something is wrong')
+
             if self.specIntTime > 5000:
                 logging.info("Too high spec int time value,break")
                 break
@@ -398,18 +414,19 @@ class CO3_instrument(Common_instrument):
                 break
 
             elif pixelLevel < minval:
-                logging.debug('adding increment'+str(increment))
+                logging.debug(str(pixelLevel) + 'lover than' + str(minval) + 'adding increment' + str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
 
             elif pixelLevel > maxval:
-                logging.debug('subtracting increment'+str(increment))
+                logging.debug(str(pixelLevel)+'higher than' + str(maxval) + ' subtracting increment' + str(increment))
                 self.specIntTime -= increment
                 increment = increment / 2
 
             else:
                 adjusted = True
-            self.specIntTime = max(1, self.specIntTime)
+
+
         return adjusted, pixelLevel
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
