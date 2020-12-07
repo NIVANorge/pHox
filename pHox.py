@@ -404,6 +404,7 @@ class CO3_instrument(Common_instrument):
 
             if increment == 0:
                 logging.info('increment is 0,something is wrong')
+                break
 
             if self.specIntTime > 5000:
                 logging.info("Too high spec int time value,break")
@@ -425,7 +426,7 @@ class CO3_instrument(Common_instrument):
 
             else:
                 adjusted = True
-
+                break
 
         return adjusted, pixelLevel
 
