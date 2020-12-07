@@ -1234,7 +1234,7 @@ class Panel(QWidget):
 
     async def update_absorbance_plot(self, n_inj, spAbs):
         logging.debug('update_absorbance_plot')
-        spAbs_to_plot = spAbs[(self.wvls > 220) & (self.wvls < 260)]
+        spAbs_to_plot = spAbs[(self.wvls > 220) & (self.wvls < 360)]
         self.abs_lines[n_inj].setData(self.wvls_to_plot, spAbs_to_plot)
         await asyncio.sleep(0.005)
 
@@ -1550,7 +1550,7 @@ class Panel(QWidget):
             if self.until_next_sample <= self.lamp_time:
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
-                self.close_shutter()
+                self.open_shutter()
                 #self.btn_light.click()
 
         self.until_next_sample -= round(self.infotimer_step/60, 3)
@@ -1858,6 +1858,7 @@ class Panel(QWidget):
         if self.args.co3:
             self.btn_light.setChecked(False)
             self.btn_light_clicked()
+            self.close_shutter()
             #self.btn_light.click()
 
         return
