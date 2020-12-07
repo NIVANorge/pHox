@@ -15,7 +15,7 @@
         "dye_level": 2000,
         "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
-        "dye_nshots": 5,
+        "dye_nshots": 9,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
@@ -30,11 +30,11 @@
             "30",
             "60"
         ],
-        "pumpTime_sec": 60,
+        "pumpTime_sec": 15,
         "mixTime": 10,
-        "waitTime": 3,
+        "waitTime": 5,
         "ncycles": 1,
-        "Spectro_Integration_time": 20.0,
+        "Spectro_Integration_time": 50.0,
         "Ship_Code": "Standalone",
         "Valid_ship_codes": [
             "Standalone",
