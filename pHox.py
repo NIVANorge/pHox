@@ -430,6 +430,9 @@ class CO3_instrument(Common_instrument):
 
         return adjusted, pixelLevel
 
+    def get_co3_pars(self, a0, b0, b1, c0, c1, d0, S, T):
+        p = a0 * 10**-1 + b0 * 10**-3*S + b1 * 10**-4 * S**2 + c0*10**-3 * T + c1*10**-5*T**2 + d0*S*T*10**-5
+
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
         #voltage = round(voltage, prec["Voltage"])
@@ -457,6 +460,7 @@ class CO3_instrument(Common_instrument):
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
         
         # sharp and Byrne 2019 (temperature and salinity correction) ( 17<S<40)
+
         e1 = (1.09519*10**-1) + (4.49666*10**-3)*S_corr + (1.95519*10**-3)*T + (2.44460*10**-5)*T**2 + (-2.01796*10**-5)*S_corr*T
         e3e2 = (32.4812*10**-1) + (-79.7676*10**-3)*S_corr + (6.28521*10**-4)*S_corr**2 + (-11.8691*10**-3)*T + (-3.58709*10**-5)*T**2 + (32.5849*10**-5)*S_corr*T
         log_beta1_e2 = (55.6674*10**-1) + (-51.0194*10**-3)*S_corr + (4.61423*10**-4)*S_corr**2 + (-13.6998*10**-5)*S_corr*T

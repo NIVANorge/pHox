@@ -22,7 +22,7 @@ except:
 
 from datetime import datetime
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton
+from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QComboBox
 from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QGridLayout, QRadioButton,
                               QApplication, QMainWindow)
 
@@ -164,6 +164,9 @@ class tab_pco2_class(QWidget):
         self.VP_Vout_live = QLineEdit()
         self.VT_Vout_live = QLineEdit()
 
+        self.fbox_temp_live = QLineEdit()
+        self.fbox_sal_live = QLineEdit()
+
         self.pco2_params = [self.Tw_pco2_live, self.Ta_mem_pco2_live, self.Qw_pco2_live,
                             self.Pw_pco2_live, self.Pa_env_pco2_live, self.Ta_env_pco2_live,
                             self.VP_Vout_live, self.VT_Vout_live,self.CO2_pco2_live]
@@ -172,20 +175,26 @@ class tab_pco2_class(QWidget):
                             'Water_Pressure', 'Air_Pressure_env', 'Air_Temperature_env',
                             'VP_Vout_live', 'VT_Vout_live','C02_ppm' ]
 
-        self.rbtns = []
+        '''self.rbtns = []
         for k,n in enumerate(self.pco2_labels[:-1]):
             b = QRadioButton(n)
-            self.rbtns.append(b)
-            b.toggled.connect(self.onClicked_radio)
-            layout.addWidget(b, k, 0)
+            #self.rbtns.append(b)
+            #b.toggled.connect(self.onClicked_radio)
+            layout.addWidget(b, k, 0)'''
 
-        self.rbtns[0].setChecked(True)
+        #self.rbtns[0].setChecked(True)
         self.parameter_to_plot = 'Water_temperature'
         [layout.addWidget(self.pco2_params[n], n, 1) for n in range(len(self.pco2_params))]
+        [layout.addWidget(QLabel(self.pco2_labels[n]), n, 0) for n in range(len(self.pco2_params))]
+
+        #layout.addWidget(QLabel(self.pco2_labels[-1]), 8, 0)
+        layout.addWidget(QLabel('fbox_temp'), 9, 0)
+        layout.addWidget(QLabel('fbox_sal'), 10, 0)
+        layout.addWidget(self.fbox_temp_live, 9, 1)
+        layout.addWidget(self.fbox_sal_live, 10, 1)
+
         #layout.addWidget(QLabel(self.pco2_labels[-3]), 6, 0)
         #layout.addWidget(QLabel(self.pco2_labels[-2]), 7, 0)
-        layout.addWidget(QLabel(self.pco2_labels[-1]), 8, 0)
-
         groupbox.setLayout(layout)
         self.group_layout.addWidget(groupbox, 0, 0, 1, 2)
 
@@ -199,7 +208,8 @@ class tab_pco2_class(QWidget):
     async def update_tab_values(self, values, data):
         all_val = values + [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
         [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(all_val))]
-
+        self.fbox_temp_live.setText(str(fbox['temperature']))
+        self.fbox_sal_live.setText(str(fbox['salinity']))
 
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument
@@ -215,7 +225,7 @@ class Panel_PCO2_only(QWidget):
         self.pco2_timeseries = pd.DataFrame(columns = [
             'times','CO2_values','Water_temperature',
             'Air_Temperature_membr','Water_Pressure','Air_Pressure_env',
-            'Water_Flow','Air_Temperature_env','VP_Vout_live', 'VT_Vout_live'])
+            'Water_Flow','Air_Temperature_env','VP_Vout_live', 'VT_Vout_live', 'fbox_temp', 'fbox_sal'])
 
         self.tabs = QTabWidget()
         self.tab_pco2 = tab_pco2_class()
@@ -239,7 +249,8 @@ class Panel_PCO2_only(QWidget):
         hboxPanel = QtGui.QGridLayout()
         hboxPanel.addWidget(self.plotwidget_pco2, 0, 0)
         hboxPanel.addWidget(self.plotwidget_var, 1, 0)
-        hboxPanel.addWidget(self.tabs, 0, 1, 2, 1)
+        hboxPanel.addWidget(self.plotwidget_var2, 2, 0)
+        hboxPanel.addWidget(self.tabs, 0, 1, 3, 1)
 
         self.timerSave_pco2 = QtCore.QTimer()
         self.timerSave_pco2.timeout.connect(self.timer_finished)
@@ -255,9 +266,21 @@ class Panel_PCO2_only(QWidget):
         self.StatusBox = QtGui.QTextEdit()
         self.StatusBox.setReadOnly(True)
 
-        self.tab_pco2.group_layout.addWidget(self.btn_measure, 1, 0)
-        self.tab_pco2.group_layout.addWidget(self.btn_measure_once, 1, 1)
-        self.tab_pco2.group_layout.addWidget(self.StatusBox, 2, 0,1,2)
+
+        self.plotvar1_combo = QComboBox()
+        [self.plotvar1_combo.addItem(str(item)) for item in self.tab_pco2.pco2_labels[:-1]+['fbox_temp','fbox_sal']]
+        self.plotvar2_combo = QComboBox()
+        [self.plotvar2_combo.addItem(str(item)) for item in self.tab_pco2.pco2_labels[:-1]+['fbox_temp','fbox_sal']]
+
+        self.tab_pco2.group_layout.addWidget(QLabel('plot 2'), 1, 0)
+        self.tab_pco2.group_layout.addWidget(self.plotvar1_combo, 1, 1)
+
+        self.tab_pco2.group_layout.addWidget(QLabel('plot 3'), 2, 0)
+        self.tab_pco2.group_layout.addWidget(self.plotvar2_combo, 2, 1)
+
+        self.tab_pco2.group_layout.addWidget(self.btn_measure, 3, 0)
+        self.tab_pco2.group_layout.addWidget(self.btn_measure_once, 3, 1)
+        self.tab_pco2.group_layout.addWidget(self.StatusBox, 4, 0,1,2)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
 
         self.setLayout(hboxPanel)
@@ -290,13 +313,17 @@ class Panel_PCO2_only(QWidget):
 
     @asyncSlot()
     async def btn_measure_once_clicked(self):
+        self.btn_measure.setEnabled(False)
         await self.update_pco2_data()
+        self.btn_measure.setEnabled(True)
 
     def btn_measure_clicked(self):
         if self.btn_measure.isChecked():
+            self.btn_measure_once.setEnabled(False)
             interval = float(config_file['pCO2']['interval'])
             self.timerSave_pco2.start(interval * 1000)
         else:
+            self.btn_measure_once.setEnabled(True)
             self.timerSave_pco2.stop()
 
     def clear_plot_btn_clicked(self):
@@ -305,18 +332,24 @@ class Panel_PCO2_only(QWidget):
     def make_tab_plotwidget(self):
         date_axis = TimeAxisItem(orientation='bottom')
         date_axis2 = TimeAxisItem(orientation='bottom')
+        date_axis3 = TimeAxisItem(orientation='bottom')
 
         self.plotwidget_pco2 = pg.PlotWidget(axisItems={'bottom': date_axis})
         self.plotwidget_var = pg.PlotWidget(axisItems={'bottom': date_axis2})
+        self.plotwidget_var2 = pg.PlotWidget(axisItems={'bottom': date_axis3})
+
         self.plotwidget_pco2.setMouseEnabled(x=False, y=False)
         self.plotwidget_var.setMouseEnabled(x=False, y=False)
+        self.plotwidget_var2.setMouseEnabled(x=False, y=False)
 
+
+        self.plotwidget_line2 = self.plotwidget_var2.plot()
+        self.plotwidget_line2_avg = self.plotwidget_var2.plot()
 
         self.plotwidget_line = self.plotwidget_var.plot()
         self.plotwidget_line_avg = self.plotwidget_var.plot()
-        self.pco2_data_line = self.plotwidget_pco2.plot()
-        self.pco2_data_averaged_line = self.plotwidget_pco2.plot()
 
+        self.pco2_data_line = self.plotwidget_pco2.plot()
         self.pco2_data_averaged_line = self.plotwidget_pco2.plot()
 
         self.plotwidget_pco2.setBackground("#19232D")
@@ -325,7 +358,8 @@ class Panel_PCO2_only(QWidget):
 
         self.plotwidget_var.setBackground("#19232D")
         self.plotwidget_var.showGrid(x=True, y=True)
-
+        self.plotwidget_var2.setBackground("#19232D")
+        self.plotwidget_var2.showGrid(x=True, y=True)
 
         self.pen = pg.mkPen(width=0.3, style=QtCore.Qt.DashLine)
         self.pen_avg = pg.mkPen(width=0.7)
@@ -411,17 +445,12 @@ class Panel_PCO2_only(QWidget):
 
         self.data = pd.DataFrame(columns=['time', 'timestamp', 'ppm', 'type',
                                           'range', 'sn', 'VP', 'VT', 'mode'])
-        #self.data['type'] = [3]
-        #print ('type', self.data['type'])
 
         self.data['time'] = datetime.now()
         d = datetime.now().timestamp()
         self.data['timestamp'] = [d]
 
-        #print ('d', d)
-        #print (self.data['timestamp'])
         synced = await self.sync_pco2()  # False
-        #self.StatusBox.setText('measuring')
 
         if synced:
             if self.args.localdev:
@@ -450,7 +479,6 @@ class Panel_PCO2_only(QWidget):
                     self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
                     self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
                     self.data['mode'] = self.buff[35:36]
-                    #if self.data['type'][0] != b'\x81'[0]:
                     if self.buff[8:9][0] != b'\x81'[0]:
                         print('the gas type is not correct')
                         synced = False
@@ -458,7 +486,7 @@ class Panel_PCO2_only(QWidget):
                     #    raise ValueError('the detector mode is not correct')
                 except:
                     raise
-                self.data.round({'CH1_Vout': 3, 'ppm': 3, 'range':3, 'VP': 3, 'VT': 3})
+            self.data = self.data.round({'CH1_Vout': 3, 'ppm': 3, 'range':3, 'VP': 3, 'VT': 3})
         else:
             synced = False
             # raise ValueError('cannot sync to CO2 detector')
@@ -479,7 +507,12 @@ class Panel_PCO2_only(QWidget):
 
         length = len(self.pco2_timeseries['times'])
         time_limit = config_file["pCO2"]["timeaxis_limit"]
-        self.plotwidget_var.setTitle(self.tab_pco2.parameter_to_plot)
+
+        self.par1_to_plot = self.plotvar1_combo.currentText()
+        self.par2_to_plot = self.plotvar2_combo.currentText()
+
+        self.plotwidget_var.setTitle(self.par1_to_plot)
+        self.plotwidget_var2.setTitle(self.par2_to_plot)
         await asyncio.sleep(0.001)
 
         if length == 300:
@@ -491,25 +524,33 @@ class Panel_PCO2_only(QWidget):
 
         row = [self.data['timestamp'].values[0], self.data['ppm'].values[0], self.wat_temp,
                self.air_temp_mem, self.wat_pres, self.air_pres, self.wat_flow, self.air_temp_env,
-               self.data['VP'], self.data['VT']]
+               self.data['VP'], self.data['VT'], fbox["temperature"], fbox["salinity"]]
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
 
+        for n in [self.plotwidget_pco2, self.plotwidget_var, self.plotwidget_var2]:
+            n.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
 
         self.pco2_data_line.setData(self.pco2_timeseries['times'].values,
                                     self.pco2_timeseries['CO2_values'].values,
                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                     symbolSize=1, pen=self.pen)
-        self.plotwidget_pco2.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
+
+
         self.plotwidget_line.setData(self.pco2_timeseries['times'],
-                                     np.around(self.pco2_timeseries[self.tab_pco2.parameter_to_plot].astype(np.double), 3),
+                                     np.around(self.pco2_timeseries[self.par1_to_plot].astype(np.double), 3),
                                      symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                      symbolSize=1, pen=self.pen)
-        self.plotwidget_var.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
 
-        subset = self.pco2_timeseries[['times', 'CO2_values', self.tab_pco2.parameter_to_plot]]
+        self.plotwidget_line2.setData(self.pco2_timeseries['times'],
+                                     np.around(self.pco2_timeseries[self.par2_to_plot].astype(np.double), 3),
+                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
+                                     symbolSize=1, pen=self.pen)
+
+        subset = self.pco2_timeseries[set(('times', 'CO2_values', self.par1_to_plot,self.par2_to_plot))]
         subset.set_index('times', inplace=True)
+
         self.pco2_timeseries_averaged = subset.rolling(10).mean().dropna()
 
         self.pco2_data_averaged_line.setData(self.pco2_timeseries_averaged.index.values,
@@ -518,7 +559,12 @@ class Panel_PCO2_only(QWidget):
                                 symbolSize=self.symbolSize, pen=self.pen_avg)
 
         self.plotwidget_line_avg.setData(self.pco2_timeseries_averaged.index.values,
-                                self.pco2_timeseries_averaged[self.tab_pco2.parameter_to_plot].values,
+                                self.pco2_timeseries_averaged[self.par1_to_plot].values,
+                                symbolBrush='y', alpha=0.5, size=2, symbol='o',
+                                symbolSize=self.symbolSize, pen=self.pen_avg)
+
+        self.plotwidget_line2_avg.setData(self.pco2_timeseries_averaged.index.values,
+                                self.pco2_timeseries_averaged[self.par2_to_plot].values,
                                 symbolBrush='y', alpha=0.5, size=2, symbol='o',
                                 symbolSize=self.symbolSize, pen=self.pen_avg)
 
