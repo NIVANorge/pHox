@@ -392,8 +392,8 @@ class Panel_PCO2_only(QWidget):
             if not self.measuring:
                 await self.update_pco2_data()
             else:
-                print('Change the interval, measurement is not finished yet, but you are trying '
-                      'to start a new one. Skipping this attempt')
+                print('Skipping',datetime.now()
+                )
         else:
             self.timerSave_pco2.stop()
 
@@ -524,7 +524,7 @@ class Panel_PCO2_only(QWidget):
 
         row = [self.data['timestamp'].values[0], self.data['ppm'].values[0], self.wat_temp,
                self.air_temp_mem, self.wat_pres, self.air_pres, self.wat_flow, self.air_temp_env,
-               self.data['VP'], self.data['VT'], fbox["temperature"], fbox["salinity"]]
+               self.data['VP'].values, self.data['VT'].values, fbox["temperature"], fbox["salinity"]]
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
@@ -532,6 +532,12 @@ class Panel_PCO2_only(QWidget):
         for n in [self.plotwidget_pco2, self.plotwidget_var, self.plotwidget_var2]:
             n.setXRange(self.pco2_timeseries['times'].values[0], self.pco2_timeseries['times'].values[-1])
 
+        
+        self.plotwidget_var2.setYRange(np.min(self.pco2_timeseries[self.par2_to_plot].values) - 0.001,
+                                      np.max(self.pco2_timeseries[self.par2_to_plot].values) + 0.001)
+        self.plotwidget_var.setYRange(np.min(self.pco2_timeseries[self.par1_to_plot].values) - 0.001,
+                                      np.max(self.pco2_timeseries[self.par1_to_plot].values) + 0.001)
+                                      
         self.pco2_data_line.setData(self.pco2_timeseries['times'].values,
                                     self.pco2_timeseries['CO2_values'].values,
                                     symbolBrush='w', alpha=0.3, size=1, symbol='o',
@@ -539,20 +545,24 @@ class Panel_PCO2_only(QWidget):
 
 
         self.plotwidget_line.setData(self.pco2_timeseries['times'],
-                                     np.around(self.pco2_timeseries[self.par1_to_plot].astype(np.double), 3),
+                                     self.pco2_timeseries[self.par1_to_plot],
                                      symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                      symbolSize=1, pen=self.pen)
 
         self.plotwidget_line2.setData(self.pco2_timeseries['times'],
-                                     np.around(self.pco2_timeseries[self.par2_to_plot].astype(np.double), 3),
+                                     self.pco2_timeseries[self.par2_to_plot],
                                      symbolBrush='w', alpha=0.3, size=1, symbol='o',
                                      symbolSize=1, pen=self.pen)
 
-        subset = self.pco2_timeseries[set(('times', 'CO2_values', self.par1_to_plot,self.par2_to_plot))]
+        if self.par1_to_plot == self.par2_to_plot:
+            
+            subset = self.pco2_timeseries[['times', 'CO2_values', self.par1_to_plot]]
+        else:
+            subset = self.pco2_timeseries[['times', 'CO2_values', self.par1_to_plot,self.par2_to_plot]]
         subset.set_index('times', inplace=True)
 
         self.pco2_timeseries_averaged = subset.rolling(10).mean().dropna()
-
+        #print (self.pco2_timeseries_averaged)
         self.pco2_data_averaged_line.setData(self.pco2_timeseries_averaged.index.values,
                                 self.pco2_timeseries_averaged['CO2_values'].values,
                                 symbolBrush='y', alpha=0.5, size=2, symbol='o',
