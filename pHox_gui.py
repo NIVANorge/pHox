@@ -848,7 +848,7 @@ class Panel(QWidget):
                 self.instrument.drain_mode
             ],
 
-            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(10, 100, 10)) + list(range(100, 5000, 100)),
+            "Spectro integration time": [list(range(1, 20, 1)) + list(range(20, 100, 10)) + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
@@ -1893,6 +1893,7 @@ class Panel(QWidget):
 
         # Dye is coming check
         dye_threshold = 5
+        # Correct by the pixel we are using in the measurement
         if (self.spCounts_df['blank'] - self.spCounts_df['0']).mean() > dye_threshold:
             dye_is_coming = True
             self.dye_qc_chk.setCheckState(rgb_lookup['green'])

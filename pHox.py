@@ -373,13 +373,14 @@ class CO3_instrument(Common_instrument):
 
     async def precheck_auto_adj(self):
 
-        pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
+        pixelLevel = await self.get_sp_levels(self.wvlPixels)
+
         logging.debug('precheck pixel level:' + str(pixelLevel))
-        print(self.THR * 0.95,self.THR * 1.05)
-        if pixelLevel < self.THR * 1.05 and pixelLevel > self.THR * 0.95:
-            return True
-        else:
-            return False
+        #print(self.THR * 0.95, self.THR * 1.05)
+        min_cond = min(pixelLevel) > self.THR * 0.95
+        max_cond = max(pixelLevel) < self.THR * 1.05
+        #print (self.wvlPixels,pixelLevel,min_cond,max_cond ,'precheck')
+        return (min_cond and max_cond)
 
     async def auto_adjust(self, *args):
         # CO3!!
@@ -390,7 +391,6 @@ class CO3_instrument(Common_instrument):
 
         increment = 200
 
-
         n = 0
         while n < 15:
             n += 1
@@ -399,7 +399,9 @@ class CO3_instrument(Common_instrument):
             logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
-            pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
+
+            #print(self.wvlPixels, pixelLevel, 'autadj')
+            pixelLevel = await self.get_sp_levels(self.wvlPixels)
             logging.debug('pixellevel'+str(pixelLevel))
 
             if increment == 0:
@@ -414,12 +416,12 @@ class CO3_instrument(Common_instrument):
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 
-            elif pixelLevel < minval:
+            elif max(pixelLevel < minval):
                 logging.debug(str(pixelLevel) + 'lover than' + str(minval) + 'adding increment' + str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
 
-            elif pixelLevel > maxval:
+            elif max(pixelLevel) > maxval:
                 logging.debug(str(pixelLevel)+'higher than' + str(maxval) + ' subtracting increment' + str(increment))
                 self.specIntTime -= increment
                 increment = increment / 2
@@ -881,9 +883,11 @@ class Test_CO3_instrument(CO3_instrument):
 
     async def pumping(self, pumpTime):
         self.turn_on_relay(self.wpump_slot)  # start the instrument pump
-        self.turn_on_relay(self.stirrer_slot)  # start the stirrer
+        if not self.args.co3:
+            self.turn_on_relay(self.stirrer_slot)  # start the stirrer
         await asyncio.sleep(pumpTime)
-        self.turn_off_relay(self.stirrer_slot)  # turn off the pump
+        if not self.args.co3:
+            self.turn_off_relay(self.stirrer_slot)  # turn off the pump
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
