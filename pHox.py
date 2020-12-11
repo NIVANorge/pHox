@@ -389,7 +389,7 @@ class CO3_instrument(Common_instrument):
         minval = self.THR * 0.95
         logging.debug('Autoadjusting into range' + str(minval) + ',' + str(maxval))
 
-        increment = 200
+        increment = 400
 
         n = 0
         while n < 15:
@@ -416,7 +416,7 @@ class CO3_instrument(Common_instrument):
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 
-            elif max(pixelLevel < minval):
+            elif max(pixelLevel) < minval:
                 logging.debug(str(pixelLevel) + 'lover than' + str(minval) + 'adding increment' + str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
