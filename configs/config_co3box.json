@@ -15,7 +15,7 @@
         "dye_level": 2000,
         "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
-        "dye_nshots": 9,
+        "dye_nshots": 12,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
@@ -30,7 +30,7 @@
             "30",
             "60"
         ],
-        "pumpTime_sec": 15,
+        "pumpTime_sec": 60,
         "mixTime": 10,
         "waitTime": 5,
         "ncycles": 1,

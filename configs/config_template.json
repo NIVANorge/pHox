@@ -34,7 +34,7 @@
         "pumpTime_sec": 60,
         "mixTime": 0,
         "waitTime": 0,
-        "ncycles": 4,
+        "ncycles": 1,
         "Spectro_Integration_time": 10.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
