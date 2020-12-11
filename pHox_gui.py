@@ -656,10 +656,10 @@ class Panel(QWidget):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
-        self.sample_steps = [QCheckBox(f) for f in [
-            "1. Adjusting Light", "2  Measuring dark,blank",
-            "3. Measurement 1", "4. Measurement 2",
-            "5. Measurement 3", "6. Measurement 4"]]
+        # read the number of repetitions and adapt
+        self.sample_steps2 = [QCheckBox("Measurement {}".format(n)) for n in range(1,self.instrument.ncycles +1)]
+        self.sample_steps = [QCheckBox("1. Adjusting Light"), QCheckBox("2 Dark and blank")] + self.sample_steps2
+
         layout = QGridLayout()
 
         [step.setEnabled(False) for step in self.sample_steps]
