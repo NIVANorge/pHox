@@ -34,7 +34,8 @@
         "Ship_Code": "NB",
         "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
         "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "drain_mode" : "OFF"
     },
     "pH": {
         "LED_SLOTS": [

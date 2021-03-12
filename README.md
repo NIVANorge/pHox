@@ -34,18 +34,20 @@ For the GUI development we used PyQT library
 
 ``` sudo python pHox_gui.py [OPTIONS]```  #append with needed options 
 
+
+! pCO<sub>2</sub>-only only case should start as ```sudo python pco2.py```
+
 By default the program starts pH mode. 
 Append the command line argument with parameters if you want to change the mode:
  
 | Command     |   Description                                  |
 |-------------|:-----------------------------------------------|
-|--co3        | CO<sub>3</sub> mode                                       |
-|--pco2       | pCO<sub>2</sub> + pH mode                                 |
-|--onlypco2   | pCO<sub>2</sub>-only mode                                 |
+|--co3        | CO<sub>3</sub> mode                            |
+|--pco2       | pCO<sub>2</sub> + pH mode                      |
 |--localdev   | local development mode (**testing**)           |
 |--debug      | show logging messages of debug level           |
 |--nodye      | do not inject dye during sample (**testing**)  |
-|--stability  | test stability of a spectrophotometer          |
+|--stability  | test stability of a spectrophotometer (**testing**)    |
 
 #### How to install the code when using the new box 
 1. pull this repository `git pull origin https://github.com/NIVANorge/pHox.git `
@@ -85,7 +87,6 @@ For pCO<sub>2</sub>, there is only `pCO2.log`
 When you call the main module, pHox_gui.py, the main graphical panel is created. 
 Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
 In these classes, all widgets, all timers are created.  
-
 
 Gui class is a Main class. All other classes (for spectrophotometer and raspberry are depended on it)
 Then from the main class, we create the instrument class 
@@ -196,23 +197,15 @@ The autoadjust function will be triggered every time measurement is started,if s
 (Both in single measurement mode, single measurement mode and if auto adjust button is clicked).
 
 
-
 Then, the options are also shown in  the GUI, in the config tab. 
 
 ### Graphical part description 
 
-
 ######  qss styles 
-
-###### Live plotting
-
+All styles for the widgets are defined in style.qss
 
 
-- [ ] 
-#### TODO: Subthemes:
 
-- [x] precisions
-- [ ] asynchronous parts
  
 
 

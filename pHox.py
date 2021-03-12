@@ -25,6 +25,7 @@ except:
 
 from pHox_gui import AsyncThreadWrapper
 
+
 def get_linregress(x, y):
     a = np.vstack([x, np.ones(len(x))]).T
     slope, intercept = np.linalg.lstsq(a, y, rcond=None)[0]
@@ -103,7 +104,7 @@ class Spectro_seabreeze(object):
         if not self.spectro_type:
             logging.info("could not get the spectro type, defaulting to FLMT")
             self.spectro_type = "FLMT"
-        logging.info("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
+        logging.debug("spectro_type set to '{}' for spec '{}'".format(self.spectro_type, self.spec))
 
     def set_integration_time_not_async(self, time_millisec):
         if self.busy:
@@ -195,7 +196,8 @@ class Common_instrument(object):
     async def set_Valve(self, status):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
-        if status:
+
+        if not status:
             logging.info("Closing the valve")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
         else:
@@ -234,10 +236,7 @@ class Common_instrument(object):
         conf_operational = config_file["Operational"]
         self.autostart = self.to_bool(conf_operational["AUTOSTART"])
         self.automode = conf_operational["AUTOSTART_MODE"]
-        #self.DURATION = int(conf_operational["DURATION"])
         self.Voltagech = int(conf_operational["T_PROBE_CH"])
-        if not (self.Voltagech in range(9)):
-            self.Voltagech = 8
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
         self.pumpTime = int(conf_operational["pumpTime_sec"])
@@ -252,8 +251,7 @@ class Common_instrument(object):
         self.stirrer_slot = conf_operational["STIRR_SLOT"]
         self.extra_slot = conf_operational["SPARE_SLOT"]
         self.autoadj_opt = conf_operational["Autoadjust_state"]
-        # TODO: Replace ssrlines with new lines
-        # keep it for now since there is a loop dependent on self.ssrLines
+
         self.ssrLines = [
             self.wpump_slot,
             self.dyepump_slot,
@@ -269,6 +267,7 @@ class Common_instrument(object):
         self.Cuvette_V = conf_operational["CUVETTE_V"]  # ml
         self.dye_vol_inj = conf_operational["DYE_V_INJ"]
         self.specIntTime = conf_operational["Spectro_Integration_time"]
+        self.drain_mode = conf_operational['drain_mode']
         self.ship_code = conf_operational["Ship_Code"]
         self.valid_ship_codes = conf_operational["Valid_ship_codes"]
 
@@ -363,79 +362,113 @@ class CO3_instrument(Common_instrument):
         conf = config_file["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
+        self.wvl3 = conf["WL_3"]
+        self.wvl_needed = (self.wvl1, self.wvl2, self.wvl3)
 
         self.light_slot = conf["LIGHT_SLOT"]
         self.dye = conf["Default_DYE"]
-        self.wvl_needed = (self.wvl1, self.wvl2, 350)
 
         self.PCO3_string_version = str(conf["PCO3_string_version"])
+
+
+    async def precheck_auto_adj(self):
+
+        pixelLevel = await self.get_sp_levels(self.wvlPixels)
+
+        logging.debug('precheck pixel level:' + str(pixelLevel))
+        #print(self.THR * 0.95, self.THR * 1.05)
+        min_cond = min(pixelLevel) > self.THR * 0.95
+        max_cond = max(pixelLevel) < self.THR * 1.05
+        #print (self.wvlPixels,pixelLevel,min_cond,max_cond ,'precheck')
+        return (min_cond and max_cond)
 
     async def auto_adjust(self, *args):
         # CO3!!
         adjusted = False
-        pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
-
-        increment = (self.specIntTime * self.THR / pixelLevel) - self.specIntTime
-
         maxval = self.THR * 1.05
         minval = self.THR * 0.95
+        logging.debug('Autoadjusting into range' + str(minval) + ',' + str(maxval))
 
-        while adjusted == False:
+        increment = 400
 
+        n = 0
+        while n < 15:
+            n += 1
+
+            self.specIntTime = max(1, self.specIntTime)
+            logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
-            await asyncio.sleep(self.specIntTime * 1.0e-3)
-            pixelLevel = await self.get_sp_levels(self.wvlPixels[1])
+            await asyncio.sleep(0.5)
+
+            #print(self.wvlPixels, pixelLevel, 'autadj')
+            pixelLevel = await self.get_sp_levels(self.wvlPixels)
+            logging.debug('pixellevel'+str(pixelLevel))
+
+            if increment == 0:
+                logging.info('increment is 0,something is wrong')
+                break
 
             if self.specIntTime > 5000:
                 logging.info("Too high spec int time value,break")
                 break
 
-            elif self.specIntTime < 100:
+            elif self.specIntTime < 1:
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 
-            elif pixelLevel < minval:
+            elif max(pixelLevel) < minval:
+                logging.debug(str(pixelLevel) + 'lover than' + str(minval) + 'adding increment' + str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
 
-            elif pixelLevel > maxval:
+            elif max(pixelLevel) > maxval:
+                logging.debug(str(pixelLevel)+'higher than' + str(maxval) + ' subtracting increment' + str(increment))
                 self.specIntTime -= increment
                 increment = increment / 2
 
             else:
                 adjusted = True
+                break
 
         return adjusted, pixelLevel
+
+    def get_co3_pars(self, a0, b0, b1, c0, c1, d0, S, T):
+        p = a0 * 10**-1 + b0 * 10**-3*S + b1 * 10**-4 * S**2 + c0*10**-3 * T + c1*10**-5*T**2 + d0*S*T*10**-5
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
         #voltage = round(voltage, prec["Voltage"])
 
         T_cuvette = (self.TempCalCoef[0] * voltage) + self.TempCalCoef[1] #, prec["fb_temperature"])
-        T = 273.15 + T_cuvette
+        # temperature in celsius degres for Sharp and Byrne 2019
+        T = T_cuvette
 
-        A1, A2, A_350 = Absorbance
-
-
+        A1, A2, A3 = Absorbance
 
         if manual_salinity is None:
             sal = self.fb_data["salinity"]   #round(, prec["salinity"])
+            print ('fbox sal', self.fb_data["salinity"])
         else:
             sal = manual_salinity               #round(, prec["salinity"])
 
         S_corr = sal * dilution                 #round(, prec["salinity"])
         logging.debug(f"S_corr {S_corr}")
-        R = (A2 - A_350) / (A1 - A_350)
-        # coefficients from Patsavas et al. 2015
+
+        R = (A2 - A3) / (A1 - A3)
+
+        # coefficients from Patsavas et al. 2015 (salinity correction only)
         #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
-        # sharp and Byrne 2019
-        e1 = 1.09519*10 + (4.49666*10**3)*S_corr + (1.95519*10**3)*T + (2.44460*10**5)*T**2 + (-2.01796*10**5)*S_corr*T
-        e3e2 = 32.4812*10 + (-79.7676*10**3)*S_corr + (6.28521*10**4)*S_corr**2 + (-11.8691*10**3)*T + (-3.58709*10**5)*T**2 + (32.5849*10**5)*S_corr*T
-        log_beta1_e2 = 55.6674*10 + (-51.0194*10**3)*S_corr + (4.61423*10**4)*S_corr**2 + (-13.6998*10**5)*S_corr*T
+        
+        # sharp and Byrne 2019 (temperature and salinity correction) ( 17<S<40)
 
-        logging.debug(f"R {R}e1 {e1} e3e2{e3e2}")
+        e1 = (1.09519*10**-1) + (4.49666*10**-3)*S_corr + (1.95519*10**-3)*T + (2.44460*10**-5)*T**2 + (-2.01796*10**-5)*S_corr*T
+        e3e2 = (32.4812*10**-1) + (-79.7676*10**-3)*S_corr + (6.28521*10**-4)*S_corr**2 + (-11.8691*10**-3)*T + (-3.58709*10**-5)*T**2 + (32.5849*10**-5)*S_corr*T
+        log_beta1_e2 = (55.6674*10**-1) + (-51.0194*10**-3)*S_corr + (4.61423*10**-4)*S_corr**2 + (-13.6998*10**-5)*S_corr*T
+
+
+        logging.debug(f"R {R} e1 {e1} e3e2{e3e2}")
         arg = (R - e1) / (1 - R * e3e2)
         logging.debug(f"arg {arg}")
         # CO3 = dilution * 1.e6*(10**-(log_beta1_e2 + np.log10(arg)))  # umol/kg
@@ -455,7 +488,7 @@ class CO3_instrument(Common_instrument):
             T_cuvette,
             vol_injected,
             S_corr,
-            A_350,
+            A3,
         ]
 
     def calc_final_co3(self, co3_eval):
@@ -467,14 +500,14 @@ class CO3_instrument(Common_instrument):
             logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
         except:
             logging.error('could not find CO3 intercept, FIX')
-        (slope1, intercept, r_value) = 999, 999, 999
+            (slope1, intercept, r_value) = 999, 999, 999
+        intercept = y[0]
         return [slope1, intercept, r_value]
 
 
 class pH_instrument(Common_instrument):
     def __init__(self, panelargs):
         super().__init__(panelargs)
-        # self.args = panelargs
         self.load_config_pH()
 
         self.maxval = self.THR * 1.05
@@ -504,12 +537,7 @@ class pH_instrument(Common_instrument):
 
         self.NIR = int(conf_pH["wl_NIR-"])
         self.wvl_needed = (self.HI, self.I2, self.NIR)
-
-        # self.molAbsRats = default['MOL_ABS_RATIOS']
         self.led_slots = conf_pH["LED_SLOTS"]
-       # self.LED1 = int(conf_pH["LED1"])
-       # self.LED2 = int(conf_pH["LED2"])
-       # self.LED3 = int(conf_pH["LED3"])
         self.LEDS = [int(conf_pH["LED1"]), int(conf_pH["LED2"]), int(conf_pH["LED3"])]
         self.PPHOX_string_version = conf_pH['PPHOX_STRING_VERSION']
 
@@ -521,7 +549,7 @@ class pH_instrument(Common_instrument):
         if led_ind == 2:
             self.minval = self.THR * 0.90
 
-        logging.info(f"led_ind {led_ind}")
+        logging.debug(f"led_ind {led_ind}")
         step = 0
 
         increment = 50
@@ -529,13 +557,13 @@ class pH_instrument(Common_instrument):
         # Increment is decreased twice in case we change the direction
         # of decrease/increase
         while not adj:
-            logging.info(f"step is {step}")
+            logging.debug(f"step is {step}")
             step += 1
             self.adjust_LED(led_ind, LED)
             await asyncio.sleep(0.1)
             pixelLevel = await self.get_sp_levels(self.wvlPixels[led_ind])
             await asyncio.sleep(0.1)
-            logging.info(f"pixelLevel {pixelLevel}")
+            logging.debug(f"pixelLevel {pixelLevel}")
 
             if pixelLevel > self.maxval and LED > 15:
                 logging.debug("case0  Too high pixellevel, decrease LED ")
@@ -620,7 +648,7 @@ class pH_instrument(Common_instrument):
                 self.adj_action = "decrease"
                 self.specIntTime -= increment_sptint
                 if self.specIntTime < 50:
-                    logging.info("self.specIntTime < 50")
+                    logging.info("self.specIntTime < 50, stop")
                     break
 
             elif any(t == "increase int time" for t in [res1, res2, res3]):
@@ -632,7 +660,7 @@ class pH_instrument(Common_instrument):
                     self.adj_action = "increase"
 
                 else:
-                    logging.info("too high spt")
+                    logging.info("too high spt, stop")
                     break
 
             elif adj1 and adj2 and adj3:
@@ -837,12 +865,12 @@ class Test_CO3_instrument(CO3_instrument):
     async def set_Valve(self, status):
         pass
         if status:
-            logging.info("Closing the valve localdev")
+            logging.info("Closing the inlet valve localdev")
         await asyncio.sleep(0.3)
 
     def set_Valve_sync(self, status):
-        if status:
-            logging.info("Closing the valve localdev ")
+        if not status:
+            logging.info("Closing the inlet  valve localdev ")
         else:
             logging.info("Opening the valve localdev ")
         time.sleep(0.3)
@@ -855,9 +883,11 @@ class Test_CO3_instrument(CO3_instrument):
 
     async def pumping(self, pumpTime):
         self.turn_on_relay(self.wpump_slot)  # start the instrument pump
-        self.turn_on_relay(self.stirrer_slot)  # start the stirrer
+        if not self.args.co3:
+            self.turn_on_relay(self.stirrer_slot)  # start the stirrer
         await asyncio.sleep(pumpTime)
-        self.turn_off_relay(self.stirrer_slot)  # turn off the pump
+        if not self.args.co3:
+            self.turn_off_relay(self.stirrer_slot)  # turn off the pump
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
@@ -940,7 +970,7 @@ class Test_pH_instrument(pH_instrument):
     async def pump_dye(self, nshots):
         # biochemical valve solenoid pump
         for shot in range(nshots):
-            logging.info("inject shot {}".format(shot))
+            logging.debug("inject shot {}".format(shot))
             self.turn_on_relay(self.dyepump_slot)
             await asyncio.sleep(0.05)
             self.turn_off_relay(self.dyepump_slot)
