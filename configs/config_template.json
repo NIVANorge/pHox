@@ -34,8 +34,8 @@
         "pumpTime_sec": 60,
         "mixTime": 0,
         "waitTime": 0,
-        "ncycles": 1,
-        "Spectro_Integration_time": 10.0,
+        "ncycles": 3,
+        "Spectro_Integration_time": 2.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -69,7 +69,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1999.88
+        "dye_level": 1999.91
     },
     "pCO2": {
         "interval": 1,

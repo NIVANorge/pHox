@@ -36,6 +36,7 @@ def udp_server():
     try:
         sock_listen.bind(("", UDP_RECV))
     except:
+        print ('Could not start the UDP listener')
         logging.info('Could not start the UDP listener'
                      'kill the process: '
                      'sudo netstat -tulpn'
