@@ -46,10 +46,12 @@ class TimeAxisItem(pg.AxisItem):
 class pco2_instrument(object):
     def __init__(self, base_folderpath, panelargs):
         ports = list(serial.tools.list_ports.comports())
-        self.port = ports[0]
+        self.args = panelargs
+        if not self.args.localdev:
+            self.port = ports[0]
         self.base_folderpath = base_folderpath
         self.path = self.base_folderpath + "/data_pCO2/"
-        self.args = panelargs
+
         self.co2 = 990
         self.co2_temp = 999
         self.buff = None
@@ -286,7 +288,11 @@ class Panel_PCO2_only(QWidget):
 
         self.tab_pco2.group_layout.addWidget(self.btn_measure, 3, 0)
         self.tab_pco2.group_layout.addWidget(self.btn_measure_once, 3, 1)
-        self.tab_pco2.group_layout.addWidget(self.StatusBox, 4, 0,1,2)
+        self.tab_pco2.group_layout.addWidget(self.StatusBox, 4, 0,1,1)
+
+        self.no_serial = QPushButton('Ignore Serial Connection')
+        self.no_serial.setCheckable(True)
+        self.tab_pco2.group_layout.addWidget(self.no_serial, 4, 1,1,1)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
 
         self.setLayout(hboxPanel)
@@ -418,8 +424,10 @@ class Panel_PCO2_only(QWidget):
                   self.air_pres, self.air_temp_env]
         await self.tab_pco2.update_tab_ai_values(values)
 
-        measure_co2 = False
-        if measure_co2:
+
+        #F = False
+        #if measure_co2:
+        if not self.no_serial.isChecked():
             synced_serial = await self.get_pco2_values()
             if synced_serial:
                 await self.tab_pco2.update_tab_serial_values(self.serial_data)
