@@ -980,9 +980,10 @@ class Panel(QWidget):
             self.btn_dye_pmp,
             self.btn_wpump,
             self.btn_drain,
-            self.btn_shutter,
-
         ]
+
+        if self.args.co3:
+            buttons = buttons + self.btn_shutter
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
 
