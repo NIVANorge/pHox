@@ -45,6 +45,8 @@ class TimeAxisItem(pg.AxisItem):
         
 class pco2_instrument(object):
     def __init__(self, base_folderpath, panelargs):
+        ports = list(serial.tools.list_ports.comports())
+        self.port = ports[0]
         self.base_folderpath = base_folderpath
         self.path = self.base_folderpath + "/data_pCO2/"
         self.args = panelargs
@@ -57,7 +59,7 @@ class pco2_instrument(object):
             os.mkdir(self.path)
 
         try:
-            self.connection = serial.Serial('/dev/serial0', baudrate=115200, timeout=5,
+            self.connection = serial.Serial(self.port.device, baudrate=115200, timeout=5,
                                             parity=serial.PARITY_NONE,
                                             stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS,
                                             rtscts=False, dsrdtr=False,
@@ -449,7 +451,6 @@ class Panel_PCO2_only(QWidget):
 
     async def sync_pco2(self):
         self.pco2_instrument.connection.flushInput()
-
         for n in range(100):
             if (not self.btn_measure.isChecked() and not self.btn_measure_once.isChecked()):
                 return
