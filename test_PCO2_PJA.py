@@ -39,7 +39,7 @@ class CO2Detector(object):
 	
 		
 	def open(self):
-		self.conn = serial.Serial(self.port[0],baudrate=115200,timeout=5, parity=serial.PARITY_NONE,stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS,rtscts=False,dsrdtr=False,xonxoff=False)
+		self.conn = serial.Serial('/dev/ttyAMA0',baudrate=115200,timeout=5, parity=serial.PARITY_NONE,stopbits=serial.STOPBITS_ONE,bytesize=serial.EIGHTBITS,rtscts=False,dsrdtr=False,xonxoff=False)
 		return
 		
 	def close(self):
@@ -52,6 +52,7 @@ class CO2Detector(object):
 		count  = 100
 		while not synced:
 			b = self.conn.read(1)
+			print ("got b")
 			if len(b) and (b[0] == b'\x07'[0]):
 				synced = True
 			count = count - 1
@@ -64,7 +65,7 @@ class CO2Detector(object):
 				self.data['VP']       = -999.0
 				self.data['VT']       = -999.0
 				self.data['mode']     = b'\x80'
-				#raise ValueError('cannot sync to CO2 detector')
+				raise ValueError('cannot sync to CO2 detector')
 				return(self.data) 
 		try:
 			self.buff=self.conn.read(37)
@@ -107,10 +108,10 @@ while True:
 		Pw.read()
 		Flow.read()
 		Pa.read()
-		CO.read()
+		#CO.read()
 		s = [ '{:s}={:-.3f}'.format(x.name, x.value) for x in (Ta,Tw,Pw,Flow,Pa) ]
 		#s = []
-		s += CO.toString()
+		#s += CO.toString()
 		print('  '.join(s))		
 		time.sleep(1)
 	except KeyboardInterrupt:
