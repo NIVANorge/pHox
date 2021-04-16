@@ -51,7 +51,7 @@ class pco2_instrument(object):
         self.co2 = 990
         self.co2_temp = 999
         self.buff = None
-        #self.data = pd.DataFrame
+        #self.serial_data = pd.DataFrame
 
         if not os.path.exists(self.path):
             os.mkdir(self.path)
@@ -205,11 +205,15 @@ class tab_pco2_class(QWidget):
         if radioBtn.isChecked():
             self.parameter_to_plot = radioBtn.text()
 
-    async def update_tab_values(self, values, data):
-        all_val = values + [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
-        [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(all_val))]
+    async def update_tab_ai_values(self, values):
+        all_val = values
+        [self.pco2_params[n].setText(str(all_val[n])) for n in range(len(values))]
         self.fbox_temp_live.setText(str(fbox['temperature']))
         self.fbox_sal_live.setText(str(fbox['salinity']))
+
+    async def update_tab_serial_values(self, data):
+        all_val = [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
+        [self.pco2_params[n].setText(str(all_val[n])) for n in range(5,len(all_val))]
 
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument
@@ -314,7 +318,7 @@ class Panel_PCO2_only(QWidget):
     @asyncSlot()
     async def btn_measure_once_clicked(self):
         self.btn_measure.setEnabled(False)
-        await self.update_pco2_data()
+        await self.update_data()
         self.btn_measure.setEnabled(True)
 
     def btn_measure_clicked(self):
@@ -390,14 +394,14 @@ class Panel_PCO2_only(QWidget):
         
         if self.btn_measure.isChecked():
             if not self.measuring:
-                await self.update_pco2_data()
+                await self.update_data()
             else:
                 print('Skipping',datetime.now()
                 )
         else:
             self.timerSave_pco2.stop()
 
-    async def update_pco2_data(self):
+    async def update_data(self):
         self.measuring = True
         start = datetime.now()
         # UPDATE VALUES
@@ -408,21 +412,36 @@ class Panel_PCO2_only(QWidget):
         self.air_pres = self.get_value_pco2_from_voltage(type="Pa_env")
         self.air_temp_env = self.get_value_pco2_from_voltage(type="Ta_env")
 
-        synced = await self.get_pco2_values()
-
         values = [self.wat_temp, self.air_temp_mem, self.wat_flow, self.wat_pres,
                   self.air_pres, self.air_temp_env]
-                  
-        if synced:
-            await self.tab_pco2.update_tab_values(values, self.data)
-            await asyncio.sleep(0.0001)
-            self.pco2_df = await self.update_pco2_plot()
-            await self.pco2_instrument.save_pCO2_data(self.data, values)
-            #await self.send_pco2_to_ferrybox()
+        await self.tab_pco2.update_tab_ai_values(values)
 
+        measure_co2 = False
+        if measure_co2:
+            synced_serial = await self.get_pco2_values()
+            if synced_serial:
+                await self.tab_pco2.update_tab_serial_values(self.serial_data)
+                await asyncio.sleep(0.0001)
+                self.pco2_df = await self.update_pco2_plot()
+                await self.pco2_instrument.save_pCO2_data(self.serial_data, values)
+                #await self.send_pco2_to_ferrybox()
+
+            else:
+                self.StatusBox.setText('Could not measure using serial connection')
         else:
-            self.StatusBox.setText('Could not measure')
 
+            self.serial_data = pd.DataFrame(data={'time':['nan'], 'timestamp': ['nan'],
+                                                'ppm': ['nan'], 'type': ['nan'],
+                                                'range': ['nan'], 'sn': ['nan'],
+                                                'VP':['nan'], 'VT': ['nan'],
+                                                'mode':['nan']})
+
+            self.serial_data['time'] = datetime.now()
+            d = datetime.now().timestamp()
+            self.serial_data['timestamp'] = [d]
+
+
+            await self.pco2_instrument.save_pCO2_data(self.serial_data, values)
 
         self.measuring = False
         #print ('measurement took', datetime.now() - start)
@@ -443,50 +462,50 @@ class Panel_PCO2_only(QWidget):
 
     async def get_pco2_values(self):
 
-        self.data = pd.DataFrame(columns=['time', 'timestamp', 'ppm', 'type',
+        self.serial_data = pd.DataFrame(columns=['time', 'timestamp', 'ppm', 'type',
                                           'range', 'sn', 'VP', 'VT', 'mode'])
 
-        self.data['time'] = datetime.now()
+        self.serial_data['time'] = datetime.now()
         d = datetime.now().timestamp()
-        self.data['timestamp'] = [d]
+        self.serial_data['timestamp'] = [d]
 
         synced = await self.sync_pco2()  # False
 
         if synced:
             if self.args.localdev:
-               self.data['CH1_Vout'] = 999
+               self.serial_data['CH1_Vout'] = 999
                import random
-               self.data['ppm'] = random.randint(400,500)
-               self.data['type'] = 999
-               self.data['range'] = 999
-               self.data['sn'] = 999
-               self.data['VP'] = 999
-               self.data['VT'] = 999
-               self.data['mode'] = 999
+               self.serial_data['ppm'] = random.randint(400,500)
+               self.serial_data['type'] = 999
+               self.serial_data['range'] = 999
+               self.serial_data['sn'] = 999
+               self.serial_data['VP'] = 999
+               self.serial_data['VT'] = 999
+               self.serial_data['mode'] = 999
             else:
                 try:
                     #self.StatusBox.setText('Trying to read data')
                     self.buff = self.pco2_instrument.connection.read(37)
 
-                    self.data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
+                    self.serial_data['CH1_Vout'] = struct.unpack('<f', self.buff[0:4])[0]
 
-                    self.data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
-                    self.data['ppm'] = self.data['ppm']*float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1])
+                    self.serial_data['ppm'] = struct.unpack('<f', self.buff[4:8])[0]
+                    self.serial_data['ppm'] = self.serial_data['ppm']*float(self.Co2_CalCoef[0]) + float(self.Co2_CalCoef[1])
 
-                    self.data['type'] = self.buff[8:9]
-                    self.data['range'] = struct.unpack('<f', self.buff[9:13])[0]
-                    self.data['sn'] = self.buff[13:27]
-                    self.data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
-                    self.data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
-                    self.data['mode'] = self.buff[35:36]
+                    self.serial_data['type'] = self.buff[8:9]
+                    self.serial_data['range'] = struct.unpack('<f', self.buff[9:13])[0]
+                    self.serial_data['sn'] = self.buff[13:27]
+                    self.serial_data['VP'] = struct.unpack('<f', self.buff[27:31])[0]
+                    self.serial_data['VT'] = struct.unpack('<f', self.buff[31:35])[0]
+                    self.serial_data['mode'] = self.buff[35:36]
                     if self.buff[8:9][0] != b'\x81'[0]:
                         print('the gas type is not correct')
                         synced = False
-                    # if self.data['mode'][0] != b'\x80'[0]:
+                    # if self.serial_data['mode'][0] != b'\x80'[0]:
                     #    raise ValueError('the detector mode is not correct')
                 except:
                     raise
-            self.data = self.data.round({'CH1_Vout': 3, 'ppm': 3, 'range':3, 'VP': 3, 'VT': 3})
+            self.serial_data = self.serial_data.round({'CH1_Vout': 3, 'ppm': 3, 'range':3, 'VP': 3, 'VT': 3})
         else:
             synced = False
             # raise ValueError('cannot sync to CO2 detector')
@@ -522,9 +541,9 @@ class Panel_PCO2_only(QWidget):
         if length > time_limit:
             self.pco2_timeseries = self.pco2_timeseries.drop([0], axis=0).reset_index(drop=True)
 
-        row = [self.data['timestamp'].values[0], self.data['ppm'].values[0], self.wat_temp,
+        row = [self.serial_data['timestamp'].values[0], self.serial_data['ppm'].values[0], self.wat_temp,
                self.air_temp_mem, self.wat_pres, self.air_pres, self.wat_flow, self.air_temp_env,
-               self.data['VP'].values, self.data['VT'].values, fbox["temperature"], fbox["salinity"]]
+               self.serial_data['VP'].values, self.serial_data['VT'].values, fbox["temperature"], fbox["salinity"]]
 
         # add one row with all values
         self.pco2_timeseries.loc[length] = row
