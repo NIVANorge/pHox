@@ -292,6 +292,7 @@ class Panel_PCO2_only(QWidget):
 
         self.no_serial = QPushButton('Ignore Serial Connection')
         self.no_serial.setCheckable(True)
+        self.no_serial.setChecked(True)
         self.tab_pco2.group_layout.addWidget(self.no_serial, 4, 1,1,1)
         self.tab_pco2.setLayout(self.tab_pco2.group_layout)
 
