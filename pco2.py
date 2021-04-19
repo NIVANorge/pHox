@@ -216,8 +216,8 @@ class tab_pco2_class(QWidget):
         self.fbox_sal_live.setText(str(fbox['salinity']))
 
     async def update_tab_serial_values(self, data):
-        all_val = [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
-        [self.pco2_params[n].setText(str(all_val[n])) for n in range(5,len(all_val))]
+        all_val = [data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
+        [self.pco2_params[n].setText(str(v)) for n,v in enumerate(all_val,start = 6)]
 
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument
