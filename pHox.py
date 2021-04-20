@@ -309,6 +309,7 @@ class Common_instrument(object):
     async def pump_dye(self, nshots):
         for shot in range(nshots):
             self.turn_on_relay(self.dyepump_slot)
+            logging.debug('inject dye shot {}'.format(shot))
             await asyncio.sleep(0.15)
             self.turn_off_relay(self.dyepump_slot)
             await asyncio.sleep(0.35)
@@ -328,10 +329,15 @@ class Common_instrument(object):
         for i in range(nAver):
             try:
                 v += self.adc.read_voltage(channel)
-            except TimeoutError:
-                logging.error('Timeout error in get_Voltage')
+            except Exception as e:
+                logging.error(e)
+                nAver -= 1
                 pass
-        Voltage = round(v / nAver, prec["Voltage"])
+        try:
+            Voltage = round(v / nAver, prec["Voltage"])
+        except Exception as e:
+            print (e)
+            Voltage = -999
         return Voltage
 
     def calc_wavelengths(self):
@@ -373,13 +379,14 @@ class CO3_instrument(Common_instrument):
 
     async def precheck_auto_adj(self):
 
-        pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
+        pixelLevel = await self.get_sp_levels(self.wvlPixels)
+
         logging.debug('precheck pixel level:' + str(pixelLevel))
-        print(self.THR * 0.95,self.THR * 1.05)
-        if pixelLevel < self.THR * 1.05 and pixelLevel > self.THR * 0.95:
-            return True
-        else:
-            return False
+        #print(self.THR * 0.95, self.THR * 1.05)
+        min_cond = min(pixelLevel) > self.THR * 0.95
+        max_cond = max(pixelLevel) < self.THR * 1.05
+        #print (self.wvlPixels,pixelLevel,min_cond,max_cond ,'precheck')
+        return (min_cond and max_cond)
 
     async def auto_adjust(self, *args):
         # CO3!!
@@ -388,19 +395,20 @@ class CO3_instrument(Common_instrument):
         minval = self.THR * 0.95
         logging.debug('Autoadjusting into range' + str(minval) + ',' + str(maxval))
 
-        increment = 200
-
+        increment = 500
 
         n = 0
-        while n < 15:
+        while n < 20:
             n += 1
 
             self.specIntTime = max(1, self.specIntTime)
             logging.debug("Trying Integration time: " + str(self.specIntTime))
             await self.spectrometer_cls.set_integration_time(self.specIntTime)
             await asyncio.sleep(0.5)
-            pixelLevel = await self.get_sp_levels(self.wvlPixels[2])
-            logging.debug('pixellevel'+str(pixelLevel))
+
+            #print(self.wvlPixels, pixelLevel, 'autadj')
+            pixelLevel = await self.get_sp_levels(self.wvlPixels)
+            logging.debug('max pixellevel'+str(max(pixelLevel)))
 
             if increment == 0:
                 logging.info('increment is 0,something is wrong')
@@ -414,12 +422,12 @@ class CO3_instrument(Common_instrument):
                 logging.info("Something is wrong, specint time is too low,break ")
                 break
 
-            elif pixelLevel < minval:
+            elif max(pixelLevel) < minval:
                 logging.debug(str(pixelLevel) + 'lover than' + str(minval) + 'adding increment' + str(increment))
                 self.specIntTime += increment
                 increment = increment / 2
 
-            elif pixelLevel > maxval:
+            elif max(pixelLevel) > maxval:
                 logging.debug(str(pixelLevel)+'higher than' + str(maxval) + ' subtracting increment' + str(increment))
                 self.specIntTime -= increment
                 increment = increment / 2
@@ -429,6 +437,9 @@ class CO3_instrument(Common_instrument):
                 break
 
         return adjusted, pixelLevel
+
+    def get_co3_pars(self, a0, b0, b1, c0, c1, d0, S, T):
+        p = a0 * 10**-1 + b0 * 10**-3*S + b1 * 10**-4 * S**2 + c0*10**-3 * T + c1*10**-5*T**2 + d0*S*T*10**-5
 
     def calc_CO3(self, Absorbance, voltage, dilution, vol_injected, manual_salinity):
 
@@ -457,6 +468,7 @@ class CO3_instrument(Common_instrument):
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
         
         # sharp and Byrne 2019 (temperature and salinity correction) ( 17<S<40)
+
         e1 = (1.09519*10**-1) + (4.49666*10**-3)*S_corr + (1.95519*10**-3)*T + (2.44460*10**-5)*T**2 + (-2.01796*10**-5)*S_corr*T
         e3e2 = (32.4812*10**-1) + (-79.7676*10**-3)*S_corr + (6.28521*10**-4)*S_corr**2 + (-11.8691*10**-3)*T + (-3.58709*10**-5)*T**2 + (32.5849*10**-5)*S_corr*T
         log_beta1_e2 = (55.6674*10**-1) + (-51.0194*10**-3)*S_corr + (4.61423*10**-4)*S_corr**2 + (-13.6998*10**-5)*S_corr*T
@@ -877,9 +889,11 @@ class Test_CO3_instrument(CO3_instrument):
 
     async def pumping(self, pumpTime):
         self.turn_on_relay(self.wpump_slot)  # start the instrument pump
-        self.turn_on_relay(self.stirrer_slot)  # start the stirrer
+        if not self.args.co3:
+            self.turn_on_relay(self.stirrer_slot)  # start the stirrer
         await asyncio.sleep(pumpTime)
-        self.turn_off_relay(self.stirrer_slot)  # turn off the pump
+        if not self.args.co3:
+            self.turn_off_relay(self.stirrer_slot)  # turn off the pump
         self.turn_off_relay(self.wpump_slot)  # turn off the stirrer
         return
 
