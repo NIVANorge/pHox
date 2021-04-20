@@ -125,12 +125,12 @@
             ]
         },
           "Probe_14": {
-            "comment": "not used",
-            "is_calibrated": "False",
-            "calibr_date": "20/02/2020",
+            "comment": "installed on CO3 cal by KAS",
+            "is_calibrated": "True",
+            "calibr_date": "12/12/2020",
             "Calibr_coef": [
-                70.975,
-                16.184
+                46.142,
+                16.278
             ]
         },
           "Probe_15": {

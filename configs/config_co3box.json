@@ -15,12 +15,12 @@
         "dye_level": 2000,
         "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
-        "dye_nshots": 9,
+        "dye_nshots": 6,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 10,
+        "SAMPLING_INTERVAL_MIN": 60,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -30,12 +30,12 @@
             "30",
             "60"
         ],
-        "pumpTime_sec": 15,
+        "pumpTime_sec": 60,
         "mixTime": 10,
         "waitTime": 5,
         "ncycles": 1,
-        "Spectro_Integration_time": 50.0,
-        "Ship_Code": "Standalone",
+        "Spectro_Integration_time": 90.0,
+        "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
             "NB",
@@ -68,7 +68,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "dye_level": 1996.9999999999982
+        "dye_level": 1951.9400000000032
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
