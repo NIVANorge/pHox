@@ -656,10 +656,10 @@ class Panel(QWidget):
 
         self.sample_steps_groupBox = QGroupBox("Measuring Progress")
 
-        self.sample_steps = [QCheckBox(f) for f in [
-            "1. Adjusting Light", "2  Measuring dark,blank",
-            "3. Measurement 1", "4. Measurement 2",
-            "5. Measurement 3", "6. Measurement 4"]]
+        # read the number of repetitions and adapt
+        self.sample_steps2 = [QCheckBox("Measurement {}".format(n)) for n in range(1,self.instrument.ncycles +1)]
+        self.sample_steps = [QCheckBox("1. Adjusting Light"), QCheckBox("2 Dark and blank")] + self.sample_steps2
+
         layout = QGridLayout()
 
         [step.setEnabled(False) for step in self.sample_steps]
@@ -848,7 +848,7 @@ class Panel(QWidget):
                 self.instrument.drain_mode
             ],
 
-            "Spectro integration time": [[0.01, 0.1, 1, 10] + list(range(10, 100, 10)) + list(range(100, 5000, 100)),
+            "Spectro integration time": [list(range(1, 20, 1)) + list(range(20, 100, 10)) + list(range(100, 5000, 100)),
                 self.specIntTime_combo_chngd,
                 self.instrument.specIntTime
             ],
@@ -1893,6 +1893,7 @@ class Panel(QWidget):
 
         # Dye is coming check
         dye_threshold = 5
+        # Correct by the pixel we are using in the measurement
         if (self.spCounts_df['blank'] - self.spCounts_df['0']).mean() > dye_threshold:
             dye_is_coming = True
             self.dye_qc_chk.setCheckState(rgb_lookup['green'])
