@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 import serial
 import serial.tools.list_ports
 import logging
@@ -125,6 +125,8 @@ class only_pco2_instrument(pco2_instrument):
         for i in range(nAver):
             v += self.adc.read_voltage(channel)
         Voltage = round(v / nAver, prec["Voltage"])
+        # PJA 2021-04-16: to debug temperature values
+        #print("AI Channel {:-d}: {:5.2f}V".format(channel, Voltage))
         return Voltage
 
 
@@ -217,7 +219,7 @@ class tab_pco2_class(QWidget):
 
     async def update_tab_serial_values(self, data):
         all_val = [ data['VP'].values[0], data['VT'].values[0],data['ppm'].values[0]]
-        [self.pco2_params[n].setText(str(all_val[n])) for n in range(5,len(all_val))]
+        [self.pco2_params[n].setText(str(v)) for n,v in enumerate(all_val,start = 6)]
 
 class Panel_PCO2_only(QWidget):
     # Class for ONLY PCO2 Instrument

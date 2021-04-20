@@ -52,7 +52,6 @@ class CO2Detector(object):
 		count  = 100
 		while not synced:
 			b = self.conn.read(1)
-			print ("got b")
 			if len(b) and (b[0] == b'\x07'[0]):
 				synced = True
 			count = count - 1
@@ -89,7 +88,8 @@ class CO2Detector(object):
 		l  = ('CH1_Vout', 'ppm', 'range', 'VP', 'VT')
 		s  = [ '{:s}={:-.3f}'.format(x,self.data[x]) for x in l ]
 		#s += [ 'SN={0}'.format(self.data['sn']) ]
-		s += [ 'SN={0}'.format(self.data['sn'].decode('ascii').strip()) ]
+		#s += [ 'SN={0}'.format(self.data['sn'].decode('ascii').strip()) ]
+		print(self.data['sn'])
 		return(s)
 		
 		
@@ -108,10 +108,10 @@ while True:
 		Pw.read()
 		Flow.read()
 		Pa.read()
-		#CO.read()
+		CO.read()
 		s = [ '{:s}={:-.3f}'.format(x.name, x.value) for x in (Ta,Tw,Pw,Flow,Pa) ]
 		#s = []
-		#s += CO.toString()
+		s += CO.toString()
 		print('  '.join(s))		
 		time.sleep(1)
 	except KeyboardInterrupt:
