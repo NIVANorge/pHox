@@ -1103,10 +1103,11 @@ class Panel(QWidget):
             await self.instrument.set_Valve(False)
         await self.drain()
         self.btn_drain.setChecked(False)
-        self.btn_valve.setChecked(True)
-        # Open the inlet valve after draining
-        await self.instrument.set_Valve(True)
 
+        # Open the inlet valve after draining
+        if not self.args.co3:
+            await self.instrument.set_Valve(True)
+            self.btn_valve.setChecked(True)
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1552,7 +1553,12 @@ class Panel(QWidget):
                 self.btn_light_clicked()
                 self.open_shutter()
                 #self.btn_light.click()
-
+        if self.args.co3 and not self.btn_valve.isChecked():
+            self.lamp_time = config_file["CO3"]["lamp_time"]
+            if self.until_next_sample <= self.lamp_time:
+                logging.info('open the valve')
+                self.instrument.set_Valve_sync(True)
+                self.btn_valve.setChecked(True)
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
     @asyncSlot()
@@ -1608,8 +1614,8 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        self.instrument.set_Valve_sync(True)
-        self.btn_valve.setChecked(True)
+        self.instrument.set_Valve_sync(False)
+        self.btn_valve.setChecked(False)
 
         if not restart:
             logging.debug('Check that drain is closed')
@@ -1808,6 +1814,7 @@ class Panel(QWidget):
             # pump if single or calibration , close the valve
             await self.pump_if_needed()
             await self.instrument.set_Valve(False)
+            self.btn_valve.setChecked(False)
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
 
@@ -1837,8 +1844,9 @@ class Panel(QWidget):
                 await self.drain()
 
             # Step 7 Open valve
-            await self.instrument.set_Valve(True)
-
+            if not self.args.co3:
+                await self.instrument.set_Valve(True)
+                self.btn_valve.setChecked(True)
             if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()
