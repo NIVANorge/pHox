@@ -213,7 +213,7 @@ class Common_instrument(object):
     def set_Valve_sync(self, status):
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
-        if status:
+        if not status:
             logging.info("Closing the valve")
             ch1, ch2 = self.valve_slots[2], self.valve_slots[1]
         else:
@@ -869,8 +869,7 @@ class Test_CO3_instrument(CO3_instrument):
         pass
 
     async def set_Valve(self, status):
-        pass
-        if status:
+        if not status:
             logging.info("Closing the inlet valve localdev")
         await asyncio.sleep(0.3)
 
@@ -934,15 +933,14 @@ class Test_pH_instrument(pH_instrument):
         pass
 
     async def set_Valve(self, status):
-        pass
-        if status:
+        if not status:
             logging.info("Closing the valve localdev pH")
         else:
             logging.info("Opening the valve localdev pH")
         await asyncio.sleep(0.01)
 
     def set_Valve_sync(self, status):
-        if status:
+        if not status:
             logging.info("Closing the valve localdev pH")
         else:
             logging.info("Opening the valve localdev pH")
