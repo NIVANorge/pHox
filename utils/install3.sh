@@ -92,7 +92,7 @@ fi
 # Install Autostart
 #--------------------------------------------------------------------------
 echo "****** AUTOSTART *******"
-echo "Install autostart file  "
+echo "Install autostart file (NOT FOR PCO2)"
 echo "************************"
 echo "                        "
 read -p "Skip? Y/[N] " ans
@@ -112,6 +112,34 @@ then
     echo 'X-GNOME-Autostart-enabled=true'                      >> $f
     mv $f $g
 fi
+
+#--------------------------------------------------------------------------
+# Install Autostart
+#--------------------------------------------------------------------------
+echo "****** AUTOSTART for PCO2 *******"
+echo "Install autostart file for PCO2"
+echo "************************"
+echo "                        "
+read -p "Skip? Y/[N] " ans
+if [ "$ans" != "Y" ]
+then
+    f="/tmp/pHox.desktop"
+    g="/home/pi/.config/autostart/pHox.desktop"
+    if [ ! -d "/home/pi/.config/autostart" ]
+    then
+        mkdir -p "/home/pi/.config/autostart"
+    fi
+    echo '[Desktop Entry]'                                     >  $f
+    echo 'Type=Application'                                    >> $f
+    echo 'NAME=pHox'                                           >> $f
+    echo "Exec=sudo bash -c 'cd /home/pi/pHox && /usr/bin/python3 /home/pi/pHox/pco2.py'" >> $f
+    cp $f "/home/pi/Desktop"
+    echo 'X-GNOME-Autostart-enabled=true'                      >> $f
+    mv $f $g
+fi
+
+
+
 
 #--------------------------------------------------------------------------
 # Install static IP on eth0
