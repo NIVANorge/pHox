@@ -1619,10 +1619,11 @@ class Panel(QWidget):
         self.btn_valve.setChecked(False)
 
         if not restart:
-            logging.debug('Check that drain is closed')
-            self.btn_drain.setChecked(False)
-            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+            if self.args.co3:            
+                logging.debug('Check that drain is closed')
+                self.btn_drain.setChecked(False)
+                self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+                self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
