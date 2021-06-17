@@ -2148,7 +2148,7 @@ class Panel_pH(Panel):
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
-        self.set_LEDs(False)
+        self.set_LEDs(True)
         logging.info("turn on the leds")
         await asyncio.sleep(2)
 
