@@ -1646,7 +1646,8 @@ class Panel(QWidget):
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
         logging.info("turn on light source")
-
+        logging.debug('restart is' + str(restart))
+        logging.debug(str(self.major_modes))
         if not restart:
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
@@ -1663,6 +1664,7 @@ class Panel(QWidget):
             self.btn_cont_meas.setChecked(True)
 
         if fbox['pumping'] or fbox['pumping'] is None:
+            self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
         if self.args.pco2:

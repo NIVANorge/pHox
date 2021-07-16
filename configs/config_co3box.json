@@ -12,8 +12,6 @@
             25
         ],
         "DYE_V_INJ": 0.03,
-        "dye_level": 2000 ,
-        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
         "specAvScans": 6,
@@ -28,11 +26,7 @@
         "ncycles": 4,
         "Spectro_Integration_time": 3000,
         "Ship_Code": "Standalone",
-        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"],
-        "LIGHT_THRESHOLD_STS": 15500,
-        "LIGHT_THRESHOLD_FLAME": 60000,
-        "Autoadjust_state": "ON",
-        "Autoadjust_comment": "Options are ON, OFF, ON_NORED"
+        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"]
     },
     "pH": {
         "LED_SLOTS": [
@@ -107,8 +101,7 @@
         "pH_tris_buffer": 8.094,
         "S_tris_buffer": 35,
         "Calibration_threshold": 0.005,
-        "Calibration_pump_time" : 30,
-        "T_tris_buffer": 20
+        "Calibration_pump_time" : 30
       },
     "QC" : {
         "flow_threshold": 2000,

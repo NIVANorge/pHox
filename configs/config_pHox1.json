@@ -16,8 +16,6 @@
             25
         ],
         "DYE_V_INJ": 0.03,
-        "dye_level": 2000 ,
-        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
         "specAvScans": 6,
@@ -55,7 +53,9 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "PPHOX_STRING_VERSION": "1"
+        "PPHOX_STRING_VERSION": "1",
+        "dye_level": 2000 ,
+        "dye_level_comment": "max 2000 ml, two bags"
 
     },
     "pCO2": {
@@ -105,8 +105,7 @@
         "WL_2": 250,
         "LIGHT_SLOT": 22,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor",
-        "PCO3_string_version": "1"
+        "Default_DYE": "Pb_perchlor"
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
