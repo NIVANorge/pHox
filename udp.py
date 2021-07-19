@@ -12,7 +12,8 @@ UDP_IP = "192.168.0.2"  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 
 SHIP_IP_DICT = {'TF': "192.168.0.1",
-                "RA": "192.168.0.1"}
+                "RA": "192.168.0.1",
+                "KH": "192.168.13.3"}
 
 
 Ferrybox = {
@@ -46,6 +47,7 @@ def udp_server():
         try:
             Ferrybox['udp_ok'] = False
             (data, addr) = sock_listen.recvfrom(500)
+            print (data,addr)
         except:
             # add time
             pass
