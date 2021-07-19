@@ -608,7 +608,20 @@ class Panel(QWidget):
             self.btn_calibr.setEnabled(True)
             self.btn_single_meas.setEnabled(True)
             self.btn_cont_meas.setEnabled(True)
+        if mode_unset == 'Paused':
+            logging.debug('unset paused mode')
+            self.until_next_sample = self.instrument.samplingInterval
+            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
+            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
 
+            self.btn_single_meas.setEnabled(False)
+            self.btn_calibr.setEnabled(False)
+            self.config_widgets_set_state(False)
+            self.manual_widgets_set_enabled(False)
+
+            if 'Manual' in self.major_modes:
+                self.btn_adjust_light_intensity.setEnabled(False)    
         if mode_unset == 'Flowcheck':
             if 'Manual' in self.major_modes:
                 self.manual_widgets_set_enabled(True)
@@ -1616,7 +1629,7 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
-
+        
         if not restart:
             logging.debug('Check that drain is closed')
             self.btn_drain.setChecked(False)
@@ -1632,13 +1645,14 @@ class Panel(QWidget):
 
             self.updater.start_live_plot()
             self.timerTemp_info.start(500)
+        if restart:
+            self.unset_major_mode('Paused')
+            #logging.info("Starting continuous mode in Autostart")
+            #self.StatusBox.setText("Starting continuous mode")
 
-            logging.info("Starting continuous mode in Autostart")
-            self.StatusBox.setText("Starting continuous mode")
-
-        if fbox['pumping'] or fbox['pumping'] is None or self.instrument.ship_code == "Standalone":
-            self.btn_cont_meas.setChecked(True)
-            self.btn_cont_meas_clicked()
+        #if fbox['pumping'] or fbox['pumping'] is None or self.instrument.ship_code == "Standalone":
+        self.btn_cont_meas.setChecked(True)
+        self.btn_cont_meas_clicked()
 
         if self.args.pco2:
             # change to config file
@@ -1674,8 +1688,9 @@ class Panel(QWidget):
                     pass
             elif fbox['pumping'] == 1:
                 if 'Paused' in self.major_modes:
+                    logging.debug('trying to restart,leaving port')                    
                     logging.debug("Going back to continuous mode, the pump is working now")
-                    self.unset_major_mode('Paused')
+
                     self._autostart(restart=True)
                 else:
                     pass
