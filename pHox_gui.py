@@ -1101,12 +1101,14 @@ class Panel(QWidget):
         if self.btn_valve.isChecked():
             self.btn_valve.setChecked(False)
             await self.instrument.set_Valve(False)
+
         await self.drain()
         self.btn_drain.setChecked(False)
-        self.btn_valve.setChecked(True)
-        # Open the inlet valve after draining
-        await self.instrument.set_Valve(True)
 
+        # Open the inlet valve after draining
+        if not self.args.co3:
+            await self.instrument.set_Valve(True)
+            self.btn_valve.setChecked(True)
 
     def btn_wpump_clicked(self):
         if self.btn_wpump.isChecked():
@@ -1552,6 +1554,13 @@ class Panel(QWidget):
                 self.btn_light_clicked()
                 self.open_shutter()
                 #self.btn_light.click()
+        if self.args.co3 and not self.btn_valve.isChecked():
+            self.lamp_time = config_file["CO3"]["lamp_time"]
+            if self.until_next_sample <= self.lamp_time:
+                self.instrument.set_Valve_sync(True)
+                self.btn_valve.setChecked(True)
+                logging.debug('open the inlet valve')
+                #self.btn_light.click()
 
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
@@ -1561,6 +1570,7 @@ class Panel(QWidget):
         self.until_next_sample = self.instrument.samplingInterval
         if "Measuring" not in self.major_modes:
             folderpath = self.get_folderpath()
+            # Why do we not await for warming?
             await self.sample_cycle(folderpath)
 
         else:
@@ -1608,10 +1618,12 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        self.instrument.set_Valve_sync(True)
-        self.btn_valve.setChecked(True)
-
+        # False closes the inlet valve
+        self.instrument.set_Valve_sync(False)
+        self.btn_valve.setChecked(False)
+        logging.debug(restart)
         if not restart:
+
             logging.debug('Check that drain is closed')
             self.btn_drain.setChecked(False)
             self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
@@ -1631,6 +1643,7 @@ class Panel(QWidget):
             self.StatusBox.setText("Starting continuous mode")
 
         if fbox['pumping'] or fbox['pumping'] is None or self.instrument.ship_code == "Standalone":
+            logging.info('restarting continuous mode after pump restarted')
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
@@ -1808,6 +1821,7 @@ class Panel(QWidget):
             # pump if single or calibration , close the valve
             await self.pump_if_needed()
             await self.instrument.set_Valve(False)
+            self.btn_valve.setChecked(False)
             # Step 1. Autoadjust LEDS
             self.res_autoadjust = await self.call_autoAdjust()
 
@@ -1836,8 +1850,10 @@ class Panel(QWidget):
                 # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
                 await self.drain()
 
-            # Step 7 Open valve
-            await self.instrument.set_Valve(True)
+            # Step 7 Open valve if not CO3
+            if not self.args.co3:
+                await self.instrument.set_Valve(True)
+                self.btn_valve.setChecked(True)
 
             if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
