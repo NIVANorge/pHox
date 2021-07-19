@@ -339,7 +339,8 @@ class Common_instrument(object):
         except Exception as e:
             print (e)
             Voltage = -999
-        logging.error(str(nAver) + 'num of Volt measurements')
+        if nAver < 3:
+            logging.error(str(nAver) + ' num of Volt measurements')
         return Voltage
 
     def calc_wavelengths(self):
