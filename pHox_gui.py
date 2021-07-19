@@ -980,9 +980,10 @@ class Panel(QWidget):
             self.btn_dye_pmp,
             self.btn_wpump,
             self.btn_drain,
-            self.btn_shutter,
-
         ]
+
+        if self.args.co3:
+            buttons = buttons + self.btn_shutter
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
 
@@ -1557,11 +1558,9 @@ class Panel(QWidget):
         if self.args.co3 and not self.btn_valve.isChecked():
             self.lamp_time = config_file["CO3"]["lamp_time"]
             if self.until_next_sample <= self.lamp_time:
+                logging.info('open the valve')
                 self.instrument.set_Valve_sync(True)
                 self.btn_valve.setChecked(True)
-                logging.debug('open the inlet valve')
-                #self.btn_light.click()
-
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
     @asyncSlot()
@@ -1618,10 +1617,9 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        # False closes the inlet valve
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
-        logging.debug(restart)
+
         if not restart:
 
             logging.debug('Check that drain is closed')
@@ -1850,11 +1848,10 @@ class Panel(QWidget):
                 # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
                 await self.drain()
 
-            # Step 7 Open valve if not CO3
+            # Step 7 Open valve
             if not self.args.co3:
                 await self.instrument.set_Valve(True)
                 self.btn_valve.setChecked(True)
-
             if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()

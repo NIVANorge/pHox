@@ -339,6 +339,7 @@ class Common_instrument(object):
         except Exception as e:
             print (e)
             Voltage = -999
+        logging.error(str(nAver) + 'num of Volt measurements')
         return Voltage
 
     def calc_wavelengths(self):
@@ -934,8 +935,7 @@ class Test_pH_instrument(pH_instrument):
         pass
 
     async def set_Valve(self, status):
-        pass
-        if status:
+        if not status:
             logging.info("Closing the valve localdev pH")
         else:
             logging.info("Opening the valve localdev pH")
