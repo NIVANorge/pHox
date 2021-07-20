@@ -976,7 +976,7 @@ class Panel(QWidget):
         ]
 
         if self.args.co3:
-            buttons = buttons + self.btn_shutter
+            buttons = buttons + [self.btn_shutter]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
 

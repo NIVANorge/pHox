@@ -1,10 +1,10 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_6",
+        "TEMP_PROBE_ID": "Probe_14",
         "T_PROBE_CH": 8,
-        "WPUMP_SLOT": 17,
-        "DYEPUMP_SLOT": 18,
-        "STIRR_SLOT": 27,
+        "WPUMP_SLOT": 21,
+        "DYEPUMP_SLOT": 19,
+        "STIRR_SLOT": 20,
         "SPARE_SLOT": 22,
         "VALVE_SLOTS": [
             24,
@@ -12,13 +12,15 @@
             25
         ],
         "DYE_V_INJ": 0.03,
+        "dye_level": 2000,
+        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
-        "dye_nshots": 4,
+        "dye_nshots": 6,
         "specAvScans": 6,
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 10,
+        "SAMPLING_INTERVAL_MIN": 15,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -30,9 +32,9 @@
         ],
         "pumpTime_sec": 60,
         "mixTime": 10,
-        "waitTime": 3,
-        "ncycles": 4,
-        "Spectro_Integration_time": 2500,
+        "waitTime": 5,
+        "ncycles": 1,
+        "Spectro_Integration_time": 32.25,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -44,7 +46,10 @@
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
         "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
-        "drain_mode" : "OFF"
+        "drain_mode": "ON",
+        "drain_slot": 16,
+        "air_slot": 26,
+        "drain_time": 60
     },
     "pH": {
         "LED_SLOTS": [
@@ -53,18 +58,17 @@
             12,
             16
         ],
-        "LED1": 25,
-        "LED2": 38,
-        "LED3": 61,
-        "Default_DYE": "MCP",
+        "LED1": 29,
+        "LED2": 16,
+        "LED3": 80,
+        "LED_THRESHOLD": 15500,
+        "Default_DYE": "Pb_perchlor",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1037.5999999999635,
-        "dye_level_comment": "max 2000 ml, two bags"
+        "dye_level": 1996.3999999999987
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
@@ -110,9 +114,13 @@
     "CO3": {
         "WL_1": 234,
         "WL_2": 250,
-        "LIGHT_SLOT": 22,
+        "WL_3": 350,
+        "LIGHT_SLOT": 17,
         "comment_co3": "# Pb_perchlor or Pb_chlor",
-        "Default_DYE": "Pb_perchlor"
+        "Default_DYE": "Pb_perchlor",
+        "PCO3_string_version": "1",
+        "SHUTTER_SLOT": 27,
+        "lamp_time": 3
     },
     "TrisBuffer": {
         "Comment": "pH of Tris buffer calibration solution at 25deg",
