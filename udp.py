@@ -48,6 +48,7 @@ def udp_server():
         try:
             Ferrybox['udp_ok'] = False
             (data, addr) = sock_listen.recvfrom(500)
+            print (data,addr)
         except:
             # add time
             pass

@@ -1632,7 +1632,9 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
-        
+        logging.info("turn on light source")
+        logging.debug('restart is' + str(restart))
+        logging.debug(str(self.major_modes))
         if not restart:
 
             logging.debug('Check that drain is closed')

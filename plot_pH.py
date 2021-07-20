@@ -13,7 +13,6 @@ myFmt = mdates.DateFormatter('%m-%d %H:%M')
 
 ax[0].set_title('pH insitu')
 ax[0].set_ylim(0,12)
-
 ax[1].set_title('Latitude')
 ax[0].set(xticklabels=[])
 ax[1].xaxis.set_major_formatter(myFmt)
