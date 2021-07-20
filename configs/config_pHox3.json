@@ -52,9 +52,9 @@
             12,
             16
         ],
-        "LED1": 22.0,
+        "LED1": 25,
         "LED2": 38,
-        "LED3": 54,
+        "LED3": 61,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -62,7 +62,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1047.199999999964,
+        "dye_level": 1037.5999999999635,
         "dye_level_comment": "max 2000 ml, two bags"
     },
     "pCO2": {
