@@ -1636,11 +1636,11 @@ class Panel(QWidget):
         logging.debug('restart is' + str(restart))
         logging.debug(str(self.major_modes))
         if not restart:
-
-            logging.debug('Check that drain is closed')
-            self.btn_drain.setChecked(False)
-            self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-            self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+            if self.args.co3:            
+                logging.debug('Check that drain is closed')
+                self.btn_drain.setChecked(False)
+                self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
+                self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
 
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
@@ -2167,7 +2167,7 @@ class Panel_pH(Panel):
         # grab spectrum
         dark = await self.instrument.spectrometer_cls.get_intensities(self.instrument.specAvScans, correct=True)
 
-        self.set_LEDs(False)
+        self.set_LEDs(True)
         logging.info("turn on the leds")
         await asyncio.sleep(2)
 
