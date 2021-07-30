@@ -1473,7 +1473,11 @@ class Panel(QWidget):
             else:
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
-
+        if self.until_next_sample <= self.manual_limit and not self.btn_valve.isChecked():
+            logging.info('open the valve before the measurement')
+            self.instrument.set_Valve_sync(True)
+            self.btn_valve.setChecked(True)   
+            
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
               and "Measuring" not in self.major_modes):
             logging.debug('> 3 min Until next sample, Reenable Manual control button ')

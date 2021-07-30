@@ -32,19 +32,22 @@
         "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 2500,
+        "Spectro_Integration_time": 3100.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
             "NB",
             "FA",
-            "TF"
+            "TF",
+            "KH"
         ],
         "LIGHT_THRESHOLD_STS": 15500,
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
         "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
-        "drain_mode" : "OFF"
+        "drain_mode": "OFF",
+        "dye_level": 1037.5999999999635,
+        "dye_level_comment": "max 2000 ml, two bags"
     },
     "pH": {
         "LED_SLOTS": [
@@ -53,9 +56,9 @@
             12,
             16
         ],
-        "LED1": 25,
-        "LED2": 38,
-        "LED3": 61,
+        "LED1": 38,
+        "LED2": 67,
+        "LED3": 99,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -63,8 +66,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1037.5999999999635,
-        "dye_level_comment": "max 2000 ml, two bags"
+        "dye_level": 1923.199999999997
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
