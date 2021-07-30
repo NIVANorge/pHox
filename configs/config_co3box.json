@@ -31,12 +31,25 @@
             "60"
         ],
         "pumpTime_sec": 60,
-        "mixTime": 5,
-        "waitTime": 3,
-        "ncycles": 4,
-        "Spectro_Integration_time": 3000,
-        "Ship_Code": "Standalone",
-        "Valid_ship_codes" : ["Standalone", "NB", "FA", "TF"]
+        "mixTime": 10,
+        "waitTime": 5,
+        "ncycles": 1,
+        "Spectro_Integration_time": 32.25,
+        "Ship_Code": "NB",
+        "Valid_ship_codes": [
+            "Standalone",
+            "NB",
+            "FA",
+            "TF"
+        ],
+        "LIGHT_THRESHOLD_STS": 15500,
+        "LIGHT_THRESHOLD_FLAME": 60000,
+        "Autoadjust_state": "ON",
+        "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
+        "drain_mode": "ON",
+        "drain_slot": 16,
+        "air_slot": 26,
+        "drain_time": 60
     },
     "pH": {
         "LED_SLOTS": [
@@ -55,7 +68,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "dye_level": 1996.3999999999987
+        "dye_level": 1960.219999999994
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
