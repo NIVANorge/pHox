@@ -214,7 +214,7 @@ class CalibrationProgess(QDialog):
 class TimerManager:
     def __init__(self, input_timer):
         self.input_timer = input_timer
-        logging.debug('TimerManager init method called')
+        #logging.debug('TimerManager init method called')
 
     def __enter__(self):
         self.input_timer.start(1000)
@@ -222,7 +222,7 @@ class TimerManager:
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.input_timer.stop()
-        logging.debug('TimerManager method called')
+        #logging.debug('TimerManager method called')
 
 
 class QTextEditLogger(logging.Handler):
@@ -306,7 +306,7 @@ class Panel(QWidget):
         self.updater = SensorStateUpdateManager(self)
 
         self.infotimer_step = 15  # seconds
-        self.manual_limit = 3     # 3 minutes, time when we turn off manual mode if continuous is clicked
+        self.manual_limit = 4     # 3 minutes, time when we turn off manual mode if continuous is clicked
 
     def init_ui(self):
         self.tabs = QTabWidget()
@@ -1317,7 +1317,6 @@ class Panel(QWidget):
     async def update_plot_no_request(self):
         # During auto adjustment and measurements, the plots are updated with spectrums
         # from the "buffer" to avoid crashing of the software
-        logging.debug('update plot no request')
         try:
             await self.update_spectra_plot_manual(self.instrument.spectrum)
         except:
@@ -1473,6 +1472,11 @@ class Panel(QWidget):
             else:
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
+                
+        if self.until_next_sample <= self.manual_limit and not self.btn_valve.isChecked():
+            logging.info('open the valve before the measurement')
+            self.instrument.set_Valve_sync(True)
+            self.btn_valve.setChecked(True)            
 
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
               and "Measuring" not in self.major_modes):
@@ -1489,12 +1493,7 @@ class Panel(QWidget):
                 self.btn_light_clicked()
                 self.open_shutter()
                 #self.btn_light.click()
-        if self.args.co3 and not self.btn_valve.isChecked():
-            self.lamp_time = config_file["CO3"]["lamp_time"]
-            if self.until_next_sample <= self.lamp_time:
-                logging.info('open the valve')
-                self.instrument.set_Valve_sync(True)
-                self.btn_valve.setChecked(True)
+
         self.until_next_sample -= round(self.infotimer_step/60, 3)
 
     @asyncSlot()
@@ -1510,31 +1509,35 @@ class Panel(QWidget):
             logging.info("Skipped a sample because the previous measurement is still ongoing")
             pass  # TODO Increase interval
 
+
+    def save_results_in_json(self,folderpath,flnmStr):
+        import json
+        upload_RT_dict = {"spt": {},
+                          "eval": {},
+                          "final_pH": {}}
+
+        for col in self.spCounts_df.columns:
+            upload_RT_dict['spt'][col] = self.spCounts_df[col].values.tolist()
+
+        for col in self.evalPar_df.columns:
+            upload_RT_dict['eval'][col] = self.evalPar_df[col].values.tolist()
+
+        for col in self.data_log_row.columns:
+            upload_RT_dict["final_pH"][col] = self.data_log_row[col].values.tolist()[0]
+
+        upload_RT_path = os.path.join(folderpath, "upload")
+
+        if not os.path.exists(upload_RT_path):
+            os.makedirs(upload_RT_path)
+
+        with open(os.path.join(upload_RT_path, flnmStr + ".json"), 'w') as fp:
+            json.dump(upload_RT_dict, fp, indent=4)
+
     def save_results(self, folderpath, flnmStr):
         logging.info('saving results')
 
         if not self.args.co3:
-            import json
-            upload_RT_dict = {"spt": {},
-                           "eval": {},
-                           "final_pH": {}}
-
-            for col in self.spCounts_df.columns:
-                upload_RT_dict['spt'][col] = self.spCounts_df[col].values.tolist()
-
-            for col in self.evalPar_df.columns:
-                upload_RT_dict['eval'][col] = self.evalPar_df[col].values.tolist()
-
-            for col in self.data_log_row.columns:
-                upload_RT_dict["final_pH"][col] = self.data_log_row[col].values.tolist()[0]
-
-            upload_RT_path = os.path.join(folderpath, "upload")
-
-            if not os.path.exists(upload_RT_path):
-                os.makedirs(upload_RT_path)
-
-            with open(os.path.join(upload_RT_path, flnmStr +".json"), 'w') as fp:
-                json.dump(upload_RT_dict, fp, indent=4)
+            self.save_results_in_json(folderpath, flnmStr)
 
         logging.debug("Save spectrum data to file")
         self.save_spt(folderpath, flnmStr)
@@ -1542,8 +1545,9 @@ class Panel(QWidget):
         self.save_evl(folderpath, flnmStr)
 
         if 'Calibration' not in self.major_modes:
-            logging.info("Send pH data to ferrybox")
+            logging.info("Send data string  to ferrybox")
             self.send_to_ferrybox()
+            logging.info("Append log file")
             self.save_logfile_df(folderpath)
 
     def update_LEDs(self):
@@ -1551,8 +1555,9 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        self.instrument.set_Valve_sync(False)
-        self.btn_valve.setChecked(False)
+        if not self.args.co3:
+            self.instrument.set_Valve_sync(True)
+            self.btn_valve.setChecked(True)
         logging.info("turn on light source")
         logging.debug('restart is' + str(restart))
         logging.debug(str(self.major_modes))
@@ -2548,7 +2553,7 @@ class Panel_CO3(Panel):
 
         logging.debug(f'get final CO3')
         p = self.instrument.calc_final_co3(self.evalPar_df)
-        (slope1, intercept, r_value) = p
+        (slope1, intercept, r_value,T_cuvette) = p
 
         self.data_log_row = pd.DataFrame(
             {
@@ -2561,7 +2566,8 @@ class Panel_CO3(Panel):
                 "co3_slope": [slope1],
                 'co3_intercept': [intercept],
                 'co3_rvalue': [r_value],
-                "box_id": [box_id]
+                "box_id": [box_id],
+                "T_cuvette": [T_cuvette]
             }
         )
 

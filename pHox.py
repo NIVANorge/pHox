@@ -503,7 +503,7 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
-
+        t_cuvette = co3_eval["T_cuvette"][0]
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
         try:
@@ -513,7 +513,7 @@ class CO3_instrument(Common_instrument):
             logging.error('could not find CO3 intercept, FIX')
             (slope1, intercept, r_value) = 999, 999, 999
         intercept = y[0]
-        return [slope1, intercept, r_value]
+        return [slope1, intercept, r_value,t_cuvette]
 
 
 class pH_instrument(Common_instrument):
@@ -643,6 +643,7 @@ class pH_instrument(Common_instrument):
                     logging.debug("*** adj2 = True")
 
                     if self.autoadj_opt == 'ON_NORED':
+                        #TODO: Fix, RED can be lower but MUST NOT be saturated 
                         LED3, adj3, res = 99, True, "READ adjusting disabled"
                     else:
                         LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LEDS[2])
@@ -671,7 +672,8 @@ class pH_instrument(Common_instrument):
                     self.adj_action = "increase"
 
                 else:
-                    logging.info("too high spt, stop")
+                    logging.error('integration time:' + str(self.specIntTime) + '')
+                    logging.error("STOP AUTOADJUST! Too high spt ")
                     break
 
             elif adj1 and adj2 and adj3:
@@ -930,7 +932,7 @@ class Test_pH_instrument(pH_instrument):
 
         if self.autoadj_opt == 'ON_NORED':
             logging.debug('NO RED in adjusting')
-            LED3, adj3, res = 99, True, "READ adjusting disabled"
+            LED3, adj3, res = 99, True, "RED adjusting disabled"
 
         return LED1, LED2, LED3, result
 
