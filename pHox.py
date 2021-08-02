@@ -503,7 +503,7 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
-        t_cuvette = co3_eval["T_cuvette"][0]
+        t_cuvette = co3_eval["T_cuvette"].values[0]
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
         try:

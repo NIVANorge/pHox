@@ -1088,7 +1088,7 @@ class Panel(QWidget):
         else:
             self.instrument.turn_off_relay(
                 self.instrument.stirrer_slot)
-                
+
 
     @asyncSlot()
     async def btn_drain_clicked(self):
@@ -1360,6 +1360,16 @@ class Panel(QWidget):
                 logging.debug('LED values are within the range, no need to call auto adjust')
         return result
 
+
+    @asyncSlot()                
+    async def stir_before_adjust(self):
+        self.instrument.turn_on_relay(
+                self.instrument.stirrer_slot)
+        await asyncio.sleep(0.1)     
+        self.instrument.turn_off_relay(
+                self.instrument.stirrer_slot)
+
+
     async def call_autoAdjust(self):
         if not self.instrument.autoadj_opt == 'OFF':
 
@@ -1371,7 +1381,8 @@ class Panel(QWidget):
 
             async with self.updater.disable_live_plotting(), self.ongoing_major_mode_contextmanager("Adjusting"):
                 self.btn_adjust_light_intensity.setChecked(True)
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
+                await self.stir_before_adjust()
                 try:
                     if self.args.co3:
                         res = await self.autoAdjust_IntTime()
