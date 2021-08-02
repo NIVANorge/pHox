@@ -12,8 +12,6 @@
             25
         ],
         "DYE_V_INJ": 0.03,
-        "dye_level": 2000,
-        "dye_level_comment": "max 2000 ml, two bags",
         "CUVETTE_V": 16,
         "dye_nshots": 1,
         "specAvScans": 6,
@@ -35,7 +33,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 10.0,
+        "Spectro_Integration_time": 712,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -69,7 +67,8 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1999.91
+        "dye_level": 1994.3600000000051,
+        "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {
         "interval": 1,

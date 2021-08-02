@@ -1617,7 +1617,6 @@ class Panel(QWidget):
         logging.info("Inside _autostart...")
         self.instrument.set_Valve_sync(False)
         self.btn_valve.setChecked(False)
-
         if not restart:
             logging.debug('Check that drain is closed')
             self.btn_drain.setChecked(False)
@@ -1637,7 +1636,7 @@ class Panel(QWidget):
             logging.info("Starting continuous mode in Autostart")
             self.StatusBox.setText("Starting continuous mode")
 
-        if fbox['pumping'] or fbox['pumping'] is None or self.instrument.ship_code == "Standalone":
+        if fbox['pumping'] or fbox['pumping'] is None:
             self.btn_cont_meas.setChecked(True)
             self.btn_cont_meas_clicked()
 
