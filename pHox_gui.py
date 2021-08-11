@@ -1830,6 +1830,7 @@ class Panel(QWidget):
         return
 
     async def drain(self):
+        self.btn_drain.setEnabled(False)
         logging.debug('Start draining')
         self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
         self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
@@ -1837,6 +1838,7 @@ class Panel(QWidget):
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
         logging.debug('Stop draining drain func')
+        self.btn_drain.setEnabled(True)
 
     async def qc(self):
 
