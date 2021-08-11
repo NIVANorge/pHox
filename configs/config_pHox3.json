@@ -32,7 +32,7 @@
         "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 3100.0,
+        "Spectro_Integration_time": 800.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -56,9 +56,9 @@
             12,
             16
         ],
-        "LED1": 38,
-        "LED2": 67,
-        "LED3": 99,
+        "LED1": 22,
+        "LED2": 32,
+        "LED3": 49,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,

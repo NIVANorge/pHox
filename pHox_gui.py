@@ -1361,7 +1361,7 @@ class Panel(QWidget):
         return result
 
 
-    @asyncSlot()                
+                   
     async def stir_before_adjust(self):
         self.instrument.turn_on_relay(
                 self.instrument.stirrer_slot)
