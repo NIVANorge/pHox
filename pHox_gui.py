@@ -1468,7 +1468,8 @@ class Panel(QWidget):
         self.open_shutter()
         logging.debug('Wait for the lamp warming')
         self.StatusBox.setText('Wait for the lamp warming')
-        await asyncio.sleep(3 * 60)
+        if not self.args.localdev:
+            await asyncio.sleep(3 * 60)
         self.StatusBox.setText('start the measurement')
         logging.debug('start the measurement')
         #self.updater.stop_live_plot()
@@ -1830,15 +1831,23 @@ class Panel(QWidget):
         return
 
     async def drain(self):
-        self.btn_drain.setEnabled(False)
+        #self.btn_drain.setEnabled(False)
         logging.debug('Start draining')
         self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
         self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
-        await asyncio.sleep(config_file['Operational']['drain_time'])
+
+        print (config_file['Operational']['drain_time'],type(config_file['Operational']['drain_time']))
+        for n in range(config_file['Operational']['drain_time']):
+            print ('second {} of draining'.format(n))
+            if self.btn_drain.isChecked():
+                await asyncio.sleep(1)
+            else:
+                break 
+        #await asyncio.sleep(config_file['Operational']['drain_time']) # in seconds 
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
         logging.debug('Stop draining drain func')
-        self.btn_drain.setEnabled(True)
+        #self.btn_drain.setEnabled(True)
 
     async def qc(self):
 
@@ -2088,7 +2097,7 @@ class Panel_pH(Panel):
         self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
-         for k, v in enumerate(["pH cuvette", "T cuvette", "pH insitu", "T insitu", "S insitu"])]
+         for k, v in enumerate(["pH cuvette", "T cuvette", "pH insitu", "T insitu", "S insitu", "T cuvette"])]
 
     def make_tab_manual(self):
         self.tab_manual.layout = QGridLayout()
@@ -2554,7 +2563,7 @@ class Panel_CO3(Panel):
         self.last_measurement_table.horizontalHeader().hide()
 
         [self.fill_table_measurement(k, 0, v)
-         for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "T insitu", "S insitu"])]
+         for k, v in enumerate(["co3", "T insitu", "S insitu","T cuvette"])]
 
     def update_evl_file(self, spAbs_min_blank, Voltage, dilution, vol_injected, manual_salinity, n_inj):
         self.evalPar_df.loc[n_inj] = self.instrument.calc_CO3(spAbs_min_blank, Voltage,
@@ -2569,8 +2578,8 @@ class Panel_CO3(Panel):
         # and call the function for getting final CO3 values
 
         logging.debug(f'get final CO3')
-        p = self.instrument.calc_final_co3(self.evalPar_df)
-        (slope1, intercept, r_value,T_cuvette) = p
+        co3,T_cuvette = self.instrument.calc_final_co3(self.evalPar_df)
+        #(_, co3, _,T_cuvette) = p
 
         self.data_log_row = pd.DataFrame(
             {
@@ -2580,9 +2589,9 @@ class Panel_CO3(Panel):
                 "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
-                "co3_slope": [slope1],
-                'co3_intercept': [intercept],
-                'co3_rvalue': [r_value],
+                "co3": [co3],
+                #'co3_intercept': [intercept],
+                #'co3_rvalue': [r_value],
                 "box_id": [box_id],
                 "T_cuvette": [T_cuvette]
             }
@@ -2592,7 +2601,7 @@ class Panel_CO3(Panel):
 
         [
             self.fill_table_measurement(k, 1, str(self.data_log_row[v].values[0]))
-            for k, v in enumerate(["co3_slope", 'co3_rvalue', 'co3_intercept', "fb_temp", "fb_sal"], 0)
+            for k, v in enumerate(["co3", "fb_temp", "fb_sal","T_cuvette"], 0)
         ]
 
     def get_logfile_name(self,folderpath):
@@ -2614,9 +2623,7 @@ class Panel_CO3(Panel):
                 "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
                 "fb_sal": [round(fbox["salinity"], prec["salinity"])],
                 "SHIP": [self.instrument.ship_code],
-                "co3_slope": [999],
-                'co3_intercept': [999],
-                'co3_rvalue': [999],
+                "co3": [999],
                 "box_id": ['box_test']
             })
         if state:

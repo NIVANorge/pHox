@@ -503,21 +503,25 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
+        # For now we have only 1 measurement so we dont really need this func
+        # but keep it for now in case we want to make several meas and find regression
+        # in the future (same as phox)
         t_cuvette = co3_eval["T_cuvette"].values[0]
-        x = co3_eval["Vol_injected"].values
-        y = co3_eval["CO3"].values
-        if self.ncycles > 2:
+        #x = co3_eval["Vol_injected"].values
+        co3 = co3_eval["CO3"].values[0]
+
+        '''if self.ncycles > 2:
             try:
                 slope1, intercept, r_value = get_linregress(x, y)
                 logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
             except:
                 logging.error('could not find CO3 intercept, FIX')
-                (slope1, intercept, r_value) = 999, 999, 999
-        else:
-            intercept = y[0]
-            slope1 = 999
-            r_value = 999
-        return [slope1, intercept, r_value,t_cuvette]
+                (slope1, intercept, r_value) = 999, 999, 999'''
+        #else:
+        #    co3 = y[0]
+        #    #slope1 = 999
+        #    #r_value = 999
+        return co3,t_cuvette
 
 
 class pH_instrument(Common_instrument):
