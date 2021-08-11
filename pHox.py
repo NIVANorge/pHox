@@ -503,16 +503,20 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
-        t_cuvette = co3_eval["T_cuvette"][0]
+        t_cuvette = co3_eval["T_cuvette"].values[0]
         x = co3_eval["Vol_injected"].values
         y = co3_eval["CO3"].values
-        try:
-            slope1, intercept, r_value = get_linregress(x, y)
-            logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
-        except:
-            logging.error('could not find CO3 intercept, FIX')
-            (slope1, intercept, r_value) = 999, 999, 999
-        intercept = y[0]
+        if self.ncycles > 2:
+            try:
+                slope1, intercept, r_value = get_linregress(x, y)
+                logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
+            except:
+                logging.error('could not find CO3 intercept, FIX')
+                (slope1, intercept, r_value) = 999, 999, 999
+        else:
+            intercept = y[0]
+            slope1 = 999
+            r_value = 999
         return [slope1, intercept, r_value,t_cuvette]
 
 

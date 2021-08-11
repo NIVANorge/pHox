@@ -2001,8 +2001,12 @@ class Panel(QWidget):
         else:
             self.instrument.spectrum = postinj_instensity_spectrum
             postinj_instensity_spectrum_min_dark = postinj_instensity_spectrum - dark
-            absorbance_spectrum = -np.log10(postinj_instensity_spectrum_min_dark / blank_min_dark)
-
+            
+            try: 
+                absorbance_spectrum = -np.log10(postinj_instensity_spectrum_min_dark / blank_min_dark)
+            except Exception as e:
+                logging.info(e)
+                absorbance_spectrum = np.zeros(len(postinj_instensity_spectrum_min_dark))               
         if self.args.co3:
             logging.debug(absorbance_spectrum[20:40])
             await self.update_absorbance_plot(n_inj, absorbance_spectrum)
