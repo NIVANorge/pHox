@@ -330,6 +330,7 @@ class Common_instrument(object):
         for i in range(nAver):
             try:
                 v += self.adc.read_voltage(channel)
+                logging.debug('ok,read voltage')
             except Exception as e:
                 logging.error(e)
                 nAver -= 1
