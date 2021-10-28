@@ -14,7 +14,7 @@ For simplicity, the miniature detection systems are called box systems
 since they are actually places in boxes. 
 
 ### Supported box configurations
-Most of the boxes measure only one parameter (pH, CO<sub>3</sub> or pCO<sub>2</sub>).
+Most of the boxes measure only one parameter (pH, CO<sub>3</sub>).
 But one box includes systems both for pH and pCO<sub>2</sub> measurements (former CBON). (not it use for now) 
 
 
@@ -36,7 +36,6 @@ For the GUI development we used PyQT library
 ``` sudo python pHox_gui.py [OPTIONS]```  #append with needed options 
 
 
-! pCO<sub>2</sub>-only only case should start as ```sudo python pco2.py```
 
 By default the program starts pH mode. 
 Append the command line argument with parameters if you want to change the mode:
