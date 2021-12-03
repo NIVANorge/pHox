@@ -488,6 +488,7 @@ class Panel(QWidget):
             self.until_next_sample = self.instrument.samplingInterval
             self.timer_contin_mode.start(int(self.instrument.samplingInterval * 1000 * 60))
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+            logging.debug('Start infotimer continous mode')
             self.infotimer_contin_mode.start(self.infotimer_step * 1000)
 
             self.btn_single_meas.setEnabled(False)
@@ -534,16 +535,16 @@ class Panel(QWidget):
             if 'Continuous' in self.major_modes and self.until_next_sample <= self.manual_limit:
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
-            self.btn_drain.setChecked(False)
+            if self.args.co3:
+                self.btn_drain.setChecked(False)
             self.manual_widgets_set_enabled(False)
             self.btn_single_meas.setEnabled(True)
 
         if mode_unset == "Continuous":
-
+            print ('unset mode continous')
             self.infotimer_contin_mode.stop()
-            self.StatusBox.clear()
             self.timer_contin_mode.stop()
-
+            self.StatusBox.clear()
             self.btn_manual_mode.setEnabled(True)
 
             if "Measuring" not in self.major_modes:
@@ -559,7 +560,9 @@ class Panel(QWidget):
                     self.btn_adjust_light_intensity.setEnabled(True)
                     # self.btn_checkflow.setEnabled(True)
                 self.config_widgets_set_state(True)
-
+            print ('finished unsetting continuous mode')
+            print ('timer active',self.infotimer_contin_mode.isActive())
+             
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
             self.btn_calibr.setEnabled(True)
@@ -588,15 +591,18 @@ class Panel(QWidget):
             self.btn_cont_meas.setEnabled(True)
         if mode_unset == 'Paused':
             logging.debug('unset paused mode')
-            self.until_next_sample = self.instrument.samplingInterval
-            self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
-            self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
-            self.infotimer_contin_mode.start(self.infotimer_step * 1000)
+            if "Continuous" in self.major_modes:
+                self.until_next_sample = self.instrument.samplingInterval
+                self.timer_contin_mode.start(self.instrument.samplingInterval * 1000 * 60)
+                self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
+                logging.debug('Restart infortimer',
+                    'coninuous mode after pause') 
+                self.infotimer_contin_mode.start(self.infotimer_step * 1000)
 
-            self.btn_single_meas.setEnabled(False)
-            self.btn_calibr.setEnabled(False)
-            self.config_widgets_set_state(False)
-            self.manual_widgets_set_enabled(False)
+                self.btn_single_meas.setEnabled(False)
+                self.btn_calibr.setEnabled(False)
+                self.config_widgets_set_state(False)
+                self.manual_widgets_set_enabled(False)
 
             if 'Manual' in self.major_modes:
                 self.btn_adjust_light_intensity.setEnabled(False)    
@@ -737,7 +743,9 @@ class Panel(QWidget):
 
         self.btn_test_udp = self.create_button('Test UDP', True)
         self.timer_test_udp = QtCore.QTimer()
+        self.timer_udp = QtCore.QTimer()
         self.timer_test_udp.timeout.connect(self.send_test_udp)
+        self.timer_udp.timeout.connect(self.send_fb_udp)
         self.btn_test_udp.clicked.connect(self.test_udp)
 
         self.tableConfigWidget = QTableWidget()
@@ -972,11 +980,10 @@ class Panel(QWidget):
             self.btn_stirr,
             self.btn_dye_pmp,
             self.btn_wpump,
-            self.btn_drain,
         ]
 
         if self.args.co3:
-            buttons = buttons + [self.btn_shutter]
+            buttons = buttons + [self.btn_drain,self.btn_shutter]
         for widget in [*buttons, *self.plus_btns, *self.minus_btns, *self.sliders, *self.spinboxes]:
             widget.setEnabled(state)
 
@@ -990,25 +997,25 @@ class Panel(QWidget):
         self.btn_light = self.create_button("Light", True)
         self.btn_light.clicked.connect(self.btn_light_clicked)
 
-
         self.btn_valve = self.create_button("Inlet valve", True)
         self.btn_stirr = self.create_button("Stirrer", True)
         self.btn_dye_pmp = self.create_button("Dye pump", True)
         self.btn_wpump = self.create_button("Water pump", True)
-        self.btn_drain = self.create_button("Drain", True)
+
         if self.args.co3:
+            self.btn_drain = self.create_button("Drain", True)           
             self.btn_shutter = self.create_button('Shutter',True)
             self.btn_shutter.clicked.connect(self.btn_shutter_clicked)
             btn_grid.addWidget(self.btn_shutter, 3, 1)
-
+            btn_grid.addWidget(self.btn_drain, 3, 0)
+            
         btn_grid.addWidget(self.btn_dye_pmp, 0, 0)
         btn_grid.addWidget(self.btn_wpump, 0, 1)
         btn_grid.addWidget(self.btn_adjust_light_intensity, 1, 0)
         btn_grid.addWidget(self.btn_light, 1, 1)
-
         btn_grid.addWidget(self.btn_valve, 2, 0)
         btn_grid.addWidget(self.btn_stirr, 2, 1)
-        btn_grid.addWidget(self.btn_drain, 3, 0)
+
 
 
         #btn_grid.addWidget(self.btn_checkflow, 4, 1)
@@ -1018,7 +1025,8 @@ class Panel(QWidget):
         self.btn_valve.clicked.connect(self.btn_valve_clicked)
         self.btn_stirr.clicked.connect(self.btn_stirr_clicked)
         self.btn_wpump.clicked.connect(self.btn_wpump_clicked)
-        self.btn_drain.clicked.connect(self.btn_drain_clicked)
+        if self.args.co3:
+            self.btn_drain.clicked.connect(self.btn_drain_clicked)
 
         # self.btn_checkflow.clicked.connect(self.btn_checkflow_clicked)
 
@@ -1476,6 +1484,8 @@ class Panel(QWidget):
 
 
     def update_contin_mode_info(self):
+        print ('update_contin_mode_info')
+        self.StatusBox.setText('update_contin_mode_info')
         print ('self.until_next_sample', self.until_next_sample)
         if self.until_next_sample <= self.manual_limit and self.btn_manual_mode.isEnabled():
             logging.debug('<= 3 min Until next sample,disable Manual control button ')
@@ -2362,10 +2372,13 @@ class Panel_pH(Panel):
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        self.string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                          row_to_string + ",*\n")
-        #udp.send_data(string_to_udp, self.instrument.ship_code)
-
+        self.timer_udp.stop()
+        self.timer_udp.start(10000)
+        
+    def send_fb_udp(self):
+        udp.send_data(self.string_to_udp, self.instrument.ship_code)        
     async def one_calibration_step(self, n, folderpath):
         # Check if stop is clicked
         if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
@@ -2753,6 +2766,7 @@ class boxUI(QMainWindow):
                 self.main_widget.close_shutter()
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
+                self.main_widget.timer_udp.stop()
                 self.main_widget.timerSpectra_plot.stop()
                 logging.info("timers are stopped")
 
