@@ -1495,10 +1495,10 @@ class Panel(QWidget):
                 self.btn_manual_mode.setChecked(False)
                 self.btn_manual_mode.setEnabled(False)
                 
-        if self.until_next_sample <= self.manual_limit and not self.btn_valve.isChecked():
-            logging.info('open the valve before the measurement')
-            self.instrument.set_Valve_sync(True)
-            self.btn_valve.setChecked(True)            
+            #if self.until_next_sample <= self.manual_limit and not self.btn_valve.isChecked():
+            #    logging.info('open the valve before the measurement')
+            #    self.instrument.set_Valve_sync(True)
+            #    self.btn_valve.setChecked(True)            
 
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
               and "Measuring" not in self.major_modes):
@@ -1577,9 +1577,9 @@ class Panel(QWidget):
 
     def _autostart(self, restart=False):
         logging.info("Inside _autostart...")
-        if not self.args.co3:
-            self.instrument.set_Valve_sync(True)
-            self.btn_valve.setChecked(True)
+        #if not self.args.co3:
+        self.instrument.set_Valve_sync(True)
+        self.btn_valve.setChecked(True)
         logging.info("turn on light source")
         logging.debug('restart is' + str(restart))
         logging.debug(str(self.major_modes))
@@ -1813,9 +1813,9 @@ class Panel(QWidget):
                 await self.drain()
 
             # Step 7 Open valve
-            if not self.args.co3:
-                await self.instrument.set_Valve(True)
-                self.btn_valve.setChecked(True)
+            #if not self.args.co3:
+            await self.instrument.set_Valve(True)
+            self.btn_valve.setChecked(True)
             if self.res_autoadjust:
                 if 'Calibration' not in self.major_modes:
                     self.update_table_last_meas()
@@ -1833,6 +1833,7 @@ class Panel(QWidget):
 
         [step.setChecked(False) for step in self.sample_steps]
         if self.args.co3:
+            logging.debug('Unclick button light')
             self.btn_light.setChecked(False)
             self.btn_light_clicked()
             self.close_shutter()
@@ -1845,7 +1846,7 @@ class Panel(QWidget):
         logging.debug('Start draining')
         self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
         self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
-
+        self.btn_drain.setChecked(True)
         print (config_file['Operational']['drain_time'],type(config_file['Operational']['drain_time']))
         for n in range(config_file['Operational']['drain_time']):
             print ('second {} of draining'.format(n))
@@ -1857,7 +1858,7 @@ class Panel(QWidget):
         self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
         self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
         logging.debug('Stop draining drain func')
-        #self.btn_drain.setEnabled(True)
+        self.btn_drain.setChecked(False)
 
     async def qc(self):
 
@@ -2191,6 +2192,7 @@ class Panel_pH(Panel):
         self.set_LEDs(state)
 
     def set_LEDs(self, state):
+
         for i, slider in enumerate(self.sliders):
             self.instrument.adjust_LED(i, state * slider.value())
         logging.info("Leds {}".format(str(state)))

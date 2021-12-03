@@ -8,8 +8,8 @@
         "SPARE_SLOT": 22,
         "VALVE_SLOTS": [
             24,
-            23,
-            25
+            25,
+            23
         ],
         "DYE_V_INJ": 0.03,
         "dye_level": 2000,
@@ -20,7 +20,7 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 60,
+        "SAMPLING_INTERVAL_MIN": 30,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -34,7 +34,7 @@
         "mixTime": 10,
         "waitTime": 5,
         "ncycles": 1,
-        "Spectro_Integration_time": 30.0,
+        "Spectro_Integration_time": 18.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -68,7 +68,7 @@
         "MCP_wl_I2": 578,
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
-        "dye_level": 1990.4599999999969
+        "dye_level": 1978.0399999999922
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
