@@ -44,10 +44,10 @@ class Spectro_localtest(object):
         self.spec = Spectrometer_localtest()
         if self.args.co3:
             self.spectro_type = "FLMT"
-            self.test_spt = pd.read_csv("data_localtests/co3.spt")
+            self.test_spt = pd.read_csv("data/data_localtests/co3.spt")
         else:
             self.spectro_type = "STS"
-            self.test_spt = pd.read_csv("data_localtests/20200213_105508.spt")
+            self.test_spt = pd.read_csv("data/data_localtests/20200213_105508.spt")
 
         x = self.test_spt.T
         x.columns = x.iloc[0]

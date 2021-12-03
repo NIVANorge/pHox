@@ -9,7 +9,7 @@ from util import get_base_folderpath, box_id, config_name, rgb_lookup
 try:
     import warnings, time, RPi.GPIO
     import RPi.GPIO as GPIO
-finally:
+except ModuleNotFoundError:
     pass
 
 from datetime import datetime, timedelta
@@ -1647,14 +1647,14 @@ class Panel(QWidget):
                       <br>2. Place the tube in the Tris buffer bottle\
                       <br>3. Turn the yellow valve to empty the cuvette\
                       <br>\
-                      <br><img src=utils/calibrationmode.png>\
+                      <br><img src=utils/figures_icons/calibrationmode.png>\
                       <br>\
                       <br> Click <b>Ok</b> to continue when you are ready, or <b>Cancel</b> to exit",
 
                  'Close drain valve':
                      '<br> Close the drain (yellow) valve when the cuvette is empty\
                          <br>\
-                         <br><img src=utils/drain.png>',
+                         <br><img src=utils/figures_icons/drain.png>',
 
                  'Calibration_second_step':
                      "Do you want calibration check to include cuvette cleaning?",
@@ -1662,7 +1662,7 @@ class Panel(QWidget):
                  "Valve back to ferrybox mode":
                      "Please turn the valves back into the ferrybox mode\
                          <br>\
-                         <br><img src=utils/ferryboxmode.png>",
+                         <br><img src=utils/figures_icons/ferryboxmode.png>",
 
                  "After calibration valve angry":
                      "ARE YOU SURE YOU TURNED THE VALVES BACK???",
@@ -1686,11 +1686,11 @@ class Panel(QWidget):
         msg = QMessageBox()
 
         if type == "After calibration valve angry":
-            image = 'utils/angry_phox.png'
+            image = 'utils/figures_icons/angry_phox.png'
         elif type in ('Calibration_second_step', "Single measurement", "Confirm Exit"):
-            image = 'utils/pHox_question.png'
+            image = 'utils/figures_icons/pHox_question.png'
         else:
-            image = 'utils/pHox_idea.png'
+            image = 'utils/figures_icons/pHox_idea.png'
 
         pixmap = QPixmap(QPixmap(image)).scaledToHeight(100, QtCore.Qt.SmoothTransformation)
 
@@ -1774,8 +1774,8 @@ class Panel(QWidget):
                 await self.get_final_value(timeStamp)
                 self.update_dye_level_bar()
 
-            if self.instrument.drain_mode == 'ON':
-                logging.info('Draining')
+            if self.instrument.drain_mode == 'ON' and self.args.co3:
+                logging.info('Draining, co3 mode')
                 self.StatusBox.setText('Draining')
                 # self.instrument.turn_on_relay(self.instrument.stirrer_slot)
                 await self.drain()
@@ -2745,8 +2745,7 @@ class boxUI(QMainWindow):
                 logging.info('spectrophotometer connection closed')
             except:
                 logging.info('Error while closing spectro')
-
-            if self.main_widget.btn_drain.isChecked():
+            if self.args.co3 and self.main_widget.btn_drain.isChecked():
                 self.main_widget.btn_drain.setChecked(False)
                 self.main_widget.btn_drain_clicked()
 
