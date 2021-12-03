@@ -65,7 +65,8 @@ def udp_server():
                     print (e)
                     print ('UNable to get time in the format w[2]')
                 t = datetime.now()
-                if abs(t - v).total_seconds() > 5:
+                if abs(t - v).total_seconds() > 60*60 :
+                    # 1 hour difference:
                     print("will correct time")
                     os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith("$PFBOX,SAL,"):
