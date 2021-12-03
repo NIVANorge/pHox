@@ -68,7 +68,7 @@ After each measurement the data is saved locally (on raspberry pi) in the `data/
 (See the local folder structure below) and sent to to main ferrybox computer via UDP.
  Later it is sent to the FTP server and injected to the database on the Google Cloud. 
 
- ![](utils/folder_structure.png)
+ ![](utils/figures_icons/folder_structure.png)
 
 The folder `spt/` contains files with raw spectra: raw dark, blank and number of light measurements. 
 Also measurements are taken in repetitions.Spt files have all of them. 
@@ -82,7 +82,7 @@ For pCO<sub>2</sub>, there is only `pCO2.log`
 
 #### Classes structure
 
-![](utils/classes.png)
+![](utils/figures_icons/classes.png)
 
 When you call the main module, pHox_gui.py, the main graphical panel is created. 
 Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
@@ -129,7 +129,7 @@ API for using spectrometer.
 
 ADCDifferentialPi, ADCDACPi, RPi.GPIO, pigpio for the communication with raspberry pi boards 
 
-![](utils/graph_instrument_classes.png)
+![](utils/figures_icons/graph_instrument_classes.png)
 * Communication with the spectrometer
 * Communication with raspberri pi, valves, pumps
 * Udp and ferrybox data 
@@ -168,7 +168,7 @@ In order to make a pH measurement, we need a strong light signal.
 The light intensity on spectrophotometer should be close to Threshold value at 3 
 defined wavelengths (NIR,HI,I2) for pH and one wavelength for CO3. 
 
-![](utils/autoadjust_fig_upd.png) 
+![](utils/figures_icons/autoadjust_fig_upd.png) 
 
 Threshold depends on the maximum possible light intensity and depends on a Spectrophotometer type.
 
