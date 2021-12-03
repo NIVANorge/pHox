@@ -5,16 +5,17 @@
 Software for operating automated systems for continuous measurements: 
 * Miniature spectrophotometric detection system for measuring pH 
 * Miniature spectrophotometric detection system for measuring CO<sub>3</sub>
-* Miniature membrane based pCO<sub>2</sub> system
+* !OBS! Miniature membrane based pCO<sub>2</sub> system - moved to the separate repository https://github.com/NIVANorge/pCO2box  
+
 
 All systems are developed in NIVA either fully or in collaboration with other companies.
 Different configurations of systems are installed on ships of opportunity. 
 For simplicity, the miniature detection systems are called box systems 
 since they are actually places in boxes. 
 
-##### Supported box configurations
-Most of the boxes measure only one parameter (pH, CO<sub>3</sub> or pCO<sub>2</sub>).
-But one box includes systems both for pH and pCO<sub>2</sub> measurements (former CBON). 
+### Supported box configurations
+Most of the boxes measure only one parameter (pH, CO<sub>3</sub>).
+But one box includes systems both for pH and pCO<sub>2</sub> measurements (former CBON). (not it use for now) 
 
 
 Normally, the boxes are set up for automatically starting software. 
@@ -35,7 +36,6 @@ For the GUI development we used PyQT library
 ``` sudo python pHox_gui.py [OPTIONS]```  #append with needed options 
 
 
-! pCO<sub>2</sub>-only only case should start as ```sudo python pco2.py```
 
 By default the program starts pH mode. 
 Append the command line argument with parameters if you want to change the mode:
@@ -43,7 +43,7 @@ Append the command line argument with parameters if you want to change the mode:
 | Command     |   Description                                  |
 |-------------|:-----------------------------------------------|
 |--co3        | CO<sub>3</sub> mode                            |
-|--pco2       | pCO<sub>2</sub> + pH mode                      |
+|--pco2       | pCO<sub>2</sub> + pH mode  (not in use!)       |
 |--localdev   | local development mode (**testing**)           |
 |--debug      | show logging messages of debug level           |
 |--nodye      | do not inject dye during sample (**testing**)  |
@@ -56,36 +56,31 @@ Append the command line argument with parameters if you want to change the mode:
 4. make sure that the configuration for you box is in `configs/` folder, if it is not there, 
 create it. 
 
-#### Logic and modes 
+### Logic and modes 
     * Continuous mode 
     * Single measurement mode
     * Calibration mode 
     * Local testing  
 
-##### Saving the data
+### Saving the data
  
-After each measurement the data is saved locally (on raspberry pi) in the `data/` folder 
-(See the local folder structure below) and sent to to main ferrybox computer via UDP.
- Later it is sent to the FTP server and injected to the database on the Google Cloud. 
-
- ![](utils/folder_structure.png)
+After each measurement the data is saved locally (on raspberry pi) in the `data/` folder and sent to to main ferrybox computer via UDP.
+Later it is sent to the FTP server and injected to the database on the Google Cloud. 
 
 The folder `spt/` contains files with raw spectra: raw dark, blank and number of light measurements. 
-Also measurements are taken in repetitions.Spt files have all of them. 
+Also measurements are taken in repetitions `.spt` files have all of them. 
 The `evl/` folder contains pH values calculated for each measurement (for number of repetitions) and coefficient, 
 other parameters used for calculation. 
 pH.log file in the main `data/` folder is the file containing the final calculated and averaged pH values.
 The file is updates after each measurement. 
 
 This structure is for pH and CO<sub>3</sub>, both of them are spectrometric measurements. 
-For pCO<sub>2</sub>, there is only `pCO2.log` 
 
-#### Classes structure
+## Classes structure
 
-![](utils/classes.png)
 
 When you call the main module, pHox_gui.py, the main graphical panel is created. 
-Depending on the options, it will be Panel_pH, Panel_PCO2_only or Panel_CO3
+Depending on the options, it will be Panel_pH, or Panel_CO3
 In these classes, all widgets, all timers are created.  
 
 Gui class is a Main class. All other classes (for spectrophotometer and raspberry are depended on it)
@@ -93,7 +88,7 @@ Then from the main class, we create the instrument class
 
 pH_instrument and CO3_instrument are children classes for common instrument class.
 They are are combined together because both of them use spectrophotometer. 
-pCO2 does not need a class for it.
+
 
 #### Communication between ferrybox computer, raspberry pi, instruments and spectrophotometers.
 
@@ -109,7 +104,7 @@ When the program is started, the Thread for udp messages is also starts.
 Every (time interval) the message from Ferrybox computer is sent to the pHox. 
 
 String message from pHox to UDP consists of: 
-* measurement code ( "$PCO3,", '$PPHOX' or "$PPCO2')
+* measurement code ( "$PCO3,", '$PPHOX')
 * measurement_string_version 
 
     (defined in the config file, helps to decode the message,"PCO3_string_version": "1") 
@@ -129,7 +124,7 @@ API for using spectrometer.
 
 ADCDifferentialPi, ADCDACPi, RPi.GPIO, pigpio for the communication with raspberry pi boards 
 
-![](utils/graph_instrument_classes.png)
+
 * Communication with the spectrometer
 * Communication with raspberri pi, valves, pumps
 * Udp and ferrybox data 
