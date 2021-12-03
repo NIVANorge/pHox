@@ -36,8 +36,9 @@ def udp_server():
 
     try:
         sock_listen.bind(("", UDP_RECV))
-    except:
+    except Exception as e:
         print ('Could not start the UDP listener')
+        print (e)
         logging.info('Could not start the UDP listener'
                      'kill the process: '
                      'sudo netstat -tulpn'
@@ -55,12 +56,17 @@ def udp_server():
         else:
             Ferrybox['udp_ok'] = True
             data = data.decode('utf-8')
-            print("received: %s" % (data.strip()))
+
             w = data.split(",")
             if data.startswith("$PFBOX,TIME,"):
-                v = datetime.strptime(w[2], "%Y-%m-%dT%H:%M:%S")
+                try:
+                    v = datetime.strptime(w[2], "%Y-%m-%dT%H:%M:%S")
+                except Exception as e:
+                    print (e)
+                    print ('UNable to get time in the format w[2]')
                 t = datetime.now()
-                if abs(t - v).total_seconds() > 5:
+                if abs(t - v).total_seconds() > 60*60 :
+                    # 1 hour difference:
                     print("will correct time")
                     os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith("$PFBOX,SAL,"):

@@ -76,7 +76,7 @@ class Spectro_localtest(object):
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
-            sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
+            sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
             return sp
 
         while self.busy:
@@ -88,7 +88,7 @@ class Spectro_localtest(object):
         return sp
 
     def get_intensities_slow(self, num_avg=1, correct=True):
-        sp = self.test_df["0"].values + random.randrange(-1000, 1000, 1)
+        sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
         return sp
 
 class Spectro_seabreeze(object):
@@ -194,6 +194,7 @@ class Common_instrument(object):
         self.rpi.write(self.extra_slot, 0)
 
     async def set_Valve(self, status):
+        # Here False mean close
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
 
@@ -329,6 +330,7 @@ class Common_instrument(object):
         for i in range(nAver):
             try:
                 v += self.adc.read_voltage(channel)
+                logging.debug('ok,read voltage')
             except Exception as e:
                 logging.error(e)
                 nAver -= 1
@@ -338,7 +340,10 @@ class Common_instrument(object):
         except Exception as e:
             print (e)
             Voltage = -999
-        logging.error(str(nAver) + 'num of Volt measurements')
+        
+        if nAver < 3:
+            logging.error(' num of Volt measurements: {}'.format(str(nAver)))
+
         return Voltage
 
     def calc_wavelengths(self):
@@ -499,17 +504,25 @@ class CO3_instrument(Common_instrument):
         ]
 
     def calc_final_co3(self, co3_eval):
+        # For now we have only 1 measurement so we dont really need this func
+        # but keep it for now in case we want to make several meas and find regression
+        # in the future (same as phox)
+        t_cuvette = co3_eval["T_cuvette"].values[0]
+        #x = co3_eval["Vol_injected"].values
+        co3 = co3_eval["CO3"].values[0]
 
-        x = co3_eval["Vol_injected"].values
-        y = co3_eval["CO3"].values
-        try:
-            slope1, intercept, r_value = get_linregress(x, y)
-            logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
-        except:
-            logging.error('could not find CO3 intercept, FIX')
-            (slope1, intercept, r_value) = 999, 999, 999
-        intercept = y[0]
-        return [slope1, intercept, r_value]
+        '''if self.ncycles > 2:
+            try:
+                slope1, intercept, r_value = get_linregress(x, y)
+                logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
+            except:
+                logging.error('could not find CO3 intercept, FIX')
+                (slope1, intercept, r_value) = 999, 999, 999'''
+        #else:
+        #    co3 = y[0]
+        #    #slope1 = 999
+        #    #r_value = 999
+        return co3,t_cuvette
 
 
 class pH_instrument(Common_instrument):
@@ -639,6 +652,7 @@ class pH_instrument(Common_instrument):
                     logging.debug("*** adj2 = True")
 
                     if self.autoadj_opt == 'ON_NORED':
+                        #TODO: Fix, RED can be lower but MUST NOT be saturated 
                         LED3, adj3, res = 99, True, "READ adjusting disabled"
                     else:
                         LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LEDS[2])
@@ -667,7 +681,8 @@ class pH_instrument(Common_instrument):
                     self.adj_action = "increase"
 
                 else:
-                    logging.info("too high spt, stop")
+                    logging.error('integration time:' + str(self.specIntTime) + '')
+                    logging.error("STOP AUTOADJUST! Too high spt ")
                     break
 
             elif adj1 and adj2 and adj3:
@@ -926,7 +941,7 @@ class Test_pH_instrument(pH_instrument):
 
         if self.autoadj_opt == 'ON_NORED':
             logging.debug('NO RED in adjusting')
-            LED3, adj3, res = 99, True, "READ adjusting disabled"
+            LED3, adj3, res = 99, True, "RED adjusting disabled"
 
         return LED1, LED2, LED3, result
 

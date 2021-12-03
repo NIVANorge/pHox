@@ -7,8 +7,8 @@ plt.style.use('ggplot')
 df = pd.read_csv('data/data_pH/pH.log')
 df['Time'] = pd.to_datetime(df['Time'],format = '%Y-%m-%d_%H:%M')
 fig, ax = plt.subplots(2)
-#df = df[df.Time > '2021-07-15']
-
+df = df[df.Lat > 1]
+df = df[df.Time > '2021-06-15']
 myFmt = mdates.DateFormatter('%m-%d %H:%M')
 
 ax[0].set_title('pH insitu')

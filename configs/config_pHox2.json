@@ -45,6 +45,7 @@
         "LIGHT_THRESHOLD_FLAME": 60000,
         "Autoadjust_state": "ON",
         "Autoadjust_comment": "Options are ON, OFF, ON_NORED",
+        "drain_mode" : "OFF",
         "dye_level": 1918.640000000074,
         "dye_level_comment": "max 2000 ml, two bags"
     },
