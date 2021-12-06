@@ -447,6 +447,9 @@ class Panel(QWidget):
             self.timerSave_pco2 = QtCore.QTimer()
             self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
+    def send_fb_udp(self):
+        udp.send_data(self.string_to_udp, self.instrument.ship_code)
+
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
             self.set_major_mode("Manual")
@@ -2340,8 +2343,7 @@ class Panel_pH(Panel):
         self.timer_udp.stop()
         self.timer_udp.start(10000)
 
-    def send_fb_udp(self):
-        udp.send_data(self.string_to_udp, self.instrument.ship_code)
+
 
     async def one_calibration_step(self, n, folderpath):
         # Check if stop is clicked
@@ -2621,11 +2623,10 @@ class Panel_CO3(Panel):
 
         logging.info('Sending CO3 data to ferrybox')
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        self.string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
+        self.timer_udp.stop()
+        self.timer_udp.start(10000)
 
-        # print (row_to_string)
-        # udp.send_data("$PPHOX," + row_to_string + ",*\n", self.instrument.ship_code)
 
 
 class SensorStateUpdateManager:
