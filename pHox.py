@@ -91,6 +91,7 @@ class Spectro_localtest(object):
         sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
         return sp
 
+
 class Spectro_seabreeze(object):
     def __init__(self):
         self.busy = False

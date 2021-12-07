@@ -305,18 +305,21 @@ class Panel(QWidget):
         self.tab_config = QWidget()
         self.tab_log = QWidget()
         self.plots = QWidget()
+        self.ts_plots = QWidget()
 
         self.tabs.addTab(self.tab_home, "Home")
         self.tabs.addTab(self.tab_manual, "Manual")
         self.tabs.addTab(self.tab_config, "Config")
         self.tabs.addTab(self.tab_status, "Status")
         self.tabs.addTab(self.tab_log, "Log")
+        self.tabs.addTab(self.ts_plots, 'TS Plot')
 
         self.make_tab_log()
         self.make_tab_home()
         self.make_tab_manual()
         self.make_tab_config()
         self.make_plotwidgets()
+        self.make_ts_plot_tab()
 
         l = QGridLayout()
         l.addWidget(self.logTextBox.widget)
@@ -425,6 +428,16 @@ class Panel(QWidget):
             self.tab_status.layout.addWidget(calibration_group, 2, 0)
 
         self.tab_status.setLayout(self.tab_status.layout)
+
+
+    def make_ts_plot_tab(self):
+        ts_plot_groupbox = QGroupBox('pH TimeSeries Plot')
+        self.update_plot_btn = QPushButton('Update plot')
+        l = QGridLayout()
+        l.addWidget(self.update_plot_btn, 0, 0)
+        #ts_plot_groupbox.setLayout(l)
+
+        self.ts_plots.setLayout(l)
 
     def create_timers(self):
 
@@ -2343,8 +2356,6 @@ class Panel_pH(Panel):
         self.timer_udp.stop()
         self.timer_udp.start(10000)
 
-
-
     async def one_calibration_step(self, n, folderpath):
         # Check if stop is clicked
         if not self.calibr_state_dialog.stop_calibr_btn.isChecked():
@@ -2626,7 +2637,6 @@ class Panel_CO3(Panel):
         self.string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
         self.timer_udp.stop()
         self.timer_udp.start(10000)
-
 
 
 class SensorStateUpdateManager:
