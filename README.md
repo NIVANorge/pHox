@@ -43,7 +43,7 @@ Append the command line argument with parameters if you want to change the mode:
 | Command     |   Description                                  |
 |-------------|:-----------------------------------------------|
 |--co3        | CO<sub>3</sub> mode                            |
-|--pco2       | pCO<sub>2</sub> + pH mode  (not in use!)       |
+|--pco2       | pCO<sub>2</sub> + pH mode                      |
 |--localdev   | local development mode (**testing**)           |
 |--debug      | show logging messages of debug level           |
 |--nodye      | do not inject dye during sample (**testing**)  |
@@ -56,19 +56,22 @@ Append the command line argument with parameters if you want to change the mode:
 4. make sure that the configuration for you box is in `configs/` folder, if it is not there, 
 create it. 
 
-### Logic and modes 
+#### Logic and modes 
     * Continuous mode 
     * Single measurement mode
     * Calibration mode 
     * Local testing  
 
-### Saving the data
+##### Saving the data
  
-After each measurement the data is saved locally (on raspberry pi) in the `data/` folder and sent to to main ferrybox computer via UDP.
-Later it is sent to the FTP server and injected to the database on the Google Cloud. 
+After each measurement the data is saved locally (on raspberry pi) in the `data/` folder 
+(See the local folder structure below) and sent to to main ferrybox computer via UDP.
+ Later it is sent to the FTP server and injected to the database on the Google Cloud. 
+
+ ![](utils/figures_icons/folder_structure.png)
 
 The folder `spt/` contains files with raw spectra: raw dark, blank and number of light measurements. 
-Also measurements are taken in repetitions `.spt` files have all of them. 
+Also measurements are taken in repetitions. `.spt` files have all of them. 
 The `evl/` folder contains pH values calculated for each measurement (for number of repetitions) and coefficient, 
 other parameters used for calculation. 
 pH.log file in the main `data/` folder is the file containing the final calculated and averaged pH values.
@@ -78,6 +81,7 @@ This structure is for pH and CO<sub>3</sub>, both of them are spectrometric meas
 
 ## Classes structure
 
+![](utils/figures_icons/classes.png)
 
 When you call the main module, pHox_gui.py, the main graphical panel is created. 
 Depending on the options, it will be Panel_pH, or Panel_CO3
@@ -104,7 +108,7 @@ When the program is started, the Thread for udp messages is also starts.
 Every (time interval) the message from Ferrybox computer is sent to the pHox. 
 
 String message from pHox to UDP consists of: 
-* measurement code ( "$PCO3,", '$PPHOX')
+* measurement code ( "$PCO3,", '$PPHOX' or "$PPCO2')
 * measurement_string_version 
 
     (defined in the config file, helps to decode the message,"PCO3_string_version": "1") 
@@ -124,7 +128,7 @@ API for using spectrometer.
 
 ADCDifferentialPi, ADCDACPi, RPi.GPIO, pigpio for the communication with raspberry pi boards 
 
-
+![](utils/figures_icons/graph_instrument_classes.png)
 * Communication with the spectrometer
 * Communication with raspberri pi, valves, pumps
 * Udp and ferrybox data 
@@ -163,7 +167,7 @@ In order to make a pH measurement, we need a strong light signal.
 The light intensity on spectrophotometer should be close to Threshold value at 3 
 defined wavelengths (NIR,HI,I2) for pH and one wavelength for CO3. 
 
-![](utils/autoadjust_fig_upd.png) 
+![](utils/figures_icons/autoadjust_fig_upd.png) 
 
 Threshold depends on the maximum possible light intensity and depends on a Spectrophotometer type.
 
