@@ -7,7 +7,7 @@ import re
 import time
 import numpy as np
 import pandas as pd
-import udp
+import tcp
 from precisions import precision as prec
 from util import config_file, temp_probe_conf_path
 try:
@@ -175,7 +175,7 @@ class Common_instrument(object):
         if not self.args.localdev:
             self.rpi = pigpio.pi()
 
-        self.fb_data = udp.Ferrybox
+        self.fb_data = tcp.Ferrybox
 
         self.load_config()
         self.spectrometer_cls.set_integration_time_not_async(self.specIntTime)

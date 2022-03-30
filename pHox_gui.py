@@ -25,8 +25,9 @@ import pyqtgraph as pg
 import argparse
 import pandas as pd
 from util import config_file
-import udp
-from udp import Ferrybox as fbox
+# import udp
+import tcp
+from tcp import Ferrybox as fbox
 from precisions import precision as prec
 from asyncqt import QEventLoop, asyncSlot
 import asyncio
@@ -447,8 +448,8 @@ class Panel(QWidget):
             self.timerSave_pco2 = QtCore.QTimer()
             self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
-    def send_fb_udp(self):
-        udp.send_data(self.string_to_udp, self.instrument.ship_code)
+    def send_fb_tcp(self):
+        tcp.client.send(self.string_to_tcp, self.instrument.ship_code)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -550,7 +551,7 @@ class Panel(QWidget):
                     # self.btn_checkflow.setEnabled(True)
                 self.config_widgets_set_state(True)
             print('finished unsetting continuous mode')
-            print('timer active', self.infotimer_contin_mode.isActive())
+            print('infotimer active', self.infotimer_contin_mode.isActive())
 
         if mode_unset == "Calibration":
             self.btn_single_meas.setEnabled(True)
@@ -729,12 +730,12 @@ class Panel(QWidget):
         self.btn_save_config = self.create_button("Save config", False)
         self.btn_save_config.clicked.connect(self.btn_save_config_clicked)
 
-        self.btn_test_udp = self.create_button('Test UDP', True)
-        self.timer_test_udp = QtCore.QTimer()
-        self.timer_udp = QtCore.QTimer()
-        self.timer_test_udp.timeout.connect(self.send_test_udp)
-        self.timer_udp.timeout.connect(self.send_fb_udp)
-        self.btn_test_udp.clicked.connect(self.test_udp)
+        self.btn_test_tcp = self.create_button('Test TCP', True)
+        self.timer_test_tcp = QtCore.QTimer()
+        self.timer_tcp = QtCore.QTimer()
+        self.timer_test_tcp.timeout.connect(self.send_test_tcp)
+        self.timer_tcp.timeout.connect(self.send_fb_tcp)
+        self.btn_test_tcp.clicked.connect(self.test_tcp)
 
         self.tableConfigWidget = QTableWidget()
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -795,7 +796,7 @@ class Panel(QWidget):
         self.create_manual_sal_group()
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_test_udp, 0, 1, 1, 1)
+        self.tab_config.layout.addWidget(self.btn_test_tcp, 0, 1, 1, 1)
 
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
@@ -1599,7 +1600,7 @@ class Panel(QWidget):
         if self.btn_cont_meas.isChecked():
 
             if fbox['pumping'] is None:
-                logging.debug('No udp connection')
+                logging.debug('No tcp connection')
 
             elif fbox['pumping'] == 0:
                 if ('Paused' not in self.major_modes and self.instrument.ship_code != "Standalone"):
@@ -1880,13 +1881,13 @@ class Panel(QWidget):
         self.data_log_row['temp_sens_qc'] = temp_alive
 
         if fbox['pumping'] is None:
-            udp_qc = False
+            tcp_qc = False
         else:
-            udp_qc = True
+            tcp_qc = True
 
-        self.data_log_row['UDP_conn_qc'] = udp_qc
+        self.data_log_row['TCP_conn_qc'] = tcp_qc
 
-        overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, udp_qc])
+        overall_qc = all([flow_is_good, dye_is_coming, biofouling_qc, temp_alive, tcp_qc])
         self.data_log_row['overall_qc'] = overall_qc
 
         return
@@ -2306,7 +2307,7 @@ class Panel_pH(Panel):
 
         return result_to_checkbox, check_passed
 
-    def test_udp(self, state):
+    def test_tcp(self, state):
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
         self.test_data_log_row = pd.DataFrame(
             {
@@ -2325,23 +2326,23 @@ class Panel_pH(Panel):
             }
         )
         if state:
-            self.timer_test_udp.start(10000)
+            self.timer_test_tcp.start(10000)
         else:
-            self.timer_test_udp.stop()
+            self.timer_test_tcp.stop()
 
-    def send_test_udp(self):
+    def send_test_tcp(self):
 
-        string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        string_to_tcp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                          self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
 
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        tcp.client.send(string_to_tcp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        self.string_to_tcp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                               row_to_string + ",*\n")
-        self.timer_udp.stop()
-        self.timer_udp.start(10000)
+        self.timer_tcp.stop()
+        self.timer_tcp.start(10000)
 
 
 
@@ -2593,7 +2594,7 @@ class Panel_CO3(Panel):
         # dif_CO3 = self.data_log_row['CO3_insitu'].values - #reference value
         self.fill_table_config(9, 1, "None")
 
-    def test_udp(self, state):
+    def test_tcp(self, state):
 
         timeStamp = datetime.utcnow().isoformat("_")[0:16]
         self.test_data_log_row = pd.DataFrame(
@@ -2608,24 +2609,24 @@ class Panel_CO3(Panel):
                 "box_id": ['box_test']
             })
         if state:
-            self.timer_test_udp.start(10000)
+            self.timer_test_tcp.start(10000)
         else:
-            self.timer_test_udp.stop()
+            self.timer_test_tcp.stop()
 
-    def send_test_udp(self):
-        print('send test udp CO3')
-        string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
+    def send_test_tcp(self):
+        print('send test tcp CO3')
+        string_to_tcp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
                          self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
 
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        tcp.client.send(string_to_tcp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
 
         logging.info('Sending CO3 data to ferrybox')
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
-        self.timer_udp.stop()
-        self.timer_udp.start(10000)
+        self.string_to_tcp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
+        self.timer_tcp.stop()
+        self.timer_tcp.start(10000)
 
 
 
@@ -2733,14 +2734,15 @@ class boxUI(QMainWindow):
                 self.main_widget.close_shutter()
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
-                self.main_widget.timer_udp.stop()
+                self.main_widget.timer_tcp.stop()
                 self.main_widget.timerSpectra_plot.stop()
                 logging.info("timers are stopped")
 
-            udp.UDP_EXIT = True
-            udp.server.join()
-            if not udp.server.is_alive():
-                logging.info("UDP server closed")
+            # TODO: fix exiting TCP server or client? 
+            # tcp.UDP_EXIT = True
+            # tcp.server.join()
+            # if not tcp.server.is_alive():
+            #     logging.info("TCP server closed")
             try:
                 self.main_widget.instrument.spectrometer_cls.spec.close()
                 logging.info('spectrophotometer connection closed')
