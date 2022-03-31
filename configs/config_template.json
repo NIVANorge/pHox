@@ -33,7 +33,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 300.0,
+        "Spectro_Integration_time": 100.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -49,7 +49,11 @@
         "air_slot": 16,
         "drain_time": 15,
         "dye_level": 1998.4400000000014,
-        "dye_level_comment": "one bag 1000 ml, two bags"
+        "dye_level_comment": "one bag 1000 ml, two bags",
+        "box_ip": "192.168.0.91",
+        "box_port": 56801,
+        "fbpc_ip": "192.168.0.1",
+        "fbpc_port": 56801
     },
     "pH": {
         "LED_SLOTS": [

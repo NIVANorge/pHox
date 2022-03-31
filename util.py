@@ -21,8 +21,10 @@ except:
 config_name = "configs/config_" + box_id + ".json"
 with open(config_name) as json_file:
     config_file = json.load(json_file)
-
-
+    box_ip = config_file["Operational"]['box_ip']
+    box_port = config_file["Operational"]['box_port']
+    fbpc_ip = config_file["Operational"]['fbpc_ip']
+    fbpc_port = config_file["Operational"]['fbpc_port']
 temp_probe_conf_path = 'configs/temperature_sensors_config.json'
 
 rgb_lookup = {'red': 1, 'green': 2, 'white': 0}

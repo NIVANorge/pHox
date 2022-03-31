@@ -4,7 +4,8 @@ import sys
 from contextlib import asynccontextmanager
 
 from pHox import *
-from util import get_base_folderpath, box_id, config_name, rgb_lookup
+from util import (get_base_folderpath, box_id, config_name, 
+    rgb_lookup, box_ip, box_port, fbpc_ip, fbpc_port)
 
 try:
     import warnings, time, RPi.GPIO
@@ -448,8 +449,6 @@ class Panel(QWidget):
             self.timerSave_pco2 = QtCore.QTimer()
             self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
-    def send_fb_tcp(self):
-        tcp.client.send(self.string_to_tcp, self.instrument.ship_code)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -730,13 +729,6 @@ class Panel(QWidget):
         self.btn_save_config = self.create_button("Save config", False)
         self.btn_save_config.clicked.connect(self.btn_save_config_clicked)
 
-        self.btn_test_tcp = self.create_button('Test TCP', True)
-        self.timer_test_tcp = QtCore.QTimer()
-        self.timer_tcp = QtCore.QTimer()
-        self.timer_test_tcp.timeout.connect(self.send_test_tcp)
-        self.timer_tcp.timeout.connect(self.send_fb_tcp)
-        self.btn_test_tcp.clicked.connect(self.test_tcp)
-
         self.tableConfigWidget = QTableWidget()
         self.tableConfigWidget.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tableConfigWidget.verticalHeader().hide()
@@ -796,7 +788,6 @@ class Panel(QWidget):
         self.create_manual_sal_group()
 
         self.tab_config.layout.addWidget(self.btn_save_config, 0, 0, 1, 1)
-        self.tab_config.layout.addWidget(self.btn_test_tcp, 0, 1, 1, 1)
 
         self.tab_config.layout.addWidget(self.tableConfigWidget, 1, 0, 1, 3)
 
@@ -2307,43 +2298,11 @@ class Panel_pH(Panel):
 
         return result_to_checkbox, check_passed
 
-    def test_tcp(self, state):
-        timeStamp = datetime.utcnow().isoformat("_")[0:16]
-        self.test_data_log_row = pd.DataFrame(
-            {
-                "Time": [timeStamp],
-                "Lon": [fbox["longitude"]],
-                "Lat": [fbox["latitude"]],
-                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
-                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
-                "SHIP": [self.instrument.ship_code],
-                "pH_cuvette": [0],
-                "T_cuvette": [0],
-                "perturbation": [0],
-                "evalAnir": [0],
-                "pH_insitu": [0],
-                "box_id": ['box_test']
-            }
-        )
-        if state:
-            self.timer_test_tcp.start(10000)
-        else:
-            self.timer_test_tcp.stop()
-
-    def send_test_tcp(self):
-
-        string_to_tcp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
-                         self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
-
-        tcp.client.send(string_to_tcp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_tcp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        tcp.DataString_from_box = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                               row_to_string + ",*\n")
-        self.timer_tcp.stop()
-        self.timer_tcp.start(10000)
-
 
 
     async def one_calibration_step(self, n, folderpath):
@@ -2594,40 +2553,11 @@ class Panel_CO3(Panel):
         # dif_CO3 = self.data_log_row['CO3_insitu'].values - #reference value
         self.fill_table_config(9, 1, "None")
 
-    def test_tcp(self, state):
-
-        timeStamp = datetime.utcnow().isoformat("_")[0:16]
-        self.test_data_log_row = pd.DataFrame(
-            {
-                "Time": [timeStamp],
-                "Lon": [fbox["longitude"]],
-                "Lat": [fbox["latitude"]],
-                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
-                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
-                "SHIP": [self.instrument.ship_code],
-                "co3": [999],
-                "box_id": ['box_test']
-            })
-        if state:
-            self.timer_test_tcp.start(10000)
-        else:
-            self.timer_test_tcp.stop()
-
-    def send_test_tcp(self):
-        print('send test tcp CO3')
-        string_to_tcp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
-                         self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
-
-        tcp.client.send(string_to_tcp, self.instrument.ship_code)
-
     def send_to_ferrybox(self):
 
         logging.info('Sending CO3 data to ferrybox')
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_tcp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
-        self.timer_tcp.stop()
-        self.timer_tcp.start(10000)
-
+        tcp.DataString_from_box = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
 
 
 class SensorStateUpdateManager:
@@ -2682,6 +2612,16 @@ class SensorStateUpdateManager:
 class boxUI(QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Starting client to get data from FB computer 
+        # host is an IP of Ferrybox computer, port is a port 56801     
+        tcp.start_client(fbpc_ip, fbpc_port)
+
+        # Starting server to send data TO FB computer 
+        # here hos is an IP of the box and port is a port of the box (same for 
+        # all boxes)
+        tcp.start_server(box_ip, box_port)
+
         parser = argparse.ArgumentParser()
 
         arguments = ["--nodye", "--pco2", "--co3", "--debug",
@@ -2734,15 +2674,11 @@ class boxUI(QMainWindow):
                 self.main_widget.close_shutter()
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
-                self.main_widget.timer_tcp.stop()
                 self.main_widget.timerSpectra_plot.stop()
                 logging.info("timers are stopped")
 
-            # TODO: fix exiting TCP server or client? 
-            # tcp.UDP_EXIT = True
-            # tcp.server.join()
-            # if not tcp.server.is_alive():
-            #     logging.info("TCP server closed")
+            tcp.stop_everything() # Shut down the surver and stop all threads 
+
             try:
                 self.main_widget.instrument.spectrometer_cls.spec.close()
                 logging.info('spectrophotometer connection closed')
