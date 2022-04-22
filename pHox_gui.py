@@ -447,8 +447,6 @@ class Panel(QWidget):
             self.timerSave_pco2 = QtCore.QTimer()
             self.timerSave_pco2.timeout.connect(self.update_pco2_data)
 
-    def send_fb_udp(self):
-        udp.send_data(self.string_to_udp, self.instrument.ship_code)
 
     def btn_manual_mode_clicked(self):
         if self.btn_manual_mode.isChecked():
@@ -731,9 +729,9 @@ class Panel(QWidget):
 
         self.btn_test_udp = self.create_button('Test UDP', True)
         self.timer_test_udp = QtCore.QTimer()
-        self.timer_udp = QtCore.QTimer()
+        #self.timer_udp = QtCore.QTimer()
         self.timer_test_udp.timeout.connect(self.send_test_udp)
-        self.timer_udp.timeout.connect(self.send_fb_udp)
+        #self.timer_udp.timeout.connect(self.send_fb_udp)
         self.btn_test_udp.clicked.connect(self.test_udp)
 
         self.tableConfigWidget = QTableWidget()
@@ -2338,10 +2336,10 @@ class Panel_pH(Panel):
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        udp.Data_String = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                               row_to_string + ",*\n")
-        self.timer_udp.stop()
-        self.timer_udp.start(10000)
+        #self.timer_udp.stop()
+        #self.timer_udp.start(10000)
 
 
 
@@ -2623,9 +2621,9 @@ class Panel_CO3(Panel):
 
         logging.info('Sending CO3 data to ferrybox')
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        self.string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
-        self.timer_udp.stop()
-        self.timer_udp.start(10000)
+        udp.Data_String = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
+        #self.timer_udp.stop()
+        #self.timer_udp.start(10000)
 
 
 
@@ -2733,14 +2731,16 @@ class boxUI(QMainWindow):
                 self.main_widget.close_shutter()
             if not self.args.onlypco2:
                 self.main_widget.timer_contin_mode.stop()
-                self.main_widget.timer_udp.stop()
+                #self.main_widget.timer_udp.stop()
                 self.main_widget.timerSpectra_plot.stop()
                 logging.info("timers are stopped")
 
             udp.UDP_EXIT = True
-            udp.server.join()
-            if not udp.server.is_alive():
-                logging.info("UDP server closed")
+            udp.receiver.join()
+            udp.sender.join()
+
+            if (not udp.sender.is_alive() and not udp.receiver.is_alive()) :
+                logging.info("UDP sender closed")
             try:
                 self.main_widget.instrument.spectrometer_cls.spec.close()
                 logging.info('spectrophotometer connection closed')
