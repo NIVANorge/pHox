@@ -885,6 +885,10 @@ class Panel(QWidget):
             salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
                                + int(self.second_decimal.currentText()) / 100 +
                                int(self.third_decimal.currentText()) / 1000)
+        elif 'Continuous' in self.major_modes and fbox['udp_ok'] == False:
+            salinity_manual = (int(self.whole_sal.currentText()) + int(self.first_decimal.currentText()) / 10
+                               + int(self.second_decimal.currentText()) / 100 +
+                               int(self.third_decimal.currentText()) / 1000)            
         elif 'Calibration' in self.major_modes:
             salinity_manual = self.instrument.buffer_sal
         else:
