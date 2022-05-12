@@ -13,7 +13,7 @@ from util import config_file
 
 UDP_SEND = config_file["Operational"]['UDP_SEND'] 
 # 59801 for pH ,  59803 for CO3, 59802 for pCO2
-UDP_RECV = 59802 # all FB PC should be always on
+UDP_RECV = 56800 # all FB PC should be always on
 UDP_IP   = '255.255.255.255'  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 
@@ -33,13 +33,44 @@ def udp_receiver():
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
     logging.debug('UDP receiver started')
+    print ('udp receiver')
     while not UDP_EXIT:
         try:
-            (data,addr) = sock.recvfrom(500)
-        except:
-            pass
+            (data,addr) = sock.recvfrom(500) # 500 is a buffer size
+            data = data.decode("utf-8") 
+            w = data.split(",")
+            if data.startswith("$PFBOX,TIME,"):
+                try:
+                    v = datetime.strptime(w[2], "%Y-%m-%dT%H:%M:%S")
+                except Exception as e:
+                    print (e)
+                    print ('UNable to get time in the format w[2]')
+                t = datetime.now()
+                if abs(t - v).total_seconds() > 60*60 :
+                    # 1 hour difference:
+                    print("will correct time")
+                    os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
+            elif data.startswith("$PFBOX,SAL,"):
+                v = float(w[2])
+                Ferrybox["salinity"] = v
+            elif data.startswith("$PFBOX,PUMP,"):
+                v = int(w[2])
+                Ferrybox["pumping"] = v
+            elif data.startswith("$PFBOX,TEMP,"):
+                v = float(w[2])
+                Ferrybox["temperature"] = v
+            elif data.startswith("$PFBOX,LAT,"):
+                v = float(w[2])
+                Ferrybox["latitude"] = v
+            elif data.startswith("$PFBOX,LON,"):
+                v = float(w[2])
+                Ferrybox["longitude"] = v
+            Ferrybox['udp_ok'] = True
+        except Exception as e:
+            # print ('Error with udp', e)
+            Ferrybox['udp_ok'] = False
         else:
-            logging.info(data)
+            pass
     sock.close()
 
 
