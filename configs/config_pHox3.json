@@ -11,6 +11,7 @@
             23,
             25
         ],
+        "UDP_SEND": 56801,
         "DYE_V_INJ": 0.03,
         "CUVETTE_V": 16,
         "dye_nshots": 4,
@@ -32,7 +33,7 @@
         "mixTime": 10,
         "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 1000.0,
+        "Spectro_Integration_time": 1200.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -56,7 +57,7 @@
             12,
             16
         ],
-        "LED1": 35,
+        "LED1": 41,
         "LED2": 60,
         "LED3": 99,
         "Default_DYE": "MCP",
@@ -66,7 +67,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 2000
+        "dye_level": 1037.1199999999635
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",

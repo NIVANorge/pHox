@@ -65,7 +65,7 @@ def udp_sender():
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             sock.bind((ip, 0))
             s = Data_String # 'hello {:-d}'.format(n)
-            logging.info(f'send to {ip}, {UDP_SEND}, {s}')
+            # logging.info(f'send to {ip}, {UDP_SEND}, {s}')
             time.sleep(1)
             sock.sendto(bytes(s, encoding='utf8'), ('255.255.255.255', UDP_SEND))
             sock.close()
