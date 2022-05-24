@@ -11,7 +11,7 @@ from util import config_file
 # MYIP = '192.168.0.200' # would be different on different boxes and should come from the config
 # we dont need it if we loop through all interfaces
 
-UDP_SEND = config_file["Operational"]['UDP_SEND'] 
+UDP_SEND = 56801 #config_file["Operational"]['UDP_SEND'] 
 # 59801 for pH ,  59803 for CO3, 59802 for pCO2
 UDP_RECV = 56800 # all FB PC should be always on
 UDP_IP   = '255.255.255.255'  # Should be the IP of the Ferrybox
@@ -83,7 +83,7 @@ def send_data(s):
 
 def udp_sender():
     global UDP_EXIT
-    #  global Data_String
+    global Data_String
 
     interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,family=socket.AF_INET)
     allips = [ip[-1][0] for ip in interfaces]
@@ -94,11 +94,12 @@ def udp_sender():
         for ip in allips:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            sock.bind((ip, 0))
+            sock.bind(("", 0))
             s = Data_String # 'hello {:-d}'.format(n)
             # logging.info(f'send to {ip}, {UDP_SEND}, {s}')
-            time.sleep(1)
-            sock.sendto(bytes(s, encoding='utf8'), ('255.255.255.255', UDP_SEND))
+            print(f'send string {s}')
+            time.sleep(10)
+            sock.sendto(bytes(s, encoding='utf8'), ('<broadcast>', UDP_SEND))
             sock.close()
 
 

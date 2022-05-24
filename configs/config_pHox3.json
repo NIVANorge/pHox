@@ -57,8 +57,8 @@
             12,
             16
         ],
-        "LED1": 41,
-        "LED2": 60,
+        "LED1": 43,
+        "LED2": 55,
         "LED3": 99,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
@@ -67,7 +67,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1037.1199999999635
+        "dye_level": 709.2799999999511
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
