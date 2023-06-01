@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_6",
+        "TEMP_PROBE_ID": "Probe_4",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 18,
@@ -19,7 +19,7 @@
         "AUTOSTART": "True",
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 10,
+        "SAMPLING_INTERVAL_MIN": 15,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -57,9 +57,9 @@
             12,
             16
         ],
-        "LED1": 43,
-        "LED2": 55,
-        "LED3": 99,
+        "LED1": 99,
+        "LED2": 92,
+        "LED3": 74,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -67,7 +67,7 @@
         "TB_wl_HI": 434,
         "TB_wl_I2": 596,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 709.2799999999511
+        "dye_level": 1404.3199999999774
     },
     "pCO2": {
         "comment0": "# Water temperature calibration coefficients :",
