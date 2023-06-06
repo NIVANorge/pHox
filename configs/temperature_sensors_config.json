@@ -35,12 +35,12 @@
             ]
         },
         "Probe_4": {
-            "comment": "installed on pHox2, cal by SAM",
+            "comment": "delta4, installed on NB, cal by TEG",
             "is_calibrated": "True",
-            "calibr_date": "20/02/2020",
+            "calibr_date": "22/02/2023",
             "Calibr_coef": [
-                72.683,
-                16.22
+                69.860,
+                16.306
             ]
         },
         "Probe_5": {

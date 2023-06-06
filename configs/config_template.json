@@ -16,6 +16,7 @@
         "dye_nshots": 1,
         "specAvScans": 6,
         "AUTOSTART": "True",
+        "UDP_SEND": 59801,
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
         "SAMPLING_INTERVAL_MIN": 60,
@@ -33,7 +34,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 300.0,
+        "Spectro_Integration_time": 600.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",
@@ -69,7 +70,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1994.3600000000051,
+        "dye_level": 1997.120000000002,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {
