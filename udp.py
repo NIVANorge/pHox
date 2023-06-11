@@ -1,18 +1,24 @@
-from datetime import datetime, timedelta
-import socket
-import threading
+"""
+udp.py
+"""
+
 import os
 import time
 import logging
-logging.getLogger()
-from util import config_file
-## type smth on the command line to stop the thread  
+import socket
+import threading
+
+from datetime import datetime
+
+# logging.getLogger()
+# from util import config_file
+## type smth on the command line to stop the thread
 #
 # MYIP = '192.168.0.200' # would be different on different boxes and should come from the config
 # we dont need it if we loop through all interfaces
 
 MYIPS = [ '192.168.0.91', '192.168.0.202' ]
-UDP_SEND = 56801 #config_file["Operational"]['UDP_SEND'] 
+UDP_SEND = 56801 #config_file["Operational"]['UDP_SEND']
 # 59801 for pH ,  59803 for CO3, 59802 for pCO2
 UDP_RECV = 56800 # all FB PC should be always on
 UDP_IP   = '255.255.255.255'  # Should be the IP of the Ferrybox
@@ -34,12 +40,12 @@ def udp_receiver():
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
     logging.debug('UDP receiver started')
-    print ('udp receiver')
+    # print ('udp receiver')
     while not UDP_EXIT:
         try:
             (data,addr) = sock.recvfrom(500) # 500 is a buffer size
-            data = data.decode("utf-8") 
-            print(data)
+            data = data.decode("utf-8")
+            # print(data)
             w = data.split(",")
             if data.startswith("$PFBOX,TIME,"):
                 try:
@@ -77,11 +83,11 @@ def udp_receiver():
 
 
 def send_data(s):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(bytes(s, encoding='utf8'), (UDP_IP, UDP_SEND))
     sock.close()
-    return 
-    
+    return
+
 
 def udp_sender():
     global UDP_EXIT
@@ -89,7 +95,7 @@ def udp_sender():
     #return
     #interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,family=socket.AF_INET)
     #allips = [ip[-1][0] for ip in interfaces]
-    allips = MYIPS
+    allips = UDP_IP,
 
     logging.debug('UDP sender started')
     n = 0
@@ -97,12 +103,12 @@ def udp_sender():
         for ip in allips:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            print(ip)
+            # print(ip)
             sock.bind((ip, UDP_SEND))
-            print(ip)
+            # print(ip)
             s = Data_String # 'hello {:-d}'.format(n)
             # logging.info(f'send to {ip}, {UDP_SEND}, {s}')
-            print(f'send string {s}')
+            # print(f'send string {s}')
             time.sleep(10)
             sock.sendto(bytes(s, encoding='utf8'), ('<broadcast>', UDP_SEND))
             sock.close()
@@ -120,18 +126,3 @@ receiver.start()
 
 sender = threading.Thread(target=udp_sender)
 sender.start()
-
-
-'''while True:
-    try:
-        s = input()
-        if len(s) > 0:
-            break
-    except:
-        break
-    time.sleep(1)
-    
-UDP_EXIT = True'''
-
-
-    

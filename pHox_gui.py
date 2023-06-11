@@ -1,18 +1,14 @@
 #! /usr/bin/python
 import os
 import sys
+import asyncio
+import argparse
 from contextlib import asynccontextmanager
-
-from pHox import *
-from util import get_base_folderpath, box_id, config_name, rgb_lookup
-
-try:
-    import warnings, time, RPi.GPIO
-    import RPi.GPIO as GPIO
-except ModuleNotFoundError:
-    pass
-
 from datetime import datetime, timedelta
+
+import numpy as np
+import pandas as pd
+import pyqtgraph as pg
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QLineEdit, QTabWidget, QWidget, QPushButton, QPlainTextEdit
 from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, QGridLayout, QProgressBar,
@@ -20,23 +16,27 @@ from PyQt5.QtWidgets import (QGroupBox, QMessageBox, QLabel, QTableWidgetItem, Q
                              QSlider, QInputDialog, QApplication, QMainWindow)
 from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtGui import QPixmap, QIcon
-import numpy as np
-import pyqtgraph as pg
-import argparse
-import pandas as pd
-from util import config_file
+from asyncqt import QEventLoop, asyncSlot
+
+# try:
+#     import RPi.GPIO
+#     import RPi.GPIO as GPIO
+# except ModuleNotFoundError:
+#     pass
+
 import udp
 from udp import Ferrybox as fbox
+from util import get_base_folderpath, box_id, config_name, rgb_lookup
+from util import config_file
 from precisions import precision as prec
-from asyncqt import QEventLoop, asyncSlot
-import asyncio
+from pHox import *
 
 
 class AfterCuvetteCleaning(QDialog):
 
-    def __init__(self, Panel):
-        super(AfterCuvetteCleaning, self).__init__(Panel)
-        self.main_qt_panel = Panel
+    def __init__(self, panel):
+        super().__init__(panel)
+        self.main_qt_panel = panel
 
         # Class functionality
         # The Dialog will be opened when the user reach the step of cleaning the Cuvette.
@@ -100,7 +100,7 @@ class AfterCuvetteCleaning(QDialog):
 class BatchNumber(QDialog):
 
     def __init__(self, parent=None):
-        super(BatchNumber, self).__init__(parent)
+        super().__init__(parent)
 
         self.setWindowTitle("Calibration solution Batch Number")
 
@@ -149,9 +149,9 @@ class BatchNumber(QDialog):
 
 
 class CalibrationProgess(QDialog):
-    # Adapt dialog depending on the answer clean cuvette or not 
+    # Adapt dialog depending on the answer clean cuvette or not
     def __init__(self, parent=None, with_cuvette_cleaning=True):
-        super(CalibrationProgess, self).__init__(parent)
+        super().__init__(parent)
 
         self.setWindowTitle("Calibration check progress window")
 
@@ -242,7 +242,7 @@ class SimpleThread(QtCore.QThread):
     finished = QtCore.pyqtSignal(object)
 
     def __init__(self, slow_function, callback):
-        super(SimpleThread, self).__init__()
+        super().__init__()
         self.caller = slow_function
         self.finished.connect(callback)
 
@@ -269,7 +269,7 @@ class AsyncThreadWrapper:
 
 class Panel(QWidget):
     def __init__(self, parent, panelargs):
-        super(QWidget, self).__init__(parent)
+        super().__init__(parent)
         self.major_modes = set()
         self.valid_modes = ["Measuring", "Adjusting", "Manual",
                             "Continuous", "Calibration", "Flowcheck",
@@ -1468,7 +1468,7 @@ class Panel(QWidget):
             # if self.until_next_sample <= self.manual_limit and not self.btn_valve.isChecked():
             #    logging.info('open the valve before the measurement')
             #    self.instrument.set_Valve_sync(True)
-            #    self.btn_valve.setChecked(True)            
+            #    self.btn_valve.setChecked(True)
 
         elif (self.until_next_sample > self.manual_limit and not self.btn_manual_mode.isEnabled()
               and "Measuring" not in self.major_modes):
@@ -2332,7 +2332,7 @@ class Panel_pH(Panel):
         string_to_udp = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                          self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
 
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        # udp.send_data(string_to_udp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
@@ -2615,7 +2615,7 @@ class Panel_CO3(Panel):
         string_to_udp = ("$PCO3," + self.instrument.PCO3_string_version + ',' +
                          self.test_data_log_row.to_csv(index=False, header=False).rstrip() + ",*\n")
 
-        udp.send_data(string_to_udp, self.instrument.ship_code)
+        # udp.send_data(string_to_udp, self.instrument.ship_code)
 
     def send_to_ferrybox(self):
 
@@ -2624,7 +2624,6 @@ class Panel_CO3(Panel):
         udp.Data_String = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
         #self.timer_udp.stop()
         #self.timer_udp.start(10000)
-
 
 
 class SensorStateUpdateManager:
@@ -2643,7 +2642,7 @@ class SensorStateUpdateManager:
         self.disable_requests = 0
 
     def get_interval_time(self):
-        # intreval time for updating live plot, depends on the spectro integration time 
+        # intreval time for updating live plot, depends on the spectro integration time
         time_buffer = min(max(self.main_qt_panel.instrument.specIntTime * 2, 200), 1000)
         return self.main_qt_panel.instrument.specIntTime + time_buffer
 
@@ -2689,7 +2688,7 @@ class boxUI(QMainWindow):
         base_folderpath = get_base_folderpath(self.args)
 
         logging.root.level = logging.DEBUG  # INFO  # logging.DEBUG if self.args.debug else
-        for name, logger in logging.root.manager.loggerDict.items():
+        for name, logger in logging.root.manager.loggerDict.items():  # pylint: disable=no-member
             if 'asyncqt' in name:  # disable debug logging on 'asyncqt' library since it's too much lines
                 logger.level = logging.INFO
 

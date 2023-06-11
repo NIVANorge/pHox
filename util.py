@@ -1,7 +1,7 @@
 import logging
 import json
 import os
-logging.getLogger()
+# logging.getLogger()
 
 def get_base_folderpath(args):
     if args.localdev:

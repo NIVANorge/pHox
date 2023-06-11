@@ -7,23 +7,24 @@ import re
 import time
 import numpy as np
 import pandas as pd
+
+import pHox_gui
 import udp
 from precisions import precision as prec
 from util import config_file, temp_probe_conf_path
+
 try:
     import pigpio
-    import RPi.GPIO as GPIO
+    # import RPi.GPIO as GPIO
     from ADCDifferentialPi import ADCDifferentialPi
     import seabreeze
 
     seabreeze.use("cseabreeze")
     from seabreeze.spectrometers import Spectrometer
-    from seabreeze.spectrometers import list_devices
-    import seabreeze.cseabreeze as sbb
-except:
+    # from seabreeze.spectrometers import list_devices
+    # import seabreeze.cseabreeze as sbb
+except ImportError:
     pass
-
-from pHox_gui import AsyncThreadWrapper
 
 
 def get_linregress(x, y):
@@ -55,7 +56,7 @@ class Spectro_localtest(object):
         self.integration_time = 100 / 1000
 
     def set_integration_time_not_async(self, time_millisec):
-        microsec = time_millisec * 1000
+        # microsec = time_millisec * 1000
         self.busy = True
         self.integration_time = time_millisec / 1000
         self.busy = False
@@ -82,7 +83,7 @@ class Spectro_localtest(object):
         while self.busy:
             await asyncio.sleep(0.05)
         self.busy = True
-        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
+        async_thread_wrapper = pHox_gui.AsyncThreadWrapper(_get_intensities)
         sp = await async_thread_wrapper.result_returner()
         self.busy = False
         return sp
@@ -90,6 +91,7 @@ class Spectro_localtest(object):
     def get_intensities_slow(self, num_avg=1, correct=True):
         sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
         return sp
+
 
 class Spectro_seabreeze(object):
     def __init__(self):
@@ -135,7 +137,7 @@ class Spectro_seabreeze(object):
             await asyncio.sleep(0.05)
         self.busy = True
 
-        async_thread_wrapper = AsyncThreadWrapper(_get_intensities)
+        async_thread_wrapper = pHox_gui.AsyncThreadWrapper(_get_intensities)
         sp = await async_thread_wrapper.result_returner()
         self.busy = False
         return sp
@@ -153,10 +155,10 @@ class Spectro_seabreeze(object):
         # not supported for FLAME spectrom
         self.spec.scans_to_average(num)
 
-    @classmethod
-    def __delete__(self):
-        self.spec.close()
-        return
+    # @classmethod
+    # def __delete__(self):
+    #     self.spec.close()
+    #     return
 
 
 class Common_instrument(object):
@@ -319,8 +321,8 @@ class Common_instrument(object):
     # COMMON
     def get_wvlPixels(self, wvls_spectrum):
         self.wvlPixels = []
-        for wl in self.wvl_needed:
-            self.wvlPixels.append(self.find_nearest(wvls_spectrum, wl))
+        # for wl in self.wvl_needed:
+        #     self.wvlPixels.append(self.find_nearest(wvls_spectrum, wl))
 
     def print_Com(self, port, txtData):
         port.write(txtData)
@@ -340,7 +342,7 @@ class Common_instrument(object):
         except Exception as e:
             print (e)
             Voltage = -999
-        
+
         if nAver < 3:
             logging.error(' num of Volt measurements: {}'.format(str(nAver)))
 
@@ -472,7 +474,7 @@ class CO3_instrument(Common_instrument):
         #e1 = 0.311907 - 0.002396 * S_corr + 0.000080 * S_corr ** 2
         #e3e2 = 3.061 - 0.0873 * S_corr + 0.0009363 * S_corr ** 2
         #log_beta1_e2 = 5.507074 - 0.041259 * S_corr + 0.000180 * S_corr ** 2
-        
+
         # sharp and Byrne 2019 (temperature and salinity correction) ( 17<S<40)
 
         e1 = (1.09519*10**-1) + (4.49666*10**-3)*S_corr + (1.95519*10**-3)*T + (2.44460*10**-5)*T**2 + (-2.01796*10**-5)*S_corr*T
@@ -511,13 +513,13 @@ class CO3_instrument(Common_instrument):
         #x = co3_eval["Vol_injected"].values
         co3 = co3_eval["CO3"].values[0]
 
-        '''if self.ncycles > 2:
-            try:
-                slope1, intercept, r_value = get_linregress(x, y)
-                logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
-            except:
-                logging.error('could not find CO3 intercept, FIX')
-                (slope1, intercept, r_value) = 999, 999, 999'''
+        # if self.ncycles > 2:
+        #     try:
+        #         slope1, intercept, r_value = get_linregress(x, y)
+        #         logging.debug(f"slope = {slope1}, intercept = {intercept}, r2= {r_value}")
+        #     except:
+        #         logging.error('could not find CO3 intercept, FIX')
+        #         (slope1, intercept, r_value) = 999, 999, 999
         #else:
         #    co3 = y[0]
         #    #slope1 = 999
@@ -652,7 +654,7 @@ class pH_instrument(Common_instrument):
                     logging.debug("*** adj2 = True")
 
                     if self.autoadj_opt == 'ON_NORED':
-                        #TODO: Fix, RED can be lower but MUST NOT be saturated 
+                        #TODO: Fix, RED can be lower but MUST NOT be saturated
                         LED3, adj3, res = 99, True, "READ adjusting disabled"
                     else:
                         LED3, adj3, res3 = await self.find_LED(led_ind=2, adj=adj3, LED=self.LEDS[2])
