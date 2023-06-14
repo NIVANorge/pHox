@@ -77,6 +77,7 @@ class Spectro_localtest(object):
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
+            time.sleep(10)
             sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
             return sp
 

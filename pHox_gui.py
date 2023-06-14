@@ -263,7 +263,7 @@ class AsyncThreadWrapper:
         while not self.callback_returned:
             await asyncio.sleep(0.1)
             self.thread.quit()
-            self.thread.wait()
+            # self.thread.wait()
         return self.result
 
 
