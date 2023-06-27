@@ -25,10 +25,10 @@ from asyncqt import QEventLoop, asyncSlot
 #     pass
 
 import udp
-from udp import Ferrybox as fbox
-from util import get_base_folderpath, box_id, config_name, rgb_lookup
-from util import config_file
-from precisions import precision as prec
+from udp import FERRYBOX as fbox
+from util import get_base_folderpath, BOX_ID, CONFIG_NAME, RGB_LOOKUP
+from util import CONFIG_FILE
+from precisions import PRECISION as prec
 from pHox import *
 
 
@@ -352,7 +352,7 @@ class Panel(QWidget):
         self.update_config('dye_level', 'pH', self.dye_level)
 
     def update_config(self, parameter, group, value):
-        with open(config_name, "r+") as json_file:
+        with open(CONFIG_NAME, "r+") as json_file:
             j = json.load(json_file)
             j[group][parameter] = value
             json_file.seek(0)  # rewind
@@ -374,12 +374,12 @@ class Panel(QWidget):
         l.addWidget(self.dye_level_bar, 0, 2)
         dye_level_group.setLayout(l)
 
-        self.dye_level = config_file['Operational']['dye_level']
+        self.dye_level = CONFIG_FILE['Operational']['dye_level']
         self.dye_level_bar.setMaximum(2000)
         self.dye_level_bar.setValue(int(self.dye_level))
 
-        self.dye_step_1meas = (config_file['Operational']["ncycles"] * config_file['Operational']["DYE_V_INJ"] *
-                               config_file['Operational']["dye_nshots"])
+        self.dye_step_1meas = (CONFIG_FILE['Operational']["ncycles"] * CONFIG_FILE['Operational']["DYE_V_INJ"] *
+                               CONFIG_FILE['Operational']["dye_nshots"])
 
         self.dye_refill_btn.clicked.connect(self.refill_dye)
         self.dye_empty_btn.clicked.connect(self.empty_all_dye)
@@ -1064,11 +1064,11 @@ class Panel(QWidget):
     def close_shutter(self):
         logging.debug('in func close shutter')
         self.btn_shutter.setChecked(False)
-        self.instrument.turn_off_relay(config_file["CO3"]["SHUTTER_SLOT"])
+        self.instrument.turn_off_relay(CONFIG_FILE["CO3"]["SHUTTER_SLOT"])
 
     def open_shutter(self):
         self.btn_shutter.setChecked(True)
-        self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
+        self.instrument.turn_on_relay(CONFIG_FILE["CO3"]["SHUTTER_SLOT"])
 
     def btn_stirr_clicked(self):
         if self.btn_stirr.isChecked():
@@ -1130,7 +1130,7 @@ class Panel(QWidget):
 
     def btn_save_config_clicked(self):
 
-        with open(config_name, "r+") as json_file:
+        with open(CONFIG_NAME, "r+") as json_file:
             j = json.load(json_file)
 
             j["pH"]["Default_DYE"] = self.dye_combo.currentText()
@@ -1152,7 +1152,7 @@ class Panel(QWidget):
 
     def dye_combo_chngd(self, ind):
         self.instrument.dye = self.dye_combo.currentText()
-        default = config_file['pH']
+        default = CONFIG_FILE['pH']
         # self.load_config_file()
 
         if self.instrument.dye == "MCP":
@@ -1479,7 +1479,7 @@ class Panel(QWidget):
             self.StatusBox.setText(f'Next sample in {self.until_next_sample} minutes ')
 
         if self.args.co3 and not self.btn_light.isChecked():
-            self.lamp_time = config_file["CO3"]["lamp_time"]
+            self.lamp_time = CONFIG_FILE["CO3"]["lamp_time"]
             if self.until_next_sample <= self.lamp_time:
                 self.btn_light.setChecked(True)
                 self.btn_light_clicked()
@@ -1556,8 +1556,8 @@ class Panel(QWidget):
             if self.args.co3:
                 logging.debug('Check that drain is closed')
                 self.btn_drain.setChecked(False)
-                self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-                self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+                self.instrument.turn_off_relay(CONFIG_FILE['Operational']['air_slot'])
+                self.instrument.turn_off_relay(CONFIG_FILE['Operational']['drain_slot'])
 
             if not self.args.co3:
                 self.StatusBox.setText("Turn on LEDs")
@@ -1813,19 +1813,19 @@ class Panel(QWidget):
     async def drain(self):
         # self.btn_drain.setEnabled(False)
         logging.debug('Start draining')
-        self.instrument.turn_on_relay(config_file['Operational']['drain_slot'])
-        self.instrument.turn_on_relay(config_file['Operational']['air_slot'])
+        self.instrument.turn_on_relay(CONFIG_FILE['Operational']['drain_slot'])
+        self.instrument.turn_on_relay(CONFIG_FILE['Operational']['air_slot'])
         self.btn_drain.setChecked(True)
-        print(config_file['Operational']['drain_time'], type(config_file['Operational']['drain_time']))
-        for n in range(config_file['Operational']['drain_time']):
+        print(CONFIG_FILE['Operational']['drain_time'], type(CONFIG_FILE['Operational']['drain_time']))
+        for n in range(CONFIG_FILE['Operational']['drain_time']):
             print('second {} of draining'.format(n))
             if self.btn_drain.isChecked():
                 await asyncio.sleep(1)
             else:
                 break
                 # await asyncio.sleep(config_file['Operational']['drain_time']) # in seconds
-        self.instrument.turn_off_relay(config_file['Operational']['air_slot'])
-        self.instrument.turn_off_relay(config_file['Operational']['drain_slot'])
+        self.instrument.turn_off_relay(CONFIG_FILE['Operational']['air_slot'])
+        self.instrument.turn_off_relay(CONFIG_FILE['Operational']['drain_slot'])
         logging.debug('Stop draining drain func')
         self.btn_drain.setChecked(False)
 
@@ -1839,13 +1839,13 @@ class Panel(QWidget):
         current_blue = await self.instrument.get_sp_levels(blue_ind)
         diff = current_blue - last_injection
 
-        flow_threshold = config_file['QC']["flow_threshold"]
+        flow_threshold = CONFIG_FILE['QC']["flow_threshold"]
         if diff > flow_threshold:
             flow_is_good = True
             self.flow_qc_chk.setCheckState(2)
         else:
             flow_is_good = False
-            self.flow_qc_chk.setCheckState(rgb_lookup['red'])
+            self.flow_qc_chk.setCheckState(RGB_LOOKUP['red'])
         self.data_log_row['flow_QC'] = flow_is_good
 
         # Dye is coming check
@@ -1853,28 +1853,28 @@ class Panel(QWidget):
         # Correct by the pixel we are using in the measurement
         if (self.spCounts_df['blank'] - self.spCounts_df['0']).mean() > dye_threshold:
             dye_is_coming = True
-            self.dye_qc_chk.setCheckState(rgb_lookup['green'])
+            self.dye_qc_chk.setCheckState(RGB_LOOKUP['green'])
         else:
             dye_is_coming = False
-            self.dye_qc_chk.setCheckState(rgb_lookup['red'])
+            self.dye_qc_chk.setCheckState(RGB_LOOKUP['red'])
         self.data_log_row['dye_coming_qc'] = dye_is_coming
 
         # Spectro integration time check
         if self.instrument.specIntTime > 2000:
             biofouling_qc = False
-            self.biofouling_qc_chk.setCheckState(rgb_lookup['red'])
+            self.biofouling_qc_chk.setCheckState(RGB_LOOKUP['red'])
         else:
             biofouling_qc = True
-            self.biofouling_qc_chk.setCheckState(rgb_lookup['green'])
+            self.biofouling_qc_chk.setCheckState(RGB_LOOKUP['green'])
         self.data_log_row['biofouling_qc'] = biofouling_qc
 
         # Temperature is alive check
         if self.evalPar_df['Voltage'].mean() == self.evalPar_df['Voltage'][0]:
             temp_alive = False
-            self.temp_alive_qc_chk.setCheckState(rgb_lookup['red'])
+            self.temp_alive_qc_chk.setCheckState(RGB_LOOKUP['red'])
         else:
             temp_alive = True
-            self.temp_alive_qc_chk.setCheckState(rgb_lookup['green'])
+            self.temp_alive_qc_chk.setCheckState(RGB_LOOKUP['green'])
         self.data_log_row['temp_sens_qc'] = temp_alive
 
         if fbox['pumping'] is None:
@@ -2136,7 +2136,7 @@ class Panel_pH(Panel):
                 "evalAnir": [evalAnir],
                 "pH_insitu": [pH_insitu],
                 'r_square': [rsquare],
-                "box_id": [box_id]
+                "box_id": [BOX_ID]
             }
         )
 
@@ -2191,7 +2191,7 @@ class Panel_pH(Panel):
 
                         res = await self.calibration_check_cycle(with_cuvette_cleaning)
                         if not res == 'white':
-                            self.btn_calibr_checkbox.setCheckState(int(rgb_lookup[res]))
+                            self.btn_calibr_checkbox.setCheckState(int(RGB_LOOKUP[res]))
                             self.last_calibr_date.setText(str(datetime.now().date()))
 
                         self.calibr_state_dialog.close()
@@ -2271,7 +2271,7 @@ class Panel_pH(Panel):
             :return:
         """
 
-        cal_temp_tris = config_file["TrisBuffer"]["T_tris_buffer"]
+        cal_temp_tris = CONFIG_FILE["TrisBuffer"]["T_tris_buffer"]
 
         # pH theoretical at  20 C
         pH_buffer_theoretical = (11911.08 - 18.2499 * 35 - 0.039336 * 35 ** 2) / (
@@ -2293,7 +2293,7 @@ class Panel_pH(Panel):
         self.data_log_row["pH_insitu"] = pH_at_cal_temp
         dif_pH = pH_at_cal_temp - pH_buffer_theoretical
         self.data_log_row['difference'] = dif_pH
-        calibration_threshold = config_file["TrisBuffer"]["Calibration_threshold"]
+        calibration_threshold = CONFIG_FILE["TrisBuffer"]["Calibration_threshold"]
 
         if abs(dif_pH) < calibration_threshold:
             result_to_checkbox = 'green'
@@ -2336,7 +2336,7 @@ class Panel_pH(Panel):
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        udp.Data_String = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
+        udp.DATA_STRING = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
                               row_to_string + ",*\n")
         #self.timer_udp.stop()
         #self.timer_udp.start(10000)
@@ -2365,7 +2365,7 @@ class Panel_pH(Panel):
 
                 result_to_checkbox, self.data_log_row['cal_result'] = await self.get_calibration_results()
 
-                self.calibr_state_dialog.result_checkboxes[n].setCheckState(rgb_lookup[result_to_checkbox])
+                self.calibr_state_dialog.result_checkboxes[n].setCheckState(RGB_LOOKUP[result_to_checkbox])
                 self.df_mean_log_row.append(self.data_log_row)
             else:
                 self.skip_calibration_step = True
@@ -2474,12 +2474,12 @@ class Panel_CO3(Panel):
         if self.btn_shutter.isChecked():
             logging.debug('open shutter')
 
-            self.instrument.turn_on_relay(config_file["CO3"]["SHUTTER_SLOT"])
+            self.instrument.turn_on_relay(CONFIG_FILE["CO3"]["SHUTTER_SLOT"])
             # self.open_shutter()
         else:
             logging.debug('close shutter')
-            logging.debug(config_file["CO3"]["SHUTTER_SLOT"])
-            self.instrument.turn_off_relay(config_file["CO3"]["SHUTTER_SLOT"])
+            logging.debug(CONFIG_FILE["CO3"]["SHUTTER_SLOT"])
+            self.instrument.turn_off_relay(CONFIG_FILE["CO3"]["SHUTTER_SLOT"])
             # self.close_shutter()
 
     def get_folderpath(self):
@@ -2571,7 +2571,7 @@ class Panel_CO3(Panel):
                 "co3": [co3],
                 # 'co3_intercept': [intercept],
                 # 'co3_rvalue': [r_value],
-                "box_id": [box_id],
+                "box_id": [BOX_ID],
                 "T_cuvette": [T_cuvette]
             }
         )
@@ -2621,7 +2621,7 @@ class Panel_CO3(Panel):
 
         logging.info('Sending CO3 data to ferrybox')
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        udp.Data_String = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
+        udp.DATA_STRING = ("$PCO3," + self.instrument.PCO3_string_version + ',' + row_to_string + ",*\n")
         #self.timer_udp.stop()
         #self.timer_udp.start(10000)
 
@@ -2705,11 +2705,11 @@ class boxUI(QMainWindow):
 
     def set_title(self):
         if self.args.pco2:
-            self.setWindowTitle(f"{box_id}, parameters pH and pCO2")
+            self.setWindowTitle(f"{BOX_ID}, parameters pH and pCO2")
         elif self.args.co3:
-            self.setWindowTitle(f"{box_id}, parameter CO3")
+            self.setWindowTitle(f"{BOX_ID}, parameter CO3")
         else:
-            self.setWindowTitle(f"{box_id}")
+            self.setWindowTitle(f"{BOX_ID}")
 
     def create_main_widget(self):
         if self.args.co3:
@@ -2767,7 +2767,8 @@ loop = None
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     d = os.getcwd()
-    qss_file = open("styles.qss").read()
+    with open("styles.qss", "r", encoding="utf-8") as file:
+        qss_file = file.read()
     app.setStyleSheet(qss_file)
 
     loop = QEventLoop(app)

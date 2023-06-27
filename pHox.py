@@ -10,17 +10,17 @@ import pandas as pd
 
 import pHox_gui
 import udp
-from precisions import precision as prec
-from util import config_file, temp_probe_conf_path
+from precisions import PRECISION as prec
+from util import CONFIG_FILE, TEMP_PROBE_CONF_PATH
 
 try:
-    import pigpio
+    import pigpio  # type: ignore
     # import RPi.GPIO as GPIO
-    from ADCDifferentialPi import ADCDifferentialPi
-    import seabreeze
+    from ADCDifferentialPi import ADCDifferentialPi  # type: ignore
+    import seabreeze  # type: ignore
 
     seabreeze.use("cseabreeze")
-    from seabreeze.spectrometers import Spectrometer
+    from seabreeze.spectrometers import Spectrometer  # type: ignore
     # from seabreeze.spectrometers import list_devices
     # import seabreeze.cseabreeze as sbb
 except ImportError:
@@ -178,7 +178,7 @@ class Common_instrument(object):
         if not self.args.localdev:
             self.rpi = pigpio.pi()
 
-        self.fb_data = udp.Ferrybox
+        self.fb_data = udp.FERRYBOX
 
         self.load_config()
         self.spectrometer_cls.set_integration_time_not_async(self.specIntTime)
@@ -237,14 +237,14 @@ class Common_instrument(object):
             return False
 
     def load_config(self):
-        conf_operational = config_file["Operational"]
+        conf_operational = CONFIG_FILE["Operational"]
         self.autostart = self.to_bool(conf_operational["AUTOSTART"])
         self.automode = conf_operational["AUTOSTART_MODE"]
         self.Voltagech = int(conf_operational["T_PROBE_CH"])
         self.samplingInterval = int(conf_operational["SAMPLING_INTERVAL_MIN"])
         self.valid_samplingIintervals = conf_operational["VALID_SAMPLING_INTERVALS"]
         self.pumpTime = int(conf_operational["pumpTime_sec"])
-        self.calibration_pump_time = int(config_file["TrisBuffer"]["Calibration_pump_time"])
+        self.calibration_pump_time = int(CONFIG_FILE["TrisBuffer"]["Calibration_pump_time"])
         self.mixT = int(conf_operational["mixTime"])
         self.waitT = int(conf_operational["waitTime"])
         self.ncycles = int(conf_operational["ncycles"])
@@ -281,7 +281,7 @@ class Common_instrument(object):
             self.THR = int(conf_operational["LIGHT_THRESHOLD_STS"])
 
     def update_temp_probe_coef(self):
-        with open(temp_probe_conf_path) as json_file:
+        with open(TEMP_PROBE_CONF_PATH) as json_file:
             j = json.load(json_file)
             self.temp_iscalibrated = j[self.TempProbe_id]["is_calibrated"]
             if self.temp_iscalibrated == 'True':
@@ -374,7 +374,7 @@ class CO3_instrument(Common_instrument):
         self.load_config_co3()
 
     def load_config_co3(self):
-        conf = config_file["CO3"]
+        conf = CONFIG_FILE["CO3"]
         self.wvl1 = conf["WL_1"]
         self.wvl2 = conf["WL_2"]
         self.wvl3 = conf["WL_3"]
@@ -547,8 +547,8 @@ class pH_instrument(Common_instrument):
 
     def load_config_pH(self):
 
-        conf_pH = config_file["pH"]
-        calibr = config_file["TrisBuffer"]
+        conf_pH = CONFIG_FILE["pH"]
+        calibr = CONFIG_FILE["TrisBuffer"]
         self.buffer_sal = calibr["S_tris_buffer"]
         self.dye = conf_pH["Default_DYE"]
         if self.dye == "MCP":

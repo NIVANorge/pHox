@@ -10,13 +10,6 @@ import threading
 
 from datetime import datetime
 
-# logging.getLogger()
-# from util import config_file
-## type smth on the command line to stop the thread
-#
-# MYIP = '192.168.0.200' # would be different on different boxes and should come from the config
-# we dont need it if we loop through all interfaces
-
 MYIPS = [ '192.168.0.91', '192.168.0.202' ]
 UDP_SEND = 56801 #config_file["Operational"]['UDP_SEND']
 # 59801 for pH ,  59803 for CO3, 59802 for pCO2
@@ -24,7 +17,7 @@ UDP_RECV = 56800 # all FB PC should be always on
 UDP_IP   = '255.255.255.255'  # Should be the IP of the Ferrybox
 UDP_EXIT = False
 
-Ferrybox = {
+FERRYBOX = {
     'salinity'   : 33.5,
     'temperature': 15.0,
     'longitude'  : 0.0,
@@ -32,10 +25,10 @@ Ferrybox = {
     'pumping'    : 1,
     'udp_ok'     : False
     }
-Data_String = '$PHOX,12345'
+DATA_STRING = '$PHOX,12345'
+
 
 def udp_receiver():
-    global UDP_EXIT
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
     sock.bind(("", UDP_RECV))
@@ -43,7 +36,7 @@ def udp_receiver():
     # print ('udp receiver')
     while not UDP_EXIT:
         try:
-            (data,addr) = sock.recvfrom(500) # 500 is a buffer size
+            (data, _) = sock.recvfrom(500) # 500 is a buffer size
             data = data.decode("utf-8")
             # print(data)
             w = data.split(",")
@@ -60,23 +53,22 @@ def udp_receiver():
                     os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith("$PFBOX,SAL,"):
                 v = float(w[2])
-                Ferrybox["salinity"] = v
+                FERRYBOX["salinity"] = v
             elif data.startswith("$PFBOX,PUMP,"):
                 v = int(w[2])
-                Ferrybox["pumping"] = v
+                FERRYBOX["pumping"] = v
             elif data.startswith("$PFBOX,TEMP,"):
                 v = float(w[2])
-                Ferrybox["temperature"] = v
+                FERRYBOX["temperature"] = v
             elif data.startswith("$PFBOX,LAT,"):
                 v = float(w[2])
-                Ferrybox["latitude"] = v
+                FERRYBOX["latitude"] = v
             elif data.startswith("$PFBOX,LON,"):
                 v = float(w[2])
-                Ferrybox["longitude"] = v
-            Ferrybox['udp_ok'] = True
-        except Exception as e:
-            # print ('Error with udp', e)
-            Ferrybox['udp_ok'] = False
+                FERRYBOX["longitude"] = v
+            FERRYBOX['udp_ok'] = True
+        except socket.timeout:
+            FERRYBOX['udp_ok'] = False
         else:
             pass
     sock.close()
@@ -90,8 +82,6 @@ def send_data(s):
 
 
 def udp_sender():
-    global UDP_EXIT
-    global Data_String
     #return
     #interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None,family=socket.AF_INET)
     #allips = [ip[-1][0] for ip in interfaces]
@@ -106,7 +96,7 @@ def udp_sender():
             # print(ip)
             sock.bind((ip, UDP_SEND))
             # print(ip)
-            s = Data_String # 'hello {:-d}'.format(n)
+            s = DATA_STRING # 'hello {:-d}'.format(n)
             # logging.info(f'send to {ip}, {UDP_SEND}, {s}')
             # print(f'send string {s}')
             time.sleep(10)

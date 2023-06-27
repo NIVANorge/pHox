@@ -1,4 +1,4 @@
-precision = {
+PRECISION = {
     "pH": 4,
     "pK": 4,
     "e1": 6,

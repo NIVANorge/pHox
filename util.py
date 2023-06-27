@@ -1,7 +1,6 @@
 import logging
 import json
 import os
-# logging.getLogger()
 
 def get_base_folderpath(args):
     if args.localdev:
@@ -13,16 +12,16 @@ def get_base_folderpath(args):
     return base_folderpath
 
 try:
-    box_id = open("/home/pi/box_id.txt", "r").read().strip('\n')
-except:
+    with open("/home/pi/box_id.txt", "r", encoding="utf-8") as file:
+        BOX_ID = file.read().strip('\n')
+except FileNotFoundError:
     logging.error('No box id found, using config_template.json')
-    box_id = "template"
+    BOX_ID = "template"
 
-config_name = "configs/config_" + box_id + ".json"
-with open(config_name) as json_file:
-    config_file = json.load(json_file)
+CONFIG_NAME = "configs/config_" + BOX_ID + ".json"
+with open(CONFIG_NAME, "r", encoding="utf-8") as json_file:
+    CONFIG_FILE = json.load(json_file)
 
+TEMP_PROBE_CONF_PATH = 'configs/temperature_sensors_config.json'
 
-temp_probe_conf_path = 'configs/temperature_sensors_config.json'
-
-rgb_lookup = {'red': 1, 'green': 2, 'white': 0}
+RGB_LOOKUP = {'red': 1, 'green': 2, 'white': 0}
