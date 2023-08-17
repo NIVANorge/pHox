@@ -1,4 +1,3 @@
-#! /usr/bin/python
 import logging
 import asyncio
 import json
@@ -15,14 +14,16 @@ from util import CONFIG_FILE, TEMP_PROBE_CONF_PATH
 
 try:
     import pigpio  # type: ignore
-    # import RPi.GPIO as GPIO
+except ImportError:
+    pass
+try:
     from ADCDifferentialPi import ADCDifferentialPi  # type: ignore
+except ImportError:
+    pass
+try:
     import seabreeze  # type: ignore
-
-    seabreeze.use("cseabreeze")
     from seabreeze.spectrometers import Spectrometer  # type: ignore
-    # from seabreeze.spectrometers import list_devices
-    # import seabreeze.cseabreeze as sbb
+    seabreeze.use("cseabreeze")
 except ImportError:
     pass
 

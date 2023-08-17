@@ -1,12 +1,13 @@
 import logging
 import json
 import os
+from pathlib import Path
 
 def get_base_folderpath(args):
     if args.localdev:
         base_folderpath = os.getcwd() + '/data/'
     else:
-        base_folderpath = "/home/pi/pHox/data"
+        base_folderpath = f"{Path().home()}/pHox/data"
     if not os.path.exists(base_folderpath):
         os.makedirs(base_folderpath)
     return base_folderpath
