@@ -72,14 +72,14 @@ class Spectro_localtest(object):
         pass
 
     def get_wavelengths(self):
-        self.wvl = np.array([np.float(n) for n in self.test_spt.iloc[0].index.values[1:]])
+        self.wvl = np.array([np.float64(n) for n in self.test_spt.iloc[0].index.values[1:]])
         # wavelengths in (nm) corresponding to each pixel of the spectrom
         return self.wvl
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
             time.sleep(10)
-            sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
+            sp = self.test_df["0"].astype('float64').values + random.randrange(-1000, 1000, 1)
             return sp
 
         while self.busy:
@@ -91,7 +91,7 @@ class Spectro_localtest(object):
         return sp
 
     def get_intensities_slow(self, num_avg=1, correct=True):
-        sp = self.test_df["0"].astype('float').values + random.randrange(-1000, 1000, 1)
+        sp = self.test_df["0"].astype('float64').values + random.randrange(-1000, 1000, 1)
         return sp
 
 

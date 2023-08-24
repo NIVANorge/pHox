@@ -19,7 +19,11 @@ RUN apt-get install -y libhdf5-dev \
     libxrender-dev \
     libxi-dev \
     libxkbcommon-dev \
-    libxkbcommon-x11-dev
+    libxkbcommon-x11-dev \
+    qtbase5-dev \
+    qtchooser \
+    qt5-qmake \
+    qtbase5-dev-tools
 
 ENV QT_DEBUG_PLUGINS=1
 
