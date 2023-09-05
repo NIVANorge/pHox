@@ -4,17 +4,19 @@ import os
 from pathlib import Path
 
 def get_base_folderpath(args):
-    if args.localdev:
-        base_folderpath = os.getcwd() + '/data/'
-    else:
-        base_folderpath = f"{Path().home()}/pHox/data"
+    base_folderpath = f"{Path().home()}/pHox_data"
+    # if args.localdev:
+    #     base_folderpath = os.getcwd() + '/data/'
+    # else:
+    #     base_folderpath = f"{Path().home()}/pHox/data"
     if not os.path.exists(base_folderpath):
         os.makedirs(base_folderpath)
     return base_folderpath
 
 try:
-    with open("/home/pi/box_id.txt", "r", encoding="utf-8") as file:
+    with open(f"{Path().home()}/box_id.txt", "r", encoding="utf-8") as file:
         BOX_ID = file.read().strip('\n')
+        BOX_ID = "template" if BOX_ID == 'pHox0' else BOX_ID
 except FileNotFoundError:
     logging.error('No box id found, using config_template.json')
     BOX_ID = "template"

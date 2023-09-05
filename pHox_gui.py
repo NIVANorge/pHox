@@ -1197,7 +1197,7 @@ class Panel(QWidget):
         self.instrument.LEDS[ind] = value
 
     def save_stability_test(self, datay):
-        stabfile = os.path.join("/home/pi/pHox/data/data_pH/sp_stability.log")
+        stabfile = os.path.join(f"{Path().home()}/pHox_data/data_pH/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
             {
@@ -2513,7 +2513,7 @@ class Panel_CO3(Panel):
 
     def save_stability_test(self, datay):
 
-        stabfile = os.path.join("/home/pi/pHox/data/data_co3/sp_stability.log")
+        stabfile = os.path.join(f"{Path().home()}/pHox_data/data_co3/sp_stability.log")
 
         stabfile_df = pd.DataFrame(
             {
