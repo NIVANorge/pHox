@@ -237,35 +237,6 @@ class TimeAxisItem(pg.AxisItem):
         return [datetime.fromtimestamp(value) for value in values]
 
 
-class SimpleThread(QtCore.QThread):
-    finished = QtCore.pyqtSignal(object)
-
-    def __init__(self, slow_function, callback):
-        super().__init__()
-        self.caller = slow_function
-        self.finished.connect(callback)
-
-    def run(self):
-        self.finished.emit(self.caller())
-
-
-class AsyncThreadWrapper:
-    def __init__(self, slow_function):
-        self.callback_returned, self.result = False, None
-        self.thread = SimpleThread(slow_function, self.result_setter)
-        self.thread.start()
-
-    def result_setter(self, res):
-        self.result, self.callback_returned = res, True
-
-    async def result_returner(self):
-        while not self.callback_returned:
-            await asyncio.sleep(0.1)
-            self.thread.quit()
-            # self.thread.wait()
-        return self.result
-
-
 class Panel(QWidget):
     def __init__(self, parent, panelargs):
         super().__init__(parent)
