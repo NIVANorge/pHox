@@ -1201,6 +1201,9 @@ class Panel(QWidget):
     async def update_spectra_plot(self):
         # logging.debug('Upd spectra, Time since start {}'.format((datetime.now() - self.starttime)))
 
+        if self.updater.update_spectra_in_progress:
+            return
+
         self.updater.update_spectra_in_progress = True
 
         try:

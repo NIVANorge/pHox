@@ -19,7 +19,7 @@
         "UDP_SEND": 59801,
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 60,
+        "SAMPLING_INTERVAL_MIN": 5,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -34,7 +34,7 @@
         "mixTime": 0,
         "waitTime": 0,
         "ncycles": 4,
-        "Spectro_Integration_time": 600.0,
+        "Spectro_Integration_time": 60.0,
         "Ship_Code": "NB",
         "Valid_ship_codes": [
             "Standalone",

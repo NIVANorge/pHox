@@ -57,12 +57,11 @@ class Spectro_localtest(object):
         x.columns = x.iloc[0]
         self.test_df = x[1:]
         self.integration_time = 100 / 1000
+        self.busy = False
 
     def set_integration_time_not_async(self, time_millisec):
         # microsec = time_millisec * 1000
-        self.busy = True
         self.integration_time = time_millisec / 1000
-        self.busy = False
 
     async def set_integration_time(self, time_millisec):
         while self.busy:
@@ -84,11 +83,8 @@ class Spectro_localtest(object):
             sp = self.test_df["0"].astype('float64').values + random.randrange(-1000, 1000, 1)
             return sp
 
-        while self.busy:
-            await asyncio.sleep(0.05)
         self.busy = True
         sp = await asyncio.get_running_loop().run_in_executor(None, _get_intensities)
-
         self.busy = False
         return sp
 
