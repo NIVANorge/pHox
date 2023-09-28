@@ -133,12 +133,8 @@ class Spectro_seabreeze(object):
                 sp = np.mean(np.array(sp), axis=0)
             return sp
 
-        while self.busy:
-            await asyncio.sleep(0.05)
         self.busy = True
-
-        async_thread_wrapper = pHox_gui.AsyncThreadWrapper(_get_intensities)
-        sp = await async_thread_wrapper.result_returner()
+        sp = await asyncio.get_running_loop().run_in_executor(None, _get_intensities)
         self.busy = False
         return sp
 
