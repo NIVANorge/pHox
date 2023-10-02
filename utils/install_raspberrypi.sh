@@ -3,9 +3,6 @@
 # exit on error
 set -e
 
-# pHox will search for this file to check a pHox number
-echo "pHox0" > $HOME/box_id.txt
-
 # raspberry pi does ask for password by default
 sudo apt update && sudo apt -y upgrade
 sudo apt install -y build-essential
@@ -33,10 +30,3 @@ sudo apt autoremove -y
 python3 -m pip install --user --upgrade pip
 python3 -m pip install --user virtualenv
 python3 -m venv $HOME/env
-source $HOME/env/bin/activate
-
-# install python modules into the venv
-python -m pip install -r ../requirements.txt
-python -m pip install pigpio
-python -m pip install seabreeze
-python -m pip install git+https://github.com/abelectronicsuk/ABElectronics_Python_Libraries.git

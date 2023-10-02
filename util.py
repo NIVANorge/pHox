@@ -21,10 +21,11 @@ except FileNotFoundError:
     logging.error('No box id found, using config_template.json')
     BOX_ID = "template"
 
-CONFIG_NAME = "configs/config_" + BOX_ID + ".json"
+dirname = os.path.dirname(__file__)
+CONFIG_NAME = os.path.join(dirname, "configs/config_" + BOX_ID + ".json")
 with open(CONFIG_NAME, "r", encoding="utf-8") as json_file:
     CONFIG_FILE = json.load(json_file)
 
-TEMP_PROBE_CONF_PATH = 'configs/temperature_sensors_config.json'
+TEMP_PROBE_CONF_PATH = os.path.join(dirname, 'configs/temperature_sensors_config.json')
 
 RGB_LOOKUP = {'red': 1, 'green': 2, 'white': 0}

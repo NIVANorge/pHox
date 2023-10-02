@@ -2740,7 +2740,7 @@ loop = None
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     d = os.getcwd()
-    with open("styles.qss", "r", encoding="utf-8") as file:
+    with open(os.path.join(os.path.dirname(__file__), "styles.qss"), "r", encoding="utf-8") as file:
         qss_file = file.read()
     app.setStyleSheet(qss_file)
 
