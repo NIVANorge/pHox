@@ -20,3 +20,4 @@ python -m pip install seabreeze
 python -m pip install git+https://github.com/abelectronicsuk/ABElectronics_Python_Libraries.git
 
 sudo systemctl enable pHox.service
+
