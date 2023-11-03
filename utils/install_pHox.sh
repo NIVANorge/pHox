@@ -17,6 +17,7 @@ source $HOME/env/bin/activate
 python -m pip install -r ../requirements.txt
 python -m pip install pigpio
 python -m pip install seabreeze
+python -m pip install smbus2
 python -m pip install git+https://github.com/abelectronicsuk/ABElectronics_Python_Libraries.git
 
 sudo systemctl enable pHox.service

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source /home/pi/env/bin/activate
+sudo pigpiod
 
-python /home/pi/pHox/pHox_gui.py --localdev > /home/pi/log_pHox.out 2>&1
+source /home/pi/env/bin/activate
+python /home/pi/pHox/pHox_gui.py > /home/pi/log_pHox.out 2>&1
 

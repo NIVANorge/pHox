@@ -24,8 +24,8 @@ except ImportError:
     pass
 try:
     import seabreeze  # type: ignore
+    seabreeze.use("pyseabreeze")
     from seabreeze.spectrometers import Spectrometer  # type: ignore
-    seabreeze.use("cseabreeze")
 except ImportError:
     pass
 
@@ -126,10 +126,10 @@ class Spectro_seabreeze(object):
 
     async def get_intensities(self, num_avg=1, correct=True):
         def _get_intensities():
-            sp = self.spec.intensities(correct_nonlinearity=correct)
+            sp = self.spec.intensities()
             if num_avg > 1:
                 for _ in range(num_avg):
-                    sp = np.vstack([sp, self.spec.intensities(correct_nonlinearity=correct)])
+                    sp = np.vstack([sp, self.spec.intensities()])
                 sp = np.mean(np.array(sp), axis=0)
             return sp
 
@@ -192,6 +192,17 @@ class Common_instrument(object):
         self.rpi.write(self.extra_slot, 0)
 
     async def set_Valve(self, status):
+        # Here False mean close
+        # the valve is normaly open
+        chEn = self.extra_slot
+        if not status:
+            logging.info("Closing the valve")
+            self.rpi.write(chEn, True)
+        else:
+            logging.info("Opening the valve")
+            self.rpi.write(chEn, False)
+
+    async def set_Valve_bistable(self, status):
         # Here False mean close
         chEn = self.valve_slots[0]
         ch1, ch2 = self.valve_slots[1], self.valve_slots[2]
