@@ -328,8 +328,8 @@ class Common_instrument(object):
     # COMMON
     def get_wvlPixels(self, wvls_spectrum):
         self.wvlPixels = []
-        # for wl in self.wvl_needed:
-        #     self.wvlPixels.append(self.find_nearest(wvls_spectrum, wl))
+        for wl in self.wvl_needed:
+            self.wvlPixels.append(self.find_nearest(wvls_spectrum, wl))
 
     def print_Com(self, port, txtData):
         port.write(txtData)
