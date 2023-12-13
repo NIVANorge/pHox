@@ -50,7 +50,7 @@ def udp_receiver():
                 if abs(t - v).total_seconds() > 60 :
                     # 1 hour difference:
                     print("will correct time")
-                    os.system("date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
+                    os.system("sudo date +'%Y-%m-%dT%H:%M:%S' --set={:s}".format(w[2]))
             elif data.startswith("$PFBOX,SAL,"):
                 v = float(w[2])
                 FERRYBOX["salinity"] = v
