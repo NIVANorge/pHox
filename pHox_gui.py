@@ -783,7 +783,7 @@ class Panel(QWidget):
                 self.instrument.ship_code],
 
             'Temp probe id': [
-                ["Probe_" + str(n) for n in range(1, 16)],
+                ["Probe_" + str(n) for n in range(1, 25)],
                 self.temp_id_combo_changed,
                 self.instrument.TempProbe_id],
 
@@ -1580,6 +1580,7 @@ class Panel(QWidget):
                     self.infotimer_contin_mode.stop()
                     self.until_next_sample = self.instrument.samplingInterval
                     self.StatusBox.setText("Continuous mode paused")
+                    self.send_initial_to_ferrybox()
                 else:
                     pass
             elif fbox['pumping'] == 1:
@@ -1612,6 +1613,7 @@ class Panel(QWidget):
                 self._autostart()
         else:
             pass
+        self.send_initial_to_ferrybox()
 
         return
 
@@ -2309,12 +2311,29 @@ class Panel_pH(Panel):
 
     def send_to_ferrybox(self):
         row_to_string = self.data_log_row.to_csv(index=False, header=False).rstrip()
-        udp.DATA_STRING = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' +
-                              row_to_string + ",*\n")
-        #self.timer_udp.stop()
-        #self.timer_udp.start(10000)
+        udp.DATA_STRING = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' + row_to_string + ",*\n")
 
-
+    def send_initial_to_ferrybox(self):
+        timeStamp = datetime.now().isoformat("_")
+        df = pd.DataFrame(
+            {
+                "Time": [timeStamp[0:16]],
+                "Lon": [round(fbox["longitude"], prec["longitude"])],
+                "Lat": [round(fbox["latitude"], prec["latitude"])],
+                "fb_temp": [round(fbox["temperature"], prec["T_cuvette"])],
+                "fb_sal": [round(fbox["salinity"], prec["salinity"])],
+                "SHIP": [self.instrument.ship_code],
+                "pH_cuvette": [-998],
+                "T_cuvette": [-998],
+                "perturbation": [-998],
+                "evalAnir": [-998],
+                "pH_insitu": [-998],
+                'r_square': [-998],
+                "box_id": [BOX_ID]
+            }
+        )
+        row_to_string = df.to_csv(index=False, header=False).rstrip()
+        udp.DATA_STRING = ("$PPHOX," + self.instrument.PPHOX_string_version + ',' + row_to_string + ",*\n")
 
     async def one_calibration_step(self, n, folderpath):
         # Check if stop is clicked

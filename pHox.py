@@ -303,6 +303,7 @@ class Common_instrument(object):
 
     async def pumping(self, pumpTime):
         self.turn_on_relay(self.wpump_slot)  # start the instrument pump
+        await asyncio.sleep(10)
         self.turn_on_relay(self.stirrer_slot)  # start the stirrer
         await asyncio.sleep(pumpTime)
         self.turn_off_relay(self.stirrer_slot)  # turn off the pump

@@ -39,7 +39,7 @@
             "is_calibrated": "True",
             "calibr_date": "22/02/2023",
             "Calibr_coef": [
-                69.860,
+                -69.860,
                 16.306
             ]
         },
@@ -141,5 +141,50 @@
                 70.975,
                 16.184
             ]
-        }
+        },
+        "Probe_20": {
+          "comment": " ",
+          "is_calibrated": "True",
+          "calibr_date": "21/12/2023",
+          "Calibr_coef": [
+              74.985,
+              18.377
+          ]
+        },
+        "Probe_21": {
+          "comment": " ",
+          "is_calibrated": "True",
+          "calibr_date": "21/12/2023",
+          "Calibr_coef": [
+              72.775,
+              16.869
+          ]
+        },
+        "Probe_22": {
+          "comment": " ",
+          "is_calibrated": "False",
+          "calibr_date": "21/12/2023",
+          "Calibr_coef": [
+              72.775,
+              16.869
+          ]
+        },
+        "Probe_23": {
+          "comment": " ",
+          "is_calibrated": "True",
+          "calibr_date": "21/12/2023",
+          "Calibr_coef": [
+              72.697,
+              16.915
+          ]
+        },
+        "Probe_24": {
+          "comment": " ",
+          "is_calibrated": "True",
+          "calibr_date": "21/12/2023",
+          "Calibr_coef": [
+              74.449,
+              16.808
+          ]
+      }
 }

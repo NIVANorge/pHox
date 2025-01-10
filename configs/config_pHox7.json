@@ -1,6 +1,6 @@
 {
     "Operational": {
-        "TEMP_PROBE_ID": "Probe_1",
+        "TEMP_PROBE_ID": "Probe_4",
         "T_PROBE_CH": 8,
         "WPUMP_SLOT": 17,
         "DYEPUMP_SLOT": 27,
@@ -19,7 +19,7 @@
         "UDP_SEND": 59801,
         "AUTOSTART_MODE": "pump",
         "DURATION": -1,
-        "SAMPLING_INTERVAL_MIN": 5,
+        "SAMPLING_INTERVAL_MIN": 15,
         "VALID_SAMPLING_INTERVALS": [
             "5",
             "7",
@@ -31,16 +31,17 @@
         ],
         "drain_mode": "ON",
         "pumpTime_sec": 60,
-        "mixTime": 0,
-        "waitTime": 0,
+        "mixTime": 5,
+        "waitTime": 3,
         "ncycles": 4,
-        "Spectro_Integration_time": 4800.0,
-        "Ship_Code": "NB",
+        "Spectro_Integration_time": 3700.0,
+        "Ship_Code": "RW",
         "Valid_ship_codes": [
             "Standalone",
             "NB",
             "FA",
-            "TF"
+            "TF",
+            "RW"
         ],
         "LIGHT_THRESHOLD_STS": 15500,
         "LIGHT_THRESHOLD_FLAME": 60000,
@@ -59,9 +60,9 @@
             19,
             16
         ],
-        "LED1": 65,
-        "LED2": 65,
-        "LED3": 85,
+        "LED1": 99,
+        "LED2": 32,
+        "LED3": 26,
         "Default_DYE": "MCP",
         "wl_NIR-": 730,
         "MCP_wl_HI": 434,
@@ -70,7 +71,7 @@
         "TB_wl_I2": 596,
         "LED4": 70,
         "PPHOX_STRING_VERSION": "1",
-        "dye_level": 1995.5600000000022,
+        "dye_level": 1984.4000000000142,
         "dye_level_comment": "one bag 1000 ml, two bags"
     },
     "pCO2": {

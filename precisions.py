@@ -4,7 +4,7 @@ PRECISION = {
     "e1": 6,
     "e2": 6,
     "e3": 6,
-    "Voltage": 3,
+    "Voltage": 5,
     "salinity": 2,
     "A1": 5,
     "A2": 5,
